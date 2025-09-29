@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/today_template_provider.dart';
+import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/today_template_card.dart';
 
@@ -14,7 +15,18 @@ class TodayScreen extends ConsumerWidget {
     final template = ref.watch(todayTemplateProvider);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('Today')),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('Today'),
+        trailing: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).push(CupertinoPageRoute(builder: (_) => const SettingsScreen()));
+          },
+          child: const Icon(CupertinoIcons.gear, color: CupertinoColors.white),
+        ),
+      ),
       child: SafeArea(
         child: template.when(
           data: (data) => data == null

@@ -65,7 +65,8 @@ class TemplateRepository {
       name: 'Club Halos',
       modality: ExerciseModality.reps,
       prescription: '6 per direction',
-      targetSets: 2, // Left + right direction
+      targetSets: 2,
+      // Left + right direction
       equipment: 'Club',
       cue: 'Smooth arc, open shoulders',
     );
@@ -74,7 +75,8 @@ class TemplateRepository {
       name: 'Half-kneeling Hip Flexor Stretch',
       modality: ExerciseModality.hold,
       prescription: '30s per side',
-      targetSets: 2, // Left + right side
+      targetSets: 2,
+      // Left + right side
       equipment: 'Club overhead',
       cue: 'Posterior tilt, reach tall',
     );
@@ -83,7 +85,8 @@ class TemplateRepository {
       name: 'Cat-Cow to Thread Needle',
       modality: ExerciseModality.mobility,
       prescription: '5 per side',
-      targetSets: 2, // Left + right side
+      targetSets: 2,
+      // Left + right side
       cue: 'Segment spine, reach long',
     );
     final beastCrawl = WorkoutExercise(
@@ -156,7 +159,8 @@ class TemplateRepository {
       name: 'Standing Thoracic Rotation with Club',
       modality: ExerciseModality.reps,
       prescription: '8 per side',
-      targetSets: 2, // Left + right side
+      targetSets: 2,
+      // Left + right side
       cue: 'Hip lock, rotate through T-spine',
     );
     final supineBreathing = WorkoutExercise(
@@ -172,7 +176,8 @@ class TemplateRepository {
       name: "Child's Pose with Side Reach",
       modality: ExerciseModality.mobility,
       prescription: '45s per side',
-      targetSets: 2, // Left + right side
+      targetSets: 2,
+      // Left + right side
       cue: 'Reach long, breathe lateral ribs',
     );
     final boxBreathing = WorkoutExercise(
@@ -180,7 +185,8 @@ class TemplateRepository {
       name: 'Box Breathing 4-4-4-4',
       modality: ExerciseModality.breath,
       prescription: '2 minutes',
-      targetSets: 1, // Single continuous session
+      targetSets: 1,
+      // Single continuous session
       cue: 'Equal phases, relaxed jaw',
     );
 

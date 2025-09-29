@@ -6,6 +6,8 @@
   - Do not add comments to generated code.
   - Keep responses brief and scannable; include only essential context.
   - Do not run `flutter run` commands - let the user test apps in their own terminal for faster hot reload.
+  - Avoid verbose summaries and token-wasting explanations at the end of responses.
+  - Focus on actionable results, not lengthy recaps of what was done.
 
 - **Dart/Flutter preferences**:
   - Prefer getters over `getX()` method forms for model attributes.

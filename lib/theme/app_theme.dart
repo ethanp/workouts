@@ -86,18 +86,24 @@ CupertinoThemeData buildAppTheme() {
     primaryColor: AppColors.accentPrimary,
     textTheme: CupertinoTextThemeData(
       textStyle: TextStyle(color: AppColors.textColor1),
-      actionTextStyle: TextStyle(color: AppColors.accentPrimary),
+      actionTextStyle: TextStyle(
+        inherit: false,
+        color: AppColors.accentPrimary,
+      ),
       navTitleTextStyle: TextStyle(
+        inherit: false,
         color: AppColors.textColor1,
         fontSize: 17,
         fontWeight: FontWeight.w600,
       ),
       navLargeTitleTextStyle: TextStyle(
+        inherit: false,
         color: AppColors.textColor1,
         fontSize: 32,
         fontWeight: FontWeight.w700,
       ),
       tabLabelTextStyle: TextStyle(
+        inherit: false,
         color: AppColors.textColor3,
         fontSize: 12,
         fontWeight: FontWeight.w500,

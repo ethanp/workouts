@@ -73,6 +73,45 @@ class SessionRepository {
     await _persistSession(updatedSession);
   }
 
+  Future<void> unlogSet({
+    required Session session,
+    required SessionBlock block,
+    required WorkoutExercise exercise,
+  }) async {
+    var logRemoved = false;
+    final updatedBlocks = session.blocks.map((item) {
+      if (item.id != block.id) {
+        return item;
+      }
+
+      final removalIndex = item.logs.lastIndexWhere(
+        (log) => log.exerciseId == exercise.id,
+      );
+      if (removalIndex == -1) {
+        return item;
+      }
+
+      logRemoved = true;
+      final trimmedLogs = [...item.logs]..removeAt(removalIndex);
+      final normalizedLogs = [
+        for (var i = 0; i < trimmedLogs.length; i++)
+          trimmedLogs[i].copyWith(setIndex: i),
+      ];
+
+      return item.copyWith(logs: normalizedLogs);
+    }).toList();
+
+    if (!logRemoved) {
+      return;
+    }
+
+    final updatedSession = session.copyWith(
+      blocks: updatedBlocks,
+      updatedAt: DateTime.now(),
+    );
+    await _persistSession(updatedSession);
+  }
+
   Future<void> completeSession(
     Session session, {
     String? notes,
@@ -97,6 +136,10 @@ class SessionRepository {
       updatedAt: now,
     );
     await _persistSession(completedSession);
+  }
+
+  Future<void> discardSession(String id) async {
+    await _db.deleteSession(id);
   }
 
   Future<List<Session>> history() async {

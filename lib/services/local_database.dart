@@ -12,12 +12,19 @@ part 'local_database.g.dart';
 @DataClassName('WorkoutTemplateRow')
 class WorkoutTemplatesTable extends Table {
   TextColumn get id => text()();
+
   TextColumn get name => text()();
+
   TextColumn get goal => text()();
+
   TextColumn get blocksJson => text()();
+
   TextColumn get notes => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime()();
+
   DateTimeColumn get updatedAt => dateTime().nullable()();
+
   IntColumn get version => integer().withDefault(const Constant(1))();
 
   @override
@@ -27,18 +34,30 @@ class WorkoutTemplatesTable extends Table {
 @DataClassName('SessionRow')
 class SessionsTable extends Table {
   TextColumn get id => text()();
+
   TextColumn get templateId => text()();
+
   DateTimeColumn get startedAt => dateTime()();
+
   DateTimeColumn get completedAt => dateTime().nullable()();
+
   IntColumn get durationSeconds => integer().nullable()();
+
   TextColumn get notes => text().nullable()();
+
   TextColumn get feeling => text().nullable()();
+
   TextColumn get blocksJson => text()();
+
   TextColumn get breathSegmentsJson => text()();
+
   BoolColumn get isPaused => boolean().withDefault(const Constant(false))();
+
   DateTimeColumn get pausedAt => dateTime().nullable()();
+
   IntColumn get totalPausedDurationSeconds =>
       integer().withDefault(const Constant(0))();
+
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
@@ -94,6 +113,10 @@ class LocalDatabase extends _$LocalDatabase {
 
   Future<void> upsertSession(SessionsTableCompanion companion) async {
     await into(sessionsTable).insertOnConflictUpdate(companion);
+  }
+
+  Future<void> deleteSession(String id) async {
+    await (delete(sessionsTable)..where((tbl) => tbl.id.equals(id))).go();
   }
 }
 

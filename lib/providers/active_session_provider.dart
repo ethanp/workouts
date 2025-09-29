@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
+import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
 import 'package:workouts/services/repositories/session_repository.dart';
 
@@ -20,7 +21,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final repository = ref.read(sessionRepositoryProvider);
     final session = await repository.startSession(templateId);
     state = AsyncValue.data(session);
-    // Automatically show session UI when starting
+    ref.invalidate(heartRateTimelineNotifierProvider);
     ref.read(sessionUIVisibilityNotifierProvider.notifier).show();
   }
 
@@ -65,6 +66,24 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     state = AsyncValue.data(updatedSession);
   }
 
+  Future<void> unlogSet({
+    required SessionBlock block,
+    required WorkoutExercise exercise,
+  }) async {
+    final current = state.value;
+    if (current == null) {
+      throw StateError('No active session');
+    }
+    final repository = ref.read(sessionRepositoryProvider);
+    await repository.unlogSet(
+      session: current,
+      block: block,
+      exercise: exercise,
+    );
+    final updatedSession = await repository.fetchSessionById(current.id);
+    state = AsyncValue.data(updatedSession);
+  }
+
   Future<void> complete({String? notes, String? feeling}) async {
     final current = state.value;
     if (current == null) {
@@ -73,9 +92,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final repository = ref.read(sessionRepositoryProvider);
     await repository.completeSession(current, notes: notes, feeling: feeling);
     state = const AsyncValue.data(null);
-    // Hide session UI when completing
+    ref.invalidate(heartRateTimelineNotifierProvider);
     ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
-    // Refresh history to show updated session
     ref.invalidate(sessionHistoryProvider);
   }
 
@@ -115,7 +133,15 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   }
 
   Future<void> discard() async {
+    final current = state.value;
+    if (current != null) {
+      final repository = ref.read(sessionRepositoryProvider);
+      await repository.discardSession(current.id);
+    }
     state = const AsyncValue.data(null);
+    ref.invalidate(heartRateTimelineNotifierProvider);
+    ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
+    ref.invalidate(sessionHistoryProvider);
   }
 }
 
@@ -125,5 +151,6 @@ class SessionUIVisibilityNotifier extends _$SessionUIVisibilityNotifier {
   bool build() => false;
 
   void show() => state = true;
+
   void hide() => state = false;
 }
