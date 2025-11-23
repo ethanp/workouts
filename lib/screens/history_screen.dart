@@ -5,6 +5,7 @@ import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/screens/session_detail_screen.dart';
+import 'package:workouts/services/repositories/session_repository.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -22,8 +23,12 @@ class HistoryScreen extends ConsumerWidget {
               ? _emptyState()
               : ListView.separated(
                   padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemBuilder: (context, index) =>
-                      _SessionTile(session: sessions[index]),
+                  itemBuilder: (context, index) => _DismissibleSessionTile(
+                    session: sessions[index],
+                    onDismissed: () async {
+                      await _handleDelete(context, ref, sessions[index]);
+                    },
+                  ),
                   separatorBuilder: (_, __) =>
                       const SizedBox(height: AppSpacing.md),
                   itemCount: sessions.length,
@@ -38,6 +43,39 @@ class HistoryScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _handleDelete(
+    BuildContext context,
+    WidgetRef ref,
+    Session session,
+  ) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Delete Session'),
+        content: const Text(
+          'Are you sure you want to delete this workout session? This action cannot be undone.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final repository = ref.read(sessionRepositoryProvider);
+      await repository.discardSession(session.id);
+      ref.invalidate(sessionHistoryProvider);
+    }
   }
 
   Widget _emptyState() {
@@ -59,6 +97,56 @@ class HistoryScreen extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DismissibleSessionTile extends StatelessWidget {
+  const _DismissibleSessionTile({
+    required this.session,
+    required this.onDismissed,
+  });
+
+  final Session session;
+  final Future<void> Function() onDismissed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: Key(session.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async {
+        await onDismissed();
+        return false;
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: CupertinoColors.destructiveRed,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              CupertinoIcons.delete,
+              color: CupertinoColors.white,
+              size: 28,
+            ),
+            SizedBox(height: AppSpacing.xs),
+            Text(
+              'Delete',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+      child: _SessionTile(session: session),
     );
   }
 }

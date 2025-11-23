@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
@@ -14,7 +13,7 @@ class SessionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesMapAsync = ref.watch(templatesMapProvider);
-    
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: templatesMapAsync.when(
@@ -144,7 +143,9 @@ class SessionDetailScreen extends ConsumerWidget {
   }
 
   String _formatDateTime(DateTime date) {
-    final hour = date.hour > 12 ? date.hour - 12 : (date.hour == 0 ? 12 : date.hour);
+    final hour = date.hour > 12
+        ? date.hour - 12
+        : (date.hour == 0 ? 12 : date.hour);
     final minute = date.minute.toString().padLeft(2, '0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return '${date.month}/${date.day}/${date.year} at $hour:$minute $period';
@@ -180,7 +181,7 @@ class _BlockCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _getBlockTitle(),
+                'Block ${index + 1}: ${titleCase(block.type.name)}',
                 style: AppTypography.title,
               ),
               if (block.totalRounds != null)
@@ -197,18 +198,17 @@ class _BlockCard extends StatelessWidget {
     );
   }
 
-  String _getBlockTitle() {
-    return switch (block.type) {
-      WorkoutBlockType.warmup => 'Block ${index + 1}: Warmup',
-      WorkoutBlockType.animalFlow => 'Block ${index + 1}: Animal Flow',
-      WorkoutBlockType.strength => 'Block ${index + 1}: Strength',
-      WorkoutBlockType.mobility => 'Block ${index + 1}: Mobility',
-      WorkoutBlockType.cooldown => 'Block ${index + 1}: Cooldown',
-    };
+  String titleCase(String name) {
+    final spacesAdded = name
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')
+        .trim();
+    return '${spacesAdded[0].toUpperCase()}${spacesAdded.substring(1)}';
   }
 
   Widget _buildExercise(WorkoutExercise exercise) {
-    final exerciseLogs = block.logs.where((log) => log.exerciseId == exercise.id).toList();
+    final exerciseLogs = block.logs
+        .where((log) => log.exerciseId == exercise.id)
+        .toList();
     final completedSets = exerciseLogs.length;
 
     return Padding(
@@ -220,10 +220,7 @@ class _BlockCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  exercise.name,
-                  style: AppTypography.subtitle,
-                ),
+                child: Text(exercise.name, style: AppTypography.subtitle),
               ),
               Text(
                 '$completedSets/${exercise.targetSets} sets',
@@ -246,7 +243,7 @@ class _BlockCard extends StatelessWidget {
 
   Widget _buildSetLog(SessionSetLog log) {
     final details = <String>[];
-    
+
     if (log.weightKg != null) {
       details.add('${log.weightKg}kg');
     }
@@ -290,4 +287,3 @@ class _BlockCard extends StatelessWidget {
     );
   }
 }
-
