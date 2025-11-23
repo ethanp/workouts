@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -13,6 +14,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final permissionAsync = ref.watch(healthKitPermissionNotifierProvider);
     final exportAsync = ref.watch(healthExportControllerProvider);
+    final versionAsync = ref.watch(templateVersionControllerProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
@@ -20,12 +22,123 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            _TemplateVersionTile(versionAsync: versionAsync, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
             _PermissionStatusTile(permissionAsync: permissionAsync, ref: ref),
             const SizedBox(height: AppSpacing.lg),
             _HealthDataActions(exportAsync: exportAsync, ref: ref),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _TemplateVersionTile extends StatelessWidget {
+  const _TemplateVersionTile({required this.versionAsync, required this.ref});
+
+  final AsyncValue<TemplateVersionStatus> versionAsync;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: versionAsync.when(
+        data: (status) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Workout Templates', style: AppTypography.subtitle),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              status.installed == null
+                  ? 'Not initialized (version ${status.current})'
+                  : 'Version ${status.installed} installed (current: ${status.current})',
+              style: AppTypography.body.copyWith(
+                color: status.needsUpdate
+                    ? AppColors.warning
+                    : AppColors.textColor3,
+              ),
+            ),
+            if (status.needsUpdate) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Templates need to be updated to access new features and fixes.',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor4,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              CupertinoButton.filled(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                onPressed: () => _confirmReseed(context),
+                child: const Text(
+                  'Update Templates',
+                  style: TextStyle(
+                    color: CupertinoColors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        loading: () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Workout Templates', style: AppTypography.subtitle),
+            const SizedBox(height: AppSpacing.xs),
+            const CupertinoActivityIndicator(),
+          ],
+        ),
+        error: (error, _) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Workout Templates', style: AppTypography.subtitle),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Error: $error',
+              style: AppTypography.body.copyWith(color: AppColors.error),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmReseed(BuildContext context) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (context) {
+        return CupertinoActionSheet(
+          title: const Text('Update Templates?'),
+          message: const Text(
+            'This will regenerate all workout templates with the latest version. Any active sessions will not be affected.',
+          ),
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.of(context, rootNavigator: true).pop();
+                ref.read(templateVersionControllerProvider.notifier).reseed();
+              },
+              child: const Text('Update Templates'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            child: const Text('Cancel'),
+          ),
+        );
+      },
     );
   }
 }

@@ -18,7 +18,7 @@ class TemplateRepository {
 
   final LocalDatabase _db;
 
-  static const int currentTemplateVersion = 3;
+  static const int currentTemplateVersion = 4;
 
   Future<List<WorkoutTemplate>> fetchTemplates() async {
     final localRows = await _db.readTemplates();
@@ -52,13 +52,23 @@ class TemplateRepository {
   }
 
   Future<void> saveTemplate(WorkoutTemplate template) async {
+    final blocksJson = jsonEncode(
+      template.blocks.map((block) => block.toJson()).toList(),
+    );
+    print('💾 Saving template: ${template.name}');
+    if (template.name.contains('PT')) {
+      final firstExercise = template.blocks.first.exercises.first;
+      print('   First exercise: ${firstExercise.name}');
+      print('   setupDuration: ${firstExercise.setupDuration}');
+      print('   workDuration: ${firstExercise.workDuration}');
+      final exerciseJson = firstExercise.toJson();
+      print('   Exercise JSON: $exerciseJson');
+    }
     final companion = WorkoutTemplatesTableCompanion.insert(
       id: template.id,
       name: template.name,
       goal: template.goal,
-      blocksJson: jsonEncode(
-        template.blocks.map((block) => block.toJson()).toList(),
-      ),
+      blocksJson: blocksJson,
       notes: Value(template.notes),
       createdAt: template.createdAt ?? DateTime.now(),
       updatedAt: Value(template.updatedAt ?? DateTime.now()),
@@ -276,6 +286,8 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
       cue: 'Slow pressure along scalene line.',
+      setupDuration: const Duration(seconds: 30),
+      workDuration: const Duration(minutes: 2),
     );
     final doorwayPecStretch = WorkoutExercise(
       id: _uuid.v4(),
@@ -283,6 +295,8 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
       cue: 'Elbow at shoulder height, breathe lateral ribs.',
+      setupDuration: const Duration(seconds: 30),
+      workDuration: const Duration(minutes: 2),
     );
     final rhomboidsSmash = WorkoutExercise(
       id: _uuid.v4(),
@@ -290,6 +304,8 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
       cue: 'Lean into ball, glide along medial scapula.',
+      setupDuration: const Duration(seconds: 30),
+      workDuration: const Duration(minutes: 2),
     );
     final upperSideChestSmash = WorkoutExercise(
       id: _uuid.v4(),
@@ -297,6 +313,8 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
       cue: 'Support head, open ribs as you roll.',
+      setupDuration: const Duration(seconds: 30),
+      workDuration: const Duration(minutes: 2),
     );
     final bandFonzy = WorkoutExercise(
       id: _uuid.v4(),

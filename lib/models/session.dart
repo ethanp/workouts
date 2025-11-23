@@ -81,3 +81,23 @@ class Session with _$Session {
   factory Session.fromJson(Map<String, dynamic> json) =>
       _$SessionFromJson(json);
 }
+
+extension SessionBlockRecommendations on SessionBlock {
+  WorkoutExercise? get nextIncompleteExercise {
+    final counts = <String, int>{};
+    for (final log in logs) {
+      counts.update(log.exerciseId, (value) => value + 1, ifAbsent: () => 1);
+    }
+    for (final exercise in exercises) {
+      final targetSets = exercise.targetSets;
+      if (targetSets <= 0) {
+        continue;
+      }
+      final completed = counts[exercise.id] ?? 0;
+      if (completed < targetSets) {
+        return exercise;
+      }
+    }
+    return null;
+  }
+}

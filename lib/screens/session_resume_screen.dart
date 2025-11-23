@@ -325,12 +325,34 @@ class _SessionViewState extends ConsumerState<_SessionView> {
   }
 }
 
-class _BlockView extends StatelessWidget {
+class _BlockView extends StatefulWidget {
   const _BlockView({required this.block});
 
   final SessionBlock block;
 
-  String get label => switch (block.type) {
+  @override
+  State<_BlockView> createState() => _BlockViewState();
+}
+
+class _BlockViewState extends State<_BlockView> {
+  final _scrollController = ScrollController();
+  final _exerciseKeys = <String, GlobalKey>{};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final exercise in widget.block.exercises) {
+      _exerciseKeys[exercise.id] = GlobalKey();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  String get label => switch (widget.block.type) {
     WorkoutBlockType.warmup => 'Warmup',
     WorkoutBlockType.animalFlow => 'Animal Flow',
     WorkoutBlockType.strength => 'Strength',
@@ -338,13 +360,30 @@ class _BlockView extends StatelessWidget {
     WorkoutBlockType.cooldown => 'Cooldown',
   };
 
+  void _scrollToExercise(String exerciseId) {
+    final key = _exerciseKeys[exerciseId];
+    if (key?.currentContext != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: 0.15,
+        );
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hasRoundInfo = block.roundIndex != null && block.totalRounds != null;
+    final hasRoundInfo =
+        widget.block.roundIndex != null && widget.block.totalRounds != null;
     final roundLabel = hasRoundInfo
-        ? 'Round ${block.roundIndex} of ${block.totalRounds}'
+        ? 'Round ${widget.block.roundIndex} of ${widget.block.totalRounds}'
         : null;
+    final nextExerciseId = widget.block.nextIncompleteExercise?.id;
     return ListView(
+      controller: _scrollController,
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         Text(label, style: AppTypography.title),
@@ -371,23 +410,107 @@ class _BlockView extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
         ] else
           const SizedBox(height: AppSpacing.sm),
-        ...block.exercises.map(
-          (exercise) => _ExerciseCard(block: block, exercise: exercise),
+        ...widget.block.exercises.map(
+          (exercise) => _ExerciseCard(
+            key: _exerciseKeys[exercise.id],
+            block: widget.block,
+            exercise: exercise,
+            isNextRecommended: exercise.id == nextExerciseId,
+            onSetLogged: () => _scrollToNext(exercise.id),
+          ),
         ),
       ],
     );
   }
+
+  void _scrollToNext(String currentExerciseId) {
+    final currentIndex = widget.block.exercises.indexWhere(
+      (e) => e.id == currentExerciseId,
+    );
+    if (currentIndex >= 0 && currentIndex < widget.block.exercises.length - 1) {
+      final nextExercise = widget.block.exercises[currentIndex + 1];
+      _scrollToExercise(nextExercise.id);
+    }
+  }
 }
 
-class _ExerciseCard extends ConsumerWidget {
-  const _ExerciseCard({required this.block, required this.exercise});
+enum _TimerPhase { idle, setup, work, complete }
+
+class _ExerciseCard extends ConsumerStatefulWidget {
+  const _ExerciseCard({
+    super.key,
+    required this.block,
+    required this.exercise,
+    required this.isNextRecommended,
+    required this.onSetLogged,
+  });
 
   final SessionBlock block;
   final WorkoutExercise exercise;
+  final bool isNextRecommended;
+  final VoidCallback onSetLogged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final completedSets = _getLoggedSets();
+  ConsumerState<_ExerciseCard> createState() => _ExerciseCardState();
+}
+
+class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
+  Timer? _timer;
+  Duration? _remaining;
+  _TimerPhase _phase = _TimerPhase.idle;
+  bool _isPaused = false;
+
+  Duration get _setupDuration => widget.exercise.setupDuration ?? Duration.zero;
+
+  Duration get _workDuration => widget.exercise.workDuration ?? Duration.zero;
+
+  bool get _hasTiming =>
+      _setupDuration > Duration.zero || _workDuration > Duration.zero;
+
+  bool get _isRunningPhase =>
+      _phase == _TimerPhase.setup || _phase == _TimerPhase.work;
+
+  bool get _shouldAutoStart => widget.isNextRecommended && _hasTiming;
+
+  SessionBlock get block => widget.block;
+  WorkoutExercise get exercise => widget.exercise;
+
+  @override
+  void initState() {
+    super.initState();
+    print('🔍 ExerciseCard initState: ${exercise.name}');
+    print('   isNextRecommended: ${widget.isNextRecommended}');
+    print('   hasTiming: $_hasTiming');
+    print('   setupDuration: $_setupDuration');
+    print('   workDuration: $_workDuration');
+    print('   shouldAutoStart: $_shouldAutoStart');
+    if (_shouldAutoStart) {
+      print('   ✅ Auto-starting timer');
+      _startInitialPhase();
+    } else {
+      print('   ❌ NOT auto-starting');
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _ExerciseCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_shouldAutoStart && !_isRunningPhase) {
+      _startInitialPhase();
+    } else if (!_shouldAutoStart && _phase != _TimerPhase.idle) {
+      _resetTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final completedSets = _loggedSets;
     final targetSets = exercise.targetSets;
     final isComplete = targetSets > 0 && completedSets >= targetSets;
     final progressText = '$completedSets of $targetSets completed';
@@ -400,6 +523,11 @@ class _ExerciseCard extends ConsumerWidget {
     final indicatorTextColor = isComplete
         ? AppColors.success
         : AppColors.textColor3;
+
+    final expectedTiming =
+        exercise.modality == ExerciseModality.timed &&
+        exercise.prescription.contains('setup');
+    final showTimingWarning = expectedTiming && !_hasTiming;
 
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -424,6 +552,26 @@ class _ExerciseCard extends ConsumerWidget {
           if (exercise.cue != null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(exercise.cue!, style: AppTypography.caption),
+          ],
+          if (showTimingWarning) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                'Timer unavailable (old session). Start a new session for auto-timer.',
+                style: AppTypography.caption.copyWith(color: AppColors.warning),
+              ),
+            ),
           ],
           const SizedBox(height: AppSpacing.sm),
           Row(
@@ -452,7 +600,7 @@ class _ExerciseCard extends ConsumerWidget {
                 color: AppColors.backgroundDepth3,
                 disabledColor: AppColors.backgroundDepth4,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                onPressed: _getLoggedSets() == 0
+                onPressed: _loggedSets == 0
                     ? null
                     : () => _unlogSet(context, ref),
                 child: const Text(
@@ -485,12 +633,35 @@ class _ExerciseCard extends ConsumerWidget {
               ),
             ],
           ),
+          if (_hasTiming) ...[
+            const SizedBox(height: AppSpacing.md),
+            _TimerPanel(
+              phase: _phase,
+              remaining: _remaining,
+              isPaused: _isPaused,
+              onStart: _startInitialPhase,
+              onPause: _pauseTimer,
+              onResume: _resumeTimer,
+              onReset: _resetTimer,
+              onSkipToComplete: _skipToComplete,
+              onAdjustTime: _adjustTime,
+              canPause: _isRunningPhase && !_isPaused,
+              canResume: _isRunningPhase && _isPaused,
+              canStart: !_isRunningPhase,
+              canReset: _phase != _TimerPhase.idle,
+              canAdjust: _isRunningPhase,
+              canSkip:
+                  _phase != _TimerPhase.idle && _phase != _TimerPhase.complete,
+              hasSetupPhase: _setupDuration > Duration.zero,
+              hasWorkPhase: _workDuration > Duration.zero,
+            ),
+          ],
         ],
       ),
     );
   }
 
-  int _getLoggedSets() {
+  int get _loggedSets {
     return block.logs.where((log) => log.exerciseId == exercise.id).length;
   }
 
@@ -504,6 +675,361 @@ class _ExerciseCard extends ConsumerWidget {
     await ref
         .read(activeSessionNotifierProvider.notifier)
         .unlogSet(block: block, exercise: exercise);
+  }
+
+  void _startInitialPhase() {
+    if (!_hasTiming) return;
+    final phase = _setupDuration > Duration.zero
+        ? _TimerPhase.setup
+        : _TimerPhase.work;
+    if (phase == _TimerPhase.work && _workDuration <= Duration.zero) {
+      return;
+    }
+    _startPhase(phase);
+  }
+
+  void _startPhase(_TimerPhase phase) {
+    final duration = _durationForPhase(phase);
+    if (duration <= Duration.zero) {
+      _advancePhase(phase);
+      return;
+    }
+    setState(() {
+      _phase = phase;
+      _isPaused = false;
+      _remaining = duration;
+    });
+    _startTicker();
+  }
+
+  void _startTicker() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
+  }
+
+  void _onTick() {
+    if (!mounted || _isPaused || _remaining == null) {
+      return;
+    }
+    final next = _remaining! - const Duration(seconds: 1);
+    if (next <= Duration.zero) {
+      _advancePhase(_phase);
+    } else {
+      setState(() {
+        _remaining = next;
+      });
+    }
+  }
+
+  void _advancePhase(_TimerPhase phase) {
+    if (phase == _TimerPhase.setup && _workDuration > Duration.zero) {
+      _startPhase(_TimerPhase.work);
+    } else {
+      _completeTimer();
+    }
+  }
+
+  void _completeTimer() {
+    _timer?.cancel();
+    setState(() {
+      _phase = _TimerPhase.complete;
+      _isPaused = false;
+      _remaining = Duration.zero;
+    });
+    _logSetAndAdvance();
+  }
+
+  void _pauseTimer() {
+    if (!_isRunningPhase || _isPaused) {
+      return;
+    }
+    _timer?.cancel();
+    setState(() {
+      _isPaused = true;
+    });
+  }
+
+  void _resumeTimer() {
+    if (!_isRunningPhase || !_isPaused) {
+      return;
+    }
+    setState(() {
+      _isPaused = false;
+    });
+    _startTicker();
+  }
+
+  void _resetTimer() {
+    _timer?.cancel();
+    setState(() {
+      _phase = _TimerPhase.idle;
+      _isPaused = false;
+      _remaining = null;
+    });
+  }
+
+  void _skipToComplete() {
+    _timer?.cancel();
+    setState(() {
+      _phase = _TimerPhase.complete;
+      _isPaused = false;
+      _remaining = Duration.zero;
+    });
+    _logSetAndAdvance();
+  }
+
+  Future<void> _logSetAndAdvance() async {
+    await _logSet(context, ref);
+    widget.onSetLogged();
+  }
+
+  void _adjustTime(int seconds) {
+    if (!_isRunningPhase || _remaining == null) return;
+    setState(() {
+      final adjusted = _remaining! + Duration(seconds: seconds);
+      _remaining = adjusted < Duration.zero ? Duration.zero : adjusted;
+      if (_remaining == Duration.zero) {
+        _advancePhase(_phase);
+      }
+    });
+  }
+
+  Duration _durationForPhase(_TimerPhase phase) {
+    switch (phase) {
+      case _TimerPhase.setup:
+        return _setupDuration;
+      case _TimerPhase.work:
+        return _workDuration;
+      case _TimerPhase.idle:
+      case _TimerPhase.complete:
+        return Duration.zero;
+    }
+  }
+}
+
+class _TimerPanel extends StatelessWidget {
+  const _TimerPanel({
+    required this.phase,
+    required this.remaining,
+    required this.isPaused,
+    required this.onStart,
+    required this.onPause,
+    required this.onResume,
+    required this.onReset,
+    required this.onSkipToComplete,
+    required this.onAdjustTime,
+    required this.canPause,
+    required this.canResume,
+    required this.canStart,
+    required this.canReset,
+    required this.canAdjust,
+    required this.canSkip,
+    required this.hasSetupPhase,
+    required this.hasWorkPhase,
+  });
+
+  final _TimerPhase phase;
+  final Duration? remaining;
+  final bool isPaused;
+  final VoidCallback onStart;
+  final VoidCallback onPause;
+  final VoidCallback onResume;
+  final VoidCallback onReset;
+  final VoidCallback onSkipToComplete;
+  final void Function(int seconds) onAdjustTime;
+  final bool canPause;
+  final bool canResume;
+  final bool canStart;
+  final bool canReset;
+  final bool canAdjust;
+  final bool canSkip;
+  final bool hasSetupPhase;
+  final bool hasWorkPhase;
+
+  String get _phaseLabel {
+    return switch (phase) {
+      _TimerPhase.setup => 'Setup',
+      _TimerPhase.work => 'Work',
+      _TimerPhase.complete => 'Complete',
+      _TimerPhase.idle => hasSetupPhase || hasWorkPhase ? 'Ready' : 'Timer',
+    };
+  }
+
+  String get _timeDisplay {
+    if (remaining == null) {
+      return '--:--';
+    }
+    final minutes = remaining!.inMinutes.remainder(60).abs();
+    final seconds = remaining!.inSeconds.remainder(60).abs();
+    final hours = remaining!.inHours;
+    if (hours > 0) {
+      final mins = minutes.toString().padLeft(2, '0');
+      final secs = seconds.toString().padLeft(2, '0');
+      return '${hours.toString().padLeft(2, '0')}:$mins:$secs';
+    }
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth3,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _phaseLabel,
+                style: AppTypography.subtitle.copyWith(
+                  color: AppColors.textColor3,
+                ),
+              ),
+              Text(
+                isPaused ? 'Paused' : '',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor4,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            _timeDisplay,
+            style: AppTypography.title.copyWith(
+              letterSpacing: 1.2,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              if (canAdjust) ...[
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  color: AppColors.backgroundDepth4,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onPressed: () => onAdjustTime(-10),
+                  child: const Text(
+                    '-10s',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  color: AppColors.backgroundDepth4,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onPressed: () => onAdjustTime(10),
+                  child: const Text(
+                    '+10s',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ],
+              Expanded(
+                child: CupertinoButton.filled(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
+                  ),
+                  onPressed: canPause
+                      ? onPause
+                      : canResume
+                      ? onResume
+                      : canStart
+                      ? onStart
+                      : null,
+                  child: Text(
+                    canPause
+                        ? 'Pause'
+                        : canResume
+                        ? 'Resume'
+                        : 'Start',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Expanded(
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  color: AppColors.backgroundDepth4,
+                  disabledColor: AppColors.backgroundDepth4.withValues(
+                    alpha: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onPressed: canReset ? onReset : null,
+                  child: const Text(
+                    'Reset',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  color: AppColors.success,
+                  disabledColor: AppColors.backgroundDepth4.withValues(
+                    alpha: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  onPressed: canSkip ? onSkipToComplete : null,
+                  child: const Text(
+                    'Mark Complete',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

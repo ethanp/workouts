@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/utils/json_converters.dart';
 
 part 'workout_exercise.freezed.dart';
 part 'workout_exercise.g.dart';
@@ -15,6 +16,8 @@ class WorkoutExercise with _$WorkoutExercise {
     @Default(1) int targetSets,
     String? equipment,
     String? cue,
+    @NullableDurationSecondsConverter() Duration? setupDuration,
+    @NullableDurationSecondsConverter() Duration? workDuration,
   }) = _WorkoutExercise;
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) =>
