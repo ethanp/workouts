@@ -7,10 +7,12 @@ class TodayTemplateCard extends StatelessWidget {
     super.key,
     required this.template,
     required this.onStart,
+    required this.onTap,
   });
 
   final WorkoutTemplate template;
   final VoidCallback onStart;
+  final VoidCallback onTap;
 
   int get totalDuration => template.blocks
       .map((block) => block.targetDuration.inMinutes)
@@ -22,14 +24,16 @@ class TodayTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth2),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth2,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.borderDepth2),
+        ),
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(template.name, style: AppTypography.title),
@@ -62,6 +66,7 @@ class TodayTemplateCard extends StatelessWidget {
             ),
           ),
         ],
+        ),
       ),
     );
   }

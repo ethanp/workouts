@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
+import 'package:workouts/providers/templates_provider.dart';
+import 'package:workouts/screens/session_detail_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -70,6 +72,7 @@ class _SessionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isComplete = session.completedAt != null;
     final displayDate = session.completedAt ?? session.startedAt;
+    final templatesMapAsync = ref.watch(templatesMapProvider);
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -95,6 +98,28 @@ class _SessionTile extends ConsumerWidget {
                 Text(_formatDate(displayDate), style: AppTypography.subtitle),
                 _buildStatusBadge(isComplete),
               ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            templatesMapAsync.when(
+              data: (templatesMap) {
+                final template = templatesMap[session.templateId];
+                return Text(
+                  template?.name ?? 'Unknown Template',
+                  style: AppTypography.title.copyWith(
+                    color: AppColors.textColor1,
+                  ),
+                );
+              },
+              loading: () => const SizedBox(
+                height: 24,
+                child: CupertinoActivityIndicator(radius: 8),
+              ),
+              error: (_, __) => Text(
+                'Unknown Template',
+                style: AppTypography.title.copyWith(
+                  color: AppColors.textColor3,
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -187,27 +212,13 @@ class _SessionTile extends ConsumerWidget {
 
   Future<void> _handleSessionTap(BuildContext context, WidgetRef ref) async {
     if (session.completedAt == null) {
-      // Resume existing incomplete session
       await ref
           .read(activeSessionNotifierProvider.notifier)
           .resumeExisting(session);
     } else {
-      // Show completed session details (could navigate to detail screen)
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Session Complete'),
-          content: Text(
-            'Workout completed on ${_formatDate(session.completedAt!)}\n'
-            'Duration: ${_getDurationText(session.duration)}\n\n'
-            '${session.notes ?? "No notes"}',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('OK'),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-          ],
+      Navigator.of(context).push(
+        CupertinoPageRoute(
+          builder: (context) => SessionDetailScreen(session: session),
         ),
       );
     }

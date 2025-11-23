@@ -38,9 +38,16 @@ class TodayScreen extends ConsumerWidget {
                       TodayTemplateCard(
                         template: template,
                         onStart: () => _startSession(ref, template.id),
+                        onTap: () => ref
+                            .read(expandedTemplatesProvider.notifier)
+                            .toggle(template.id),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      _BlockPreviewList(blocks: template.blocks),
+                      if (ref.watch(expandedTemplatesProvider
+                          .select((s) => s.contains(template.id)))) ...[
+                        _BlockPreviewList(blocks: template.blocks),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                     ],
                     const _AnimalMovementSummary(),

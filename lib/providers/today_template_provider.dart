@@ -10,3 +10,19 @@ Future<List<WorkoutTemplate>> todayTemplates(Ref ref) async {
   final repository = ref.watch(templateRepositoryProvider);
   return repository.fetchTemplates();
 }
+
+@riverpod
+class ExpandedTemplates extends _$ExpandedTemplates {
+  @override
+  Set<String> build() => {};
+
+  void toggle(String templateId) {
+    if (state.contains(templateId)) {
+      state = {...state}..remove(templateId);
+    } else {
+      state = {...state, templateId};
+    }
+  }
+
+  bool isExpanded(String templateId) => state.contains(templateId);
+}
