@@ -36,6 +36,8 @@ class SessionBlock with _$SessionBlock {
     @DurationSecondsConverter() required Duration targetDuration,
     @NullableDurationSecondsConverter() Duration? actualDuration,
     String? notes,
+    int? roundIndex,
+    int? totalRounds,
   }) = _SessionBlock;
 
   factory SessionBlock.fromJson(Map<String, dynamic> json) =>

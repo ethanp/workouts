@@ -37,29 +37,30 @@ class IPhoneDeployment:
         self.script_name = "iPhone"
         self.build_type = "release"
         self.hash_file = '.build_hash_iphone'
-    
+
     def print_header(self, text: str):
         """Print a formatted header"""
         print(f"{Colors.HEADER}{Colors.BOLD}{text}{Colors.ENDC}")
         print("=" * len(text))
-    
+
     def print_success(self, text: str):
         """Print success message"""
         print(f"{Colors.OKGREEN}✅ {text}{Colors.ENDC}")
-    
+
     def print_warning(self, text: str):
         """Print warning message"""
         print(f"{Colors.WARNING}⚠️  {text}{Colors.ENDC}")
-    
+
     def print_error(self, text: str):
         """Print error message"""
         print(f"{Colors.FAIL}❌ {text}{Colors.ENDC}")
-    
+
     def print_info(self, text: str):
         """Print info message"""
         print(f"{Colors.OKBLUE}📱 {text}{Colors.ENDC}")
-    
-    def run_command(self, command: List[str], capture_output: bool = True, check: bool = False) -> Tuple[int, str, str]:
+
+    def run_command(self, command: List[str], capture_output: bool = True, check: bool = False) -> \
+    Tuple[int, str, str]:
         """Run a command and return exit code, stdout, and stderr"""
         try:
             result = subprocess.run(
@@ -71,7 +72,7 @@ class IPhoneDeployment:
             return result.returncode, result.stdout, result.stderr
         except subprocess.CalledProcessError as e:
             return e.returncode, e.stdout, e.stderr
-    
+
     def run_command_streaming(self, command: List[str], check: bool = False) -> int:
         """Run a command with real-time output streaming"""
         try:
@@ -82,16 +83,16 @@ class IPhoneDeployment:
             return result.returncode
         except subprocess.CalledProcessError as e:
             return e.returncode
-    
+
     def check_flutter_available(self) -> bool:
         """Check if Flutter is available"""
         returncode, _, _ = self.run_command(["flutter", "--version"], check=False)
         return returncode == 0
-    
+
     def check_project_directory(self) -> bool:
         """Check if we're in the right directory"""
         return os.path.exists("pubspec.yaml")
-    
+
     def get_file_hash(self, file_path: str) -> str:
         """Get MD5 hash of a file"""
         try:
@@ -99,17 +100,19 @@ class IPhoneDeployment:
                 return hashlib.md5(f.read()).hexdigest()
         except (IOError, OSError):
             return ""
-    
+
     def get_directory_hash(self, directory: str, extensions: List[str] = None) -> str:
         """Get a hash representing the state of files in a directory"""
         if extensions is None:
-            extensions = ['.dart', '.yaml', '.yml', '.json', '.png', '.jpg', '.jpeg', '.svg', '.ttf', '.otf']
-        
+            extensions = ['.dart', '.yaml', '.yml', '.json', '.png', '.jpg', '.jpeg', '.svg',
+                          '.ttf', '.otf']
+
         hashes = []
         try:
             for root, dirs, files in os.walk(directory):
-                dirs[:] = [d for d in dirs if d not in ['build', '.dart_tool', 'ios/build', 'ios/Pods']]
-                
+                dirs[:] = [d for d in dirs if
+                           d not in ['build', '.dart_tool', 'ios/build', 'ios/Pods']]
+
                 for file in files:
                     if any(file.endswith(ext) for ext in extensions):
                         file_path = os.path.join(root, file)
@@ -121,34 +124,34 @@ class IPhoneDeployment:
 
         hashes.sort()
         return hashlib.md5('\n'.join(hashes).encode()).hexdigest()
-    
+
     def check_if_deployment_needed(self) -> None:
         """Check if deployment is needed based on file changes since last deployment."""
         self.print_info("Checking if deployment is needed...")
-        
+
         directories_to_check = [
             'lib',
             'assets',
             'ios/Runner',
             'ios/Runner/Assets.xcassets'
         ]
-        
+
         files_to_check = [
             'pubspec.yaml',
             'pubspec.lock',
             'ios/Runner/Info.plist'
         ]
-        
+
         current_hashes = {}
-        
+
         for directory in directories_to_check:
             if os.path.exists(directory):
                 current_hashes[directory] = self.get_directory_hash(directory)
-        
+
         for file_path in files_to_check:
             if os.path.exists(file_path):
                 current_hashes[file_path] = self.get_file_hash(file_path)
-        
+
         if os.path.exists(self.hash_file):
             try:
                 with open(self.hash_file, 'r') as f:
@@ -159,52 +162,55 @@ class IPhoneDeployment:
 
                 if current_hashes == stored_hashes:
                     if last_deploy_time:
-                        self.print_success("No changes detected since last deployment - skipping deployment")
+                        self.print_success(
+                            "No changes detected since last deployment - skipping deployment")
                         print(f"Last deployment: {last_deploy_time}")
                         raise SystemExit(0)
                     else:
-                        self.print_info("No changes detected, but no deployment timestamp found - proceeding with deployment")
+                        self.print_info(
+                            "No changes detected, but no deployment timestamp found - proceeding with deployment")
                 else:
                     self.print_info("Changes detected since last deployment - deployment needed")
             except (IOError, json.JSONDecodeError):
-                self.print_info("Could not read previous deployment data - proceeding with deployment")
+                self.print_info(
+                    "Could not read previous deployment data - proceeding with deployment")
         else:
             self.print_info("No previous deployment data found - proceeding with deployment")
 
     def check_if_rebuild_needed(self) -> bool:
         """Check if a rebuild is needed based on file changes"""
         self.print_info("Checking for file changes...")
-        
+
         directories_to_check = [
             'lib',
             'assets',
             'ios/Runner',
             'ios/Runner/Assets.xcassets'
         ]
-        
+
         files_to_check = [
             'pubspec.yaml',
             'pubspec.lock',
             'ios/Runner/Info.plist'
         ]
-        
+
         current_hashes = {}
-        
+
         for directory in directories_to_check:
             if os.path.exists(directory):
                 current_hashes[directory] = self.get_directory_hash(directory)
-        
+
         for file_path in files_to_check:
             if os.path.exists(file_path):
                 current_hashes[file_path] = self.get_file_hash(file_path)
-        
+
         if os.path.exists(self.hash_file):
             try:
                 with open(self.hash_file, 'r') as f:
                     stored_data = json.load(f)
-                
+
                 stored_hashes = stored_data.get('hashes', {})
-                
+
                 if current_hashes == stored_hashes:
                     self.print_success("No changes detected - skipping clean and rebuild")
                     return False
@@ -214,13 +220,13 @@ class IPhoneDeployment:
                 self.print_info("Could not read previous build hash - rebuilding")
         else:
             self.print_info("No previous build hash found - rebuilding")
-        
+
         try:
             with open(self.hash_file, 'w') as f:
                 json.dump(current_hashes, f, indent=2)
         except IOError:
             self.print_warning("Could not save build hash")
-        
+
         return True
 
     def build_app(self) -> None:
@@ -240,7 +246,8 @@ class IPhoneDeployment:
 
             self.print_info("🔨 Generating code...")
             returncode = self.run_command_streaming([
-                "flutter", "packages", "pub", "run", "build_runner", "build", "--delete-conflicting-outputs"
+                "flutter", "packages", "pub", "run", "build_runner", "build",
+                "--delete-conflicting-outputs"
             ], check=False)
             if returncode != 0:
                 raise RuntimeError("Failed to run build_runner code generation.")
@@ -263,19 +270,19 @@ class IPhoneDeployment:
             if os.path.exists(self.hash_file):
                 with open(self.hash_file, 'r') as f:
                     stored_data = json.load(f)
-                
+
                 hashes = stored_data.get('hashes', {})
             else:
                 hashes = {}
-            
+
             deployment_data = {
                 'hashes': hashes,
                 'last_deploy_time': time.strftime('%Y-%m-%d %H:%M:%S')
             }
-            
+
             with open(self.hash_file, 'w') as f:
                 json.dump(deployment_data, f, indent=2)
-                
+
         except IOError:
             self.print_warning("Could not save deployment timestamp")
 
@@ -360,12 +367,12 @@ class IPhoneDeployment:
     def main(self):
         """Main deployment function."""
         self.print_header(f"Workouts - {self.script_name} Deployment Script")
-        
+
         self.check_prerequisites()
         self.check_if_deployment_needed()
         self.build_app()
         self.deploy()
-        
+
         self.record_deployment_timestamp()
 
 

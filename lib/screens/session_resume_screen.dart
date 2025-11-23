@@ -340,11 +340,37 @@ class _BlockView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasRoundInfo = block.roundIndex != null && block.totalRounds != null;
+    final roundLabel = hasRoundInfo
+        ? 'Round ${block.roundIndex} of ${block.totalRounds}'
+        : null;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         Text(label, style: AppTypography.title),
-        const SizedBox(height: AppSpacing.sm),
+        if (roundLabel != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDepth3,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.borderDepth2),
+            ),
+            child: Text(
+              roundLabel,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ] else
+          const SizedBox(height: AppSpacing.sm),
         ...block.exercises.map(
           (exercise) => _ExerciseCard(block: block, exercise: exercise),
         ),
@@ -366,10 +392,10 @@ class _ExerciseCard extends ConsumerWidget {
     final isComplete = targetSets > 0 && completedSets >= targetSets;
     final progressText = '$completedSets of $targetSets completed';
     final indicatorBackground = isComplete
-        ? AppColors.success.withOpacity(0.15)
+        ? AppColors.success.withValues(alpha: 0.15)
         : AppColors.backgroundDepth3;
     final indicatorBorder = isComplete
-        ? AppColors.success.withOpacity(0.3)
+        ? AppColors.success.withValues(alpha: 0.3)
         : AppColors.borderDepth2;
     final indicatorTextColor = isComplete
         ? AppColors.success
@@ -586,7 +612,7 @@ class _WatchConnectionIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = isConnected ? AppColors.success : AppColors.textColor3;
     final background = isConnected
-        ? AppColors.success.withOpacity(0.15)
+        ? AppColors.success.withValues(alpha: 0.15)
         : AppColors.backgroundDepth3;
     final icon = isConnected
         ? CupertinoIcons.check_mark_circled_solid
@@ -601,7 +627,7 @@ class _WatchConnectionIndicator extends StatelessWidget {
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

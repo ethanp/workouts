@@ -24,20 +24,28 @@ class SessionRepository {
     final template = templates.firstWhere((item) => item.id == templateId);
     final now = DateTime.now();
     final sessionBlocks = <SessionBlock>[];
+    var blockIndex = 0;
 
-    for (var i = 0; i < template.blocks.length; i++) {
-      final block = template.blocks[i];
-      sessionBlocks.add(
-        SessionBlock(
-          id: _uuid.v4(),
-          sessionId: 'pending',
-          type: block.type,
-          blockIndex: i,
-          exercises: block.exercises,
-          logs: const [],
-          targetDuration: block.targetDuration,
-        ),
-      );
+    for (final block in template.blocks) {
+      final totalRounds = block.rounds <= 0 ? 1 : block.rounds;
+      final hasMultipleRounds = totalRounds > 1;
+
+      for (var round = 0; round < totalRounds; round++) {
+        sessionBlocks.add(
+          SessionBlock(
+            id: _uuid.v4(),
+            sessionId: 'pending',
+            type: block.type,
+            blockIndex: blockIndex,
+            exercises: block.exercises,
+            logs: const [],
+            targetDuration: block.targetDuration,
+            roundIndex: hasMultipleRounds ? round + 1 : null,
+            totalRounds: hasMultipleRounds ? totalRounds : null,
+          ),
+        );
+        blockIndex++;
+      }
     }
 
     final session = Session(

@@ -15,6 +15,7 @@ class WorkoutBlock with _$WorkoutBlock {
     required Duration targetDuration,
     required List<WorkoutExercise> exercises,
     @Default('') String description,
+    @Default(1) int rounds,
   }) = _WorkoutBlock;
 
   factory WorkoutBlock.fromJson(Map<String, dynamic> json) =>

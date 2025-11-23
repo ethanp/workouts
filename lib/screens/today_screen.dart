@@ -12,7 +12,7 @@ class TodayScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final template = ref.watch(todayTemplateProvider);
+    final templates = ref.watch(todayTemplatesProvider);
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -28,19 +28,21 @@ class TodayScreen extends ConsumerWidget {
         ),
       ),
       child: SafeArea(
-        child: template.when(
-          data: (data) => data == null
+        child: templates.when(
+          data: (items) => items.isEmpty
               ? const _EmptyTemplateView()
               : ListView(
                   padding: const EdgeInsets.all(AppSpacing.lg),
                   children: [
-                    TodayTemplateCard(
-                      template: data,
-                      onStart: () => _startSession(ref, data.id),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    _BlockPreviewList(blocks: data.blocks),
-                    const SizedBox(height: AppSpacing.xl),
+                    for (final template in items) ...[
+                      TodayTemplateCard(
+                        template: template,
+                        onStart: () => _startSession(ref, template.id),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _BlockPreviewList(blocks: template.blocks),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
                     const _AnimalMovementSummary(),
                   ],
                 ),
@@ -109,9 +111,35 @@ class _BlockPreview extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(blockLabel, style: AppTypography.subtitle),
-              Text(
-                '${block.targetDuration.inMinutes}m',
-                style: AppTypography.caption,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (block.rounds > 1) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      margin: const EdgeInsets.only(right: AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundDepth3,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(color: AppColors.borderDepth2),
+                      ),
+                      child: Text(
+                        '${block.rounds} rounds',
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textColor3,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                  Text(
+                    '${block.targetDuration.inMinutes}m',
+                    style: AppTypography.caption,
+                  ),
+                ],
               ),
             ],
           ),

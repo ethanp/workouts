@@ -6,7 +6,7 @@ import 'package:workouts/services/repositories/template_repository.dart';
 part 'today_template_provider.g.dart';
 
 @riverpod
-Future<WorkoutTemplate?> todayTemplate(Ref ref) async {
+Future<List<WorkoutTemplate>> todayTemplates(Ref ref) async {
   final repository = ref.watch(templateRepositoryProvider);
-  return repository.fetchTemplates().then((templates) => templates.firstOrNull);
+  return repository.fetchTemplates();
 }

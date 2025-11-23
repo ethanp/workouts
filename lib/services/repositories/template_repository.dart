@@ -18,14 +18,12 @@ class TemplateRepository {
 
   final LocalDatabase _db;
 
-  static const int currentTemplateVersion = 2;
+  static const int currentTemplateVersion = 3;
 
   Future<List<WorkoutTemplate>> fetchTemplates() async {
     final localRows = await _db.readTemplates();
     if (localRows.isEmpty) {
-      final defaultTemplate = _buildDefaultTemplate();
-      await saveTemplate(defaultTemplate);
-      return [defaultTemplate];
+      return _reseedTemplates();
     }
 
     // Check if any templates are outdated and need regeneration
@@ -35,12 +33,22 @@ class TemplateRepository {
     if (needsUpdate) {
       // Clear outdated templates and regenerate
       await _db.delete(_db.workoutTemplatesTable).go();
-      final defaultTemplate = _buildDefaultTemplate();
-      await saveTemplate(defaultTemplate);
-      return [defaultTemplate];
+      return _reseedTemplates();
     }
 
     return localRows.map(_mapTemplate).toList();
+  }
+
+  Future<List<WorkoutTemplate>> _reseedTemplates() async {
+    final templates = _buildSeedTemplates();
+    for (final template in templates) {
+      await saveTemplate(template);
+    }
+    return templates;
+  }
+
+  List<WorkoutTemplate> _buildSeedTemplates() {
+    return [_buildDefaultTemplate(), _buildPTRoutineTemplate()];
   }
 
   Future<void> saveTemplate(WorkoutTemplate template) async {
@@ -258,6 +266,111 @@ class TemplateRepository {
       goal: 'Strength, mobility, scapular integration',
       blocks: blocks,
       notes: '60-minute session blending load and flow.',
+    );
+  }
+
+  WorkoutTemplate _buildPTRoutineTemplate() {
+    final sideLowerNeckSmash = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Side Lower Neck Smash',
+      modality: ExerciseModality.timed,
+      prescription: '30s setup, 2m on',
+      cue: 'Slow pressure along scalene line.',
+    );
+    final doorwayPecStretch = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Doorway Pec Stretch',
+      modality: ExerciseModality.timed,
+      prescription: '30s setup, 2m on',
+      cue: 'Elbow at shoulder height, breathe lateral ribs.',
+    );
+    final rhomboidsSmash = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Rhomboids Smash',
+      modality: ExerciseModality.timed,
+      prescription: '30s setup, 2m on',
+      cue: 'Lean into ball, glide along medial scapula.',
+    );
+    final upperSideChestSmash = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Upper Side Chest Smash',
+      modality: ExerciseModality.timed,
+      prescription: '30s setup, 2m on',
+      cue: 'Support head, open ribs as you roll.',
+    );
+    final bandFonzy = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Band Fonzy',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      cue: 'Thumbs back, scapula glides down.',
+    );
+    final scapularPunches = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Scapular Punches',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      cue: 'Reach long, protract smoothly.',
+    );
+    final lowBandRow = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Low Band Row',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      cue: 'Elbows sweep low, ribs stacked.',
+    );
+    final internalRotatorEccentrics = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Internal Rotator Eccentrics',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      cue: 'Control return, elbow pinned.',
+    );
+    final externalRotatorEccentrics = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'External Rotator Eccentrics',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      cue: 'Slow lowering, forearm parallel.',
+    );
+
+    final mobilityCircuit = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Powerset Mobility Circuit',
+      type: WorkoutBlockType.mobility,
+      targetDuration: const Duration(minutes: 20),
+      exercises: [
+        sideLowerNeckSmash,
+        doorwayPecStretch,
+        rhomboidsSmash,
+        upperSideChestSmash,
+      ],
+      description: 'Tissue prep for cervical decompression.',
+      rounds: 2,
+    );
+
+    final strengthCircuit = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Powerset Strength Circuit',
+      type: WorkoutBlockType.strength,
+      targetDuration: const Duration(minutes: 10),
+      exercises: [
+        bandFonzy,
+        scapularPunches,
+        lowBandRow,
+        internalRotatorEccentrics,
+        externalRotatorEccentrics,
+      ],
+      description: 'Scapular control and rotator cuff endurance.',
+      rounds: 2,
+    );
+
+    return WorkoutTemplate(
+      id: _uuid.v4(),
+      name: 'C7 Radiculopathy PT Routine',
+      goal: 'Rehabilitation, mobility, scapular stability',
+      blocks: [mobilityCircuit, strengthCircuit],
+      notes: 'Two-round tissue prep + scapular stability progression.',
     );
   }
 
