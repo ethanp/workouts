@@ -9,6 +9,7 @@ import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/expandable_cues.dart';
 import 'package:workouts/widgets/heart_rate_timeline_card.dart';
 
 class SessionResumeScreen extends ConsumerWidget {
@@ -357,6 +358,8 @@ class _BlockViewState extends State<_BlockView> {
     WorkoutBlockType.animalFlow => 'Animal Flow',
     WorkoutBlockType.strength => 'Strength',
     WorkoutBlockType.mobility => 'Mobility',
+    WorkoutBlockType.core => 'Core',
+    WorkoutBlockType.conditioning => 'Conditioning',
     WorkoutBlockType.cooldown => 'Cooldown',
   };
 
@@ -549,9 +552,18 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
               Text(exercise.prescription, style: AppTypography.caption),
             ],
           ),
-          if (exercise.cue != null) ...[
+          if (exercise.restDuration != null) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(exercise.cue!, style: AppTypography.caption),
+            Text(
+              'Rest: ${_formatDuration(exercise.restDuration!)}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          ],
+          if (exercise.cues.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ExpandableCues(cues: exercise.cues),
           ],
           if (showTimingWarning) ...[
             const SizedBox(height: AppSpacing.xs),
@@ -663,6 +675,15 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
 
   int get _loggedSets {
     return block.logs.where((log) => log.exerciseId == exercise.id).length;
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
   }
 
   Future<void> _logSet(BuildContext context, WidgetRef ref) async {

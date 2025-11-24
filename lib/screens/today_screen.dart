@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_block.dart';
+import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/today_template_provider.dart';
 import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/expandable_cues.dart';
 import 'package:workouts/widgets/today_template_card.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -98,6 +100,8 @@ class _BlockPreview extends StatelessWidget {
     WorkoutBlockType.animalFlow => 'Animal Flow',
     WorkoutBlockType.strength => 'Strength',
     WorkoutBlockType.mobility => 'Mobility',
+    WorkoutBlockType.core => 'Core',
+    WorkoutBlockType.conditioning => 'Conditioning',
     WorkoutBlockType.cooldown => 'Cooldown',
   };
 
@@ -151,18 +155,67 @@ class _BlockPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          ...block.exercises.map((exercise) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-              child: Text(
-                '${exercise.name} — ${exercise.prescription}',
-                style: AppTypography.body,
-              ),
-            );
-          }),
+          ...block.exercises.map((exercise) => _ExercisePreview(exercise: exercise)),
         ],
       ),
     );
+  }
+}
+
+class _ExercisePreview extends StatelessWidget {
+  const _ExercisePreview({required this.exercise});
+
+  final WorkoutExercise exercise;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  exercise.name,
+                  style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              Text(
+                exercise.prescription,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor3,
+                ),
+              ),
+            ],
+          ),
+          if (exercise.restDuration != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Rest: ${_formatDuration(exercise.restDuration!)}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          ],
+          if (exercise.cues.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            ExpandableCues(cues: exercise.cues),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
   }
 }
 

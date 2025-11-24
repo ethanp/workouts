@@ -4,6 +4,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/expandable_cues.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({super.key, required this.session});
@@ -232,6 +233,19 @@ class _BlockCard extends StatelessWidget {
               ),
             ],
           ),
+          if (exercise.restDuration != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Rest: ${_getDurationText(exercise.restDuration)}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          ],
+          if (exercise.cues.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            ExpandableCues(cues: exercise.cues),
+          ],
           if (exerciseLogs.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
             ...exerciseLogs.map((log) => _buildSetLog(log)),
@@ -285,5 +299,15 @@ class _BlockCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getDurationText(Duration? duration) {
+    if (duration == null) return 'N/A';
+    final minutes = duration.inMinutes;
+    final seconds = duration.inSeconds % 60;
+    if (minutes > 0) {
+      return '${minutes}m ${seconds}s';
+    }
+    return '${seconds}s';
   }
 }

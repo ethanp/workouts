@@ -18,7 +18,7 @@ class TemplateRepository {
 
   final LocalDatabase _db;
 
-  static const int currentTemplateVersion = 4;
+  static const int currentTemplateVersion = 5;
 
   Future<List<WorkoutTemplate>> fetchTemplates() async {
     final localRows = await _db.readTemplates();
@@ -48,7 +48,11 @@ class TemplateRepository {
   }
 
   List<WorkoutTemplate> _buildSeedTemplates() {
-    return [_buildDefaultTemplate(), _buildPTRoutineTemplate()];
+    return [
+      _buildDefaultTemplate(),
+      _buildPTRoutineTemplate(),
+      _buildMobilityStrengthTemplate(),
+    ];
   }
 
   Future<void> saveTemplate(WorkoutTemplate template) async {
@@ -84,9 +88,8 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '6 per direction',
       targetSets: 2,
-      // Left + right direction
       equipment: 'Club',
-      cue: 'Smooth arc, open shoulders',
+      cues: ['Smooth arc, open shoulders'],
     );
     final hipFlexorStretch = WorkoutExercise(
       id: _uuid.v4(),
@@ -94,9 +97,8 @@ class TemplateRepository {
       modality: ExerciseModality.hold,
       prescription: '30s per side',
       targetSets: 2,
-      // Left + right side
       equipment: 'Club overhead',
-      cue: 'Posterior tilt, reach tall',
+      cues: ['Posterior tilt, reach tall'],
     );
     final catCow = WorkoutExercise(
       id: _uuid.v4(),
@@ -104,8 +106,7 @@ class TemplateRepository {
       modality: ExerciseModality.mobility,
       prescription: '5 per side',
       targetSets: 2,
-      // Left + right side
-      cue: 'Segment spine, reach long',
+      cues: ['Segment spine, reach long'],
     );
     final beastCrawl = WorkoutExercise(
       id: _uuid.v4(),
@@ -113,7 +114,7 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '3 × 20-30s',
       targetSets: 3,
-      cue: 'Knees hover, contralateral steps',
+      cues: ['Knees hover, contralateral steps'],
     );
     final crabReach = WorkoutExercise(
       id: _uuid.v4(),
@@ -121,7 +122,7 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '3 × 5 per side',
       targetSets: 3,
-      cue: 'Drive hips, open chest',
+      cues: ['Drive hips, open chest'],
     );
     final kbRdl = WorkoutExercise(
       id: _uuid.v4(),
@@ -130,7 +131,7 @@ class TemplateRepository {
       prescription: '3 × 8',
       targetSets: 3,
       equipment: 'Kettlebell',
-      cue: 'Lat pack, hinge tall',
+      cues: ['Lat pack, hinge tall'],
     );
     final clubShield = WorkoutExercise(
       id: _uuid.v4(),
@@ -138,7 +139,7 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '3 × 6 per side',
       targetSets: 3,
-      cue: 'Brace ribs, smooth arc',
+      cues: ['Brace ribs, smooth arc'],
     );
     final halfKneelingPress = WorkoutExercise(
       id: _uuid.v4(),
@@ -146,7 +147,7 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '3 × 6 per side',
       targetSets: 3,
-      cue: 'Glute lock, tall press',
+      cues: ['Glute lock, tall press'],
     );
     final suitcaseCarry = WorkoutExercise(
       id: _uuid.v4(),
@@ -154,7 +155,7 @@ class TemplateRepository {
       modality: ExerciseModality.timed,
       prescription: '3 × 40s per side',
       targetSets: 3,
-      cue: 'Ribs stacked, smooth walk',
+      cues: ['Ribs stacked, smooth walk'],
     );
     final gobletDeepLunge = WorkoutExercise(
       id: _uuid.v4(),
@@ -162,7 +163,7 @@ class TemplateRepository {
       modality: ExerciseModality.hold,
       prescription: '2 × 30s per side',
       targetSets: 2,
-      cue: 'Knee tracks, hips square',
+      cues: ['Knee tracks, hips square'],
     );
     final clubSideBend = WorkoutExercise(
       id: _uuid.v4(),
@@ -170,7 +171,7 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '2 × 6 per side',
       targetSets: 2,
-      cue: 'Long spine, oblique squeeze',
+      cues: ['Long spine, oblique squeeze'],
     );
     final thoracicRotation = WorkoutExercise(
       id: _uuid.v4(),
@@ -178,8 +179,7 @@ class TemplateRepository {
       modality: ExerciseModality.reps,
       prescription: '8 per side',
       targetSets: 2,
-      // Left + right side
-      cue: 'Hip lock, rotate through T-spine',
+      cues: ['Hip lock, rotate through T-spine'],
     );
     final supineBreathing = WorkoutExercise(
       id: _uuid.v4(),
@@ -187,7 +187,7 @@ class TemplateRepository {
       modality: ExerciseModality.breath,
       prescription: '2 × 5 breaths',
       targetSets: 2,
-      cue: 'Nasal inhale, long exhale',
+      cues: ['Nasal inhale, long exhale'],
     );
     final childsPose = WorkoutExercise(
       id: _uuid.v4(),
@@ -195,8 +195,7 @@ class TemplateRepository {
       modality: ExerciseModality.mobility,
       prescription: '45s per side',
       targetSets: 2,
-      // Left + right side
-      cue: 'Reach long, breathe lateral ribs',
+      cues: ['Reach long, breathe lateral ribs'],
     );
     final boxBreathing = WorkoutExercise(
       id: _uuid.v4(),
@@ -204,8 +203,7 @@ class TemplateRepository {
       modality: ExerciseModality.breath,
       prescription: '2 minutes',
       targetSets: 1,
-      // Single continuous session
-      cue: 'Equal phases, relaxed jaw',
+      cues: ['Equal phases, relaxed jaw'],
     );
 
     WorkoutBlock buildBlock(
@@ -285,7 +283,7 @@ class TemplateRepository {
       name: 'Side Lower Neck Smash',
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
-      cue: 'Slow pressure along scalene line.',
+      cues: ['Slow pressure along scalene line'],
       setupDuration: const Duration(seconds: 30),
       workDuration: const Duration(minutes: 2),
     );
@@ -294,7 +292,7 @@ class TemplateRepository {
       name: 'Doorway Pec Stretch',
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
-      cue: 'Elbow at shoulder height, breathe lateral ribs.',
+      cues: ['Elbow at shoulder height, breathe lateral ribs'],
       setupDuration: const Duration(seconds: 30),
       workDuration: const Duration(minutes: 2),
     );
@@ -303,7 +301,7 @@ class TemplateRepository {
       name: 'Rhomboids Smash',
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
-      cue: 'Lean into ball, glide along medial scapula.',
+      cues: ['Lean into ball, glide along medial scapula'],
       setupDuration: const Duration(seconds: 30),
       workDuration: const Duration(minutes: 2),
     );
@@ -312,7 +310,7 @@ class TemplateRepository {
       name: 'Upper Side Chest Smash',
       modality: ExerciseModality.timed,
       prescription: '30s setup, 2m on',
-      cue: 'Support head, open ribs as you roll.',
+      cues: ['Support head, open ribs as you roll'],
       setupDuration: const Duration(seconds: 30),
       workDuration: const Duration(minutes: 2),
     );
@@ -321,35 +319,35 @@ class TemplateRepository {
       name: 'Band Fonzy',
       modality: ExerciseModality.reps,
       prescription: '10 reps',
-      cue: 'Thumbs back, scapula glides down.',
+      cues: ['Thumbs back, scapula glides down'],
     );
     final scapularPunches = WorkoutExercise(
       id: _uuid.v4(),
       name: 'Scapular Punches',
       modality: ExerciseModality.reps,
       prescription: '10 reps',
-      cue: 'Reach long, protract smoothly.',
+      cues: ['Reach long, protract smoothly'],
     );
     final lowBandRow = WorkoutExercise(
       id: _uuid.v4(),
       name: 'Low Band Row',
       modality: ExerciseModality.reps,
       prescription: '10 reps',
-      cue: 'Elbows sweep low, ribs stacked.',
+      cues: ['Elbows sweep low, ribs stacked'],
     );
     final internalRotatorEccentrics = WorkoutExercise(
       id: _uuid.v4(),
       name: 'Internal Rotator Eccentrics',
       modality: ExerciseModality.reps,
       prescription: '10 reps',
-      cue: 'Control return, elbow pinned.',
+      cues: ['Control return, elbow pinned'],
     );
     final externalRotatorEccentrics = WorkoutExercise(
       id: _uuid.v4(),
       name: 'External Rotator Eccentrics',
       modality: ExerciseModality.reps,
       prescription: '10 reps',
-      cue: 'Slow lowering, forearm parallel.',
+      cues: ['Slow lowering, forearm parallel'],
     );
 
     final mobilityCircuit = WorkoutBlock(
@@ -389,6 +387,325 @@ class TemplateRepository {
       goal: 'Rehabilitation, mobility, scapular stability',
       blocks: [mobilityCircuit, strengthCircuit],
       notes: 'Two-round tissue prep + scapular stability progression.',
+    );
+  }
+
+  WorkoutTemplate _buildMobilityStrengthTemplate() {
+    final treadmillWarmup = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Treadmill Warm-up',
+      modality: ExerciseModality.timed,
+      prescription: '4 minutes',
+      targetSets: 1,
+      cues: [
+        '2.5–3.0 mph',
+        'Loose arms',
+        'Shoulders down',
+        'Normal breathing',
+        'No posture forcing',
+      ],
+    );
+
+    final openBooks = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Open Books',
+      modality: ExerciseModality.reps,
+      prescription: '6 per side',
+      targetSets: 1,
+      cues: ['Gentle rotation', 'Follow hand with eyes', 'Keep knees stacked'],
+    );
+
+    final catCow = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Cat-Cow',
+      modality: ExerciseModality.reps,
+      prescription: '10 slow reps',
+      targetSets: 1,
+      cues: ['Gentle movements', 'Breathe with motion', 'Segment the spine'],
+    );
+
+    final sternumFloat = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Sternum Float',
+      modality: ExerciseModality.breath,
+      prescription: '3 × 5 breaths',
+      targetSets: 3,
+      cues: ['1 cm lift', 'Shoulders DOWN', 'Gentle elevation only'],
+    );
+
+    final wallSlides = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Wall Slides',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      targetSets: 1,
+      cues: [
+        'Elbows and wrists on wall',
+        'Slide up smoothly',
+        'Keep shoulders relaxed',
+      ],
+    );
+
+    final scapularRetractions = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Scapular Retractions',
+      modality: ExerciseModality.reps,
+      prescription: '10 reps',
+      targetSets: 1,
+      cues: ['30% effort', 'Gentle squeeze', 'No neck tension'],
+    );
+
+    final serratusWallPushup = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Serratus Wall Push-up',
+      modality: ExerciseModality.reps,
+      prescription: '8 reps',
+      targetSets: 1,
+      cues: [
+        'Protract shoulder blades',
+        'Push through palms',
+        'Keep elbows straight',
+      ],
+    );
+
+    final gobletSquat = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Goblet Squat',
+      modality: ExerciseModality.reps,
+      prescription: '8–12 reps',
+      targetSets: 3,
+      equipment: '16 kg KB or 20 lb DB',
+      restDuration: const Duration(seconds: 60),
+      cues: [
+        'Chest soft',
+        'Elbows inside knees',
+        'Torso vertical',
+        'No pinching shoulder blades',
+      ],
+    );
+
+    final stepUps = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Step-Ups',
+      modality: ExerciseModality.reps,
+      prescription: '8–10 per leg',
+      targetSets: 3,
+      equipment: 'Bodyweight or light DBs',
+      restDuration: const Duration(seconds: 45),
+      cues: [
+        'Slow lowering',
+        'Drive through heel',
+        'Arms hang loose',
+      ],
+    );
+
+    final gluteBridge = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Glute Bridge',
+      modality: ExerciseModality.reps,
+      prescription: '10–12 reps',
+      targetSets: 3,
+      cues: [
+        'Squeeze glutes at top',
+        'Ribs down',
+        'No neck pushing into floor',
+      ],
+    );
+
+    final deadBug = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Dead Bug',
+      modality: ExerciseModality.reps,
+      prescription: '8 per side (slow)',
+      targetSets: 3,
+      cues: [
+        'Ribs down',
+        'Low back gently touching floor',
+        'Move limbs like wet noodles — not stiff',
+        'No neck involvement',
+      ],
+    );
+
+    final hollowBodyHold = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Modified Hollow Body Hold',
+      modality: ExerciseModality.hold,
+      prescription: '10–20 seconds',
+      targetSets: 3,
+      cues: [
+        'Knees bent 90°',
+        'Ribs down',
+        'Arms by sides or lightly overhead',
+        'Head barely floated off ground',
+        'STOP if neck takes over',
+      ],
+    );
+
+    final stirThePot = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Stir-the-Pot',
+      modality: ExerciseModality.hold,
+      prescription: '10–20 sec each direction',
+      targetSets: 2,
+      equipment: 'Stability ball',
+      cues: [
+        'Tiny circles',
+        'Torso rigid',
+        "Don't let shoulders shrug",
+        'Neck neutral, looking slightly down',
+      ],
+    );
+
+    final lowRow = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Low Row',
+      modality: ExerciseModality.reps,
+      prescription: '10–12 reps',
+      targetSets: 3,
+      equipment: 'Band or cable (light)',
+      cues: [
+        'Keep elbows tucked',
+        'No shoulder retraction pinch',
+        'Think "elbows slide back"',
+        'Stop immediately if triceps tingles',
+      ],
+    );
+
+    final facePull = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Face Pull',
+      modality: ExerciseModality.reps,
+      prescription: '12 reps',
+      targetSets: 2,
+      equipment: 'Band (NOT cable)',
+      cues: [
+        'Elbows high',
+        'Pull toward forehead',
+        'Light resistance only',
+        'Feel mid-back, NOT traps',
+      ],
+    );
+
+    final easyBike = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Easy Bike or Treadmill Walk',
+      modality: ExerciseModality.timed,
+      prescription: '8 minutes',
+      targetSets: 1,
+      cues: [
+        'Relaxed gait',
+        'Arms loose',
+        'Shallow incline optional',
+        'Avoid posture forcing',
+      ],
+    );
+
+    final foamRollerExtensions = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Foam Roller Thoracic Extensions',
+      modality: ExerciseModality.reps,
+      prescription: '6 reps',
+      targetSets: 2,
+      cues: ['Gentle extensions', 'Avoid the neck entirely'],
+    );
+
+    final shoulderDrop = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Shoulder Drop + Long Exhale',
+      modality: ExerciseModality.breath,
+      prescription: '1 minute',
+      targetSets: 1,
+      cues: [
+        'Inhale 4 sec → exhale 6 sec',
+        'Let the rib cage gently settle',
+      ],
+    );
+
+    final hipFlexorStretch = WorkoutExercise(
+      id: _uuid.v4(),
+      name: 'Hip Flexor Stretch',
+      modality: ExerciseModality.hold,
+      prescription: '30 sec per side',
+      targetSets: 1,
+      cues: ['Gentle posterior tilt', 'No arching low back'],
+    );
+
+    final mobilityBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Mobility & Activation',
+      type: WorkoutBlockType.warmup,
+      targetDuration: const Duration(minutes: 10),
+      exercises: [
+        treadmillWarmup,
+        openBooks,
+        catCow,
+        sternumFloat,
+        wallSlides,
+        scapularRetractions,
+        serratusWallPushup,
+      ],
+      description: '0–10 min',
+    );
+
+    final lowerBodyBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Lower Body Strength',
+      type: WorkoutBlockType.strength,
+      targetDuration: const Duration(minutes: 15),
+      exercises: [gobletSquat, stepUps, gluteBridge],
+      description: '10–25 min',
+    );
+
+    final coreBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Core & Lower-Cross Fix',
+      type: WorkoutBlockType.core,
+      targetDuration: const Duration(minutes: 10),
+      exercises: [deadBug, hollowBodyHold, stirThePot],
+      description: '25–35 min',
+    );
+
+    final pullBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Pull / Scapular Strength',
+      type: WorkoutBlockType.strength,
+      targetDuration: const Duration(minutes: 10),
+      exercises: [lowRow, facePull],
+      description: '35–45 min',
+    );
+
+    final conditioningBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Conditioning Flush',
+      type: WorkoutBlockType.conditioning,
+      targetDuration: const Duration(minutes: 10),
+      exercises: [easyBike],
+      description: '45–55 min',
+    );
+
+    final cooldownBlock = WorkoutBlock(
+      id: _uuid.v4(),
+      title: 'Cool-down',
+      type: WorkoutBlockType.cooldown,
+      targetDuration: const Duration(minutes: 5),
+      exercises: [foamRollerExtensions, shoulderDrop, hipFlexorStretch],
+      description: '55–60 min',
+    );
+
+    return WorkoutTemplate(
+      id: _uuid.v4(),
+      name: 'Mobility & Strength Foundation',
+      goal: 'Nerve-safe strength, mobility, and scapular stability',
+      blocks: [
+        mobilityBlock,
+        lowerBodyBlock,
+        coreBlock,
+        pullBlock,
+        conditioningBlock,
+        cooldownBlock,
+      ],
+      notes:
+          '60-minute session designed for thoracic mobility and lower-cross pattern correction with detailed form cues.',
     );
   }
 

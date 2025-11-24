@@ -15,9 +15,10 @@ class WorkoutExercise with _$WorkoutExercise {
     required String prescription,
     @Default(1) int targetSets,
     String? equipment,
-    String? cue,
+    @Default([]) List<String> cues,
     @NullableDurationSecondsConverter() Duration? setupDuration,
     @NullableDurationSecondsConverter() Duration? workDuration,
+    @NullableDurationSecondsConverter() Duration? restDuration,
   }) = _WorkoutExercise;
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) =>

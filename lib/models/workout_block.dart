@@ -4,7 +4,15 @@ import 'package:workouts/models/workout_exercise.dart';
 part 'workout_block.freezed.dart';
 part 'workout_block.g.dart';
 
-enum WorkoutBlockType { warmup, animalFlow, strength, mobility, cooldown }
+enum WorkoutBlockType {
+  warmup,
+  animalFlow,
+  strength,
+  mobility,
+  core,
+  conditioning,
+  cooldown
+}
 
 @freezed
 class WorkoutBlock with _$WorkoutBlock {
