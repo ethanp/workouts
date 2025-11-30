@@ -24,30 +24,36 @@ class TodayTemplateCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.borderDepth2),
-        ),
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.borderDepth2),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(template.name, style: AppTypography.title),
-          const SizedBox(height: AppSpacing.sm),
-          Text(template.goal, style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              _buildStat('Duration', '${totalDuration}m'),
-              const SizedBox(width: AppSpacing.lg),
-              _buildStat('Blocks', '${template.blocks.length}'),
-              const SizedBox(width: AppSpacing.lg),
-              _buildStat('Exercises', '$totalSets'),
-            ],
+          GestureDetector(
+            onTap: onTap,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(template.name, style: AppTypography.title),
+                const SizedBox(height: AppSpacing.sm),
+                Text(template.goal, style: AppTypography.subtitle),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    _buildStat('Duration', '${totalDuration}m'),
+                    const SizedBox(width: AppSpacing.lg),
+                    _buildStat('Blocks', '${template.blocks.length}'),
+                    const SizedBox(width: AppSpacing.lg),
+                    _buildStat('Exercises', '$totalSets'),
+                  ],
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
           SizedBox(
@@ -66,7 +72,6 @@ class TodayTemplateCard extends StatelessWidget {
             ),
           ),
         ],
-        ),
       ),
     );
   }

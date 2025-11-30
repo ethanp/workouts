@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -7,16 +8,19 @@ import 'package:uuid/uuid.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
+import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/local_database.dart';
+import 'package:workouts/services/sync/sync_service.dart';
 
 part 'template_repository.g.dart';
 
 const _uuid = Uuid();
 
 class TemplateRepository {
-  TemplateRepository(this._db);
+  TemplateRepository(this._db, this._syncService);
 
   final LocalDatabase _db;
+  final SyncService _syncService;
 
   static const int currentTemplateVersion = 5;
 
@@ -59,15 +63,6 @@ class TemplateRepository {
     final blocksJson = jsonEncode(
       template.blocks.map((block) => block.toJson()).toList(),
     );
-    print('💾 Saving template: ${template.name}');
-    if (template.name.contains('PT')) {
-      final firstExercise = template.blocks.first.exercises.first;
-      print('   First exercise: ${firstExercise.name}');
-      print('   setupDuration: ${firstExercise.setupDuration}');
-      print('   workDuration: ${firstExercise.workDuration}');
-      final exerciseJson = firstExercise.toJson();
-      print('   Exercise JSON: $exerciseJson');
-    }
     final companion = WorkoutTemplatesTableCompanion.insert(
       id: template.id,
       name: template.name,
@@ -79,6 +74,11 @@ class TemplateRepository {
       version: Value(currentTemplateVersion),
     );
     await _db.upsertTemplate(companion);
+
+    final row = await _db.readTemplateById(template.id);
+    if (row != null) {
+      unawaited(_syncService.pushTemplate(row));
+    }
   }
 
   WorkoutTemplate _buildDefaultTemplate() {
@@ -492,11 +492,7 @@ class TemplateRepository {
       targetSets: 3,
       equipment: 'Bodyweight or light DBs',
       restDuration: const Duration(seconds: 45),
-      cues: [
-        'Slow lowering',
-        'Drive through heel',
-        'Arms hang loose',
-      ],
+      cues: ['Slow lowering', 'Drive through heel', 'Arms hang loose'],
     );
 
     final gluteBridge = WorkoutExercise(
@@ -615,10 +611,7 @@ class TemplateRepository {
       modality: ExerciseModality.breath,
       prescription: '1 minute',
       targetSets: 1,
-      cues: [
-        'Inhale 4 sec → exhale 6 sec',
-        'Let the rib cage gently settle',
-      ],
+      cues: ['Inhale 4 sec → exhale 6 sec', 'Let the rib cage gently settle'],
     );
 
     final hipFlexorStretch = WorkoutExercise(
@@ -732,5 +725,6 @@ class TemplateRepository {
 @riverpod
 TemplateRepository templateRepository(Ref ref) {
   final db = ref.watch(localDatabaseProvider);
-  return TemplateRepository(db);
+  final syncService = ref.watch(syncServiceProvider);
+  return TemplateRepository(db, syncService);
 }

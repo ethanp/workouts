@@ -8,6 +8,7 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
+import 'package:workouts/screens/exercise_picker_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
 import 'package:workouts/widgets/heart_rate_timeline_card.dart';
@@ -56,11 +57,8 @@ class _SessionViewState extends ConsumerState<_SessionView> {
   @override
   void initState() {
     super.initState();
-    // Update timer every second to show elapsed time
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) {
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     });
   }
 
@@ -326,16 +324,16 @@ class _SessionViewState extends ConsumerState<_SessionView> {
   }
 }
 
-class _BlockView extends StatefulWidget {
+class _BlockView extends ConsumerStatefulWidget {
   const _BlockView({required this.block});
 
   final SessionBlock block;
 
   @override
-  State<_BlockView> createState() => _BlockViewState();
+  ConsumerState<_BlockView> createState() => _BlockViewState();
 }
 
-class _BlockViewState extends State<_BlockView> {
+class _BlockViewState extends ConsumerState<_BlockView> {
   final _scrollController = ScrollController();
   final _exerciseKeys = <String, GlobalKey>{};
 
@@ -344,6 +342,14 @@ class _BlockViewState extends State<_BlockView> {
     super.initState();
     for (final exercise in widget.block.exercises) {
       _exerciseKeys[exercise.id] = GlobalKey();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _BlockView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    for (final exercise in widget.block.exercises) {
+      _exerciseKeys.putIfAbsent(exercise.id, () => GlobalKey());
     }
   }
 
@@ -389,24 +395,51 @@ class _BlockViewState extends State<_BlockView> {
       controller: _scrollController,
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        Text(label, style: AppTypography.title),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(child: Text(label, style: AppTypography.title)),
+            CupertinoButton(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              onPressed: () => _showExercisePicker(context),
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.accentPrimary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(
+                    color: AppColors.accentPrimary.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: const Icon(
+                  CupertinoIcons.add,
+                  color: AppColors.accentPrimary,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
+        ),
         if (roundLabel != null) ...[
           const SizedBox(height: AppSpacing.xs),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundDepth3,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.borderDepth2),
-            ),
-            child: Text(
-              roundLabel,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-                fontWeight: FontWeight.w600,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundDepth3,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.borderDepth2),
+              ),
+              child: Text(
+                roundLabel,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor3,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -414,7 +447,7 @@ class _BlockViewState extends State<_BlockView> {
         ] else
           const SizedBox(height: AppSpacing.sm),
         ...widget.block.exercises.map(
-          (exercise) => _ExerciseCard(
+          (exercise) => _DismissibleExerciseCard(
             key: _exerciseKeys[exercise.id],
             block: widget.block,
             exercise: exercise,
@@ -435,13 +468,100 @@ class _BlockViewState extends State<_BlockView> {
       _scrollToExercise(nextExercise.id);
     }
   }
+
+  Future<void> _showExercisePicker(BuildContext context) async {
+    final existingIds = widget.block.exercises.map((e) => e.id).toSet();
+    final exercise = await Navigator.of(context).push<WorkoutExercise>(
+      CupertinoPageRoute(
+        builder: (ctx) => ExercisePickerScreen(excludeIds: existingIds),
+      ),
+    );
+    if (!mounted) return;
+    if (exercise != null) {
+      ref
+          .read(activeSessionNotifierProvider.notifier)
+          .addExercise(widget.block, exercise);
+    }
+  }
+}
+
+class _DismissibleExerciseCard extends ConsumerWidget {
+  const _DismissibleExerciseCard({
+    super.key,
+    required this.block,
+    required this.exercise,
+    required this.isNextRecommended,
+    required this.onSetLogged,
+  });
+
+  final SessionBlock block;
+  final WorkoutExercise exercise;
+  final bool isNextRecommended;
+  final VoidCallback onSetLogged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasLogs = block.logs.any((l) => l.exerciseId == exercise.id);
+
+    return Dismissible(
+      key: ValueKey('dismiss-${exercise.id}'),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) => _confirmRemove(context, hasLogs),
+      onDismissed: (_) {
+        ref
+            .read(activeSessionNotifierProvider.notifier)
+            .removeExercise(block, exercise.id);
+      },
+      background: Container(
+        alignment: Alignment.centerRight,
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.error,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white),
+      ),
+      child: _ExerciseCard(
+        block: block,
+        exercise: exercise,
+        isNextRecommended: isNextRecommended,
+        onSetLogged: onSetLogged,
+      ),
+    );
+  }
+
+  Future<bool> _confirmRemove(BuildContext context, bool hasLogs) async {
+    if (!hasLogs) return true;
+
+    final result = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        title: const Text('Remove Exercise?'),
+        content: const Text(
+          'This exercise has logged sets. Removing it will delete all progress for this exercise.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
 }
 
 enum _TimerPhase { idle, setup, work, complete }
 
 class _ExerciseCard extends ConsumerStatefulWidget {
   const _ExerciseCard({
-    super.key,
     required this.block,
     required this.exercise,
     required this.isNextRecommended,
@@ -481,17 +601,8 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
   @override
   void initState() {
     super.initState();
-    print('🔍 ExerciseCard initState: ${exercise.name}');
-    print('   isNextRecommended: ${widget.isNextRecommended}');
-    print('   hasTiming: $_hasTiming');
-    print('   setupDuration: $_setupDuration');
-    print('   workDuration: $_workDuration');
-    print('   shouldAutoStart: $_shouldAutoStart');
     if (_shouldAutoStart) {
-      print('   ✅ Auto-starting timer');
       _startInitialPhase();
-    } else {
-      print('   ❌ NOT auto-starting');
     }
   }
 

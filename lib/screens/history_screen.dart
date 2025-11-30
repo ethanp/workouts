@@ -16,7 +16,29 @@ class HistoryScreen extends ConsumerWidget {
     final history = ref.watch(sessionHistoryProvider);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('History')),
+      navigationBar: CupertinoNavigationBar(
+        middle: const Text('History'),
+        trailing: history.maybeWhen(
+          data: (sessions) {
+            final inProgressCount = sessions
+                .where((s) => s.completedAt == null)
+                .length;
+            if (inProgressCount == 0) return null;
+            return CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () =>
+                  _handleCancelAllInProgress(context, ref, inProgressCount),
+              child: Text(
+                'Cancel All ($inProgressCount)',
+                style: AppTypography.body.copyWith(
+                  color: CupertinoColors.destructiveRed,
+                ),
+              ),
+            );
+          },
+          orElse: () => null,
+        ),
+      ),
       child: SafeArea(
         child: history.when(
           data: (sessions) => sessions.isEmpty
@@ -75,6 +97,46 @@ class HistoryScreen extends ConsumerWidget {
       final repository = ref.read(sessionRepositoryProvider);
       await repository.discardSession(session.id);
       ref.invalidate(sessionHistoryProvider);
+      // Also clear active session if it was the one deleted
+      final activeSession = ref.read(activeSessionNotifierProvider).value;
+      if (activeSession?.id == session.id) {
+        ref.read(activeSessionNotifierProvider.notifier).discard();
+      }
+    }
+  }
+
+  Future<void> _handleCancelAllInProgress(
+    BuildContext context,
+    WidgetRef ref,
+    int count,
+  ) async {
+    final confirmed = await showCupertinoDialog<bool>(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Cancel All In-Progress Sessions'),
+        content: Text(
+          'Are you sure you want to cancel all $count in-progress workout sessions? This action cannot be undone.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Cancel All'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final repository = ref.read(sessionRepositoryProvider);
+      await repository.discardAllInProgressSessions();
+      // Clear active session if it exists
+      ref.read(activeSessionNotifierProvider.notifier).discard();
+      ref.invalidate(sessionHistoryProvider);
     }
   }
 
@@ -129,11 +191,7 @@ class _DismissibleSessionTile extends StatelessWidget {
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              CupertinoIcons.delete,
-              color: CupertinoColors.white,
-              size: 28,
-            ),
+            Icon(CupertinoIcons.delete, color: CupertinoColors.white, size: 28),
             SizedBox(height: AppSpacing.xs),
             Text(
               'Delete',
@@ -276,16 +334,17 @@ class _SessionTile extends ConsumerWidget {
   }
 
   String _formatDate(DateTime date) {
+    final localDate = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final sessionDate = DateTime(date.year, date.month, date.day);
+    final sessionDate = DateTime(localDate.year, localDate.month, localDate.day);
 
     if (sessionDate == today) {
       return 'Today';
     } else if (sessionDate == today.subtract(const Duration(days: 1))) {
       return 'Yesterday';
     } else {
-      return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
+      return '${localDate.month.toString().padLeft(2, '0')}/${localDate.day.toString().padLeft(2, '0')}/${localDate.year}';
     }
   }
 

@@ -144,12 +144,13 @@ class SessionDetailScreen extends ConsumerWidget {
   }
 
   String _formatDateTime(DateTime date) {
-    final hour = date.hour > 12
-        ? date.hour - 12
-        : (date.hour == 0 ? 12 : date.hour);
-    final minute = date.minute.toString().padLeft(2, '0');
-    final period = date.hour >= 12 ? 'PM' : 'AM';
-    return '${date.month}/${date.day}/${date.year} at $hour:$minute $period';
+    final local = date.toLocal();
+    final hour = local.hour > 12
+        ? local.hour - 12
+        : (local.hour == 0 ? 12 : local.hour);
+    final minute = local.minute.toString().padLeft(2, '0');
+    final period = local.hour >= 12 ? 'PM' : 'AM';
+    return '${local.month}/${local.day}/${local.year} at $hour:$minute $period';
   }
 
   String _getDurationText(Duration? duration) {

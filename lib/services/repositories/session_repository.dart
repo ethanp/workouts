@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/drift.dart';
@@ -6,18 +7,21 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
+import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/local_database.dart';
 import 'package:workouts/services/repositories/template_repository.dart';
+import 'package:workouts/services/sync/sync_service.dart';
 
 part 'session_repository.g.dart';
 
 const _uuid = Uuid();
 
 class SessionRepository {
-  SessionRepository(this._db, this._templateRepository);
+  SessionRepository(this._db, this._templateRepository, this._syncService);
 
   final LocalDatabase _db;
   final TemplateRepository _templateRepository;
+  final SyncService _syncService;
 
   Future<Session> startSession(String templateId) async {
     final templates = await _templateRepository.fetchTemplates();
@@ -147,7 +151,25 @@ class SessionRepository {
   }
 
   Future<void> discardSession(String id) async {
+    final session = await _db.readSessionById(id);
     await _db.deleteSession(id);
+    if (session?.remoteId != null) {
+      unawaited(_syncService.deleteSessionRemote(session!.remoteId!));
+    }
+  }
+
+  Future<void> discardAllInProgressSessions() async {
+    final sessions = await history();
+    final inProgressSessions = sessions
+        .where((s) => s.completedAt == null)
+        .toList();
+    for (final session in inProgressSessions) {
+      final row = await _db.readSessionById(session.id);
+      await _db.deleteSession(session.id);
+      if (row?.remoteId != null) {
+        unawaited(_syncService.deleteSessionRemote(row!.remoteId!));
+      }
+    }
   }
 
   Future<List<Session>> history() async {
@@ -180,14 +202,75 @@ class SessionRepository {
     await _persistSession(session);
   }
 
+  Future<Session> addExercise(
+    Session session,
+    String blockId,
+    WorkoutExercise exercise,
+  ) async {
+    final targetBlock = session.blocks.firstWhere((b) => b.id == blockId);
+    final siblingIds = _findSiblingBlockIds(session, targetBlock);
+
+    final updatedBlocks = session.blocks.map((block) {
+      if (!siblingIds.contains(block.id)) return block;
+      return block.copyWith(exercises: [...block.exercises, exercise]);
+    }).toList();
+
+    final updatedSession = session.copyWith(
+      blocks: updatedBlocks,
+      updatedAt: DateTime.now(),
+    );
+    await _persistSession(updatedSession);
+    return updatedSession;
+  }
+
+  Future<Session> removeExercise(
+    Session session,
+    String blockId,
+    String exerciseId,
+  ) async {
+    final targetBlock = session.blocks.firstWhere((b) => b.id == blockId);
+    final siblingIds = _findSiblingBlockIds(session, targetBlock);
+
+    final updatedBlocks = session.blocks.map((block) {
+      if (!siblingIds.contains(block.id)) return block;
+      return block.copyWith(
+        exercises: block.exercises.where((e) => e.id != exerciseId).toList(),
+        logs: block.logs.where((l) => l.exerciseId != exerciseId).toList(),
+      );
+    }).toList();
+
+    final updatedSession = session.copyWith(
+      blocks: updatedBlocks,
+      updatedAt: DateTime.now(),
+    );
+    await _persistSession(updatedSession);
+    return updatedSession;
+  }
+
+  Set<String> _findSiblingBlockIds(Session session, SessionBlock target) {
+    if (target.totalRounds == null) return {target.id};
+    return session.blocks
+        .where(
+          (b) => b.type == target.type && b.totalRounds == target.totalRounds,
+        )
+        .map((b) => b.id)
+        .toSet();
+  }
+
   Future<void> _persistSession(Session session) async {
     final blocksJson = session.blocks.map((block) => block.toJson()).toList();
     final breathJson = session.breathSegments
         .map((item) => item.toJson())
         .toList();
+
+    // Preserve existing remoteId if the session already exists
+    final existing = await _db.readSessionById(session.id);
+    final remoteId = existing?.remoteId;
+
     await _db.upsertSession(
       SessionsTableCompanion.insert(
         id: session.id,
+        remoteId: Value(remoteId),
         templateId: session.templateId,
         startedAt: session.startedAt,
         completedAt: Value(session.completedAt),
@@ -204,6 +287,11 @@ class SessionRepository {
         updatedAt: Value(session.updatedAt ?? DateTime.now()),
       ),
     );
+
+    final row = await _db.readSessionById(session.id);
+    if (row != null) {
+      unawaited(_syncService.pushSession(row));
+    }
   }
 
   Session _mapSession(SessionRow data) {
@@ -246,5 +334,6 @@ class SessionRepository {
 SessionRepository sessionRepository(Ref ref) {
   final db = ref.watch(localDatabaseProvider);
   final templates = ref.watch(templateRepositoryProvider);
-  return SessionRepository(db, templates);
+  final syncService = ref.watch(syncServiceProvider);
+  return SessionRepository(db, templates, syncService);
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -15,6 +16,7 @@ class SettingsScreen extends ConsumerWidget {
     final permissionAsync = ref.watch(healthKitPermissionNotifierProvider);
     final exportAsync = ref.watch(healthExportControllerProvider);
     final versionAsync = ref.watch(templateVersionControllerProvider);
+    final syncState = ref.watch(syncNotifierProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
@@ -22,6 +24,8 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            _SyncTile(syncState: syncState, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
             _TemplateVersionTile(versionAsync: versionAsync, ref: ref),
             const SizedBox(height: AppSpacing.lg),
             _PermissionStatusTile(permissionAsync: permissionAsync, ref: ref),
@@ -29,6 +33,75 @@ class SettingsScreen extends ConsumerWidget {
             _HealthDataActions(exportAsync: exportAsync, ref: ref),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SyncTile extends StatelessWidget {
+  const _SyncTile({required this.syncState, required this.ref});
+
+  final SyncState syncState;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusLabel = switch (syncState) {
+      SyncState.idle => 'Ready',
+      SyncState.syncing => 'Syncing…',
+      SyncState.listening => 'Listening',
+      SyncState.error => 'Sync failed',
+    };
+    final isSyncing = syncState == SyncState.syncing;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('PocketBase Sync', style: AppTypography.subtitle),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              if (isSyncing)
+                const Padding(
+                  padding: EdgeInsets.only(right: AppSpacing.sm),
+                  child: CupertinoActivityIndicator(radius: 8),
+                ),
+              Text(
+                statusLabel,
+                style: AppTypography.body.copyWith(
+                  color: syncState == SyncState.error
+                      ? AppColors.error
+                      : AppColors.textColor3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          CupertinoButton.filled(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.sm,
+            ),
+            onPressed: isSyncing
+                ? null
+                : () => ref.read(syncNotifierProvider.notifier).sync(),
+            child: const Text(
+              'Sync Now',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

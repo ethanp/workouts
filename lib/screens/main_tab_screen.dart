@@ -79,7 +79,10 @@ class _ActiveSessionWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(activeSessionNotifierProvider).value!;
+    final session = ref.watch(activeSessionNotifierProvider).value;
+    
+    // Session may become null during discard - just show child
+    if (session == null) return child;
 
     return Column(
       children: [

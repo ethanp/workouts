@@ -143,6 +143,30 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
     ref.invalidate(sessionHistoryProvider);
   }
+
+  Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {
+    final current = state.value;
+    if (current == null) return;
+    final repository = ref.read(sessionRepositoryProvider);
+    state = AsyncValue.data(await repository.addExercise(current, block.id, exercise));
+  }
+
+  Future<void> removeExercise(SessionBlock block, String exerciseId) async {
+    final current = state.value;
+    if (current == null) return;
+    final repository = ref.read(sessionRepositoryProvider);
+    state = AsyncValue.data(await repository.removeExercise(current, block.id, exerciseId));
+  }
+
+  Future<void> refreshFromDatabase() async {
+    final current = state.value;
+    if (current == null) return;
+    final repository = ref.read(sessionRepositoryProvider);
+    final refreshed = await repository.fetchSessionById(current.id);
+    if (refreshed != null) {
+      state = AsyncValue.data(refreshed);
+    }
+  }
 }
 
 @riverpod
