@@ -9,6 +9,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/local_database.dart';
+import 'package:workouts/services/mappers.dart' as mappers;
 import 'package:workouts/services/repositories/template_repository.dart';
 import 'package:workouts/services/sync/session_conflict_resolver.dart';
 
@@ -21,16 +22,14 @@ class SyncService {
     bool forceOnline = false,
   }) : _connectivity = connectivity ?? Connectivity(),
        _forceOnline = forceOnline {
-    if (pocketBase != null) {
-      _pb = pocketBase;
-    } else {
-      String url;
-      try {
-        url = dotenv.env['POCKETBASE_URL'] ?? 'http://localhost:8090';
-      } catch (_) {
-        url = 'http://localhost:8090';
-      }
-      _pb = PocketBase(url);
+    _pb = pocketBase ?? PocketBase(_defaultUrl);
+  }
+
+  static String get _defaultUrl {
+    try {
+      return dotenv.env['POCKETBASE_URL'] ?? 'http://localhost:8090';
+    } catch (_) {
+      return 'http://localhost:8090';
     }
   }
 
@@ -40,7 +39,7 @@ class SyncService {
   final Connectivity _connectivity;
   final SessionConflictResolver _conflictResolver = SessionConflictResolver();
   bool _isSubscribed = false;
-  final bool _forceOnline; // For testing
+  final bool _forceOnline;
 
   bool get isSubscribed => _isSubscribed;
 
@@ -53,10 +52,13 @@ class SyncService {
       final result = await _connectivity.checkConnectivity();
       return result.any((r) => r != ConnectivityResult.none);
     } catch (_) {
-      // In tests, connectivity might not be available
-      return true; // Assume online for tests
+      return true;
     }
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Sync orchestration
+  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> syncAll() async {
     if (!await isOnline()) return;
@@ -77,43 +79,18 @@ class SyncService {
     await _pullSessions();
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // Push single records
+  // ─────────────────────────────────────────────────────────────────────────
+
   Future<void> pushTemplate(WorkoutTemplateRow row) async {
     if (!await isOnline()) {
       await _db.addToSyncQueue('push_template', row.id);
       return;
     }
-
     try {
-      if (row.remoteId != null) {
-        await _pb
-            .collection('templates')
-            .update(
-              row.remoteId!,
-              body: {
-                'name': row.name,
-                'goal': row.goal,
-                'blocks_json': row.blocksJson,
-                'notes': row.notes,
-                'created_at': row.createdAt.toIso8601String(),
-                'updated_at': row.updatedAt?.toIso8601String(),
-              },
-            );
-      } else {
-        final record = await _pb
-            .collection('templates')
-            .create(
-              body: {
-                'name': row.name,
-                'goal': row.goal,
-                'blocks_json': row.blocksJson,
-                'notes': row.notes,
-                'created_at': row.createdAt.toIso8601String(),
-                'updated_at': row.updatedAt?.toIso8601String(),
-              },
-            );
-        await _db.setTemplateRemoteId(row.id, record.id);
-      }
-    } catch (e) {
+      await _upsertTemplateRemote(row);
+    } catch (_) {
       await _db.addToSyncQueue('push_template', row.id);
     }
   }
@@ -123,64 +100,39 @@ class SyncService {
       await _db.addToSyncQueue('push_session', row.id);
       return;
     }
-
     final template = await _db.readTemplateById(row.templateId);
     if (template?.remoteId == null) {
       await _db.addToSyncQueue('push_session', row.id);
       return;
     }
-
     try {
-      if (row.remoteId != null) {
-        await _pb
-            .collection('sessions')
-            .update(
-              row.remoteId!,
-              body: {
-                'template_id': template!.remoteId,
-                'started_at': row.startedAt.toIso8601String(),
-                'completed_at': row.completedAt?.toIso8601String(),
-                'duration_seconds': row.durationSeconds,
-                'notes': row.notes,
-                'feeling': row.feeling,
-                'blocks_json': row.blocksJson,
-                'breath_segments_json': row.breathSegmentsJson,
-                'is_paused': row.isPaused,
-                'paused_at': row.pausedAt?.toIso8601String(),
-                'total_paused_duration_seconds': row.totalPausedDurationSeconds,
-                'updated_at': row.updatedAt.toIso8601String(),
-              },
-            );
-      } else {
-        final record = await _pb
-            .collection('sessions')
-            .create(
-              body: {
-                'template_id': template!.remoteId,
-                'started_at': row.startedAt.toIso8601String(),
-                'completed_at': row.completedAt?.toIso8601String(),
-                'duration_seconds': row.durationSeconds,
-                'notes': row.notes,
-                'feeling': row.feeling,
-                'blocks_json': row.blocksJson,
-                'breath_segments_json': row.breathSegmentsJson,
-                'is_paused': row.isPaused,
-                'paused_at': row.pausedAt?.toIso8601String(),
-                'total_paused_duration_seconds': row.totalPausedDurationSeconds,
-                'updated_at': row.updatedAt.toIso8601String(),
-              },
-            );
-        await _db.setSessionRemoteId(row.id, record.id);
-      }
-    } catch (e) {
+      await _upsertSessionRemote(row, template!.remoteId!);
+    } catch (_) {
       await _db.addToSyncQueue('push_session', row.id);
     }
   }
 
+  Future<void> deleteSessionRemote(String remoteId) async {
+    if (!await isOnline()) {
+      await _db.addToSyncQueue('delete_session', remoteId);
+      return;
+    }
+    try {
+      await _pb.collection('sessions').delete(remoteId);
+    } catch (e) {
+      if (!e.toString().contains('404')) {
+        await _db.addToSyncQueue('delete_session', remoteId);
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Subscriptions
+  // ─────────────────────────────────────────────────────────────────────────
+
   Future<void> subscribe() async {
     if (_isSubscribed) return;
     _isSubscribed = true;
-
     _pb.collection('templates').subscribe('*', _handleTemplateEvent);
     _pb.collection('sessions').subscribe('*', _handleSessionEvent);
   }
@@ -188,300 +140,112 @@ class SyncService {
   Future<void> unsubscribe() async {
     if (!_isSubscribed) return;
     _isSubscribed = false;
-
     _pb.collection('templates').unsubscribe('*');
     _pb.collection('sessions').unsubscribe('*');
   }
 
   Future<void> _handleTemplateEvent(RecordSubscriptionEvent event) async {
+    final record = event.record;
+    if (record == null) return;
+
     if (event.action == 'delete') {
-      final deletedId = event.record?.id;
-      if (deletedId != null) {
-        final localTemplate = await _db.readTemplates();
-        final toDelete = localTemplate
-            .where((r) => r.remoteId == deletedId)
-            .firstOrNull;
-        if (toDelete != null) {
-          await _db.deleteTemplate(toDelete.id);
-          onDataChanged?.call('templates');
-        }
+      final local = (await _db.readTemplates())
+          .where((r) => r.remoteId == record.id)
+          .firstOrNull;
+      if (local != null) {
+        await _db.deleteTemplate(local.id);
+        onDataChanged?.call('templates');
       }
       return;
     }
 
-    final record = event.record!;
-    final localRows = await _db.readTemplates();
-    final existing = localRows
-        .where((r) => r.remoteId == record.id)
-        .firstOrNull;
-    if (existing != null) return;
-
-    final blocksString = _ensureString(record.data['blocks_json']);
-    final companion = WorkoutTemplatesTableCompanion.insert(
-      id: record.id,
-      remoteId: Value(record.id),
-      name: record.data['name'] as String,
-      goal: record.data['goal'] as String,
-      blocksJson: blocksString,
-      notes: Value(record.data['notes'] as String?),
-      createdAt:
-          DateTime.tryParse(record.data['created_at'] ?? '') ?? DateTime.now(),
-      updatedAt: Value(DateTime.tryParse(record.data['updated_at'] ?? '')),
-      version: Value(TemplateRepository.currentTemplateVersion),
+    final exists = (await _db.readTemplates()).any(
+      (r) => r.remoteId == record.id,
     );
-    await _db.upsertTemplate(companion);
+    if (exists) return;
+
+    await _db.upsertTemplate(_templateCompanionFromRecord(record));
     onDataChanged?.call('templates');
   }
 
   Future<void> _handleSessionEvent(RecordSubscriptionEvent event) async {
+    final record = event.record;
+    if (record == null) return;
+
     if (event.action == 'delete') {
-      final deletedId = event.record?.id;
-      if (deletedId != null) {
-        final localSessions = await _db.readSessions();
-        final toDelete = localSessions
-            .where((r) => r.remoteId == deletedId)
-            .firstOrNull;
-        if (toDelete != null) {
-          await _db.deleteSession(toDelete.id);
-          onDataChanged?.call('sessions');
-        }
+      final local = (await _db.readSessions())
+          .where((r) => r.remoteId == record.id)
+          .firstOrNull;
+      if (local != null) {
+        await _db.deleteSession(local.id);
+        onDataChanged?.call('sessions');
       }
       return;
     }
-
-    final record = event.record!;
-    final localRows = await _db.readSessions();
-    final existing = localRows
-        .where((r) => r.remoteId == record.id)
-        .firstOrNull;
 
     final remoteTemplateId = record.data['template_id'] as String;
     final template = await _db.readTemplateByRemoteId(remoteTemplateId);
     if (template == null) return;
 
-    final blocksString = _ensureString(record.data['blocks_json']);
-    final breathString = _ensureString(
-      record.data['breath_segments_json'] ?? [],
-    );
+    final existing = (await _db.readSessions())
+        .where((r) => r.remoteId == record.id)
+        .firstOrNull;
 
     if (existing != null) {
-      final localSession = sessionFromRow(existing);
-      final remoteSession = Session(
-        id: record.id,
-        templateId: template.id,
-        startedAt: DateTime.parse(record.data['started_at'] as String),
-        completedAt: DateTime.tryParse(record.data['completed_at'] ?? ''),
-        duration: record.data['duration_seconds'] != null
-            ? Duration(seconds: record.data['duration_seconds'] as int)
-            : null,
-        notes: record.data['notes'] as String?,
-        feeling: record.data['feeling'] as String?,
-        blocks: (jsonDecode(blocksString) as List<dynamic>)
-            .map(
-              (b) => SessionBlock.fromJson(Map<String, dynamic>.from(b as Map)),
-            )
-            .toList(),
-        breathSegments: (jsonDecode(breathString) as List<dynamic>)
-            .map(
-              (b) =>
-                  BreathSegment.fromJson(Map<String, dynamic>.from(b as Map)),
-            )
-            .toList(),
-        isPaused: record.data['is_paused'] as bool? ?? false,
-        pausedAt: DateTime.tryParse(record.data['paused_at'] ?? ''),
-        totalPausedDuration: Duration(
-          seconds: record.data['total_paused_duration_seconds'] as int? ?? 0,
-        ),
-        updatedAt: DateTime.tryParse(record.data['updated_at'] ?? ''),
-      );
-
       final resolved = _conflictResolver.resolveConflict(
-        localSession,
-        remoteSession,
+        mappers.sessionFromRow(existing),
+        _sessionFromRecord(record, template.id),
       );
-
-      final resolvedBlocksJson = jsonEncode(
-        resolved.blocks.map((b) => b.toJson()).toList(),
-      );
-      final resolvedBreathJson = jsonEncode(
-        resolved.breathSegments.map((b) => b.toJson()).toList(),
-      );
-
-      final companion = SessionsTableCompanion.insert(
-        id: resolved.id,
-        remoteId: Value(record.id),
-        templateId: resolved.templateId,
-        startedAt: resolved.startedAt,
-        completedAt: Value(resolved.completedAt),
-        durationSeconds: Value(resolved.duration?.inSeconds),
-        notes: Value(resolved.notes),
-        feeling: Value(resolved.feeling),
-        blocksJson: resolvedBlocksJson,
-        breathSegmentsJson: resolvedBreathJson,
-        isPaused: Value(resolved.isPaused),
-        pausedAt: Value(resolved.pausedAt),
-        totalPausedDurationSeconds: Value(
-          resolved.totalPausedDuration.inSeconds,
-        ),
-        updatedAt: Value(resolved.updatedAt ?? DateTime.now()),
-      );
-      await _db.upsertSession(companion);
-      onDataChanged?.call('sessions');
-      return;
+      await _db.upsertSession(_sessionCompanionFromModel(resolved, record.id));
+    } else {
+      await _db.upsertSession(_sessionCompanionFromRecord(record, template.id));
     }
-
-    final companion = SessionsTableCompanion.insert(
-      id: record.id,
-      remoteId: Value(record.id),
-      templateId: template.id,
-      startedAt: DateTime.parse(record.data['started_at'] as String),
-      completedAt: Value(DateTime.tryParse(record.data['completed_at'] ?? '')),
-      durationSeconds: Value(record.data['duration_seconds'] as int?),
-      notes: Value(record.data['notes'] as String?),
-      feeling: Value(record.data['feeling'] as String?),
-      blocksJson: blocksString,
-      breathSegmentsJson: breathString,
-      isPaused: Value(record.data['is_paused'] as bool? ?? false),
-      pausedAt: Value(DateTime.tryParse(record.data['paused_at'] ?? '')),
-      totalPausedDurationSeconds: Value(
-        record.data['total_paused_duration_seconds'] as int? ?? 0,
-      ),
-    );
-    await _db.upsertSession(companion);
     onDataChanged?.call('sessions');
   }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Queue processing
+  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> processQueue() async {
     if (!await isOnline()) return;
 
-    final queueItems = await _db.readSyncQueue();
-    for (final item in queueItems) {
-      // Skip items that have failed too many times (max 3 retries)
+    for (final item in await _db.readSyncQueue()) {
       if (item.retryCount >= 3) continue;
 
       try {
         switch (item.operation) {
           case 'push_template':
-            final template = await _db.readTemplateById(item.recordId);
-            if (template != null) {
-              await _pushSingleTemplate(template);
-            }
+            final t = await _db.readTemplateById(item.recordId);
+            if (t != null) await _upsertTemplateRemote(t);
           case 'push_session':
-            final session = await _db.readSessionById(item.recordId);
-            if (session != null) {
-              await _pushSingleSession(session);
+            final s = await _db.readSessionById(item.recordId);
+            if (s != null) {
+              final t = await _db.readTemplateById(s.templateId);
+              if (t?.remoteId != null)
+                await _upsertSessionRemote(s, t!.remoteId!);
             }
           case 'delete_template':
-            await _deleteTemplate(item.recordId);
+            await _deleteRemote('templates', item.recordId);
           case 'delete_session':
-            await _deleteSession(item.recordId);
+            await _deleteRemote('sessions', item.recordId);
         }
-        // Success - remove from queue
         await _db.removeFromSyncQueue(item.id);
-      } catch (e) {
-        // Failure - increment retry count
+      } catch (_) {
         await _db.incrementQueueRetryCount(item.id);
       }
     }
   }
 
-  Future<void> _pushSingleTemplate(WorkoutTemplateRow row) async {
-    if (row.remoteId != null) {
-      await _pb
-          .collection('templates')
-          .update(
-            row.remoteId!,
-            body: {
-              'name': row.name,
-              'goal': row.goal,
-              'blocks_json': row.blocksJson,
-              'notes': row.notes,
-              'created_at': row.createdAt.toIso8601String(),
-              'updated_at': row.updatedAt?.toIso8601String(),
-            },
-          );
-    } else {
-      final record = await _pb
-          .collection('templates')
-          .create(
-            body: {
-              'name': row.name,
-              'goal': row.goal,
-              'blocks_json': row.blocksJson,
-              'notes': row.notes,
-              'created_at': row.createdAt.toIso8601String(),
-              'updated_at': row.updatedAt?.toIso8601String(),
-            },
-          );
-      await _db.setTemplateRemoteId(row.id, record.id);
-    }
-  }
-
-  Future<void> _pushSingleSession(SessionRow row) async {
-    final template = await _db.readTemplateById(row.templateId);
-    if (template?.remoteId == null) throw Exception('Template not synced');
-
-    if (row.remoteId != null) {
-      await _pb
-          .collection('sessions')
-          .update(
-            row.remoteId!,
-            body: {
-              'template_id': template!.remoteId,
-              'started_at': row.startedAt.toIso8601String(),
-              'completed_at': row.completedAt?.toIso8601String(),
-              'duration_seconds': row.durationSeconds,
-              'notes': row.notes,
-              'feeling': row.feeling,
-              'blocks_json': row.blocksJson,
-              'breath_segments_json': row.breathSegmentsJson,
-              'is_paused': row.isPaused,
-              'paused_at': row.pausedAt?.toIso8601String(),
-              'total_paused_duration_seconds': row.totalPausedDurationSeconds,
-              'updated_at': row.updatedAt.toIso8601String(),
-            },
-          );
-    } else {
-      final record = await _pb
-          .collection('sessions')
-          .create(
-            body: {
-              'template_id': template!.remoteId,
-              'started_at': row.startedAt.toIso8601String(),
-              'completed_at': row.completedAt?.toIso8601String(),
-              'duration_seconds': row.durationSeconds,
-              'notes': row.notes,
-              'feeling': row.feeling,
-              'blocks_json': row.blocksJson,
-              'breath_segments_json': row.breathSegmentsJson,
-              'is_paused': row.isPaused,
-              'paused_at': row.pausedAt?.toIso8601String(),
-              'total_paused_duration_seconds': row.totalPausedDurationSeconds,
-              'updated_at': row.updatedAt.toIso8601String(),
-            },
-          );
-      await _db.setSessionRemoteId(row.id, record.id);
-    }
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Bulk push/pull
+  // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> _pushTemplates() async {
-    final localRows = await _db.readTemplates();
-    final toPush = localRows.where((r) => r.remoteId == null);
-
-    for (final row in toPush) {
-      final record = await _pb
-          .collection('templates')
-          .create(
-            body: {
-              'name': row.name,
-              'goal': row.goal,
-              'blocks_json': row.blocksJson,
-              'notes': row.notes,
-              'created_at': row.createdAt.toIso8601String(),
-              'updated_at': row.updatedAt?.toIso8601String(),
-            },
-          );
-      await _db.setTemplateRemoteId(row.id, record.id);
+    for (final row in (await _db.readTemplates()).where(
+      (r) => r.remoteId == null,
+    )) {
+      await _upsertTemplateRemote(row);
     }
   }
 
@@ -495,60 +259,26 @@ class SyncService {
         .toSet();
 
     for (final record in remoteRecords) {
-      if (localRemoteIds.contains(record.id)) continue;
-
-      final blocksString = _ensureString(record.data['blocks_json']);
-
-      final companion = WorkoutTemplatesTableCompanion.insert(
-        id: record.id,
-        remoteId: Value(record.id),
-        name: record.data['name'] as String,
-        goal: record.data['goal'] as String,
-        blocksJson: blocksString,
-        notes: Value(record.data['notes'] as String?),
-        createdAt:
-            DateTime.tryParse(record.data['created_at'] ?? '') ??
-            DateTime.now(),
-        updatedAt: Value(DateTime.tryParse(record.data['updated_at'] ?? '')),
-        version: Value(TemplateRepository.currentTemplateVersion),
-      );
-      await _db.upsertTemplate(companion);
+      if (!localRemoteIds.contains(record.id)) {
+        await _db.upsertTemplate(_templateCompanionFromRecord(record));
+      }
     }
 
-    for (final localRow in localRows) {
-      if (localRow.remoteId != null && !remoteIds.contains(localRow.remoteId)) {
-        await _db.deleteTemplate(localRow.id);
+    for (final row in localRows) {
+      if (row.remoteId != null && !remoteIds.contains(row.remoteId)) {
+        await _db.deleteTemplate(row.id);
       }
     }
   }
 
   Future<void> _pushSessions() async {
-    final localRows = await _db.readSessions();
-    final toPush = localRows.where((r) => r.remoteId == null);
-
-    for (final row in toPush) {
+    for (final row in (await _db.readSessions()).where(
+      (r) => r.remoteId == null,
+    )) {
       final template = await _db.readTemplateById(row.templateId);
-      if (template?.remoteId == null) continue;
-
-      final record = await _pb
-          .collection('sessions')
-          .create(
-            body: {
-              'template_id': template!.remoteId,
-              'started_at': row.startedAt.toIso8601String(),
-              'completed_at': row.completedAt?.toIso8601String(),
-              'duration_seconds': row.durationSeconds,
-              'notes': row.notes,
-              'feeling': row.feeling,
-              'blocks_json': row.blocksJson,
-              'breath_segments_json': row.breathSegmentsJson,
-              'is_paused': row.isPaused,
-              'paused_at': row.pausedAt?.toIso8601String(),
-              'total_paused_duration_seconds': row.totalPausedDurationSeconds,
-              'updated_at': row.updatedAt.toIso8601String(),
-            },
-          );
-      await _db.setSessionRemoteId(row.id, record.id);
+      if (template?.remoteId != null) {
+        await _upsertSessionRemote(row, template!.remoteId!);
+      }
     }
   }
 
@@ -564,126 +294,193 @@ class SyncService {
     for (final record in remoteRecords) {
       if (localRemoteIds.contains(record.id)) continue;
 
-      final remoteTemplateId = record.data['template_id'] as String;
-      final template = await _db.readTemplateByRemoteId(remoteTemplateId);
-      if (template == null) continue;
-
-      final blocksString = _ensureString(record.data['blocks_json']);
-      final breathString = _ensureString(
-        record.data['breath_segments_json'] ?? [],
+      final template = await _db.readTemplateByRemoteId(
+        record.data['template_id'] as String,
       );
-
-      final companion = SessionsTableCompanion.insert(
-        id: record.id,
-        remoteId: Value(record.id),
-        templateId: template.id,
-        startedAt: DateTime.parse(record.data['started_at'] as String),
-        completedAt: Value(
-          DateTime.tryParse(record.data['completed_at'] ?? ''),
-        ),
-        durationSeconds: Value(record.data['duration_seconds'] as int?),
-        notes: Value(record.data['notes'] as String?),
-        feeling: Value(record.data['feeling'] as String?),
-        blocksJson: blocksString,
-        breathSegmentsJson: breathString,
-        isPaused: Value(record.data['is_paused'] as bool? ?? false),
-        pausedAt: Value(DateTime.tryParse(record.data['paused_at'] ?? '')),
-        totalPausedDurationSeconds: Value(
-          record.data['total_paused_duration_seconds'] as int? ?? 0,
-        ),
-      );
-      await _db.upsertSession(companion);
+      if (template != null) {
+        await _db.upsertSession(
+          _sessionCompanionFromRecord(record, template.id),
+        );
+      }
     }
 
-    for (final localRow in localRows) {
-      if (localRow.remoteId != null && !remoteIds.contains(localRow.remoteId)) {
-        await _db.deleteSession(localRow.id);
+    for (final row in localRows) {
+      if (row.remoteId != null && !remoteIds.contains(row.remoteId)) {
+        await _db.deleteSession(row.id);
       }
     }
   }
 
-  WorkoutTemplate templateFromRow(WorkoutTemplateRow row) {
-    final blocksJson = jsonDecode(row.blocksJson) as List<dynamic>;
-    final blocks = blocksJson
-        .map((b) => WorkoutBlock.fromJson(Map<String, dynamic>.from(b as Map)))
-        .toList();
-    return WorkoutTemplate(
-      id: row.id,
-      name: row.name,
-      goal: row.goal,
-      blocks: blocks,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      notes: row.notes,
+  // ─────────────────────────────────────────────────────────────────────────
+  // Remote CRUD helpers
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Future<void> _upsertTemplateRemote(WorkoutTemplateRow row) async {
+    final body = _templateBody(row);
+    if (row.remoteId != null) {
+      await _pb.collection('templates').update(row.remoteId!, body: body);
+    } else {
+      final record = await _pb.collection('templates').create(body: body);
+      await _db.setTemplateRemoteId(row.id, record.id);
+    }
+  }
+
+  Future<void> _upsertSessionRemote(
+    SessionRow row,
+    String remoteTemplateId,
+  ) async {
+    final body = _sessionBody(row, remoteTemplateId);
+    if (row.remoteId != null) {
+      await _pb.collection('sessions').update(row.remoteId!, body: body);
+    } else {
+      final record = await _pb.collection('sessions').create(body: body);
+      await _db.setSessionRemoteId(row.id, record.id);
+    }
+  }
+
+  Future<void> _deleteRemote(String collection, String remoteId) async {
+    try {
+      await _pb.collection(collection).delete(remoteId);
+    } catch (e) {
+      if (!e.toString().contains('404')) rethrow;
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Body builders (Row → API body)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Map<String, dynamic> _templateBody(WorkoutTemplateRow row) => {
+    'name': row.name,
+    'goal': row.goal,
+    'blocks_json': row.blocksJson,
+    'notes': row.notes,
+    'created_at': row.createdAt.toIso8601String(),
+    'updated_at': row.updatedAt?.toIso8601String(),
+  };
+
+  Map<String, dynamic> _sessionBody(SessionRow row, String remoteTemplateId) =>
+      {
+        'template_id': remoteTemplateId,
+        'started_at': row.startedAt.toIso8601String(),
+        'completed_at': row.completedAt?.toIso8601String(),
+        'duration_seconds': row.durationSeconds,
+        'notes': row.notes,
+        'feeling': row.feeling,
+        'blocks_json': row.blocksJson,
+        'breath_segments_json': row.breathSegmentsJson,
+        'is_paused': row.isPaused,
+        'paused_at': row.pausedAt?.toIso8601String(),
+        'total_paused_duration_seconds': row.totalPausedDurationSeconds,
+        'updated_at': row.updatedAt.toIso8601String(),
+      };
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Companion builders (Record → Drift companion)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  WorkoutTemplatesTableCompanion _templateCompanionFromRecord(
+    RecordModel record,
+  ) {
+    return WorkoutTemplatesTableCompanion.insert(
+      id: record.id,
+      remoteId: Value(record.id),
+      name: record.data['name'] as String,
+      goal: record.data['goal'] as String,
+      blocksJson: _ensureString(record.data['blocks_json']),
+      notes: Value(record.data['notes'] as String?),
+      createdAt:
+          DateTime.tryParse(record.data['created_at'] ?? '') ?? DateTime.now(),
+      updatedAt: Value(DateTime.tryParse(record.data['updated_at'] ?? '')),
+      version: Value(TemplateRepository.currentTemplateVersion),
     );
   }
 
-  Future<void> _deleteTemplate(String remoteId) async {
-    try {
-      await _pb.collection('templates').delete(remoteId);
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        return;
-      }
-      rethrow;
-    }
+  SessionsTableCompanion _sessionCompanionFromRecord(
+    RecordModel record,
+    String templateId,
+  ) {
+    return SessionsTableCompanion.insert(
+      id: record.id,
+      remoteId: Value(record.id),
+      templateId: templateId,
+      startedAt: DateTime.parse(record.data['started_at'] as String),
+      completedAt: Value(DateTime.tryParse(record.data['completed_at'] ?? '')),
+      durationSeconds: Value(record.data['duration_seconds'] as int?),
+      notes: Value(record.data['notes'] as String?),
+      feeling: Value(record.data['feeling'] as String?),
+      blocksJson: _ensureString(record.data['blocks_json']),
+      breathSegmentsJson: _ensureString(
+        record.data['breath_segments_json'] ?? [],
+      ),
+      isPaused: Value(record.data['is_paused'] as bool? ?? false),
+      pausedAt: Value(DateTime.tryParse(record.data['paused_at'] ?? '')),
+      totalPausedDurationSeconds: Value(
+        record.data['total_paused_duration_seconds'] as int? ?? 0,
+      ),
+    );
   }
 
-  Future<void> deleteSessionRemote(String remoteId) async {
-    if (!await isOnline()) {
-      await _db.addToSyncQueue('delete_session', remoteId);
-      return;
-    }
-
-    try {
-      await _pb.collection('sessions').delete(remoteId);
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        return;
-      }
-      await _db.addToSyncQueue('delete_session', remoteId);
-    }
+  SessionsTableCompanion _sessionCompanionFromModel(
+    Session s,
+    String remoteId,
+  ) {
+    return SessionsTableCompanion.insert(
+      id: s.id,
+      remoteId: Value(remoteId),
+      templateId: s.templateId,
+      startedAt: s.startedAt,
+      completedAt: Value(s.completedAt),
+      durationSeconds: Value(s.duration?.inSeconds),
+      notes: Value(s.notes),
+      feeling: Value(s.feeling),
+      blocksJson: jsonEncode(s.blocks.map((b) => b.toJson()).toList()),
+      breathSegmentsJson: jsonEncode(
+        s.breathSegments.map((b) => b.toJson()).toList(),
+      ),
+      isPaused: Value(s.isPaused),
+      pausedAt: Value(s.pausedAt),
+      totalPausedDurationSeconds: Value(s.totalPausedDuration.inSeconds),
+      updatedAt: Value(s.updatedAt ?? DateTime.now()),
+    );
   }
 
-  Future<void> _deleteSession(String remoteId) async {
-    try {
-      await _pb.collection('sessions').delete(remoteId);
-    } catch (e) {
-      if (e.toString().contains('404')) {
-        return;
-      }
-      rethrow;
-    }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Model builders (Record/Row → Domain model)
+  // ─────────────────────────────────────────────────────────────────────────
+
+  Session _sessionFromRecord(RecordModel record, String templateId) {
+    final blocksStr = _ensureString(record.data['blocks_json']);
+    final breathStr = _ensureString(record.data['breath_segments_json'] ?? []);
+    return Session(
+      id: record.id,
+      templateId: templateId,
+      startedAt: DateTime.parse(record.data['started_at'] as String),
+      completedAt: DateTime.tryParse(record.data['completed_at'] ?? ''),
+      duration: record.data['duration_seconds'] != null
+          ? Duration(seconds: record.data['duration_seconds'] as int)
+          : null,
+      notes: record.data['notes'] as String?,
+      feeling: record.data['feeling'] as String?,
+      blocks: (jsonDecode(blocksStr) as List)
+          .map(
+            (b) => SessionBlock.fromJson(Map<String, dynamic>.from(b as Map)),
+          )
+          .toList(),
+      breathSegments: (jsonDecode(breathStr) as List)
+          .map(
+            (b) => BreathSegment.fromJson(Map<String, dynamic>.from(b as Map)),
+          )
+          .toList(),
+      isPaused: record.data['is_paused'] as bool? ?? false,
+      pausedAt: DateTime.tryParse(record.data['paused_at'] ?? ''),
+      totalPausedDuration: Duration(
+        seconds: record.data['total_paused_duration_seconds'] as int? ?? 0,
+      ),
+      updatedAt: DateTime.tryParse(record.data['updated_at'] ?? ''),
+    );
   }
 
   String _ensureString(dynamic value) =>
       value is String ? value : jsonEncode(value);
-
-  Session sessionFromRow(SessionRow row) {
-    final blocksJson = jsonDecode(row.blocksJson) as List<dynamic>;
-    final blocks = blocksJson
-        .map((b) => SessionBlock.fromJson(Map<String, dynamic>.from(b as Map)))
-        .toList();
-    final breathJson = jsonDecode(row.breathSegmentsJson) as List<dynamic>;
-    final breathSegments = breathJson
-        .map((b) => BreathSegment.fromJson(Map<String, dynamic>.from(b as Map)))
-        .toList();
-    return Session(
-      id: row.id,
-      templateId: row.templateId,
-      startedAt: row.startedAt,
-      completedAt: row.completedAt,
-      duration: row.durationSeconds != null
-          ? Duration(seconds: row.durationSeconds!)
-          : null,
-      notes: row.notes,
-      feeling: row.feeling,
-      blocks: blocks,
-      breathSegments: breathSegments,
-      isPaused: row.isPaused,
-      pausedAt: row.pausedAt,
-      totalPausedDuration: Duration(seconds: row.totalPausedDurationSeconds),
-      updatedAt: row.updatedAt,
-    );
-  }
 }

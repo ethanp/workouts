@@ -9,6 +9,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/local_database.dart';
+import 'package:workouts/services/mappers.dart' as mappers;
 import 'package:workouts/services/repositories/template_repository.dart';
 import 'package:workouts/services/sync/sync_service.dart';
 
@@ -174,7 +175,7 @@ class SessionRepository {
 
   Future<List<Session>> history() async {
     final rows = await _db.readSessions();
-    final sessions = rows.map(_mapSession).toList();
+    final sessions = rows.map(mappers.sessionFromRow).toList();
 
     // Sort with in-progress sessions first, then by most recent
     sessions.sort((a, b) {
@@ -195,7 +196,7 @@ class SessionRepository {
 
   Future<Session?> fetchSessionById(String id) async {
     final row = await _db.readSessionById(id);
-    return row == null ? null : _mapSession(row);
+    return row == null ? null : mappers.sessionFromRow(row);
   }
 
   Future<void> updateSession(Session session) async {
@@ -292,41 +293,6 @@ class SessionRepository {
     if (row != null) {
       unawaited(_syncService.pushSession(row));
     }
-  }
-
-  Session _mapSession(SessionRow data) {
-    final blocksDynamic = jsonDecode(data.blocksJson) as List<dynamic>;
-    final breathDynamic = jsonDecode(data.breathSegmentsJson) as List<dynamic>;
-
-    final blocks = blocksDynamic
-        .map(
-          (raw) => SessionBlock.fromJson(Map<String, dynamic>.from(raw as Map)),
-        )
-        .toList();
-    final breath = breathDynamic
-        .map(
-          (raw) =>
-              BreathSegment.fromJson(Map<String, dynamic>.from(raw as Map)),
-        )
-        .toList();
-
-    return Session(
-      id: data.id,
-      templateId: data.templateId,
-      startedAt: data.startedAt,
-      completedAt: data.completedAt,
-      duration: data.durationSeconds != null
-          ? Duration(seconds: data.durationSeconds!)
-          : null,
-      notes: data.notes,
-      feeling: data.feeling,
-      blocks: blocks,
-      breathSegments: breath,
-      isPaused: data.isPaused,
-      pausedAt: data.pausedAt,
-      totalPausedDuration: Duration(seconds: data.totalPausedDurationSeconds),
-      updatedAt: data.updatedAt,
-    );
   }
 }
 

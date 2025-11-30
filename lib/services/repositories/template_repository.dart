@@ -10,6 +10,7 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/local_database.dart';
+import 'package:workouts/services/mappers.dart' as mappers;
 import 'package:workouts/services/sync/sync_service.dart';
 
 part 'template_repository.g.dart';
@@ -40,7 +41,7 @@ class TemplateRepository {
       return _reseedTemplates();
     }
 
-    return localRows.map(_mapTemplate).toList();
+    return localRows.map(mappers.templateFromRow).toList();
   }
 
   Future<List<WorkoutTemplate>> _reseedTemplates() async {
@@ -699,25 +700,6 @@ class TemplateRepository {
       ],
       notes:
           '60-minute session designed for thoracic mobility and lower-cross pattern correction with detailed form cues.',
-    );
-  }
-
-  WorkoutTemplate _mapTemplate(WorkoutTemplateRow data) {
-    final blocksJson = jsonDecode(data.blocksJson) as List<dynamic>;
-    final blocks = blocksJson
-        .map(
-          (block) =>
-              WorkoutBlock.fromJson(Map<String, dynamic>.from(block as Map)),
-        )
-        .toList();
-    return WorkoutTemplate(
-      id: data.id,
-      name: data.name,
-      goal: data.goal,
-      blocks: blocks,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
-      notes: data.notes,
     );
   }
 }
