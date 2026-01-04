@@ -5,7 +5,7 @@ import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/screens/session_detail_screen.dart';
-import 'package:workouts/services/repositories/session_repository.dart';
+import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -94,7 +94,7 @@ class HistoryScreen extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      final repository = ref.read(sessionRepositoryProvider);
+      final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardSession(session.id);
       ref.invalidate(sessionHistoryProvider);
       // Also clear active session if it was the one deleted
@@ -132,7 +132,7 @@ class HistoryScreen extends ConsumerWidget {
     );
 
     if (confirmed == true) {
-      final repository = ref.read(sessionRepositoryProvider);
+      final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardAllInProgressSessions();
       // Clear active session if it exists
       ref.read(activeSessionNotifierProvider.notifier).discard();
@@ -337,7 +337,11 @@ class _SessionTile extends ConsumerWidget {
     final localDate = date.toLocal();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final sessionDate = DateTime(localDate.year, localDate.month, localDate.day);
+    final sessionDate = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
+    );
 
     if (sessionDate == today) {
       return 'Today';

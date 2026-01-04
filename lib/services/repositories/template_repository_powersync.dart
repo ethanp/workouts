@@ -1,49 +1,260 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/local_database.dart';
-import 'package:workouts/services/mappers.dart' as mappers;
-import 'package:workouts/services/sync/sync_service.dart';
+import 'package:workouts/services/powersync_database_provider.dart';
+import 'package:workouts/services/powersync_mappers.dart' as mappers;
 
-part 'template_repository.g.dart';
+part 'template_repository_powersync.g.dart';
 
 const _uuid = Uuid();
 
-class TemplateRepository {
-  TemplateRepository(this._db, this._syncService);
+class TemplateRepositoryPowerSync {
+  TemplateRepositoryPowerSync(this._db);
 
-  final LocalDatabase _db;
-  final SyncService _syncService;
+  final PowerSyncDatabase _db;
 
   static const int currentTemplateVersion = 5;
 
+  /// Fetch all workout templates with blocks and exercises.
   Future<List<WorkoutTemplate>> fetchTemplates() async {
-    final localRows = await _db.readTemplates();
-    if (localRows.isEmpty) {
-      return _reseedTemplates();
-    }
-
-    // Check if any templates are outdated and need regeneration
-    final needsUpdate = localRows.any(
-      (row) => row.version < currentTemplateVersion,
+    // Fetch templates
+    final templateRows = await _db.getAll(
+      'SELECT * FROM workout_templates ORDER BY created_at DESC',
     );
-    if (needsUpdate) {
-      // Clear outdated templates and regenerate
-      await _db.delete(_db.workoutTemplatesTable).go();
+
+    if (templateRows.isEmpty) {
       return _reseedTemplates();
     }
 
-    return localRows.map(mappers.templateFromRow).toList();
+    final templates = <WorkoutTemplate>[];
+
+    for (final templateRow in templateRows) {
+      final templateId = templateRow['id'] as String;
+
+      // Fetch blocks for this template
+      final blockRows = await _db.getAll(
+        '''
+        SELECT * FROM workout_blocks
+        WHERE template_id = ?
+        ORDER BY block_index
+        ''',
+        [templateId],
+      );
+
+      final blocks = <WorkoutBlock>[];
+
+      for (final blockRow in blockRows) {
+        final blockId = blockRow['id'] as String;
+
+        // Fetch exercises for this block
+        final exerciseRows = await _db.getAll(
+          '''
+          SELECT 
+            e.id as e_id,
+            e.name as e_name,
+            e.modality as e_modality,
+            e.equipment as e_equipment,
+            e.cues as e_cues,
+            wbe.prescription as wbe_prescription,
+            wbe.setup_duration_seconds as wbe_setup_duration_seconds,
+            wbe.work_duration_seconds as wbe_work_duration_seconds,
+            wbe.rest_duration_seconds as wbe_rest_duration_seconds
+          FROM workout_block_exercises wbe
+          INNER JOIN exercises e ON e.id = wbe.exercise_id
+          WHERE wbe.block_id = ?
+          ORDER BY wbe.exercise_index
+          ''',
+          [blockId],
+        );
+
+        final exercises = exerciseRows
+            .map((row) => mappers.workoutExerciseFromJoinRow(row))
+            .toList();
+
+        blocks.add(mappers.workoutBlockFromRow(blockRow, exercises));
+      }
+
+      templates.add(mappers.workoutTemplateFromRow(templateRow, blocks));
+    }
+
+    return templates;
   }
 
+  /// Watch templates (reactive stream).
+  Stream<List<WorkoutTemplate>> watchTemplates() {
+    return _db
+        .watch('SELECT * FROM workout_templates ORDER BY created_at DESC')
+        .asyncMap((templateRows) async {
+          final templates = <WorkoutTemplate>[];
+
+          for (final templateRow in templateRows) {
+            final templateId = templateRow['id'] as String;
+
+            final blockRows = await _db.getAll(
+              '''
+          SELECT * FROM workout_blocks
+          WHERE template_id = ?
+          ORDER BY block_index
+          ''',
+              [templateId],
+            );
+
+            final blocks = <WorkoutBlock>[];
+
+            for (final blockRow in blockRows) {
+              final blockId = blockRow['id'] as String;
+
+              final exerciseRows = await _db.getAll(
+                '''
+            SELECT 
+              e.id as e_id,
+              e.name as e_name,
+              e.modality as e_modality,
+              e.equipment as e_equipment,
+              e.cues as e_cues,
+              wbe.prescription as wbe_prescription,
+              wbe.setup_duration_seconds as wbe_setup_duration_seconds,
+              wbe.work_duration_seconds as wbe_work_duration_seconds,
+              wbe.rest_duration_seconds as wbe_rest_duration_seconds
+            FROM workout_block_exercises wbe
+            INNER JOIN exercises e ON e.id = wbe.exercise_id
+            WHERE wbe.block_id = ?
+            ORDER BY wbe.exercise_index
+            ''',
+                [blockId],
+              );
+
+              final exercises = exerciseRows
+                  .map((row) => mappers.workoutExerciseFromJoinRow(row))
+                  .toList();
+
+              blocks.add(mappers.workoutBlockFromRow(blockRow, exercises));
+            }
+
+            templates.add(mappers.workoutTemplateFromRow(templateRow, blocks));
+          }
+
+          return templates;
+        });
+  }
+
+  /// Save a workout template (creates or updates).
+  Future<void> saveTemplate(WorkoutTemplate template) async {
+    final now = DateTime.now().toIso8601String();
+
+    // Upsert template (PowerSync views require INSERT OR REPLACE)
+    await _db.execute(
+      '''
+      INSERT OR REPLACE INTO workout_templates (id, name, goal, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        template.id,
+        template.name,
+        template.goal,
+        template.notes ?? '',
+        template.createdAt?.toIso8601String() ?? now,
+        now, // Always update updated_at on save
+      ],
+    );
+
+    // Delete existing blocks (cascade will delete exercises)
+    await _db.execute('DELETE FROM workout_blocks WHERE template_id = ?', [
+      template.id,
+    ]);
+
+    // Insert blocks and exercises
+    for (
+      var blockIndex = 0;
+      blockIndex < template.blocks.length;
+      blockIndex++
+    ) {
+      final block = template.blocks[blockIndex];
+      final blockId = block.id.isEmpty ? _uuid.v4() : block.id;
+
+      await _db.execute(
+        '''
+        INSERT INTO workout_blocks (
+          id, template_id, block_index, type, title,
+          target_duration_seconds, description, rounds
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''',
+        [
+          blockId,
+          template.id,
+          blockIndex,
+          block.type.name,
+          block.title,
+          block.targetDuration.inSeconds,
+          block.description,
+          block.rounds,
+        ],
+      );
+
+      // Insert exercises for this block
+      for (
+        var exerciseIndex = 0;
+        exerciseIndex < block.exercises.length;
+        exerciseIndex++
+      ) {
+        final exercise = block.exercises[exerciseIndex];
+
+        // Ensure exercise exists
+        await _db.execute(
+          '''
+          INSERT OR REPLACE INTO exercises (id, name, modality, equipment, cues, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+          ''',
+          [
+            exercise.id,
+            exercise.name,
+            exercise.modality.name,
+            exercise.equipment ?? '',
+            jsonEncode(exercise.cues),
+            now,
+            now,
+          ],
+        );
+
+        // Insert junction table entry
+        await _db.execute(
+          '''
+          INSERT INTO workout_block_exercises (
+            id, block_id, exercise_id, exercise_index, prescription,
+            setup_duration_seconds, work_duration_seconds, rest_duration_seconds
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          ''',
+          [
+            _uuid.v4(),
+            blockId,
+            exercise.id,
+            exerciseIndex,
+            exercise.prescription,
+            exercise.setupDuration?.inSeconds,
+            exercise.workDuration?.inSeconds,
+            exercise.restDuration?.inSeconds,
+          ],
+        );
+      }
+    }
+  }
+
+  /// Delete a template.
+  Future<void> deleteTemplate(String templateId) async {
+    // Cascade delete will handle blocks and exercises
+    await _db.execute('DELETE FROM workout_templates WHERE id = ?', [
+      templateId,
+    ]);
+  }
+
+  /// Seed templates on first run.
   Future<List<WorkoutTemplate>> _reseedTemplates() async {
     final templates = _buildSeedTemplates();
     for (final template in templates) {
@@ -52,34 +263,20 @@ class TemplateRepository {
     return templates;
   }
 
+  /// Public method to clear and reseed all templates.
+  Future<void> reseedTemplates() async {
+    await _db.execute('DELETE FROM workout_block_exercises');
+    await _db.execute('DELETE FROM workout_blocks');
+    await _db.execute('DELETE FROM workout_templates');
+    await _reseedTemplates();
+  }
+
   List<WorkoutTemplate> _buildSeedTemplates() {
     return [
       _buildDefaultTemplate(),
       _buildPTRoutineTemplate(),
       _buildMobilityStrengthTemplate(),
     ];
-  }
-
-  Future<void> saveTemplate(WorkoutTemplate template) async {
-    final blocksJson = jsonEncode(
-      template.blocks.map((block) => block.toJson()).toList(),
-    );
-    final companion = WorkoutTemplatesTableCompanion.insert(
-      id: template.id,
-      name: template.name,
-      goal: template.goal,
-      blocksJson: blocksJson,
-      notes: Value(template.notes),
-      createdAt: template.createdAt ?? DateTime.now(),
-      updatedAt: Value(template.updatedAt ?? DateTime.now()),
-      version: Value(currentTemplateVersion),
-    );
-    await _db.upsertTemplate(companion);
-
-    final row = await _db.readTemplateById(template.id);
-    if (row != null) {
-      unawaited(_syncService.pushTemplate(row));
-    }
   }
 
   WorkoutTemplate _buildDefaultTemplate() {
@@ -705,8 +902,11 @@ class TemplateRepository {
 }
 
 @riverpod
-TemplateRepository templateRepository(Ref ref) {
-  final db = ref.watch(localDatabaseProvider);
-  final syncService = ref.watch(syncServiceProvider);
-  return TemplateRepository(db, syncService);
+TemplateRepositoryPowerSync templateRepositoryPowerSync(Ref ref) {
+  final dbAsync = ref.watch(powerSyncDatabaseProvider);
+  final db = dbAsync.valueOrNull;
+  if (db == null) {
+    throw StateError('PowerSync database not initialized');
+  }
+  return TemplateRepositoryPowerSync(db);
 }

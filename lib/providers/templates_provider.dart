@@ -2,25 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/repositories/template_repository.dart';
+import 'package:workouts/services/repositories/template_repository_powersync.dart';
 
 part 'templates_provider.g.dart';
 
 @riverpod
-Future<List<WorkoutTemplate>> workoutTemplates(Ref ref) async {
-  final repository = ref.watch(templateRepositoryProvider);
-
-  // Watch for sync events and refresh when templates change
-  ref.listen(syncEventsProvider, (previous, next) {
-    next.whenData((event) {
-      if (event == 'templates') {
-        ref.invalidateSelf();
-      }
-    });
-  });
-
-  return repository.fetchTemplates();
+Stream<List<WorkoutTemplate>> workoutTemplates(Ref ref) async* {
+  final repository = ref.watch(templateRepositoryPowerSyncProvider);
+  yield* repository.watchTemplates();
 }
 
 @riverpod

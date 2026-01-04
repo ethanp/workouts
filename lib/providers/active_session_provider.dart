@@ -4,7 +4,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
-import 'package:workouts/services/repositories/session_repository.dart';
+import 'package:workouts/services/repositories/session_repository_powersync.dart';
 
 part 'active_session_provider.g.dart';
 
@@ -18,7 +18,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   }
 
   Future<void> start(String templateId) async {
-    final repository = ref.read(sessionRepositoryProvider);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
     final session = await repository.startSession(templateId);
     state = AsyncValue.data(session);
     ref.invalidate(heartRateTimelineNotifierProvider);
@@ -37,8 +37,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     double? weightKg,
     int? reps,
     Duration? duration,
-    double? rpe,
-    String? notes,
+    int? unitRemaining,
   }) async {
     final current = state.value;
     if (current == null) {
@@ -52,10 +51,9 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       weightKg: weightKg,
       reps: reps,
       duration: duration,
-      rpe: rpe,
-      notes: notes,
+      unitRemaining: unitRemaining,
     );
-    final repository = ref.read(sessionRepositoryProvider);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.logSet(
       session: current,
       block: block,
@@ -74,7 +72,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     if (current == null) {
       throw StateError('No active session');
     }
-    final repository = ref.read(sessionRepositoryProvider);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.unlogSet(
       session: current,
       block: block,
@@ -89,7 +87,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     if (current == null) {
       return;
     }
-    final repository = ref.read(sessionRepositoryProvider);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.completeSession(current, notes: notes, feeling: feeling);
     state = const AsyncValue.data(null);
     ref.invalidate(heartRateTimelineNotifierProvider);
@@ -102,14 +100,10 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     if (current == null || current.isPaused || current.completedAt != null) {
       return;
     }
-    final pausedSession = current.copyWith(
-      isPaused: true,
-      pausedAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-    final repository = ref.read(sessionRepositoryProvider);
-    await repository.updateSession(pausedSession);
-    state = AsyncValue.data(pausedSession);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    await repository.pauseSession(current);
+    final updatedSession = await repository.fetchSessionById(current.id);
+    state = AsyncValue.data(updatedSession);
   }
 
   Future<void> resume() async {
@@ -117,25 +111,16 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     if (current == null || !current.isPaused || current.completedAt != null) {
       return;
     }
-    final pauseDuration = current.pausedAt != null
-        ? DateTime.now().difference(current.pausedAt!)
-        : Duration.zero;
-
-    final resumedSession = current.copyWith(
-      isPaused: false,
-      pausedAt: null,
-      totalPausedDuration: current.totalPausedDuration + pauseDuration,
-      updatedAt: DateTime.now(),
-    );
-    final repository = ref.read(sessionRepositoryProvider);
-    await repository.updateSession(resumedSession);
-    state = AsyncValue.data(resumedSession);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    await repository.resumeSession(current);
+    final updatedSession = await repository.fetchSessionById(current.id);
+    state = AsyncValue.data(updatedSession);
   }
 
   Future<void> discard() async {
     final current = state.value;
     if (current != null) {
-      final repository = ref.read(sessionRepositoryProvider);
+      final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardSession(current.id);
     }
     state = const AsyncValue.data(null);
@@ -147,25 +132,27 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {
     final current = state.value;
     if (current == null) return;
-    final repository = ref.read(sessionRepositoryProvider);
-    state = AsyncValue.data(await repository.addExercise(current, block.id, exercise));
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.addExercise(current, block.id, exercise),
+    );
   }
 
   Future<void> removeExercise(SessionBlock block, String exerciseId) async {
     final current = state.value;
     if (current == null) return;
-    final repository = ref.read(sessionRepositoryProvider);
-    state = AsyncValue.data(await repository.removeExercise(current, block.id, exerciseId));
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.removeExercise(current, block.id, exerciseId),
+    );
   }
 
   Future<void> refreshFromDatabase() async {
     final current = state.value;
     if (current == null) return;
-    final repository = ref.read(sessionRepositoryProvider);
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
     final refreshed = await repository.fetchSessionById(current.id);
-    if (refreshed != null) {
-      state = AsyncValue.data(refreshed);
-    }
+    state = AsyncValue.data(refreshed);
   }
 }
 

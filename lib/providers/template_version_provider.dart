@@ -1,6 +1,5 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:workouts/services/local_database.dart';
-import 'package:workouts/services/repositories/template_repository.dart';
+import 'package:workouts/services/repositories/template_repository_powersync.dart';
 
 part 'template_version_provider.g.dart';
 
@@ -8,11 +7,11 @@ part 'template_version_provider.g.dart';
 class TemplateVersionController extends _$TemplateVersionController {
   @override
   Future<TemplateVersionStatus> build() async {
-    final db = ref.watch(localDatabaseProvider);
-    final rows = await db.readTemplates();
-    final currentVersion = TemplateRepository.currentTemplateVersion;
+    final repository = ref.watch(templateRepositoryPowerSyncProvider);
+    final templates = await repository.fetchTemplates();
+    final currentVersion = TemplateRepositoryPowerSync.currentTemplateVersion;
 
-    if (rows.isEmpty) {
+    if (templates.isEmpty) {
       return TemplateVersionStatus(
         current: currentVersion,
         installed: null,
@@ -20,20 +19,17 @@ class TemplateVersionController extends _$TemplateVersionController {
       );
     }
 
-    final minVersion = rows.map((r) => r.version).reduce((a, b) => a < b ? a : b);
     return TemplateVersionStatus(
       current: currentVersion,
-      installed: minVersion,
-      needsUpdate: minVersion < currentVersion,
+      installed: currentVersion,
+      needsUpdate: false,
     );
   }
 
   Future<void> reseed() async {
     state = const AsyncValue.loading();
-    final repository = ref.read(templateRepositoryProvider);
-    final db = ref.read(localDatabaseProvider);
-    await db.delete(db.workoutTemplatesTable).go();
-    await repository.fetchTemplates();
+    final repository = ref.read(templateRepositoryPowerSyncProvider);
+    await repository.reseedTemplates();
     ref.invalidateSelf();
   }
 }
@@ -49,4 +45,3 @@ class TemplateVersionStatus {
   final int? installed;
   final bool needsUpdate;
 }
-

@@ -1,0 +1,78 @@
+import 'package:powersync/powersync.dart';
+
+/// PowerSync schema definition for Workouts.
+/// This mirrors the Postgres schema and defines what syncs to devices.
+/// Note: PowerSync automatically adds an 'id' column to each table.
+const schema = Schema([
+  Table('exercises', [
+    Column.text('name'),
+    Column.text('modality'),
+    Column.text('equipment'),
+    Column.text('cues'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
+  Table('workout_templates', [
+    Column.text('name'),
+    Column.text('goal'),
+    Column.text('notes'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
+  Table('workout_blocks', [
+    Column.text('template_id'),
+    Column.integer('block_index'),
+    Column.text('type'),
+    Column.text('title'),
+    Column.integer('target_duration_seconds'),
+    Column.text('description'),
+    Column.integer('rounds'),
+  ]),
+  Table('workout_block_exercises', [
+    Column.text('block_id'),
+    Column.text('exercise_id'),
+    Column.integer('exercise_index'),
+    Column.text('prescription'),
+    Column.integer('setup_duration_seconds'),
+    Column.integer('work_duration_seconds'),
+    Column.integer('rest_duration_seconds'),
+  ]),
+  Table('sessions', [
+    Column.text('template_id'),
+    Column.text('started_at'),
+    Column.text('completed_at'),
+    Column.integer('duration_seconds'),
+    Column.text('notes'),
+    Column.text('paused_at'),
+    Column.integer('total_paused_duration_seconds'),
+    Column.text('updated_at'),
+  ]),
+  Table('session_blocks', [
+    Column.text('session_id'),
+    Column.integer('block_index'),
+    Column.text('type'),
+    Column.integer('target_duration_seconds'),
+    Column.integer('actual_duration_seconds'),
+    Column.text('notes'),
+    Column.integer('round_index'),
+    Column.integer('total_rounds'),
+  ]),
+  Table('session_block_exercises', [
+    Column.text('block_id'),
+    Column.text('exercise_id'),
+    Column.integer('exercise_index'),
+    Column.text('prescription'),
+    Column.integer('setup_duration_seconds'),
+    Column.integer('work_duration_seconds'),
+    Column.integer('rest_duration_seconds'),
+  ]),
+  Table('session_set_logs', [
+    Column.text('block_id'),
+    Column.text('exercise_id'),
+    Column.integer('set_index'),
+    Column.real('weight_kg'),
+    Column.integer('reps'),
+    Column.integer('duration_seconds'),
+    Column.integer('unit_remaining'),
+  ]),
+]);

@@ -274,8 +274,8 @@ class _BlockCard extends StatelessWidget {
         details.add('${secs}s');
       }
     }
-    if (log.rpe != null) {
-      details.add('RPE ${log.rpe}');
+    if (log.unitRemaining != null) {
+      details.add('${log.unitRemaining} left in tank');
     }
 
     return Padding(
