@@ -13,7 +13,7 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final permissionAsync = ref.watch(healthKitPermissionNotifierProvider);
+    final permissionAsync = ref.watch(healthKitPermissionProvider);
     final exportAsync = ref.watch(healthExportControllerProvider);
     final versionAsync = ref.watch(templateVersionControllerProvider);
     final syncStatus = ref.watch(powerSyncStatusProvider);
@@ -51,7 +51,7 @@ class _SyncStatusTile extends StatelessWidget {
       error: (_, __) => 'Error',
     );
 
-    final isConnected = syncStatus.valueOrNull?.connected ?? false;
+    final isConnected = syncStatus.value?.connected ?? false;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -240,7 +240,7 @@ class _PermissionStatusTile extends StatelessWidget {
           CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: () => ref
-                .read(healthKitPermissionNotifierProvider.notifier)
+                .read(healthKitPermissionProvider.notifier)
                 .requestAuthorization(),
             child: const Text('Manage in Health app'),
           ),

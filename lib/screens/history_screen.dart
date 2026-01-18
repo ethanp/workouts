@@ -7,6 +7,7 @@ import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/screens/session_detail_screen.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/sync_status_icon.dart';
 
 class HistoryScreen extends ConsumerWidget {
   const HistoryScreen({super.key});
@@ -17,6 +18,7 @@ class HistoryScreen extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: const SyncStatusIcon(),
         middle: const Text('History'),
         trailing: history.maybeWhen(
           data: (sessions) {
@@ -98,9 +100,9 @@ class HistoryScreen extends ConsumerWidget {
       await repository.discardSession(session.id);
       ref.invalidate(sessionHistoryProvider);
       // Also clear active session if it was the one deleted
-      final activeSession = ref.read(activeSessionNotifierProvider).value;
+      final activeSession = ref.read(activeSessionProvider).value;
       if (activeSession?.id == session.id) {
-        ref.read(activeSessionNotifierProvider.notifier).discard();
+        ref.read(activeSessionProvider.notifier).discard();
       }
     }
   }
@@ -135,7 +137,7 @@ class HistoryScreen extends ConsumerWidget {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardAllInProgressSessions();
       // Clear active session if it exists
-      ref.read(activeSessionNotifierProvider.notifier).discard();
+      ref.read(activeSessionProvider.notifier).discard();
       ref.invalidate(sessionHistoryProvider);
     }
   }
@@ -364,7 +366,7 @@ class _SessionTile extends ConsumerWidget {
   Future<void> _handleSessionTap(BuildContext context, WidgetRef ref) async {
     if (session.completedAt == null) {
       await ref
-          .read(activeSessionNotifierProvider.notifier)
+          .read(activeSessionProvider.notifier)
           .resumeExisting(session);
     } else {
       Navigator.of(context).push(

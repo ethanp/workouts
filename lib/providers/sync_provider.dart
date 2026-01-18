@@ -9,9 +9,8 @@ part 'sync_provider.g.dart';
 
 @riverpod
 Stream<SyncStatus> powerSyncStatus(Ref ref) async* {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.valueOrNull;
-  if (db == null) return;
+  // Wait for database to be ready
+  final db = await ref.watch(powerSyncDatabaseProvider.future);
 
   // Emit current status immediately
   yield db.currentStatus;

@@ -30,11 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  ethan_utils:
+    path: ../ethan_utils
 
   cupertino_icons: ^1.0.8
-  flutter_riverpod: ^2.5.1
-  riverpod_annotation: ^2.3.3
-  freezed_annotation: ^2.4.4
+  flutter_riverpod: ^3.0.0
+  riverpod_annotation: ^3.0.0
+  freezed_annotation: ^3.0.0
   json_annotation: ^4.9.0
   powersync: 1.16.2
   dart_jsonwebtoken: ^2.14.0
@@ -53,9 +55,9 @@ dev_dependencies:
 
   flutter_lints: ^5.0.0
   build_runner: ^2.4.12
-  freezed: ^2.4.7
+  freezed: ^3.0.0
   json_serializable: ^6.9.3
-  riverpod_generator: ^2.3.8
+  riverpod_generator: ^3.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

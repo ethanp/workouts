@@ -15,7 +15,7 @@ enum WorkoutBlockType {
 }
 
 @freezed
-class WorkoutBlock with _$WorkoutBlock {
+abstract class WorkoutBlock with _$WorkoutBlock {
   const factory WorkoutBlock({
     required String id,
     required WorkoutBlockType type,

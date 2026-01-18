@@ -7,7 +7,7 @@ part 'workout_exercise.g.dart';
 enum ExerciseModality { reps, timed, hold, mobility, breath }
 
 @freezed
-class WorkoutExercise with _$WorkoutExercise {
+abstract class WorkoutExercise with _$WorkoutExercise {
   const factory WorkoutExercise({
     required String id,
     required String name,

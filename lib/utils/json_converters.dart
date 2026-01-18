@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 class DurationSecondsConverter extends JsonConverter<Duration, int> {
@@ -14,8 +15,7 @@ class NullableDurationSecondsConverter extends JsonConverter<Duration?, int?> {
   const NullableDurationSecondsConverter();
 
   @override
-  Duration? fromJson(int? json) =>
-      json == null ? null : Duration(seconds: json);
+  Duration? fromJson(int? json) => json.map((s) => Duration(seconds: s));
 
   @override
   int? toJson(Duration? object) => object?.inSeconds;

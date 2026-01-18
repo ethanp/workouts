@@ -21,14 +21,14 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     final session = await repository.startSession(templateId);
     state = AsyncValue.data(session);
-    ref.invalidate(heartRateTimelineNotifierProvider);
-    ref.read(sessionUIVisibilityNotifierProvider.notifier).show();
+    ref.invalidate(heartRateTimelineProvider);
+    ref.read(sessionUIVisibilityProvider.notifier).show();
   }
 
   Future<void> resumeExisting(Session session) async {
     state = AsyncValue.data(session);
     // Automatically show session UI when resuming
-    ref.read(sessionUIVisibilityNotifierProvider.notifier).show();
+    ref.read(sessionUIVisibilityProvider.notifier).show();
   }
 
   Future<void> logSet({
@@ -90,8 +90,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.completeSession(current, notes: notes, feeling: feeling);
     state = const AsyncValue.data(null);
-    ref.invalidate(heartRateTimelineNotifierProvider);
-    ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
+    ref.invalidate(heartRateTimelineProvider);
+    ref.read(sessionUIVisibilityProvider.notifier).hide();
     ref.invalidate(sessionHistoryProvider);
   }
 
@@ -124,8 +124,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       await repository.discardSession(current.id);
     }
     state = const AsyncValue.data(null);
-    ref.invalidate(heartRateTimelineNotifierProvider);
-    ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
+    ref.invalidate(heartRateTimelineProvider);
+    ref.read(sessionUIVisibilityProvider.notifier).hide();
     ref.invalidate(sessionHistoryProvider);
   }
 

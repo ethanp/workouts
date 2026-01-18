@@ -7,7 +7,7 @@ part 'session.freezed.dart';
 part 'session.g.dart';
 
 @freezed
-class SessionSetLog with _$SessionSetLog {
+abstract class SessionSetLog with _$SessionSetLog {
   const factory SessionSetLog({
     required String id,
     required String sessionBlockId,
@@ -26,7 +26,7 @@ class SessionSetLog with _$SessionSetLog {
 }
 
 @freezed
-class SessionBlock with _$SessionBlock {
+abstract class SessionBlock with _$SessionBlock {
   const factory SessionBlock({
     required String id,
     required String sessionId,
@@ -66,7 +66,7 @@ class SessionBlock with _$SessionBlock {
 }
 
 @freezed
-class Session with _$Session {
+abstract class Session with _$Session {
   const factory Session({
     required String id,
     required String templateId,

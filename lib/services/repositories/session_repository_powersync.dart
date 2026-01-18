@@ -506,7 +506,7 @@ class SessionRepositoryPowerSync {
 @riverpod
 SessionRepositoryPowerSync sessionRepositoryPowerSync(Ref ref) {
   final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.valueOrNull;
+  final db = dbAsync.value;
   if (db == null) {
     throw StateError('PowerSync database not initialized');
   }

@@ -7,6 +7,7 @@ import 'package:workouts/providers/today_template_provider.dart';
 import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
+import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/widgets/today_template_card.dart';
 
 class TodayScreen extends ConsumerWidget {
@@ -18,6 +19,7 @@ class TodayScreen extends ConsumerWidget {
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
+        leading: const SyncStatusIcon(),
         middle: const Text('Today'),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
@@ -68,7 +70,7 @@ class TodayScreen extends ConsumerWidget {
   }
 
   Future<void> _startSession(WidgetRef ref, String templateId) async {
-    await ref.read(activeSessionNotifierProvider.notifier).start(templateId);
+    await ref.read(activeSessionProvider.notifier).start(templateId);
   }
 }
 

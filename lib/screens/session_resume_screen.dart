@@ -20,7 +20,7 @@ class SessionResumeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(activeSessionNotifierProvider);
+    final sessionAsync = ref.watch(activeSessionProvider);
 
     return sessionAsync.when(
       data: (session) => session == null
@@ -71,8 +71,8 @@ class _SessionViewState extends ConsumerState<_SessionView> {
 
   @override
   Widget build(BuildContext context) {
-    final active = ref.watch(activeSessionNotifierProvider).value;
-    final heartRateSamples = ref.watch(heartRateTimelineNotifierProvider);
+    final active = ref.watch(activeSessionProvider).value;
+    final heartRateSamples = ref.watch(heartRateTimelineProvider);
     final watchStatus = ref.watch(watchConnectionStatusProvider).value ?? false;
     final session = active ?? widget.session;
     return CupertinoPageScaffold(
@@ -80,7 +80,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () =>
-              ref.read(sessionUIVisibilityNotifierProvider.notifier).hide(),
+              ref.read(sessionUIVisibilityProvider.notifier).hide(),
           child: const Icon(CupertinoIcons.chevron_down),
         ),
         middle: const Text('Active Session'),
@@ -278,9 +278,9 @@ class _SessionViewState extends ConsumerState<_SessionView> {
 
   Future<void> _togglePause(Session session) async {
     if (session.isPaused) {
-      await ref.read(activeSessionNotifierProvider.notifier).resume();
+      await ref.read(activeSessionProvider.notifier).resume();
     } else {
-      await ref.read(activeSessionNotifierProvider.notifier).pause();
+      await ref.read(activeSessionProvider.notifier).pause();
     }
   }
 
@@ -312,10 +312,10 @@ class _SessionViewState extends ConsumerState<_SessionView> {
 
     switch (action) {
       case _FinishAction.save:
-        await ref.read(activeSessionNotifierProvider.notifier).complete();
+        await ref.read(activeSessionProvider.notifier).complete();
         break;
       case _FinishAction.discard:
-        await ref.read(activeSessionNotifierProvider.notifier).discard();
+        await ref.read(activeSessionProvider.notifier).discard();
         break;
       case _FinishAction.cancel:
       case null:
@@ -479,7 +479,7 @@ class _BlockViewState extends ConsumerState<_BlockView> {
     if (!mounted) return;
     if (exercise != null) {
       ref
-          .read(activeSessionNotifierProvider.notifier)
+          .read(activeSessionProvider.notifier)
           .addExercise(widget.block, exercise);
     }
   }
@@ -509,7 +509,7 @@ class _DismissibleExerciseCard extends ConsumerWidget {
       confirmDismiss: (_) => _confirmRemove(context, hasLogs),
       onDismissed: (_) {
         ref
-            .read(activeSessionNotifierProvider.notifier)
+            .read(activeSessionProvider.notifier)
             .removeExercise(block, exercise.id);
       },
       background: Container(
@@ -799,13 +799,13 @@ class _ExerciseCardState extends ConsumerState<_ExerciseCard> {
 
   Future<void> _logSet(BuildContext context, WidgetRef ref) async {
     await ref
-        .read(activeSessionNotifierProvider.notifier)
+        .read(activeSessionProvider.notifier)
         .logSet(block: block, exercise: exercise, reps: 1);
   }
 
   Future<void> _unlogSet(BuildContext context, WidgetRef ref) async {
     await ref
-        .read(activeSessionNotifierProvider.notifier)
+        .read(activeSessionProvider.notifier)
         .unlogSet(block: block, exercise: exercise);
   }
 

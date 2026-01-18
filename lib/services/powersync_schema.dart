@@ -75,4 +75,23 @@ const schema = Schema([
     Column.integer('duration_seconds'),
     Column.integer('unit_remaining'),
   ]),
+  Table('fitness_goals', [
+    Column.text('title'),
+    Column.text('description'),
+    Column.text('category'),
+    Column.integer('priority'),
+    Column.text('target_date'),
+    Column.text('status'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
+  Table('background_notes', [
+    Column.text('goal_id'),
+    Column.text('category'),
+    Column.text('content'),
+    Column.integer('is_active'),
+    Column.text('source'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
 ]);

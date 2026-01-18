@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
+import 'package:workouts/screens/goals_screen.dart';
 import 'package:workouts/screens/history_screen.dart';
 import 'package:workouts/screens/session_resume_screen.dart';
 import 'package:workouts/screens/today_screen.dart';
@@ -19,13 +20,13 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final activeSession = ref.watch(activeSessionNotifierProvider);
-    final sessionUIVisible = ref.watch(sessionUIVisibilityNotifierProvider);
+    final activeSession = ref.watch(activeSessionProvider);
+    final sessionUIVisible = ref.watch(sessionUIVisibilityProvider);
 
     // Auto-hide session UI if there's no active session
     if (sessionUIVisible && activeSession.value == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        ref.read(sessionUIVisibilityNotifierProvider.notifier).hide();
+        ref.read(sessionUIVisibilityProvider.notifier).hide();
       });
     }
 
@@ -42,6 +43,10 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
             label: 'Today',
           ),
           BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.flag),
+            label: 'Goals',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.chart_bar_square),
             label: 'History',
           ),
@@ -54,6 +59,7 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
           builder: (context) {
             final screen = switch (selectedIndex) {
               0 => const TodayScreen(),
+              1 => const GoalsScreen(),
               _ => const HistoryScreen(),
             };
 
@@ -79,8 +85,8 @@ class _ActiveSessionWrapper extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(activeSessionNotifierProvider).value;
-    
+    final session = ref.watch(activeSessionProvider).value;
+
     // Session may become null during discard - just show child
     if (session == null) return child;
 
@@ -145,7 +151,7 @@ class _ActiveSessionBanner extends ConsumerWidget {
             CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               onPressed: () =>
-                  ref.read(sessionUIVisibilityNotifierProvider.notifier).show(),
+                  ref.read(sessionUIVisibilityProvider.notifier).show(),
               child: const Text(
                 'Open',
                 style: TextStyle(

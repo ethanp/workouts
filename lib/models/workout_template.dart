@@ -5,7 +5,7 @@ part 'workout_template.freezed.dart';
 part 'workout_template.g.dart';
 
 @freezed
-class WorkoutTemplate with _$WorkoutTemplate {
+abstract class WorkoutTemplate with _$WorkoutTemplate {
   const factory WorkoutTemplate({
     required String id,
     required String name,
