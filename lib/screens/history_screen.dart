@@ -365,9 +365,7 @@ class _SessionTile extends ConsumerWidget {
 
   Future<void> _handleSessionTap(BuildContext context, WidgetRef ref) async {
     if (session.completedAt == null) {
-      await ref
-          .read(activeSessionProvider.notifier)
-          .resumeExisting(session);
+      await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {
       Navigator.of(context).push(
         CupertinoPageRoute(

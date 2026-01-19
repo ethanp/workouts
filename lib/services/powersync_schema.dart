@@ -94,4 +94,15 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
+  Table('session_notes', [
+    Column.text('session_id'),
+    Column.text('exercise_id'),
+    Column.text('block_id'),
+    Column.text('content'),
+    Column.text('note_type'),
+    Column.text('source'),
+    Column.text('timestamp'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
 ]);

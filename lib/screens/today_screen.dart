@@ -47,8 +47,11 @@ class TodayScreen extends ConsumerWidget {
                             .toggle(template.id),
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      if (ref.watch(expandedTemplatesProvider
-                          .select((s) => s.contains(template.id)))) ...[
+                      if (ref.watch(
+                        expandedTemplatesProvider.select(
+                          (s) => s.contains(template.id),
+                        ),
+                      )) ...[
                         _BlockPreviewList(blocks: template.blocks),
                         const SizedBox(height: AppSpacing.md),
                       ],
@@ -157,7 +160,9 @@ class _BlockPreview extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          ...block.exercises.map((exercise) => _ExercisePreview(exercise: exercise)),
+          ...block.exercises.map(
+            (exercise) => _ExercisePreview(exercise: exercise),
+          ),
         ],
       ),
     );
@@ -182,7 +187,9 @@ class _ExercisePreview extends StatelessWidget {
               Expanded(
                 child: Text(
                   exercise.name,
-                  style: AppTypography.body.copyWith(fontWeight: FontWeight.w600),
+                  style: AppTypography.body.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Text(
