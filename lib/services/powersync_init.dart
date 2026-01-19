@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -10,29 +12,81 @@ import 'package:powersync/powersync.dart';
 
 import 'powersync_schema.dart';
 
+final _log = Logger('PowerSyncInit');
+
 // Server configuration from .env
-String get _powersyncUrl => dotenv.env['POWERSYNC_URL']!;
-String get _postgrestUrl => dotenv.env['POSTGREST_URL']!;
-String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET']!;
+String get _powersyncUrl => dotenv.env['POWERSYNC_URL'] ?? '';
+String get _postgrestUrl => dotenv.env['POSTGREST_URL'] ?? '';
+String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
 /// Initialize PowerSync database.
 Future<PowerSyncDatabase> initPowerSync() async {
+  _log.info('Starting PowerSync initialization...');
+
+  // Log environment configuration (without secrets)
+  _log.info('PowerSync URL: $_powersyncUrl');
+  _log.info('PostgREST URL: $_postgrestUrl');
+  _log.info('JWT Secret configured: ${_jwtSecret.isNotEmpty}');
+
+  if (_powersyncUrl.isEmpty || _postgrestUrl.isEmpty || _jwtSecret.isEmpty) {
+    final error =
+        'Missing required .env configuration. '
+        'POWERSYNC_URL=${_powersyncUrl.isEmpty ? "MISSING" : "OK"}, '
+        'POSTGREST_URL=${_postgrestUrl.isEmpty ? "MISSING" : "OK"}, '
+        'POWERSYNC_JWT_SECRET=${_jwtSecret.isEmpty ? "MISSING" : "OK"}';
+    _log.severe(error);
+    throw StateError(error);
+  }
+
   final dbPath = await getDatabasePath();
+  _log.info('Database path: $dbPath');
 
-  // Create a silent logger to suppress verbose FINE logs in debug mode
-  final silentLogger = Logger.detached('PowerSync')..level = Level.WARNING;
+  // Check if directory exists
+  final dbDir = Directory(p.dirname(dbPath));
+  if (!dbDir.existsSync()) {
+    _log.info('Creating database directory: ${dbDir.path}');
+    dbDir.createSync(recursive: true);
+  }
 
-  final db = PowerSyncDatabase(
-    schema: schema,
-    path: dbPath,
-    logger: silentLogger,
-  );
+  // Create a logger that forwards to debugPrint for visibility
+  final logger = Logger.detached('PowerSync');
+  logger.level = kDebugMode ? Level.INFO : Level.WARNING;
+  logger.onRecord.listen((record) {
+    debugPrint(
+      '[${record.level.name}] ${record.loggerName}: ${record.message}',
+    );
+    if (record.error != null) {
+      debugPrint('  Error: ${record.error}');
+    }
+    if (record.stackTrace != null) {
+      debugPrint('  Stack: ${record.stackTrace}');
+    }
+  });
 
-  await db.initialize();
+  try {
+    _log.info('Creating PowerSyncDatabase instance...');
+    final db = PowerSyncDatabase(schema: schema, path: dbPath, logger: logger);
 
-  await reconnectPowerSync(db);
+    _log.info('Initializing database...');
+    await db.initialize();
+    _log.info('Database initialized successfully');
 
-  return db;
+    _log.info('Connecting to PowerSync service...');
+    await reconnectPowerSync(db);
+    _log.info('PowerSync connection established');
+
+    return db;
+  } catch (e, stack) {
+    _log.severe('PowerSync initialization failed', e, stack);
+    debugPrint('[PowerSync] FATAL: Initialization failed');
+    debugPrint('[PowerSync] Error: $e');
+    debugPrint('[PowerSync] Stack trace:\n$stack');
+    debugPrint('[PowerSync] Database path: $dbPath');
+    debugPrint(
+      '[PowerSync] Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+    );
+    rethrow;
+  }
 }
 
 /// Reconnect to PowerSync (creates fresh connector).

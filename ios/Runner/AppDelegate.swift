@@ -66,6 +66,36 @@ import UIKit
         name: "com.workouts/watch_connectivity",
         binaryMessenger: messenger
       ).setStreamHandler(watchConnectivityStreamHandler)
+      
+      // Watch workout control channel
+      let watchChannel = FlutterMethodChannel(
+        name: "com.workouts/watch_workout",
+        binaryMessenger: messenger
+      )
+      watchChannel.setMethodCallHandler { call, result in
+        switch call.method {
+        case "startWorkout":
+          guard let args = call.arguments as? [String: Any],
+                let sessionId = args["sessionId"] as? String else {
+            result(FlutterError(code: "invalid_args", message: "sessionId required", details: nil))
+            return
+          }
+          let interval = args["samplingIntervalSeconds"] as? Double ?? 5.0
+          WatchSessionManager.shared.sendStartWorkout(sessionId: sessionId, samplingIntervalSeconds: interval)
+          result(nil)
+        case "stopWorkout":
+          WatchSessionManager.shared.sendStopWorkout()
+          result(nil)
+        case "pauseWorkout":
+          WatchSessionManager.shared.sendPauseWorkout()
+          result(nil)
+        case "resumeWorkout":
+          WatchSessionManager.shared.sendResumeWorkout()
+          result(nil)
+        default:
+          result(FlutterMethodNotImplemented)
+        }
+      }
     }
 
     WatchSessionManager.shared.configureSession(
@@ -203,6 +233,43 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
   private func publishConnectionState(for session: WCSession) {
     let connected = session.isPaired && session.activationState == .activated
     connectivityHandler?.send(isConnected: connected)
+  }
+  
+  // MARK: - Send commands to watch
+  
+  func sendStartWorkout(sessionId: String, samplingIntervalSeconds: Double = 5.0) {
+    guard WCSession.default.isReachable else {
+      print("[WatchSession] Watch not reachable, cannot send startWorkout")
+      return
+    }
+    let message: [String: Any] = [
+      "command": "startWorkout",
+      "sessionId": sessionId,
+      "samplingIntervalSeconds": samplingIntervalSeconds
+    ]
+    WCSession.default.sendMessage(message, replyHandler: nil) { error in
+      print("[WatchSession] Failed to send startWorkout: \(error.localizedDescription)")
+    }
+  }
+  
+  func sendStopWorkout() {
+    guard WCSession.default.isReachable else {
+      print("[WatchSession] Watch not reachable, cannot send stopWorkout")
+      return
+    }
+    WCSession.default.sendMessage(["command": "stopWorkout"], replyHandler: nil) { error in
+      print("[WatchSession] Failed to send stopWorkout: \(error.localizedDescription)")
+    }
+  }
+  
+  func sendPauseWorkout() {
+    guard WCSession.default.isReachable else { return }
+    WCSession.default.sendMessage(["command": "pauseWorkout"], replyHandler: nil, errorHandler: nil)
+  }
+  
+  func sendResumeWorkout() {
+    guard WCSession.default.isReachable else { return }
+    WCSession.default.sendMessage(["command": "resumeWorkout"], replyHandler: nil, errorHandler: nil)
   }
 
   func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {

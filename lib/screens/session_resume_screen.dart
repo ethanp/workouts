@@ -34,7 +34,15 @@ class SessionResumeScreen extends ConsumerWidget {
         child: Center(child: CupertinoActivityIndicator()),
       ),
       error: (error, _) => CupertinoPageScaffold(
-        child: Center(child: Text('Error loading session: $error')),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Text(
+              'Error loading session: $error',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
       ),
     );
   }

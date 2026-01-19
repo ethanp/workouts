@@ -5,10 +5,12 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/services/watch_connectivity_bridge.dart';
 
 part 'active_session_provider.g.dart';
 
 const _uuid = Uuid();
+const _watchBridge = WatchConnectivityBridge();
 
 @riverpod
 class ActiveSessionNotifier extends _$ActiveSessionNotifier {
@@ -23,12 +25,16 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     state = AsyncValue.data(session);
     ref.invalidate(heartRateTimelineProvider);
     ref.read(sessionUIVisibilityProvider.notifier).show();
+    // Notify watch to start heart rate streaming
+    _watchBridge.startWatchWorkout(sessionId: session.id);
   }
 
   Future<void> resumeExisting(Session session) async {
     state = AsyncValue.data(session);
     // Automatically show session UI when resuming
     ref.read(sessionUIVisibilityProvider.notifier).show();
+    // Notify watch to resume heart rate streaming
+    _watchBridge.startWatchWorkout(sessionId: session.id);
   }
 
   Future<void> logSet({
@@ -93,6 +99,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     ref.invalidate(heartRateTimelineProvider);
     ref.read(sessionUIVisibilityProvider.notifier).hide();
     ref.invalidate(sessionHistoryProvider);
+    // Notify watch to stop heart rate streaming
+    _watchBridge.stopWatchWorkout();
   }
 
   Future<void> pause() async {
@@ -104,6 +112,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     await repository.pauseSession(current);
     final updatedSession = await repository.fetchSessionById(current.id);
     state = AsyncValue.data(updatedSession);
+    // Notify watch to pause heart rate streaming
+    _watchBridge.pauseWatchWorkout();
   }
 
   Future<void> resume() async {
@@ -115,6 +125,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     await repository.resumeSession(current);
     final updatedSession = await repository.fetchSessionById(current.id);
     state = AsyncValue.data(updatedSession);
+    // Notify watch to resume heart rate streaming
+    _watchBridge.resumeWatchWorkout();
   }
 
   Future<void> discard() async {
@@ -127,6 +139,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     ref.invalidate(heartRateTimelineProvider);
     ref.read(sessionUIVisibilityProvider.notifier).hide();
     ref.invalidate(sessionHistoryProvider);
+    // Notify watch to stop heart rate streaming
+    _watchBridge.stopWatchWorkout();
   }
 
   Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {
