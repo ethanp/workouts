@@ -9,6 +9,8 @@ import HealthKit
 
 /// Manages an HKWorkoutSession to stream live heart rate data.
 final class WorkoutManager: NSObject, ObservableObject {
+    static let shared = WorkoutManager()
+    
     private let healthStore = HKHealthStore()
     private var workoutSession: HKWorkoutSession?
     private var workoutBuilder: HKLiveWorkoutBuilder?
@@ -24,7 +26,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     private var sampleBuffer: [[String: Any]] = []
     private var samplingTimer: Timer?
     
-    override init() {
+    private override init() {
         super.init()
         setupNotificationObservers()
     }

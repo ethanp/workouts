@@ -8,8 +8,9 @@ import SwiftUI
 @main
 struct WorkoutsWatchApp: App {
     init() {
-        // Activate Watch Connectivity early
+        // Initialize singletons early to receive notifications
         PhoneConnectivity.shared.activate()
+        _ = WorkoutManager.shared  // Ensure notification observers are registered
     }
     
     var body: some Scene {

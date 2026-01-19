@@ -20,27 +20,74 @@ class HeartRateTimelineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Heart Rate', style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            _summary(samples),
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
-          ),
+          _HeartRateHeader(samples: samples),
           const SizedBox(height: AppSpacing.md),
           _TimelinePreview(samples: samples),
         ],
       ),
     );
   }
+}
 
-  String _summary(List<HeartRateSample> samples) {
-    if (samples.isEmpty) {
-      return 'Waiting for watch connection...';
-    }
+class _HeartRateHeader extends StatelessWidget {
+  const _HeartRateHeader({required this.samples});
+
+  final List<HeartRateSample> samples;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentBpm = samples.isNotEmpty ? samples.last.bpm : null;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (currentBpm != null)
+          ..._liveHeartRate(currentBpm)
+        else
+          ..._waitingState(),
+        if (samples.isNotEmpty) _statsSummary(),
+      ],
+    );
+  }
+
+  List<Widget> _liveHeartRate(int bpm) => [
+    const Icon(
+      CupertinoIcons.heart_fill,
+      color: CupertinoColors.systemRed,
+      size: 24,
+    ),
+    const SizedBox(width: AppSpacing.xs),
+    Text(
+      '$bpm',
+      style: AppTypography.title.copyWith(fontWeight: FontWeight.bold),
+    ),
+    const SizedBox(width: 4),
+    Text(
+      'BPM',
+      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+    ),
+    const Spacer(),
+  ];
+
+  List<Widget> _waitingState() => [
+    const Icon(CupertinoIcons.heart, color: AppColors.textColor3, size: 20),
+    const SizedBox(width: AppSpacing.xs),
+    Expanded(
+      child: Text(
+        'Waiting for watch...',
+        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      ),
+    ),
+  ];
+
+  Widget _statsSummary() {
     final bpmValues = samples.map((s) => s.bpm).toList();
     final avg = (bpmValues.reduce((a, b) => a + b) / bpmValues.length).round();
     final max = bpmValues.reduce((a, b) => a > b ? a : b);
-    return 'Avg $avg BPM · Max $max BPM';
+    return Text(
+      'Avg $avg · Max $max',
+      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+    );
   }
 }
 
