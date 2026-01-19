@@ -1,12 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/models/workout_exercise.dart';
+import 'package:workouts/providers/heart_rate_samples_provider.dart';
 import 'package:workouts/providers/session_notes_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
+import 'package:workouts/widgets/heart_rate_timeline_card.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({super.key, required this.session});
@@ -17,6 +20,9 @@ class SessionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesMapAsync = ref.watch(templatesMapProvider);
     final notesAsync = ref.watch(sessionNotesStreamProvider(session.id));
+    final heartRateSamplesAsync = ref.watch(
+      heartRateSamplesStreamProvider(session.id),
+    );
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -35,6 +41,13 @@ class SessionDetailScreen extends ConsumerWidget {
           children: [
             _buildSummaryCard(),
             const SizedBox(height: AppSpacing.lg),
+            _SessionHeartRateCard(
+              samples: heartRateSamplesAsync.value ?? const [],
+              averageHeartRate: session.averageHeartRate,
+              maxHeartRate: session.maxHeartRate,
+            ),
+            if ((heartRateSamplesAsync.value ?? const []).isNotEmpty)
+              const SizedBox(height: AppSpacing.lg),
             _SessionNotesCard(notes: notesAsync.value ?? []),
             if ((notesAsync.value ?? []).isNotEmpty)
               const SizedBox(height: AppSpacing.lg),
@@ -418,5 +431,106 @@ class _SessionNotesCard extends StatelessWidget {
     final minute = local.minute.toString().padLeft(2, '0');
     final period = local.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+}
+
+class _SessionHeartRateCard extends StatelessWidget {
+  const _SessionHeartRateCard({
+    required this.samples,
+    required this.averageHeartRate,
+    required this.maxHeartRate,
+  });
+
+  final List<HeartRateSample> samples;
+  final int? averageHeartRate;
+  final int? maxHeartRate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                CupertinoIcons.heart_fill,
+                size: 20,
+                color: AppColors.textColor2,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text('Heart Rate', style: AppTypography.title),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              _StatPill(label: 'Avg', value: _avgText()),
+              const SizedBox(width: AppSpacing.sm),
+              _StatPill(label: 'Max', value: _maxText()),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          HeartRateMiniChart(samples: samples),
+        ],
+      ),
+    );
+  }
+
+  String _avgText() {
+    if (averageHeartRate != null) {
+      return '${averageHeartRate!} BPM';
+    }
+    if (samples.isEmpty) return '--';
+    final avg =
+        (samples.map((s) => s.bpm).reduce((a, b) => a + b) / samples.length)
+            .round();
+    return '$avg BPM';
+  }
+
+  String _maxText() {
+    if (maxHeartRate != null) {
+      return '${maxHeartRate!} BPM';
+    }
+    if (samples.isEmpty) return '--';
+    final max = samples.map((s) => s.bpm).reduce((a, b) => a > b ? a : b);
+    return '$max BPM';
+  }
+}
+
+class _StatPill extends StatelessWidget {
+  const _StatPill({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth3,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Row(
+        children: [
+          Text(
+            '$label ',
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          ),
+          Text(value, style: AppTypography.caption),
+        ],
+      ),
+    );
   }
 }

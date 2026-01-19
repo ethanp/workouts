@@ -316,16 +316,30 @@ class SessionRepositoryPowerSync {
     }
     duration -= session.totalPausedDuration;
 
+    final statsRow = await _db.getAll(
+      '''
+      SELECT AVG(bpm) as avg_bpm, MAX(bpm) as max_bpm
+      FROM heart_rate_samples
+      WHERE session_id = ?
+      ''',
+      [session.id],
+    );
+    final avgBpm = statsRow.first['avg_bpm'] as num?;
+    final maxBpm = statsRow.first['max_bpm'] as int?;
+
     await _db.execute(
       '''
       UPDATE sessions
-      SET completed_at = ?, duration_seconds = ?, notes = ?, paused_at = NULL, updated_at = ?
+      SET completed_at = ?, duration_seconds = ?, notes = ?, paused_at = NULL,
+          average_heart_rate = ?, max_heart_rate = ?, updated_at = ?
       WHERE id = ?
       ''',
       [
         completedAt.toIso8601String(),
         duration.inSeconds,
         notes ?? '',
+        avgBpm?.round(),
+        maxBpm,
         now,
         session.id,
       ],

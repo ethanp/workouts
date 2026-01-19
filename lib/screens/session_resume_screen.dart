@@ -122,11 +122,9 @@ class _SessionViewState extends ConsumerState<_SessionView> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   swipeInstructions(session),
-                  if (heartRateSamples.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    HeartRateTimelineCard(samples: heartRateSamples),
-                    const SizedBox(height: AppSpacing.md),
-                  ],
+                  const SizedBox(height: AppSpacing.md),
+                  HeartRateTimelineCard(samples: heartRateSamples),
+                  const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
                       pauseButton(session),

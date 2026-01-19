@@ -5,6 +5,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
+import 'package:workouts/providers/active_session_provider.dart';
+import 'package:workouts/services/repositories/heart_rate_samples_repository_powersync.dart';
 import 'package:workouts/services/health_kit_bridge.dart';
 
 part 'health_kit_provider.g.dart';
@@ -47,11 +49,32 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
   void _listen() {
     _subscription?.cancel();
     final bridge = ref.read(healthKitBridgeProvider);
-    _subscription = bridge.heartRateStream().listen((sample) {
-      final updated = [...state, sample]
+    _subscription = bridge.heartRateStream().listen((sample) async {
+      final sessionId = _resolveSessionId(sample.sessionId);
+      if (sessionId == null) {
+        return;
+      }
+
+      final normalized = sample.copyWith(sessionId: sessionId);
+      final updated = [...state, normalized]
         ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
       state = updated;
+
+      try {
+        final repo = ref.read(heartRateSamplesRepositoryPowerSyncProvider);
+        await repo.addSample(normalized);
+      } catch (_) {
+        // Ignore persistence errors; UI still renders live data.
+      }
     });
+  }
+
+  String? _resolveSessionId(String sessionId) {
+    if (sessionId.isNotEmpty && sessionId != 'unknown') {
+      return sessionId;
+    }
+    final active = ref.read(activeSessionProvider).value;
+    return active?.id;
   }
 }
 

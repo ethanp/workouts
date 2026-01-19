@@ -75,6 +75,8 @@ abstract class Session with _$Session {
     @NullableDurationSecondsConverter() Duration? duration,
     String? notes,
     String? feeling,
+    int? averageHeartRate,
+    int? maxHeartRate,
     required List<SessionBlock> blocks,
     @Default(false) bool isPaused,
     DateTime? pausedAt,

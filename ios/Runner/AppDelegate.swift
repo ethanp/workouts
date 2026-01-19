@@ -68,7 +68,10 @@ import UIKit
       ).setStreamHandler(watchConnectivityStreamHandler)
     }
 
-    WatchSessionManager.shared.configureSession(streamHandler: watchConnectivityStreamHandler)
+    WatchSessionManager.shared.configureSession(
+      connectivityHandler: watchConnectivityStreamHandler,
+      heartRateHandler: heartRateStreamHandler
+    )
     return didFinish
   }
 }
@@ -173,16 +176,22 @@ final class WatchConnectivityStreamHandler: NSObject, FlutterStreamHandler {
 final class WatchSessionManager: NSObject, WCSessionDelegate {
   static let shared = WatchSessionManager()
 
-  private weak var streamHandler: WatchConnectivityStreamHandler?
+  private weak var connectivityHandler: WatchConnectivityStreamHandler?
+  private weak var heartRateHandler: HeartRateStreamHandler?
+  private let dateFormatter = ISO8601DateFormatter()
 
   private override init() {
     super.init()
   }
 
-  func configureSession(streamHandler: WatchConnectivityStreamHandler) {
-    self.streamHandler = streamHandler
+  func configureSession(
+    connectivityHandler: WatchConnectivityStreamHandler,
+    heartRateHandler: HeartRateStreamHandler
+  ) {
+    self.connectivityHandler = connectivityHandler
+    self.heartRateHandler = heartRateHandler
     guard WCSession.isSupported() else {
-      streamHandler.send(isConnected: false)
+      connectivityHandler.send(isConnected: false)
       return
     }
     let session = WCSession.default
@@ -193,7 +202,7 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
 
   private func publishConnectionState(for session: WCSession) {
     let connected = session.isPaired && session.activationState == .activated
-    streamHandler?.send(isConnected: connected)
+    connectivityHandler?.send(isConnected: connected)
   }
 
   func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
@@ -205,11 +214,46 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
   }
 
   func sessionDidDeactivate(_ session: WCSession) {
-    streamHandler?.send(isConnected: false)
+    connectivityHandler?.send(isConnected: false)
     session.activate()
   }
 
   func sessionReachabilityDidChange(_ session: WCSession) {
     publishConnectionState(for: session)
+  }
+
+  func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+    if let samples = message["samples"] as? [[String: Any]] {
+      samples.forEach { sendHeartRateSample($0) }
+      return
+    }
+    if let sample = message["sample"] as? [String: Any] {
+      sendHeartRateSample(sample)
+      return
+    }
+    sendHeartRateSample(message)
+  }
+
+  private func sendHeartRateSample(_ payload: [String: Any]) {
+    guard let bpm = payload["bpm"] as? Int else { return }
+    let sessionId = payload["sessionId"] as? String ?? "unknown"
+    let source = payload["source"] as? String ?? "watch"
+    let energyKcal = payload["energyKcal"] as? Double
+
+    let timestamp: String
+    if let raw = payload["timestamp"] as? String {
+      timestamp = raw
+    } else {
+      timestamp = dateFormatter.string(from: Date())
+    }
+
+    heartRateHandler?.send(sample: [
+      "id": payload["id"] as? String ?? UUID().uuidString,
+      "sessionId": sessionId,
+      "timestamp": timestamp,
+      "bpm": bpm,
+      "energyKcal": energyKcal as Any,
+      "source": source
+    ])
   }
 }

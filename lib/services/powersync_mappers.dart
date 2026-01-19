@@ -17,110 +17,71 @@ int parseTargetSetsFromPrescription(String prescription) {
   return 1;
 }
 
-/// Map normalized exercise row to WorkoutExercise model.
-WorkoutExercise exerciseFromRow(Map<String, dynamic> row) {
-  final modalityStr = row['modality'] as String;
-  final modality = ExerciseModality.values.firstWhere(
+ExerciseModality _parseModality(String? value) {
+  final modalityStr = value ?? '';
+  return ExerciseModality.values.firstWhere(
     (e) => e.name == modalityStr,
     orElse: () => ExerciseModality.reps,
   );
+}
 
-  final cuesJson = row['cues'] as String?;
-  final cues = cuesJson != null
-      ? (jsonDecode(cuesJson) as List).cast<String>()
-      : <String>[];
+List<String> _parseCues(String? cuesJson) {
+  if (cuesJson == null || cuesJson.isEmpty) return <String>[];
+  return (jsonDecode(cuesJson) as List).cast<String>();
+}
 
-  final prescription = row['prescription'] as String? ?? '';
+Duration? _durationFromSeconds(Object? raw) {
+  if (raw == null) return null;
+  return Duration(seconds: raw as int);
+}
 
+String _prefixed(String prefix, String name) {
+  return prefix.isEmpty ? name : '${prefix}_$name';
+}
+
+WorkoutExercise _exerciseFromJoinRow({
+  required Map<String, dynamic> row,
+  required String exercisePrefix,
+  required String linkPrefix,
+}) {
+  final prescription =
+      row[_prefixed(linkPrefix, 'prescription')] as String? ?? '';
   return WorkoutExercise(
-    id: row['id'] as String,
-    name: row['name'] as String,
-    modality: modality,
+    id: row[_prefixed(exercisePrefix, 'id')] as String,
+    name: row[_prefixed(exercisePrefix, 'name')] as String,
+    modality: _parseModality(
+      row[_prefixed(exercisePrefix, 'modality')] as String?,
+    ),
     prescription: prescription,
     targetSets: parseTargetSetsFromPrescription(prescription),
-    equipment: row['equipment'] as String?,
-    cues: cues,
-    setupDuration: row['setup_duration_seconds'] != null
-        ? Duration(seconds: row['setup_duration_seconds'] as int)
-        : null,
-    workDuration: row['work_duration_seconds'] != null
-        ? Duration(seconds: row['work_duration_seconds'] as int)
-        : null,
-    restDuration: row['rest_duration_seconds'] != null
-        ? Duration(seconds: row['rest_duration_seconds'] as int)
-        : null,
+    equipment: row[_prefixed(exercisePrefix, 'equipment')] as String?,
+    cues: _parseCues(row[_prefixed(exercisePrefix, 'cues')] as String?),
+    setupDuration: _durationFromSeconds(
+      row[_prefixed(linkPrefix, 'setup_duration_seconds')],
+    ),
+    workDuration: _durationFromSeconds(
+      row[_prefixed(linkPrefix, 'work_duration_seconds')],
+    ),
+    restDuration: _durationFromSeconds(
+      row[_prefixed(linkPrefix, 'rest_duration_seconds')],
+    ),
   );
+}
+
+/// Map normalized exercise row to WorkoutExercise model.
+WorkoutExercise exerciseFromRow(Map<String, dynamic> row) {
+  return _exerciseFromJoinRow(row: row, exercisePrefix: '', linkPrefix: '');
 }
 
 /// Map normalized workout_block_exercises row to WorkoutExercise.
 /// This includes exercise data joined with block-specific prescription/durations.
 WorkoutExercise workoutExerciseFromJoinRow(Map<String, dynamic> row) {
-  final modalityStr = row['e_modality'] as String;
-  final modality = ExerciseModality.values.firstWhere(
-    (e) => e.name == modalityStr,
-    orElse: () => ExerciseModality.reps,
-  );
-
-  final cuesJson = row['e_cues'] as String?;
-  final cues = cuesJson != null
-      ? (jsonDecode(cuesJson) as List).cast<String>()
-      : <String>[];
-
-  final prescription = row['wbe_prescription'] as String? ?? '';
-
-  return WorkoutExercise(
-    id: row['e_id'] as String,
-    name: row['e_name'] as String,
-    modality: modality,
-    prescription: prescription,
-    targetSets: parseTargetSetsFromPrescription(prescription),
-    equipment: row['e_equipment'] as String?,
-    cues: cues,
-    setupDuration: row['wbe_setup_duration_seconds'] != null
-        ? Duration(seconds: row['wbe_setup_duration_seconds'] as int)
-        : null,
-    workDuration: row['wbe_work_duration_seconds'] != null
-        ? Duration(seconds: row['wbe_work_duration_seconds'] as int)
-        : null,
-    restDuration: row['wbe_rest_duration_seconds'] != null
-        ? Duration(seconds: row['wbe_rest_duration_seconds'] as int)
-        : null,
-  );
+  return _exerciseFromJoinRow(row: row, exercisePrefix: 'e', linkPrefix: 'wbe');
 }
 
 /// Map normalized session_block_exercises row to WorkoutExercise.
 WorkoutExercise sessionExerciseFromJoinRow(Map<String, dynamic> row) {
-  final modalityStr = row['e_modality'] as String;
-  final modality = ExerciseModality.values.firstWhere(
-    (e) => e.name == modalityStr,
-    orElse: () => ExerciseModality.reps,
-  );
-
-  final cuesJson = row['e_cues'] as String?;
-  final cues = cuesJson != null
-      ? (jsonDecode(cuesJson) as List).cast<String>()
-      : <String>[];
-
-  final prescription = row['sbe_prescription'] as String? ?? '';
-
-  return WorkoutExercise(
-    id: row['e_id'] as String,
-    name: row['e_name'] as String,
-    modality: modality,
-    prescription: prescription,
-    targetSets: parseTargetSetsFromPrescription(prescription),
-    equipment: row['e_equipment'] as String?,
-    cues: cues,
-    setupDuration: row['sbe_setup_duration_seconds'] != null
-        ? Duration(seconds: row['sbe_setup_duration_seconds'] as int)
-        : null,
-    workDuration: row['sbe_work_duration_seconds'] != null
-        ? Duration(seconds: row['sbe_work_duration_seconds'] as int)
-        : null,
-    restDuration: row['sbe_rest_duration_seconds'] != null
-        ? Duration(seconds: row['sbe_rest_duration_seconds'] as int)
-        : null,
-  );
+  return _exerciseFromJoinRow(row: row, exercisePrefix: 'e', linkPrefix: 'sbe');
 }
 
 /// Map normalized workout_blocks row to WorkoutBlock model.
@@ -128,15 +89,12 @@ WorkoutBlock workoutBlockFromRow(
   Map<String, dynamic> blockRow,
   List<WorkoutExercise> exercises,
 ) {
-  final typeStr = blockRow['type'] as String;
-  final type = WorkoutBlockType.values.firstWhere(
-    (e) => e.name == typeStr,
-    orElse: () => WorkoutBlockType.strength,
-  );
-
   return WorkoutBlock(
     id: blockRow['id'] as String,
-    type: type,
+    type: WorkoutBlockType.values.firstWhere(
+      (e) => e.name == (blockRow['type'] as String),
+      orElse: () => WorkoutBlockType.strength,
+    ),
     title: blockRow['title'] as String,
     targetDuration: Duration(
       seconds: blockRow['target_duration_seconds'] as int,
@@ -176,9 +134,7 @@ SessionSetLog sessionSetLogFromRow(Map<String, dynamic> row) {
     setIndex: row['set_index'] as int,
     weightKg: row['weight_kg'] as double?,
     reps: row['reps'] as int?,
-    duration: row['duration_seconds'] != null
-        ? Duration(seconds: row['duration_seconds'] as int)
-        : null,
+    duration: _durationFromSeconds(row['duration_seconds']),
     unitRemaining: row['unit_remaining'] as int?,
   );
 }
@@ -189,25 +145,20 @@ SessionBlock sessionBlockFromRow(
   List<WorkoutExercise> exercises,
   List<SessionSetLog> logs,
 ) {
-  final typeStr = blockRow['type'] as String;
-  final type = WorkoutBlockType.values.firstWhere(
-    (e) => e.name == typeStr,
-    orElse: () => WorkoutBlockType.strength,
-  );
-
   return SessionBlock(
     id: blockRow['id'] as String,
     sessionId: blockRow['session_id'] as String,
-    type: type,
+    type: WorkoutBlockType.values.firstWhere(
+      (e) => e.name == (blockRow['type'] as String),
+      orElse: () => WorkoutBlockType.strength,
+    ),
     blockIndex: blockRow['block_index'] as int,
     exercises: exercises,
     logs: logs,
     targetDuration: Duration(
       seconds: blockRow['target_duration_seconds'] as int,
     ),
-    actualDuration: blockRow['actual_duration_seconds'] != null
-        ? Duration(seconds: blockRow['actual_duration_seconds'] as int)
-        : null,
+    actualDuration: _durationFromSeconds(blockRow['actual_duration_seconds']),
     notes: blockRow['notes'] as String?,
     roundIndex: blockRow['round_index'] as int?,
     totalRounds: blockRow['total_rounds'] as int?,
@@ -230,6 +181,8 @@ Session sessionFromRow(
         ? Duration(seconds: sessionRow['duration_seconds'] as int)
         : null,
     notes: sessionRow['notes'] as String?,
+    averageHeartRate: sessionRow['average_heart_rate'] as int?,
+    maxHeartRate: sessionRow['max_heart_rate'] as int?,
     blocks: blocks,
     isPaused: false, // Not in normalized schema, defaults to false
     pausedAt: sessionRow['paused_at'] != null
