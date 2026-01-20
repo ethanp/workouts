@@ -103,9 +103,11 @@ void _logDownloadProgress(SyncStatus status, SyncStatus? previous) {
   final progress = status.downloadProgress!;
   final prevProgress = previous?.downloadProgress;
 
-  final hasNewProgress = prevProgress == null ||
+  final hasNewProgress =
+      prevProgress == null ||
       progress.downloadedOperations != prevProgress.downloadedOperations;
-  final isSignificant = progress.downloadedOperations % 10 == 0 ||
+  final isSignificant =
+      progress.downloadedOperations % 10 == 0 ||
       progress.downloadedOperations == progress.totalOperations;
 
   if (hasNewProgress && isSignificant) {
@@ -134,14 +136,7 @@ bool isOffline(Ref ref) {
 }
 
 /// Detailed sync state for UI display
-enum SyncState {
-  connecting,
-  downloading,
-  uploading,
-  synced,
-  offline,
-  error,
-}
+enum SyncState { connecting, downloading, uploading, synced, offline, error }
 
 @riverpod
 SyncState syncState(Ref ref) {

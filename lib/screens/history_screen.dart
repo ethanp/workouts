@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
@@ -367,11 +368,7 @@ class _SessionTile extends ConsumerWidget {
     if (session.completedAt == null) {
       await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {
-      Navigator.of(context).push(
-        CupertinoPageRoute(
-          builder: (context) => SessionDetailScreen(session: session),
-        ),
-      );
+      context.push((_) => SessionDetailScreen(session: session));
     }
   }
 }

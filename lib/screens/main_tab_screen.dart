@@ -5,6 +5,7 @@ import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/screens/goals_screen.dart';
 import 'package:workouts/screens/history_screen.dart';
 import 'package:workouts/screens/session_resume_screen.dart';
+import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/screens/today_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -50,17 +51,22 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
             icon: Icon(CupertinoIcons.chart_bar_square),
             label: 'History',
           ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.gear),
+            label: 'Settings',
+          ),
         ],
         currentIndex: index,
         onTap: (value) => setState(() => index = value),
       ),
-      tabBuilder: (context, selectedIndex) {
+      tabBuilder: (_, selectedIndex) {
         return CupertinoTabView(
-          builder: (context) {
+          builder: (_) {
             final screen = switch (selectedIndex) {
               0 => const TodayScreen(),
               1 => const GoalsScreen(),
-              _ => const HistoryScreen(),
+              2 => const HistoryScreen(),
+              _ => const SettingsScreen(),
             };
 
             // Wrap screen with active session banner if there's an active session
@@ -69,7 +75,7 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
                   ? _ActiveSessionWrapper(child: screen)
                   : screen,
               loading: () => screen,
-              error: (_, __) => screen,
+              error: (_, _) => screen,
             );
           },
         );
@@ -92,20 +98,13 @@ class _ActiveSessionWrapper extends ConsumerWidget {
 
     return Column(
       children: [
-        _ActiveSessionBanner(session: session),
+        _activeSessionBanner(ref, session),
         Expanded(child: child),
       ],
     );
   }
-}
 
-class _ActiveSessionBanner extends ConsumerWidget {
-  const _ActiveSessionBanner({required this.session});
-
-  final Session session;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget _activeSessionBanner(WidgetRef ref, Session session) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -128,40 +127,48 @@ class _ActiveSessionBanner extends ConsumerWidget {
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    session.isPaused ? 'Workout Paused' : 'Workout Active',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    _getElapsedTime(session),
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+                children: [pausedOrActive(session), elapsedTime(session)],
               ),
             ),
-            CupertinoButton(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              onPressed: () =>
-                  ref.read(sessionUIVisibilityProvider.notifier).show(),
-              child: const Text(
-                'Open',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            openButton(ref),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget pausedOrActive(Session session) {
+    return Text(
+      session.isPaused ? 'Workout Paused' : 'Workout Active',
+      style: const TextStyle(
+        color: CupertinoColors.white,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Widget elapsedTime(Session session) {
+    return Text(
+      _getElapsedTime(session),
+      style: const TextStyle(
+        color: CupertinoColors.white,
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+      ),
+    );
+  }
+
+  Widget openButton(WidgetRef ref) {
+    return CupertinoButton(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      onPressed: () => ref.read(sessionUIVisibilityProvider.notifier).show(),
+      child: const Text(
+        'Open',
+        style: TextStyle(
+          color: CupertinoColors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

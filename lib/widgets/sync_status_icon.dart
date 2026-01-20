@@ -28,23 +28,23 @@ class SyncStatusIcon extends ConsumerWidget {
   Widget _buildIcon(SyncState state) {
     return switch (state) {
       SyncState.synced => const Icon(
-          CupertinoIcons.cloud_fill,
-          size: 20,
-          color: CupertinoColors.systemGreen,
-        ),
+        CupertinoIcons.cloud_fill,
+        size: 20,
+        color: CupertinoColors.systemGreen,
+      ),
       SyncState.downloading => _buildSyncing(isDownloading: true),
       SyncState.uploading => _buildSyncing(isUploading: true),
       SyncState.connecting => _buildConnecting(),
       SyncState.offline => const Icon(
-          CupertinoIcons.wifi_slash,
-          size: 20,
-          color: CupertinoColors.systemGrey,
-        ),
+        CupertinoIcons.wifi_slash,
+        size: 20,
+        color: CupertinoColors.systemGrey,
+      ),
       SyncState.error => const Icon(
-          CupertinoIcons.exclamationmark_circle,
-          size: 20,
-          color: CupertinoColors.systemRed,
-        ),
+        CupertinoIcons.exclamationmark_circle,
+        size: 20,
+        color: CupertinoColors.systemRed,
+      ),
     };
   }
 

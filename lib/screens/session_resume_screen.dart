@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
@@ -524,10 +525,8 @@ class _BlockViewState extends ConsumerState<_BlockView> {
 
   Future<void> _showExercisePicker(BuildContext context) async {
     final existingIds = widget.block.exercises.map((e) => e.id).toSet();
-    final exercise = await Navigator.of(context).push<WorkoutExercise>(
-      CupertinoPageRoute(
-        builder: (ctx) => ExercisePickerScreen(excludeIds: existingIds),
-      ),
+    final exercise = await context.push<WorkoutExercise>(
+      (_) => ExercisePickerScreen(excludeIds: existingIds),
     );
     if (!mounted) return;
     if (exercise != null) {
