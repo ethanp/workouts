@@ -78,7 +78,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
           CupertinoButton(
             padding: EdgeInsets.zero,
             onPressed: () {
-              ref.read(workoutGenerationProvider.notifier).clear();
+              ref.read(workoutGenerationProvider.notifier).cancel();
               Navigator.of(context).pop();
             },
             child: const Text('Cancel'),
@@ -212,7 +212,6 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
   }
 
   void _selectOption(LlmWorkoutOption option) {
-    ref.read(workoutGenerationProvider.notifier).clear();
     Navigator.of(context).pop(option);
   }
 

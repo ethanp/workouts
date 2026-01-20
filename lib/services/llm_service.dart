@@ -48,12 +48,15 @@ class LlmService {
   Future<LlmWorkoutResponse> generateWorkoutOptions({
     required WorkoutContext context,
     String? userFeedback,
+    http.Client? client,
   }) async {
+    final httpClient = client ?? this.client;
     _log.info('Generating workout options...');
     _log.fine(
       'Context: ${context.goals.length} goals, '
       '${context.backgroundNotes.length} notes, '
-      '${context.recentSessions.length} recent sessions',
+      '${context.recentSessions.length} recent sessions, '
+      '${context.influences.length} influences',
     );
 
     final String systemPrompt = _buildSystemPrompt();
@@ -62,7 +65,7 @@ class LlmService {
       {'role': 'system', 'content': systemPrompt},
       {'role': 'user', 'content': userPrompt},
     ];
-    final http.Response response = await feedToLlm(inputPromptInfo);
+    final http.Response response = await feedToLlm(inputPromptInfo, httpClient);
 
     if (response.statusCode != 200) {
       _log.severe(
@@ -84,12 +87,13 @@ class LlmService {
 
   Future<http.Response> feedToLlm(
     List<Map<String, String>> inputPromptInfo,
+    http.Client httpClient,
   ) async {
     final url = '$proxyUrl/v1/chat/completions';
     _log.info('Calling LLM proxy at $url');
 
     try {
-      final response = await client
+      final response = await httpClient
           .post(
             Uri.parse(url),
             headers: {
@@ -115,7 +119,7 @@ class LlmService {
   }
 
   String _buildSystemPrompt() {
-    return '''You are a personal fitness coach. Based on the user's goals, constraints, and recent training history, suggest 2-3 workout options for today.
+    return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
 
 For each option provide:
 1. A descriptive title
@@ -130,7 +134,13 @@ Each block must have:
 - List of exercises with sets/reps/duration as appropriate
 - Optional description and number of rounds (default 1)
 
+IMPORTANT: If the user has selected training influences (coaches/philosophies they follow), incorporate their principles into workout design:
+- Choose exercises and programming that align with those philosophies
+- Include coaching cues that reference the influence (e.g., "Crush the handle - Pavel", "Skill before intensity - Wildman")
+- The notes field for exercises should include philosophy-specific form cues when applicable
+
 Consider:
+- Training influences and their principles (highest priority for exercise selection and cues)
 - Goal alignment (prioritize primary goals)
 - Recent history (avoid overtraining muscle groups)
 - User constraints (injuries, time limits, equipment)
@@ -166,11 +176,30 @@ Respond in JSON format with this exact structure:
     final buffer = StringBuffer();
 
     appendGoalsPrompt(buffer, ctx);
+    appendInfluencesPrompt(buffer, ctx);
     appendNotesPrompt(buffer, ctx);
     appendRecentNotesPrompt(buffer, ctx);
     appendCallToAction(buffer, feedback);
 
     return buffer.toString();
+  }
+
+  void appendInfluencesPrompt(StringBuffer buffer, WorkoutContext ctx) {
+    buffer.writeln('## Training Influences');
+    if (ctx.influences.isEmpty) {
+      buffer.writeln('No specific training influences selected.');
+    } else {
+      for (final influence in ctx.influences) {
+        buffer.writeln('### ${influence.name}');
+        buffer.writeln(influence.description);
+        buffer.writeln('Key principles:');
+        for (final principle in influence.principles) {
+          buffer.writeln('- $principle');
+        }
+        buffer.writeln();
+      }
+    }
+    buffer.writeln();
   }
 
   void appendCallToAction(StringBuffer buffer, String? feedback) {

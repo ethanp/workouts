@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/providers/influences_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
+import 'package:workouts/screens/influences_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -18,12 +20,16 @@ class SettingsScreen extends ConsumerWidget {
     final versionAsync = ref.watch(templateVersionControllerProvider);
     final syncStatus = ref.watch(powerSyncStatusProvider);
 
+    final influencesAsync = ref.watch(activeInfluencesProvider);
+
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            _TrainingInfluencesTile(influencesAsync: influencesAsync),
+            const SizedBox(height: AppSpacing.lg),
             _SyncStatusTile(syncStatus: syncStatus),
             const SizedBox(height: AppSpacing.lg),
             _TemplateVersionTile(versionAsync: versionAsync, ref: ref),
@@ -31,6 +37,74 @@ class SettingsScreen extends ConsumerWidget {
             _PermissionStatusTile(permissionAsync: permissionAsync, ref: ref),
             const SizedBox(height: AppSpacing.lg),
             _HealthDataActions(exportAsync: exportAsync, ref: ref),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainingInfluencesTile extends StatelessWidget {
+  const _TrainingInfluencesTile({required this.influencesAsync});
+
+  final AsyncValue<List<dynamic>> influencesAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final activeCount = influencesAsync.value?.length ?? 0;
+    final subtitle = activeCount == 0
+        ? 'None selected'
+        : '$activeCount influence${activeCount == 1 ? '' : 's'} active';
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        CupertinoPageRoute<void>(
+          builder: (_) => const InfluencesScreen(),
+        ),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth2,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.borderDepth1),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.backgroundDepth3,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+              child: const Icon(
+                CupertinoIcons.person_2,
+                color: AppColors.textColor2,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Training Influences', style: AppTypography.subtitle),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    subtitle,
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.textColor3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              CupertinoIcons.chevron_right,
+              color: AppColors.textColor3,
+              size: 18,
+            ),
           ],
         ),
       ),
