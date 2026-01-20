@@ -8,13 +8,28 @@ abstract class LlmWorkoutOption with _$LlmWorkoutOption {
   const factory LlmWorkoutOption({
     required String id,
     required String title,
-    required int estimatedMinutes,
+    required String goal,
     required String rationale,
-    required List<LlmExercise> exercises,
+    required List<LlmWorkoutBlock> blocks,
   }) = _LlmWorkoutOption;
 
   factory LlmWorkoutOption.fromJson(Map<String, dynamic> json) =>
       _$LlmWorkoutOptionFromJson(json);
+}
+
+@freezed
+abstract class LlmWorkoutBlock with _$LlmWorkoutBlock {
+  const factory LlmWorkoutBlock({
+    required String title,
+    required String type,
+    required int estimatedMinutes,
+    required List<LlmExercise> exercises,
+    String? description,
+    @Default(1) int rounds,
+  }) = _LlmWorkoutBlock;
+
+  factory LlmWorkoutBlock.fromJson(Map<String, dynamic> json) =>
+      _$LlmWorkoutBlockFromJson(json);
 }
 
 @freezed

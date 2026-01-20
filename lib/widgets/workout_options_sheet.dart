@@ -292,7 +292,13 @@ class _WorkoutOptionCard extends StatelessWidget {
                           style: AppTypography.subtitle,
                         ),
                       ),
-                      estimatedTime(),
+                      Row(
+                        children: [
+                          workoutGoal(),
+                          const SizedBox(width: AppSpacing.xs),
+                          estimatedTime(),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -317,9 +323,7 @@ class _WorkoutOptionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...option.exercises.map(
-                    (exercise) => _ExerciseRow(exercise: exercise),
-                  ),
+                  ...option.blocks.map((block) => _BlockSection(block: block)),
                   const SizedBox(height: AppSpacing.md),
                   SizedBox(
                     width: double.infinity,
@@ -355,6 +359,10 @@ class _WorkoutOptionCard extends StatelessWidget {
   }
 
   Widget estimatedTime() {
+    final totalMinutes = option.blocks.fold<int>(
+      0,
+      (sum, block) => sum + block.estimatedMinutes,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -364,7 +372,78 @@ class _WorkoutOptionCard extends StatelessWidget {
         color: AppColors.backgroundDepth3,
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
-      child: Text('${option.estimatedMinutes}m', style: AppTypography.caption),
+      child: Text('${totalMinutes}m', style: AppTypography.caption),
+    );
+  }
+
+  Widget workoutGoal() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth3.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Text(
+        option.goal.toUpperCase(),
+        style: AppTypography.caption.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+class _BlockSection extends StatelessWidget {
+  const _BlockSection({required this.block});
+
+  final LlmWorkoutBlock block;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              Text(
+                block.title,
+                style: AppTypography.body.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textColor1,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                '${block.estimatedMinutes}m',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor3,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (block.description != null && block.description!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              block.description!,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor2,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ...block.exercises.map((exercise) => _ExerciseRow(exercise: exercise)),
+        const SizedBox(height: AppSpacing.sm),
+      ],
     );
   }
 }

@@ -64,6 +64,14 @@ class LlmService {
     ];
     final http.Response response = await feedToLlm(inputPromptInfo);
 
+    if (response.statusCode != 200) {
+      _log.severe(
+        'LLM Proxy error: ${response.statusCode}\n'
+        'Headers: ${response.headers}\n'
+        'Body: ${response.body}',
+      );
+    }
+
     return switch (response.statusCode) {
       200 => _parseResponse(response.body),
       429 => throw RateLimitedException(),
@@ -94,7 +102,7 @@ class LlmService {
               'model': 'gpt-4o-mini',
               'messages': inputPromptInfo,
               'response_format': {'type': 'json_object'},
-              'max_tokens': 1000,
+              'max_tokens': 2000,
             }),
           )
           .timeout(const Duration(seconds: 30));
@@ -111,9 +119,16 @@ class LlmService {
 
 For each option provide:
 1. A descriptive title
-2. Estimated duration in minutes
+2. A high-level goal (e.g. "Hypertrophy", "Recovery", "Strength")
 3. A brief rationale explaining why this fits today
-4. A list of exercises with sets/reps/duration as appropriate
+4. A list of workout blocks (e.g. Warmup, Main Lift, Accessory, Cooldown)
+
+Each block must have:
+- Title
+- Type (one of: warmup, animalFlow, strength, mobility, core, conditioning, cooldown)
+- Estimated duration in minutes
+- List of exercises with sets/reps/duration as appropriate
+- Optional description and number of rounds (default 1)
 
 Consider:
 - Goal alignment (prioritize primary goals)
@@ -127,10 +142,19 @@ Respond in JSON format with this exact structure:
     {
       "id": "A",
       "title": "Workout title",
-      "estimatedMinutes": 35,
+      "goal": "Workout goal",
       "rationale": "Why this workout fits today",
-      "exercises": [
-        { "name": "Exercise name", "sets": "3", "reps": "10" }
+      "blocks": [
+        {
+          "title": "Block title",
+          "type": "strength",
+          "estimatedMinutes": 15,
+          "rounds": 1,
+          "exercises": [
+            { "name": "Exercise name", "sets": "3", "reps": "10", "notes": "Form cues" }
+          ],
+          "description": "Block description"
+        }
       ]
     }
   ],
@@ -207,11 +231,27 @@ Respond in JSON format with this exact structure:
 
     final message = choices[0]['message'] as Map<String, dynamic>;
     final content = message['content'] as String;
-    final parsed = jsonDecode(content) as Map<String, dynamic>;
+    _log.fine('Raw LLM content: $content');
+
+    final Map<String, dynamic> parsed;
+    try {
+      parsed = jsonDecode(content) as Map<String, dynamic>;
+    } catch (e) {
+      _log.severe('Failed to decode JSON from LLM content: $e');
+      _log.severe('Content: $content');
+      rethrow;
+    }
 
     _log.info('Parsed ${(parsed['options'] as List).length} workout options');
 
-    return LlmWorkoutResponse.fromJson(parsed);
+    try {
+      return LlmWorkoutResponse.fromJson(parsed);
+    } catch (e, stack) {
+      _log.severe('Error mapping JSON to LlmWorkoutResponse: $e');
+      _log.severe('Parsed JSON: $parsed');
+      _log.severe(stack);
+      rethrow;
+    }
   }
 }
 

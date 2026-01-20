@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/today_template_provider.dart';
+import 'package:workouts/providers/workout_generation_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/widgets/today_template_card.dart';
@@ -53,7 +55,7 @@ class TodayScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
         _GenerateWorkoutButton(
-          onSelected: (option) => _handleGeneratedWorkout(context, option),
+          onSelected: (option) => _handleGeneratedWorkout(context, option, ref),
         ),
       ],
     );
@@ -63,25 +65,12 @@ class TodayScreen extends ConsumerWidget {
     await ref.read(activeSessionProvider.notifier).start(templateId);
   }
 
-  void _handleGeneratedWorkout(BuildContext context, dynamic option) {
-    // TODO: Convert LlmWorkoutOption to ephemeral template and start session
-    // For now, show a confirmation message
-    showCupertinoDialog(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text(option.title),
-        content: Text(
-          'This workout will be available to start once template conversion is implemented.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _handleGeneratedWorkout(
+    BuildContext context,
+    LlmWorkoutOption option,
+    WidgetRef ref,
+  ) async {
+    await ref.read(workoutGenerationProvider.notifier).select(option);
   }
 }
 
@@ -103,7 +92,7 @@ class _EmptyTemplateView extends StatelessWidget {
 class _GenerateWorkoutButton extends StatelessWidget {
   const _GenerateWorkoutButton({required this.onSelected});
 
-  final void Function(dynamic option) onSelected;
+  final void Function(LlmWorkoutOption option) onSelected;
 
   @override
   Widget build(BuildContext context) {

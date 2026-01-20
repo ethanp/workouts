@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
+import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/services/powersync_database_provider.dart';
 import 'package:workouts/services/powersync_mappers.dart' as mappers;
 
@@ -269,6 +270,62 @@ class TemplateRepositoryPowerSync {
     await _db.execute('DELETE FROM workout_blocks');
     await _db.execute('DELETE FROM workout_templates');
     await _reseedTemplates();
+  }
+
+  /// Create a template from an LLM workout option.
+  Future<WorkoutTemplate> createEphemeralFromOption(
+    LlmWorkoutOption option,
+  ) async {
+    final blocks = option.blocks.map((blockOption) {
+      final exercises = blockOption.exercises.map((e) {
+        final sets = int.tryParse(e.sets ?? '') ?? 1;
+        final parts = <String>[];
+        if (e.sets != null && e.sets!.isNotEmpty) {
+          parts.add('${e.sets} ×');
+        }
+        if (e.reps != null && e.reps!.isNotEmpty) {
+          parts.add(e.reps!);
+        } else if (e.duration != null && e.duration!.isNotEmpty) {
+          parts.add(e.duration!);
+        }
+        final prescription = parts.join(' ');
+
+        return WorkoutExercise(
+          id: _uuid.v4(),
+          name: e.name,
+          modality: e.duration != null
+              ? ExerciseModality.timed
+              : ExerciseModality.reps,
+          prescription: prescription,
+          targetSets: sets,
+          cues: e.notes != null ? [e.notes!] : const [],
+        );
+      }).toList();
+
+      return WorkoutBlock(
+        id: _uuid.v4(),
+        title: blockOption.title,
+        type: WorkoutBlockType.values.firstWhere(
+          (t) => t.name == blockOption.type,
+          orElse: () => WorkoutBlockType.strength,
+        ),
+        targetDuration: Duration(minutes: blockOption.estimatedMinutes),
+        exercises: exercises,
+        description: blockOption.description ?? '',
+        rounds: blockOption.rounds,
+      );
+    }).toList();
+
+    final template = WorkoutTemplate(
+      id: _uuid.v4(),
+      name: option.title,
+      goal: option.goal,
+      blocks: blocks,
+      notes: option.rationale,
+    );
+
+    await saveTemplate(template);
+    return template;
   }
 
   List<WorkoutTemplate> _buildSeedTemplates() {
