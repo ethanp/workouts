@@ -1,10 +1,9 @@
 import 'dart:developer' as developer;
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:workouts/services/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 export 'package:powersync/powersync.dart' show SyncStatus;
 

@@ -19,9 +19,20 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     return null;
   }
 
+  void _invalidateSessionStreamsIfMounted() {
+    if (!ref.mounted) {
+      return;
+    }
+    ref.invalidate(heartRateTimelineProvider);
+    ref.invalidate(sessionHistoryProvider);
+  }
+
   Future<void> start(String templateId) async {
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     final session = await repository.startSession(templateId);
+    if (!ref.mounted) {
+      return;
+    }
     state = AsyncValue.data(session);
     ref.invalidate(heartRateTimelineProvider);
     ref.read(sessionUIVisibilityProvider.notifier).show();
@@ -95,10 +106,12 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.completeSession(current, notes: notes, feeling: feeling);
+    if (!ref.mounted) {
+      return;
+    }
     state = const AsyncValue.data(null);
-    ref.invalidate(heartRateTimelineProvider);
+    _invalidateSessionStreamsIfMounted();
     ref.read(sessionUIVisibilityProvider.notifier).hide();
-    ref.invalidate(sessionHistoryProvider);
     // Notify watch to stop heart rate streaming
     _watchBridge.stopWatchWorkout();
   }
@@ -135,10 +148,12 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardSession(current.id);
     }
+    if (!ref.mounted) {
+      return;
+    }
     state = const AsyncValue.data(null);
-    ref.invalidate(heartRateTimelineProvider);
+    _invalidateSessionStreamsIfMounted();
     ref.read(sessionUIVisibilityProvider.notifier).hide();
-    ref.invalidate(sessionHistoryProvider);
     // Notify watch to stop heart rate streaming
     _watchBridge.stopWatchWorkout();
   }

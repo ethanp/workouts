@@ -30,6 +30,14 @@ class BackgroundNotesController extends _$BackgroundNotesController {
   @override
   FutureOr<void> build() {}
 
+  void _invalidateNotesStreamsIfMounted() {
+    if (!ref.mounted) {
+      return;
+    }
+    ref.invalidate(backgroundNotesStreamProvider);
+    ref.invalidate(activeBackgroundNotesStreamProvider);
+  }
+
   Future<void> addNote({
     required String content,
     required NoteCategory category,
@@ -46,35 +54,30 @@ class BackgroundNotesController extends _$BackgroundNotesController {
       createdAt: DateTime.now(),
     );
     await repo.saveNote(note);
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
+    _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> updateNote(BackgroundNote note) async {
     final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
     await repo.saveNote(note.copyWith(updatedAt: DateTime.now()));
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
+    _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> archiveNote(String noteId) async {
     final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
     await repo.archiveNote(noteId);
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
+    _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> activateNote(String noteId) async {
     final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
     await repo.activateNote(noteId);
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
+    _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> deleteNote(String noteId) async {
     final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
     await repo.deleteNote(noteId);
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
+    _invalidateNotesStreamsIfMounted();
   }
 }

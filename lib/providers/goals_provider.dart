@@ -24,6 +24,13 @@ class GoalsController extends _$GoalsController {
   @override
   FutureOr<void> build() {}
 
+  void _invalidateGoalsStreamIfMounted() {
+    if (!ref.mounted) {
+      return;
+    }
+    ref.invalidate(goalsStreamProvider);
+  }
+
   Future<void> addGoal({
     required String title,
     required GoalCategory category,
@@ -43,42 +50,30 @@ class GoalsController extends _$GoalsController {
       createdAt: DateTime.now(),
     );
     await repo.saveGoal(goal);
-    ref.invalidate(goalsStreamProvider);
+    _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> updateGoal(FitnessGoal goal) async {
     final repo = ref.read(goalsRepositoryPowerSyncProvider);
     await repo.saveGoal(goal);
-    ref.invalidate(goalsStreamProvider);
+    _invalidateGoalsStreamIfMounted();
   }
 
-  Future<void> archiveGoal(String goalId) async {
+  Future<void> setGoalStatus(String goalId, GoalStatus status) async {
     final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.updateGoalStatus(goalId, GoalStatus.paused);
-    ref.invalidate(goalsStreamProvider);
-  }
-
-  Future<void> activateGoal(String goalId) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.updateGoalStatus(goalId, GoalStatus.active);
-    ref.invalidate(goalsStreamProvider);
-  }
-
-  Future<void> markAchieved(String goalId) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.updateGoalStatus(goalId, GoalStatus.achieved);
-    ref.invalidate(goalsStreamProvider);
+    await repo.updateGoalStatus(goalId, status);
+    _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> deleteGoal(String goalId) async {
     final repo = ref.read(goalsRepositoryPowerSyncProvider);
     await repo.deleteGoal(goalId);
-    ref.invalidate(goalsStreamProvider);
+    _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> reorderGoal(String goalId, int newPriority) async {
     final repo = ref.read(goalsRepositoryPowerSyncProvider);
     await repo.updateGoalPriority(goalId, newPriority);
-    ref.invalidate(goalsStreamProvider);
+    _invalidateGoalsStreamIfMounted();
   }
 }

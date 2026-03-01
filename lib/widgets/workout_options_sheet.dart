@@ -272,75 +272,55 @@ class _WorkoutOptionCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header (always visible)
-          GestureDetector(
-            onTap: onTap,
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          option.title,
-                          style: AppTypography.subtitle,
-                        ),
-                      ),
-                      Row(
-                        children: [
-                          workoutGoal(),
-                          const SizedBox(width: AppSpacing.xs),
-                          estimatedTime(),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    option.rationale,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor2,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  toggleExpanded(),
-                ],
-              ),
-            ),
-          ),
-
-          // Expanded content
-          if (isExpanded) ...[
-            Container(height: 1, color: AppColors.borderDepth1),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...option.blocks.map((block) => _BlockSection(block: block)),
-                  const SizedBox(height: AppSpacing.md),
-                  SizedBox(
-                    width: double.infinity,
-                    child: CupertinoButton.filled(
-                      onPressed: onSelect,
-                      child: const Text('Start This Workout'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+        children: [_buildHeader(), if (isExpanded) _buildExpandedContent()],
       ),
     );
   }
 
-  Row toggleExpanded() {
+  Widget _buildHeader() {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildTitleRow(),
+            const SizedBox(height: AppSpacing.sm),
+            _buildRationale(),
+            const SizedBox(height: AppSpacing.sm),
+            _buildExpandToggle(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTitleRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text(option.title, style: AppTypography.subtitle)),
+        Row(
+          children: [
+            _buildGoalBadge(),
+            const SizedBox(width: AppSpacing.xs),
+            _buildTimeBadge(),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRationale() {
+    return Text(
+      option.rationale,
+      style: AppTypography.body.copyWith(color: AppColors.textColor2),
+    );
+  }
+
+  Widget _buildExpandToggle() {
     return Row(
       children: [
         Icon(
@@ -357,7 +337,59 @@ class _WorkoutOptionCard extends StatelessWidget {
     );
   }
 
-  Widget estimatedTime() {
+  Widget _buildExpandedContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(height: 1, color: AppColors.borderDepth1),
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...option.blocks.map((block) => _BlockSection(block: block)),
+              const SizedBox(height: AppSpacing.md),
+              _buildStartButton(),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStartButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: CupertinoButton.filled(
+        onPressed: onSelect,
+        child: const Text('Start This Workout'),
+      ),
+    );
+  }
+
+  Widget _buildGoalBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth3.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Text(
+        option.goal.toUpperCase(),
+        style: AppTypography.caption.copyWith(
+          fontWeight: FontWeight.bold,
+          fontSize: 10,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeBadge() {
     final totalMinutes = option.blocks.fold<int>(
       0,
       (sum, block) => sum + block.estimatedMinutes,
@@ -372,28 +404,6 @@ class _WorkoutOptionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text('${totalMinutes}m', style: AppTypography.caption),
-    );
-  }
-
-  Widget workoutGoal() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
-      child: Text(
-        option.goal.toUpperCase(),
-        style: AppTypography.caption.copyWith(
-          fontWeight: FontWeight.bold,
-          fontSize: 10,
-          letterSpacing: 0.5,
-        ),
-      ),
     );
   }
 }

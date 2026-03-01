@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -9,8 +8,8 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/models/llm_workout_option.dart';
-import 'package:workouts/services/powersync_database_provider.dart';
-import 'package:workouts/services/powersync_mappers.dart' as mappers;
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 
 part 'template_repository_powersync.g.dart';
 

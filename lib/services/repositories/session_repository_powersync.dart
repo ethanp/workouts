@@ -1,13 +1,12 @@
 import 'dart:async';
 
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/services/powersync_database_provider.dart';
-import 'package:workouts/services/powersync_mappers.dart' as mappers;
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
 
 part 'session_repository_powersync.g.dart';

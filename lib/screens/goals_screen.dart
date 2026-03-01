@@ -82,16 +82,13 @@ class GoalsScreen extends ConsumerWidget {
     showCupertinoModalPopup<void>(
       context: context,
       builder: (context) => _GoalFormSheet(
-        onSave: (title, category, description, priority) {
-          ref
-              .read(goalsControllerProvider.notifier)
-              .addGoal(
-                title: title,
-                category: category,
-                description: description,
-                priority: priority,
-              );
-          Navigator.of(context).pop();
+        onSave: (title, category, description, priority) async {
+          await ref.read(goalsControllerProvider.notifier).addGoal(
+            title: title,
+            category: category,
+            description: description,
+            priority: priority,
+          );
         },
       ),
     );
@@ -380,7 +377,7 @@ class _GoalTile extends ConsumerWidget {
                 Navigator.of(context).pop();
                 ref
                     .read(goalsControllerProvider.notifier)
-                    .markAchieved(goal.id);
+                    .setGoalStatus(goal.id, GoalStatus.achieved);
               },
               child: const Text('Mark as Achieved'),
             ),
@@ -388,7 +385,9 @@ class _GoalTile extends ConsumerWidget {
             CupertinoActionSheetAction(
               onPressed: () {
                 Navigator.of(context).pop();
-                ref.read(goalsControllerProvider.notifier).archiveGoal(goal.id);
+                ref
+                    .read(goalsControllerProvider.notifier)
+                    .setGoalStatus(goal.id, GoalStatus.paused);
               },
               child: const Text('Archive'),
             ),
@@ -398,7 +397,7 @@ class _GoalTile extends ConsumerWidget {
                 Navigator.of(context).pop();
                 ref
                     .read(goalsControllerProvider.notifier)
-                    .activateGoal(goal.id);
+                    .setGoalStatus(goal.id, GoalStatus.active);
               },
               child: const Text('Reactivate'),
             ),
@@ -424,19 +423,16 @@ class _GoalTile extends ConsumerWidget {
       context: context,
       builder: (context) => _GoalFormSheet(
         initialGoal: goal,
-        onSave: (title, category, description, priority) {
-          ref
-              .read(goalsControllerProvider.notifier)
-              .updateGoal(
-                goal.copyWith(
-                  title: title,
-                  category: category,
-                  description: description,
-                  priority: priority,
-                  updatedAt: DateTime.now(),
-                ),
-              );
-          Navigator.of(context).pop();
+        onSave: (title, category, description, priority) async {
+          await ref.read(goalsControllerProvider.notifier).updateGoal(
+            goal.copyWith(
+              title: title,
+              category: category,
+              description: description,
+              priority: priority,
+              updatedAt: DateTime.now(),
+            ),
+          );
         },
       ),
     );
@@ -494,7 +490,7 @@ class _GoalFormSheet extends StatefulWidget {
   const _GoalFormSheet({this.initialGoal, required this.onSave});
 
   final FitnessGoal? initialGoal;
-  final void Function(
+  final Future<void> Function(
     String title,
     GoalCategory category,
     String description,
@@ -551,179 +547,214 @@ class _GoalFormSheetState extends State<_GoalFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.borderDepth3,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              drawerHandle(),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                isEditing ? 'Edit Goal' : 'New Goal',
-                style: AppTypography.title,
-                textAlign: TextAlign.center,
-              ),
+              formTitle(isEditing),
               const SizedBox(height: AppSpacing.xl),
-              _FormField(
-                label: 'Title',
-                child: CupertinoTextField(
-                  controller: _titleController,
-                  placeholder: 'e.g., Improve posture',
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundDepth3,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor1,
-                  ),
-                  placeholderStyle: AppTypography.body.copyWith(
-                    color: AppColors.textColor4,
-                  ),
-                ),
-              ),
+              titleField(),
               const SizedBox(height: AppSpacing.lg),
-              _FormField(
-                label: 'Category',
-                child: SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: GoalCategory.values.map((cat) {
-                      final isSelected = cat == _selectedCategory;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: AppSpacing.sm),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedCategory = cat),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isSelected
-                                  ? AppColors.accentPrimary
-                                  : AppColors.backgroundDepth3,
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: isSelected
-                                    ? AppColors.accentPrimary
-                                    : AppColors.borderDepth2,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              cat.name,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isSelected
-                                    ? CupertinoColors.white
-                                    : AppColors.textColor2,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ),
+              categoryField(),
               const SizedBox(height: AppSpacing.lg),
-              _FormField(
-                label: 'Priority (1 = highest)',
-                child: Row(
-                  children: List.generate(5, (index) {
-                    final priority = index + 1;
-                    final isSelected = priority == _priority;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: AppSpacing.sm),
-                      child: GestureDetector(
-                        onTap: () => setState(() => _priority = priority),
-                        child: Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? AppColors.accentPrimary
-                                : AppColors.backgroundDepth3,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            border: Border.all(
-                              color: isSelected
-                                  ? AppColors.accentPrimary
-                                  : AppColors.borderDepth2,
-                            ),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            '$priority',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: isSelected
-                                  ? CupertinoColors.white
-                                  : AppColors.textColor2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
+              priorityField(),
               const SizedBox(height: AppSpacing.lg),
-              _FormField(
-                label: 'Description (optional)',
-                child: CupertinoTextField(
-                  controller: _descriptionController,
-                  placeholder: 'Why this goal matters to you...',
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  maxLines: 3,
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundDepth3,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor1,
-                  ),
-                  placeholderStyle: AppTypography.body.copyWith(
-                    color: AppColors.textColor4,
-                  ),
-                ),
-              ),
+              descriptionField(),
               const SizedBox(height: AppSpacing.xl),
-              CupertinoButton.filled(
-                onPressed: _titleController.text.trim().isEmpty
-                    ? null
-                    : () => widget.onSave(
-                        _titleController.text.trim(),
-                        _selectedCategory,
-                        _descriptionController.text.trim(),
-                        _priority,
-                      ),
+              saveButton(context, isEditing),
+              const SizedBox(height: AppSpacing.md),
+              cancelButton(context),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget drawerHandle() {
+    return Center(
+      child: Container(
+        width: 36,
+        height: 4,
+        decoration: BoxDecoration(
+          color: AppColors.borderDepth3,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
+    );
+  }
+
+  Widget formTitle(bool isEditing) {
+    return Text(
+      isEditing ? 'Edit Goal' : 'New Goal',
+      style: AppTypography.title,
+      textAlign: TextAlign.center,
+    );
+  }
+
+  Widget titleField() {
+    return _FormField(
+      label: 'Title',
+      child: CupertinoTextField(
+        controller: _titleController,
+        placeholder: 'e.g., Improve posture',
+        onChanged: (_) => setState(() {}),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        style: AppTypography.body.copyWith(color: AppColors.textColor1),
+        placeholderStyle: AppTypography.body.copyWith(
+          color: AppColors.textColor4,
+        ),
+      ),
+    );
+  }
+
+  Widget cancelButton(BuildContext context) {
+    return CupertinoButton(
+      onPressed: () => Navigator.of(context).pop(),
+      child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+    );
+  }
+
+  Widget saveButton(BuildContext context, bool isEditing) {
+    return CupertinoButton.filled(
+      onPressed: _titleController.text.trim().isEmpty
+          ? null
+          : () async {
+              final sheetNavigator = Navigator.of(context);
+              try {
+                await widget.onSave(
+                  _titleController.text.trim(),
+                  _selectedCategory,
+                  _descriptionController.text.trim(),
+                  _priority,
+                );
+              } finally {
+                if (sheetNavigator.canPop()) {
+                  sheetNavigator.pop();
+                }
+              }
+            },
+      child: Text(
+        isEditing ? 'Save Changes' : 'Add Goal',
+        style: const TextStyle(
+          color: CupertinoColors.white,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget descriptionField() {
+    return _FormField(
+      label: 'Description (optional)',
+      child: CupertinoTextField(
+        controller: _descriptionController,
+        placeholder: 'Why this goal matters to you...',
+        padding: const EdgeInsets.all(AppSpacing.md),
+        maxLines: 3,
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        style: AppTypography.body.copyWith(color: AppColors.textColor1),
+        placeholderStyle: AppTypography.body.copyWith(
+          color: AppColors.textColor4,
+        ),
+      ),
+    );
+  }
+
+  Widget priorityField() {
+    return _FormField(
+      label: 'Priority (1 = highest)',
+      child: Row(
+        children: List.generate(5, (index) {
+          final priority = index + 1;
+          final isSelected = priority == _priority;
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: GestureDetector(
+              onTap: () => setState(() => _priority = priority),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : AppColors.backgroundDepth3,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.accentPrimary
+                        : AppColors.borderDepth2,
+                  ),
+                ),
+                alignment: Alignment.center,
                 child: Text(
-                  isEditing ? 'Save Changes' : 'Add Goal',
-                  style: const TextStyle(
-                    color: CupertinoColors.white,
+                  '$priority',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isSelected
+                        ? CupertinoColors.white
+                        : AppColors.textColor2,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.md),
-              CupertinoButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: AppColors.textColor3),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget categoryField() {
+    return _FormField(
+      label: 'Category',
+      child: SizedBox(
+        height: 36,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: GoalCategory.values.map((cat) {
+            final isSelected = cat == _selectedCategory;
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: GestureDetector(
+                onTap: () => setState(() => _selectedCategory = cat),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.accentPrimary
+                        : AppColors.backgroundDepth3,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.accentPrimary
+                          : AppColors.borderDepth2,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    cat.name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isSelected
+                          ? CupertinoColors.white
+                          : AppColors.textColor2,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
+            );
+          }).toList(),
         ),
       ),
     );
