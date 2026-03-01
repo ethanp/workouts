@@ -71,6 +71,16 @@ class RunsRepositoryPowerSync {
     return runRows.map(_runFromRow).toList();
   }
 
+  Future<void> deleteRun(String runId) async {
+    await _db.writeTransaction((tx) async {
+      await tx.execute('DELETE FROM run_route_points WHERE run_id = ?', [runId]);
+      await tx.execute('DELETE FROM run_heart_rate_samples WHERE run_id = ?', [runId]);
+      await tx.execute('DELETE FROM run_computed_metrics WHERE id = ?', [runId]);
+      await tx.execute('DELETE FROM runs WHERE id = ?', [runId]);
+    });
+    _log.info('Deleted run $runId (queued for upload).');
+  }
+
   Future<void> upsertImportedRuns(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,

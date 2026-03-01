@@ -1,17 +1,20 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
-
 part 'session_repository_powersync.g.dart';
 
 const _uuid = Uuid();
+
+final _log = Logger('SessionRepository');
 
 class SessionRepositoryPowerSync {
   SessionRepositoryPowerSync(this._db, this._templateRepository);
@@ -299,6 +302,50 @@ class SessionRepositoryPowerSync {
         });
   }
 
+  Stream<List<SessionCalendarDay>> watchSessionCalendarDays() => _db
+      .watch(
+        '''
+        SELECT
+          DATE(s.started_at, 'localtime') AS day,
+          SUM(s.duration_seconds)         AS total_duration_seconds,
+          COUNT(s.id)                     AS session_count
+        FROM sessions s
+        WHERE s.completed_at IS NOT NULL
+        GROUP BY day
+        ORDER BY day ASC
+        ''',
+        triggerOnTables: const {'sessions'},
+      )
+      .map((rows) => rows.map(_sessionCalendarDayFromRow).toList());
+
+  Future<List<Session>> getSessionsForDate(DateTime localDate) async {
+    final dayString =
+        '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
+    final sessionRows = await _db.getAll(
+      "SELECT id FROM sessions WHERE completed_at IS NOT NULL AND DATE(started_at, 'localtime') = ? ORDER BY started_at ASC",
+      [dayString],
+    );
+    final sessions = <Session>[];
+    for (final row in sessionRows) {
+      sessions.add(await fetchSessionById(row['id'] as String));
+    }
+    return sessions;
+  }
+
+  SessionCalendarDay _sessionCalendarDayFromRow(Map<String, dynamic> row) {
+    final dayString = row['day'] as String;
+    final parts = dayString.split('-');
+    return SessionCalendarDay(
+      date: DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      ),
+      totalDurationSeconds: (row['total_duration_seconds'] as int?) ?? 0,
+      sessionCount: (row['session_count'] as int?) ?? 0,
+    );
+  }
+
   /// Complete a session.
   Future<void> completeSession(
     Session session, {
@@ -347,8 +394,8 @@ class SessionRepositoryPowerSync {
 
   /// Discard (delete) a session.
   Future<void> discardSession(String sessionId) async {
-    // Cascade delete will handle blocks, exercises, and logs
     await _db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);
+    _log.info('Deleted session $sessionId (queued for upload).');
   }
 
   /// Discard all in-progress sessions.

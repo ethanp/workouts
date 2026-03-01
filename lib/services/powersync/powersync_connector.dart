@@ -61,7 +61,20 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
   @override
   Future<void> uploadData(PowerSyncDatabase database) async {
     final batch = await database.getCrudBatch(limit: 1000);
-    if (batch == null) return;
+    if (batch == null) {
+      final remainingRows = await database.execute(
+        'SELECT COUNT(*) AS cnt FROM ps_crud',
+      );
+      final totalRemaining = remainingRows.first['cnt'] as int? ?? 0;
+      if (totalRemaining == 0) {
+        _log.info('Upload: no batch, queue empty.');
+      } else {
+        _log.info(
+          'Upload: no batch available, but $totalRemaining ops still in queue.',
+        );
+      }
+      return;
+    }
 
     final totalInBatch = batch.crud.length;
     final remainingRows = await database.execute(
