@@ -528,8 +528,7 @@ class _BlockViewState extends ConsumerState<_BlockView> {
     final exercise = await context.push<WorkoutExercise>(
       (_) => ExercisePickerScreen(excludeIds: existingIds),
     );
-    if (!mounted) return;
-    if (exercise != null) {
+    if (mounted && exercise != null) {
       ref
           .read(activeSessionProvider.notifier)
           .addExercise(widget.block, exercise);
@@ -1513,17 +1512,18 @@ class _AddNoteSheetState extends ConsumerState<_AddNoteSheet> {
         Navigator.of(context).pop();
       }
     } catch (error) {
-      if (!mounted) return;
-      final firstLine = error.toString().split('\n').first;
-      final cleaned = firstLine.startsWith('Exception: ')
-          ? firstLine.substring('Exception: '.length)
-          : firstLine.startsWith('Error: ')
-          ? firstLine.substring('Error: '.length)
-          : firstLine;
-      setState(() {
-        _isSaving = false;
-        _errorText = cleaned;
-      });
+      if (mounted) {
+        final firstLine = error.toString().split('\n').first;
+        final cleaned = firstLine.startsWith('Exception: ')
+            ? firstLine.substring('Exception: '.length)
+            : firstLine.startsWith('Error: ')
+            ? firstLine.substring('Error: '.length)
+            : firstLine;
+        setState(() {
+          _isSaving = false;
+          _errorText = cleaned;
+        });
+      }
     }
   }
 

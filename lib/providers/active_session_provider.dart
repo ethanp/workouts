@@ -20,24 +20,22 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   }
 
   void _invalidateSessionStreamsIfMounted() {
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      ref.invalidate(heartRateTimelineProvider);
+      ref.invalidate(sessionHistoryProvider);
     }
-    ref.invalidate(heartRateTimelineProvider);
-    ref.invalidate(sessionHistoryProvider);
   }
 
   Future<void> start(String templateId) async {
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     final session = await repository.startSession(templateId);
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      state = AsyncValue.data(session);
+      ref.invalidate(heartRateTimelineProvider);
+      ref.read(sessionUIVisibilityProvider.notifier).show();
+      // Notify watch to start heart rate streaming
+      _watchBridge.startWatchWorkout(sessionId: session.id);
     }
-    state = AsyncValue.data(session);
-    ref.invalidate(heartRateTimelineProvider);
-    ref.read(sessionUIVisibilityProvider.notifier).show();
-    // Notify watch to start heart rate streaming
-    _watchBridge.startWatchWorkout(sessionId: session.id);
   }
 
   Future<void> resumeExisting(Session session) async {
@@ -106,14 +104,13 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.completeSession(current, notes: notes, feeling: feeling);
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      state = const AsyncValue.data(null);
+      _invalidateSessionStreamsIfMounted();
+      ref.read(sessionUIVisibilityProvider.notifier).hide();
+      // Notify watch to stop heart rate streaming
+      _watchBridge.stopWatchWorkout();
     }
-    state = const AsyncValue.data(null);
-    _invalidateSessionStreamsIfMounted();
-    ref.read(sessionUIVisibilityProvider.notifier).hide();
-    // Notify watch to stop heart rate streaming
-    _watchBridge.stopWatchWorkout();
   }
 
   Future<void> pause() async {
@@ -148,14 +145,13 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardSession(current.id);
     }
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      state = const AsyncValue.data(null);
+      _invalidateSessionStreamsIfMounted();
+      ref.read(sessionUIVisibilityProvider.notifier).hide();
+      // Notify watch to stop heart rate streaming
+      _watchBridge.stopWatchWorkout();
     }
-    state = const AsyncValue.data(null);
-    _invalidateSessionStreamsIfMounted();
-    ref.read(sessionUIVisibilityProvider.notifier).hide();
-    // Notify watch to stop heart rate streaming
-    _watchBridge.stopWatchWorkout();
   }
 
   Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {

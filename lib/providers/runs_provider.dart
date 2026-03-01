@@ -65,39 +65,35 @@ class RunImportController extends _$RunImportController {
   }) async {
     try {
       final healthKitBridge = ref.read(healthKitBridgeProvider);
+      final runsRepository = ref.read(runsRepositoryPowerSyncProvider);
       final importedRuns = await healthKitBridge.fetchRecentRunningWorkouts(
         maxWorkouts: maxWorkouts,
         includeRoute: true,
         maxRoutePoints: maxRoutePoints,
         includeHeartRateSeries: true,
       );
-
-      if (!ref.mounted) {
-        return;
+      if (ref.mounted) {
+        state = AsyncValue.data(
+          RunImportProgress(
+            totalRuns: importedRuns.length,
+            processedRuns: 0,
+            inProgress: true,
+          ),
+        );
       }
 
-      state = AsyncValue.data(
-        RunImportProgress(
-          totalRuns: importedRuns.length,
-          processedRuns: 0,
-          inProgress: true,
-        ),
-      );
-
-      final runsRepository = ref.read(runsRepositoryPowerSyncProvider);
       await runsRepository.upsertImportedRuns(
         importedRuns,
         onProgress: (processedRuns, totalRuns) {
-          if (!ref.mounted) {
-            return;
+          if (ref.mounted) {
+            state = AsyncValue.data(
+              RunImportProgress(
+                totalRuns: totalRuns,
+                processedRuns: processedRuns,
+                inProgress: true,
+              ),
+            );
           }
-          state = AsyncValue.data(
-            RunImportProgress(
-              totalRuns: totalRuns,
-              processedRuns: processedRuns,
-              inProgress: true,
-            ),
-          );
         },
       );
 
@@ -113,10 +109,9 @@ class RunImportController extends _$RunImportController {
         );
       }
     } catch (error, stackTrace) {
-      if (!ref.mounted) {
-        return;
+      if (ref.mounted) {
+        state = AsyncValue.error(error, stackTrace);
       }
-      state = AsyncValue.error(error, stackTrace);
     }
   }
 }

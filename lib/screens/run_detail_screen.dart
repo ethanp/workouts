@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,7 @@ import 'package:workouts/models/run_route_point.dart';
 import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/heart_rate_timeline_card.dart';
+import 'package:workouts/widgets/logging_tile_provider.dart';
 
 class RunDetailScreen extends ConsumerWidget {
   const RunDetailScreen({super.key, required this.run});
@@ -51,7 +53,10 @@ class RunDetailScreen extends ConsumerWidget {
                       ),
                     )
                     .toList();
-                return HeartRateTimelineCard(samples: chartSamples);
+                return HeartRateTimelineCard(
+                  samples: chartSamples,
+                  routePoints: routePointsAsync.asData?.value ?? [],
+                );
               },
               loading: () =>
                   const Center(child: CupertinoActivityIndicator()),
@@ -167,8 +172,12 @@ class _RouteCard extends StatelessWidget {
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.workouts.app',
+                urlTemplate:
+                    '${dotenv.env['TILE_PROXY_URL'] ?? 'https://tile.openstreetmap.org'}/tiles/{z}/{x}/{y}.png',
+                tileProvider: LoggingCacheTileProvider(
+                  dotenv.env['TILE_PROXY_URL'] ??
+                      'https://tile.openstreetmap.org',
+                ),
               ),
               PolylineLayer(
                 polylines: [

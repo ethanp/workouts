@@ -28,16 +28,33 @@ Future<void> main() async {
   runApp(const ProviderScope(child: WorkoutsApp()));
 }
 
+String _pad2(int n) => n.toString().padLeft(2, '0');
+
 void _setupLogging() {
   Logger.root.level = kDebugMode ? Level.ALL : Level.WARNING;
   Logger.root.onRecord.listen((record) {
-    final emoji = switch (record.level) {
-      Level.SEVERE => '🔴',
-      Level.WARNING => '🟡',
-      Level.INFO => '🔵',
-      _ => '⚪',
+    final emojiByLevel = <Level, String>{
+      Level.ALL: '⚪',
+      Level.FINEST: '🔵',
+      Level.FINER: '🔵',
+      Level.FINE: '🔵',
+      Level.CONFIG: '🔵',
+      Level.INFO: '🟢',
+      Level.WARNING: '🟡',
+      Level.SEVERE: '🔴',
+      Level.SHOUT: '🟣',
+      Level.OFF: '⚫',
     };
-    debugPrint('$emoji [${record.loggerName}] ${record.message}');
+    final emoji = emojiByLevel[record.level];
+    if (emoji == null) {
+      throw StateError('Unhandled log level: ${record.level.name}');
+    }
+    final t = record.time;
+    final ts =
+        '${t.year % 100}${_pad2(t.month)}${_pad2(t.day)}'
+        '-${_pad2(t.hour)}:${_pad2(t.minute)}:${_pad2(t.second)}'
+        ':${(t.millisecond ~/ 100)}';
+    debugPrint('$emoji $ts [${record.loggerName}] ${record.message}');
     if (record.error != null) {
       debugPrint('   Error: ${record.error}');
     }

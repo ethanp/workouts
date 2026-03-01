@@ -83,18 +83,6 @@ import UIKit
           result(payload)
         }
       }
-    case "validateRunningWorkoutFields":
-      let arguments = call.arguments as? [String: Any]
-      let maxWorkouts = arguments?["maxWorkouts"] as? Int ?? 20
-      healthKitBridge.validateRunningWorkoutFields(maxWorkouts: maxWorkouts) { payload, error in
-        DispatchQueue.main.async {
-          if let error {
-            result(FlutterError(code: "validate_runs_failed", message: error.localizedDescription, details: nil))
-            return
-          }
-          result(payload)
-        }
-      }
     case "deleteWorkouts":
       guard let arguments = call.arguments as? [String: Any],
             let uuids = arguments["uuids"] as? [String] else {

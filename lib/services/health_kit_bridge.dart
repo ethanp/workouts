@@ -100,27 +100,6 @@ class HealthKitBridge {
     }
   }
 
-  Future<Map<String, dynamic>> validateRunningWorkoutFields({
-    int maxWorkouts = 20,
-  }) async {
-    try {
-      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
-        'validateRunningWorkoutFields',
-        {'maxWorkouts': maxWorkouts},
-      );
-      if (payload == null) {
-        return const {};
-      }
-      return Map<String, dynamic>.from(
-        payload.map((key, value) => MapEntry('$key', value)),
-      );
-    } on MissingPluginException {
-      return const {};
-    } on PlatformException {
-      return const {};
-    }
-  }
-
   HealthPermissionStatus _mapStatus(String? status) {
     return switch (status) {
       'authorized' => HealthPermissionStatus.authorized,

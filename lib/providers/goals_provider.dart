@@ -25,10 +25,9 @@ class GoalsController extends _$GoalsController {
   FutureOr<void> build() {}
 
   void _invalidateGoalsStreamIfMounted() {
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      ref.invalidate(goalsStreamProvider);
     }
-    ref.invalidate(goalsStreamProvider);
   }
 
   Future<void> addGoal({

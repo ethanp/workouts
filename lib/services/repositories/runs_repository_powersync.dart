@@ -9,6 +9,7 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 part 'runs_repository_powersync.g.dart';
 
 const _uuid = Uuid();
+final _importedRunIdNamespace = Namespace.url.value;
 
 class RunsRepositoryPowerSync {
   RunsRepositoryPowerSync(this._powerSyncDatabase);
@@ -72,7 +73,9 @@ class RunsRepositoryPowerSync {
       'SELECT id, created_at FROM runs WHERE external_workout_id = ? LIMIT 1',
       [externalWorkoutId],
     );
-    final runId = (existingRunRow?['id'] as String?) ?? _uuid.v4();
+    final runId =
+        (existingRunRow?['id'] as String?) ??
+        _uuid.v5(_importedRunIdNamespace, 'apple-health-run:$externalWorkoutId');
     final nowIsoString = DateTime.now().toIso8601String();
 
     await _powerSyncDatabase.execute(

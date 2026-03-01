@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/fitness_run.dart';
@@ -17,20 +18,7 @@ class RunsScreen extends ConsumerWidget {
     final isImporting = importProgress.inProgress;
 
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        leading: const SyncStatusIcon(),
-        middle: const Text('Runs'),
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: isImporting
-              ? null
-              : () =>
-                    ref.read(runImportControllerProvider.notifier).importRecentRuns(),
-          child: isImporting
-              ? const CupertinoActivityIndicator()
-              : const Icon(CupertinoIcons.arrow_down_circle),
-        ),
-      ),
+      navigationBar: navigationBar(isImporting, ref),
       child: SafeArea(
         child: Column(
           children: [
@@ -38,20 +26,9 @@ class RunsScreen extends ConsumerWidget {
               _ImportProgressBanner(importProgress: importProgress),
             Expanded(
               child: runsAsync.when(
-                data: (runs) => runs.isEmpty
-                    ? _EmptyRunsState(
-                        onImport: () => ref
-                            .read(runImportControllerProvider.notifier)
-                            .importRecentRuns(),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        itemCount: runs.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.sm),
-                        itemBuilder: (context, index) => _RunTile(run: runs[index]),
-                      ),
-                loading: () => const Center(child: CupertinoActivityIndicator()),
+                data: (runs) => runsListView(runs, ref),
+                loading: () =>
+                    const Center(child: CupertinoActivityIndicator()),
                 error: (error, _) => Center(
                   child: Text(
                     'Unable to load runs: $error',
@@ -65,6 +42,39 @@ class RunsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  CupertinoNavigationBar navigationBar(bool isImporting, WidgetRef ref) {
+    return CupertinoNavigationBar(
+      leading: const SyncStatusIcon(),
+      middle: const Text('Runs'),
+      trailing: CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: isImporting
+            ? null
+            : () => ref
+                  .read(runImportControllerProvider.notifier)
+                  .importRecentRuns(),
+        child: isImporting
+            ? const CupertinoActivityIndicator()
+            : const Icon(CupertinoIcons.arrow_down_circle),
+      ),
+    );
+  }
+
+  StatelessWidget runsListView(List<FitnessRun> runs, WidgetRef ref) {
+    return runs.isEmpty
+        ? _EmptyRunsState(
+            onImport: () => ref
+                .read(runImportControllerProvider.notifier)
+                .importRecentRuns(),
+          )
+        : ListView.separated(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            itemCount: runs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (context, index) => _RunTile(run: runs[index]),
+          );
+  }
 }
 
 class _ImportProgressBanner extends StatelessWidget {
@@ -74,7 +84,6 @@ class _ImportProgressBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progressFraction = importProgress.progressFraction.clamp(0.0, 1.0);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(
@@ -85,24 +94,32 @@ class _ImportProgressBanner extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Importing runs ${importProgress.processedRuns}/${importProgress.totalRuns}',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-          ),
+          progressLabel(),
           const SizedBox(height: AppSpacing.xs),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            child: Container(
-              height: 6,
-              color: AppColors.backgroundDepth3,
-              child: FractionallySizedBox(
-                alignment: Alignment.centerLeft,
-                widthFactor: progressFraction,
-                child: Container(color: AppColors.accentPrimary),
-              ),
-            ),
-          ),
+          progressBar(),
         ],
+      ),
+    );
+  }
+
+  Widget progressLabel() {
+    return Text(
+      'Importing runs ${importProgress.processedRuns}/${importProgress.totalRuns}',
+      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+    );
+  }
+
+  Widget progressBar() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: Container(
+        height: 6,
+        color: AppColors.backgroundDepth3,
+        child: FractionallySizedBox(
+          alignment: Alignment.centerLeft,
+          widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
+          child: Container(color: AppColors.accentPrimary),
+        ),
       ),
     );
   }
@@ -135,7 +152,10 @@ class _EmptyRunsState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
-            CupertinoButton.filled(onPressed: onImport, child: const Text('Import Runs')),
+            CupertinoButton.filled(
+              onPressed: onImport,
+              child: const Text('Import Runs'),
+            ),
           ],
         ),
       ),
@@ -157,11 +177,7 @@ class _RunTile extends StatelessWidget {
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () {
-        Navigator.of(context).push(
-          CupertinoPageRoute<void>(builder: (_) => RunDetailScreen(run: run)),
-        );
-      },
+      onPressed: () => context.push((_) => RunDetailScreen(run: run)),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
@@ -175,7 +191,10 @@ class _RunTile extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_formatRunDate(run.startedAt), style: AppTypography.subtitle),
+                Text(
+                  _formatRunDate(run.startedAt),
+                  style: AppTypography.subtitle,
+                ),
                 if (run.routeAvailable)
                   Text(
                     'Route',

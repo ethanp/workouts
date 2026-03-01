@@ -31,11 +31,10 @@ class BackgroundNotesController extends _$BackgroundNotesController {
   FutureOr<void> build() {}
 
   void _invalidateNotesStreamsIfMounted() {
-    if (!ref.mounted) {
-      return;
+    if (ref.mounted) {
+      ref.invalidate(backgroundNotesStreamProvider);
+      ref.invalidate(activeBackgroundNotesStreamProvider);
     }
-    ref.invalidate(backgroundNotesStreamProvider);
-    ref.invalidate(activeBackgroundNotesStreamProvider);
   }
 
   Future<void> addNote({
