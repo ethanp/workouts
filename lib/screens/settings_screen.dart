@@ -7,6 +7,7 @@ import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/influences_provider.dart';
+import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/screens/influences_screen.dart';
@@ -450,6 +451,7 @@ class _HealthRunImportValidationTileState
 
   @override
   Widget build(BuildContext context) {
+    final runImportAsync = ref.watch(runImportControllerProvider);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -515,6 +517,35 @@ class _HealthRunImportValidationTileState
               ),
             ],
           ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoButton.filled(
+              onPressed: runImportAsync.isLoading
+                  ? null
+                  : () => ref
+                        .read(runImportControllerProvider.notifier)
+                        .importRecentRuns(),
+              child: runImportAsync.isLoading
+                  ? const CupertinoActivityIndicator(
+                      color: CupertinoColors.white,
+                    )
+                  : const Text(
+                      'Import Runs To Local DB',
+                      style: TextStyle(
+                        color: CupertinoColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+          if (runImportAsync.value != null && runImportAsync.value! > 0) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Imported ${runImportAsync.value} runs.',
+              style: AppTypography.caption.copyWith(color: AppColors.success),
+            ),
+          ],
           if (_errorMessage != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(

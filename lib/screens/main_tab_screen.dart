@@ -4,6 +4,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/screens/goals_screen.dart';
 import 'package:workouts/screens/history_screen.dart';
+import 'package:workouts/screens/runs_screen.dart';
 import 'package:workouts/screens/session_resume_screen.dart';
 import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/screens/today_screen.dart';
@@ -49,6 +50,10 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.chart_bar_square),
+            label: 'Runs',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.clock),
             label: 'History',
           ),
           BottomNavigationBarItem(
@@ -65,7 +70,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
             final screen = switch (selectedIndex) {
               0 => const TodayScreen(),
               1 => const GoalsScreen(),
-              2 => const HistoryScreen(),
+              2 => const RunsScreen(),
+              3 => const HistoryScreen(),
               _ => const SettingsScreen(),
             };
 
