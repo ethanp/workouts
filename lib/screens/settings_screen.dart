@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
@@ -8,7 +10,10 @@ import 'package:workouts/providers/influences_provider.dart';
 import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/screens/influences_screen.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_init.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -20,8 +25,8 @@ class SettingsScreen extends ConsumerWidget {
     final exportAsync = ref.watch(healthExportControllerProvider);
     final versionAsync = ref.watch(templateVersionControllerProvider);
     final syncStatus = ref.watch(powerSyncStatusProvider);
-
     final influencesAsync = ref.watch(activeInfluencesProvider);
+    final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
@@ -29,6 +34,8 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
+            _UnitSystemTile(unitSystem: unitSystem, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
             _TrainingInfluencesTile(influencesAsync: influencesAsync),
             const SizedBox(height: AppSpacing.lg),
             _SyncStatusTile(syncStatus: syncStatus),
@@ -40,8 +47,77 @@ class SettingsScreen extends ConsumerWidget {
             const _HealthRunImportTile(),
             const SizedBox(height: AppSpacing.lg),
             _HealthDataActions(exportAsync: exportAsync, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
+            const _SyncDebugTile(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _UnitSystemTile extends StatelessWidget {
+  const _UnitSystemTile({required this.unitSystem, required this.ref});
+
+  final UnitSystem unitSystem;
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDepth3,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: const Icon(
+              CupertinoIcons.arrow_2_squarepath,
+              color: AppColors.textColor2,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Units', style: AppTypography.subtitle),
+                Text(
+                  unitSystem == UnitSystem.imperial ? 'Imperial (mi, mph)' : 'Metric (km, km/h)',
+                  style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+                ),
+              ],
+            ),
+          ),
+          CupertinoSlidingSegmentedControl<UnitSystem>(
+            groupValue: unitSystem,
+            children: const {
+              UnitSystem.imperial: Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: Text('mi'),
+              ),
+              UnitSystem.metric: Padding(
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                child: Text('km'),
+              ),
+            },
+            onValueChanged: (value) {
+              if (value != null) {
+                ref.read(unitSystemProvider.notifier).setUnitSystem(value);
+              }
+            },
+          ),
+        ],
       ),
     );
   }
@@ -518,4 +594,270 @@ class _HealthRunImportTile extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _SyncDebugSnapshot {
+  const _SyncDebugSnapshot({
+    required this.localRuns,
+    required this.serverRuns,
+    required this.crudQueue,
+    required this.fetchedAt,
+  });
+
+  final int localRuns;
+  final int serverRuns;
+  final Map<String, int> crudQueue;
+  final DateTime fetchedAt;
+
+  int get totalQueued => crudQueue.values.fold(0, (a, b) => a + b);
+}
+
+class _SyncDebugTile extends ConsumerStatefulWidget {
+  const _SyncDebugTile();
+
+  @override
+  ConsumerState<_SyncDebugTile> createState() => _SyncDebugTileState();
+}
+
+class _SyncDebugTileState extends ConsumerState<_SyncDebugTile> {
+  bool _expanded = false;
+  AsyncValue<_SyncDebugSnapshot>? _snapshot;
+  bool _reconnecting = false;
+
+  void _toggle() {
+    setState(() => _expanded = !_expanded);
+    if (_expanded && _snapshot == null) _refresh();
+  }
+
+  Future<void> _refresh() async {
+    setState(() => _snapshot = const AsyncValue.loading());
+    try {
+      final snapshot = await _fetchSnapshot();
+      if (mounted) setState(() => _snapshot = AsyncValue.data(snapshot));
+    } catch (e, st) {
+      if (mounted) setState(() => _snapshot = AsyncValue.error(e, st));
+    }
+  }
+
+  Future<_SyncDebugSnapshot> _fetchSnapshot() async {
+    final db = await ref.read(powerSyncDatabaseProvider.future);
+
+    final localRunRows = await db.execute('SELECT COUNT(*) AS cnt FROM runs');
+    final localRuns = localRunRows.first['cnt'] as int? ?? 0;
+
+    final crudRows = await db.execute(
+      "SELECT json_extract(data, '\$.type') AS tbl, COUNT(*) AS cnt "
+      'FROM ps_crud GROUP BY tbl',
+    );
+    final crudQueue = {
+      for (final row in crudRows)
+        (row['tbl'] as String? ?? 'unknown'): row['cnt'] as int? ?? 0,
+    };
+
+    int serverRuns = -1;
+    try {
+      final postgrestUrl = dotenv.env['POSTGREST_URL'] ?? '';
+      if (postgrestUrl.isNotEmpty) {
+        final response = await http
+            .get(
+              Uri.parse('$postgrestUrl/runs?select=id&limit=1'),
+              headers: {'Prefer': 'count=exact'},
+            )
+            .timeout(const Duration(seconds: 5));
+        final contentRange = response.headers['content-range'];
+        if (contentRange != null) {
+          final parts = contentRange.split('/');
+          if (parts.length >= 2) {
+            serverRuns = int.tryParse(parts.last) ?? -1;
+          }
+        }
+      }
+    } catch (_) {}
+
+    return _SyncDebugSnapshot(
+      localRuns: localRuns,
+      serverRuns: serverRuns,
+      crudQueue: crudQueue,
+      fetchedAt: DateTime.now(),
+    );
+  }
+
+  Future<void> _forceReconnect() async {
+    setState(() => _reconnecting = true);
+    try {
+      final db = await ref.read(powerSyncDatabaseProvider.future);
+      await reconnectPowerSync(db);
+    } finally {
+      if (mounted) setState(() => _reconnecting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GestureDetector(
+            onTap: _toggle,
+            behavior: HitTestBehavior.opaque,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: AppColors.backgroundDepth3,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: const Icon(
+                      CupertinoIcons.ant,
+                      color: AppColors.textColor2,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text('Sync Debug', style: AppTypography.subtitle),
+                  ),
+                  Icon(
+                    _expanded
+                        ? CupertinoIcons.chevron_up
+                        : CupertinoIcons.chevron_down,
+                    color: AppColors.textColor3,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_expanded) ...[
+            Container(height: 1, color: AppColors.borderDepth1),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: _buildBody(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_snapshot == null || _snapshot!.isLoading) {
+      return const Center(child: CupertinoActivityIndicator());
+    }
+
+    if (_snapshot!.hasError) {
+      return Text(
+        'Error: ${_snapshot!.error}',
+        style: AppTypography.caption.copyWith(color: AppColors.error),
+      );
+    }
+
+    final snap = _snapshot!.value!;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _DebugRow('Local runs', '${snap.localRuns}'),
+        _DebugRow(
+          'Server runs',
+          snap.serverRuns >= 0 ? '${snap.serverRuns}' : 'Unavailable',
+        ),
+        _DebugRow('CRUD queue', '${snap.totalQueued} total'),
+        if (snap.crudQueue.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          ...snap.crudQueue.entries.map(
+            (e) => Padding(
+              padding: const EdgeInsets.only(left: AppSpacing.md),
+              child: _DebugRow(e.key, '${e.value}'),
+            ),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'As of ${_formatDebugTime(snap.fetchedAt)}',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                color: AppColors.backgroundDepth3,
+                onPressed: _snapshot!.isLoading ? null : _refresh,
+                child: Text(
+                  'Refresh',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textColor1,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                color: AppColors.backgroundDepth3,
+                onPressed: _reconnecting ? null : _forceReconnect,
+                child: _reconnecting
+                    ? const CupertinoActivityIndicator()
+                    : Text(
+                        'Force Re-sync',
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.accentPrimary,
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DebugRow extends StatelessWidget {
+  const _DebugRow(this.label, this.value);
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: AppTypography.caption.copyWith(color: AppColors.textColor1),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String _formatDebugTime(DateTime dt) {
+  final h = dt.hour.toString().padLeft(2, '0');
+  final m = dt.minute.toString().padLeft(2, '0');
+  final s = dt.second.toString().padLeft(2, '0');
+  return '$h:$m:$s';
 }

@@ -9,7 +9,7 @@ import 'package:workouts/providers/session_notes_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
-import 'package:workouts/widgets/heart_rate_timeline_card.dart';
+import 'package:workouts/widgets/run_metrics_card.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({super.key, required this.session});
@@ -477,7 +477,7 @@ class _SessionHeartRateCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          HeartRateMiniChart(samples: samples),
+          MetricsMiniChart(samples: samples),
         ],
       ),
     );

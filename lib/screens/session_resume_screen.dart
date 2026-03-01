@@ -14,7 +14,7 @@ import 'package:workouts/models/session_note.dart';
 import 'package:workouts/providers/session_notes_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
-import 'package:workouts/widgets/heart_rate_timeline_card.dart';
+import 'package:workouts/widgets/run_metrics_card.dart';
 
 class SessionResumeScreen extends ConsumerWidget {
   const SessionResumeScreen({super.key, required this.sessionId});
@@ -132,7 +132,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
                   const SizedBox(height: AppSpacing.sm),
                   swipeInstructions(session),
                   const SizedBox(height: AppSpacing.md),
-                  HeartRateTimelineCard(samples: heartRateSamples),
+                  RunMetricsCard(samples: heartRateSamples),
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [

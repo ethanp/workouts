@@ -1,9 +1,13 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 
 Future<void> main() async {
   // Set up logging first
@@ -25,14 +29,21 @@ Future<void> main() async {
     // Continue anyway - will fail later with clearer error
   }
 
-  runApp(const ProviderScope(child: WorkoutsApp()));
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      child: const WorkoutsApp(),
+    ),
+  );
 }
 
 String _pad2(int n) => n.toString().padLeft(2, '0');
 
 void _setupLogging() {
   Logger.root.level = kDebugMode ? Level.ALL : Level.WARNING;
-  Logger.root.onRecord.listen((record) {
+  Logger.root.onRecord.listen((LogRecord record) {
     final emojiByLevel = <Level, String>{
       Level.ALL: '⚪',
       Level.FINEST: '🔵',
@@ -54,12 +65,11 @@ void _setupLogging() {
         '${t.year % 100}${_pad2(t.month)}${_pad2(t.day)}'
         '-${_pad2(t.hour)}:${_pad2(t.minute)}:${_pad2(t.second)}'
         ':${(t.millisecond ~/ 100)}';
-    debugPrint('$emoji $ts [${record.loggerName}] ${record.message}');
-    if (record.error != null) {
-      debugPrint('   Error: ${record.error}');
-    }
-    if (record.stackTrace != null && record.level >= Level.WARNING) {
-      debugPrint('   Stack: ${record.stackTrace}');
-    }
+    developer.log(
+      '$emoji $ts [${record.loggerName}] ${record.message}',
+      name: record.loggerName,
+      error: record.error,
+      stackTrace: record.level >= Level.WARNING ? record.stackTrace : null,
+    );
   });
 }

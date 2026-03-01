@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -8,274 +9,384 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 part 'runs_repository_powersync.g.dart';
 
+final _log = Logger('RunsRepository');
+
 const _uuid = Uuid();
-final _importedRunIdNamespace = Namespace.url.value;
+final _runIdNamespace = Namespace.url.value;
 
 class RunsRepositoryPowerSync {
-  RunsRepositoryPowerSync(this._powerSyncDatabase);
+  RunsRepositoryPowerSync(this._db);
 
-  final PowerSyncDatabase _powerSyncDatabase;
+  final PowerSyncDatabase _db;
 
-  Stream<List<FitnessRun>> watchRuns() {
-    return _powerSyncDatabase
-        .watch('SELECT * FROM runs ORDER BY started_at DESC')
-        .map((runRows) => runRows.map(_mapRunRow).toList());
-  }
+  Stream<List<FitnessRun>> watchRuns() => _db
+      .watch('SELECT * FROM runs ORDER BY started_at DESC')
+      .map((rows) => rows.map(_runFromRow).toList());
 
-  Stream<List<RunRoutePoint>> watchRoutePoints(String runId) {
-    return _powerSyncDatabase
-        .watch(
-          '''
-          SELECT * FROM run_route_points
-          WHERE run_id = ?
-          ORDER BY point_index ASC
-          ''',
-          parameters: [runId],
-        )
-        .map((routePointRows) => routePointRows.map(_mapRoutePointRow).toList());
-  }
+  Stream<List<RunRoutePoint>> watchRoutePoints(String runId) => _db
+      .watch(
+        'SELECT * FROM run_route_points WHERE run_id = ? ORDER BY point_index ASC',
+        parameters: [runId],
+      )
+      .map((rows) => rows.map(_routePointFromRow).toList());
 
-  Stream<List<RunHeartRateSample>> watchHeartRateSamples(String runId) {
-    return _powerSyncDatabase
-        .watch(
-          '''
-          SELECT * FROM run_heart_rate_samples
-          WHERE run_id = ?
-          ORDER BY timestamp ASC
-          ''',
-          parameters: [runId],
-        )
-        .map(
-          (heartRateRows) => heartRateRows.map(_mapHeartRateRow).toList(),
-        );
-  }
+  Stream<List<RunHeartRateSample>> watchHeartRateSamples(String runId) => _db
+      .watch(
+        'SELECT * FROM run_heart_rate_samples WHERE run_id = ? ORDER BY timestamp ASC',
+        parameters: [runId],
+      )
+      .map((rows) => rows.map(_heartRateSampleFromRow).toList());
 
   Future<void> upsertImportedRuns(
-    List<Map<String, dynamic>> importedRuns, {
-    void Function(int processedRuns, int totalRuns)? onProgress,
+    List<Map<String, dynamic>> payloads, {
+    void Function(int done, int total)? onProgress,
   }) async {
-    final totalRuns = importedRuns.length;
-    var processedRuns = 0;
-    for (final importedRunPayload in importedRuns) {
-      await _upsertSingleRun(importedRunPayload);
-      processedRuns += 1;
-      onProgress?.call(processedRuns, totalRuns);
+    _log.info('Starting import of ${payloads.length} runs.');
+    for (var i = 0; i < payloads.length; i++) {
+      final run = _RunImport.tryParse(payloads[i]);
+      if (run != null) {
+        await _upsert(run);
+      } else {
+        _log.warning('Skipping unparseable run payload at index $i.');
+      }
+      onProgress?.call(i + 1, payloads.length);
     }
+    _log.info('Import complete.');
   }
 
-  Future<void> _upsertSingleRun(Map<String, dynamic> importedRunPayload) async {
-    final externalWorkoutId = importedRunPayload['externalWorkoutId'] as String?;
-    if (externalWorkoutId == null || externalWorkoutId.isEmpty) {
-      return;
-    }
-
-    final existingRunRow = await _powerSyncDatabase.getOptional(
-      'SELECT id, created_at FROM runs WHERE external_workout_id = ? LIMIT 1',
-      [externalWorkoutId],
+  Future<void> _upsert(_RunImport run) async {
+    _log.fine(
+      'Upserting run ${run.externalWorkoutId} '
+      '(${run.routePoints.length} pts, ${run.heartRateSamples.length} HR samples)',
     );
-    final runId =
-        (existingRunRow?['id'] as String?) ??
-        _uuid.v5(_importedRunIdNamespace, 'apple-health-run:$externalWorkoutId');
-    final nowIsoString = DateTime.now().toIso8601String();
-
-    await _powerSyncDatabase.execute(
-      '''
-      INSERT OR REPLACE INTO runs (
-        id,
-        external_workout_id,
-        started_at,
-        ended_at,
-        duration_seconds,
-        distance_meters,
-        energy_kcal,
-        avg_heart_rate_bpm,
-        max_heart_rate_bpm,
-        is_indoor,
-        route_available,
-        source_name,
-        source_bundle_id,
-        device_model,
-        created_at,
-        updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
-      [
-        runId,
-        externalWorkoutId,
-        importedRunPayload['startDate'] as String,
-        importedRunPayload['endDate'] as String,
-        importedRunPayload['durationSeconds'] as int? ?? 0,
-        _toDouble(importedRunPayload['distanceMeters']) ?? 0,
-        _toDouble(importedRunPayload['energyKcal']),
-        _toDouble(importedRunPayload['avgHeartRateBpm']),
-        _toDouble(importedRunPayload['maxHeartRateBpm']),
-        (importedRunPayload['isIndoor'] == true) ? 1 : 0,
-        (importedRunPayload['routeAvailable'] == true) ? 1 : 0,
-        (importedRunPayload['sourceName'] as String?) ?? 'Apple Health',
-        importedRunPayload['sourceBundleId'] as String?,
-        importedRunPayload['deviceModel'] as String?,
-        (existingRunRow?['created_at'] as String?) ?? nowIsoString,
-        nowIsoString,
-      ],
-    );
-
-    await _replaceRoutePointsForRun(runId, importedRunPayload);
-    await _replaceHeartRateSamplesForRun(runId, importedRunPayload);
+    final runId = await _resolveRunId(run.externalWorkoutId);
+    final now = DateTime.now().toIso8601String();
+    final createdAt = await _existingCreatedAt(runId) ?? now;
+    await _saveRun(runId, run, createdAt: createdAt, updatedAt: now);
+    await _saveRoutePoints(runId, run.routePoints, now: now);
+    await _saveHeartRateSamples(runId, run.heartRateSamples, now: now);
   }
 
-  Future<void> _replaceRoutePointsForRun(
-    String runId,
-    Map<String, dynamic> importedRunPayload,
-  ) async {
-    await _powerSyncDatabase.execute(
-      'DELETE FROM run_route_points WHERE run_id = ?',
+  /// Returns the deterministic UUID for [externalWorkoutId], deleting any
+  /// locally-stored rows that used a different (non-deterministic) UUID for
+  /// the same workout. The resulting DELETE CRUD entries propagate to the
+  /// server through PowerSync's upload queue.
+  Future<String> _resolveRunId(String externalWorkoutId) async {
+    final deterministicId = _uuid.v5(
+      _runIdNamespace,
+      'apple-health-run:$externalWorkoutId',
+    );
+    final staleRows = await _db.execute(
+      'SELECT id FROM runs WHERE external_workout_id = ? AND id != ?',
+      [externalWorkoutId, deterministicId],
+    );
+    for (final row in staleRows) {
+      await _db.execute('DELETE FROM runs WHERE id = ?', [row['id']]);
+    }
+    return deterministicId;
+  }
+
+  Future<String?> _existingCreatedAt(String runId) async {
+    final row = await _db.getOptional(
+      'SELECT created_at FROM runs WHERE id = ?',
       [runId],
     );
-    final routePointsDynamic = importedRunPayload['routePoints'] as List<dynamic>?;
-    if (routePointsDynamic == null || routePointsDynamic.isEmpty) {
-      return;
-    }
-
-    final nowIsoString = DateTime.now().toIso8601String();
-    for (var pointIndex = 0; pointIndex < routePointsDynamic.length; pointIndex++) {
-      final rawRoutePoint = routePointsDynamic[pointIndex];
-      if (rawRoutePoint is! Map) {
-        continue;
-      }
-      final routePointMap = Map<String, dynamic>.from(rawRoutePoint);
-      final latitude = _toDouble(routePointMap['lat']);
-      final longitude = _toDouble(routePointMap['lng']);
-      if (latitude == null || longitude == null) {
-        continue;
-      }
-      await _powerSyncDatabase.execute(
-        '''
-        INSERT INTO run_route_points (
-          id, run_id, point_index, lat, lng, altitude_meters, timestamp, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''',
-        [
-          _uuid.v4(),
-          runId,
-          pointIndex,
-          latitude,
-          longitude,
-          _toDouble(routePointMap['altitudeMeters']),
-          routePointMap['timestamp'] as String?,
-          nowIsoString,
-          nowIsoString,
-        ],
-      );
-    }
+    return row?['created_at'] as String?;
   }
 
-  Future<void> _replaceHeartRateSamplesForRun(
+  Future<void> _saveRun(
     String runId,
-    Map<String, dynamic> importedRunPayload,
-  ) async {
-    await _powerSyncDatabase.execute(
-      'DELETE FROM run_heart_rate_samples WHERE run_id = ?',
+    _RunImport run, {
+    required String createdAt,
+    required String updatedAt,
+  }) => _db.execute(
+    // ON CONFLICT DO UPDATE avoids a DELETE+INSERT pair (which INSERT OR REPLACE
+    // would produce). A DELETE CRUD entry would be uploaded to the server and
+    // temporarily remove the run, creating a window where a PowerSync checkpoint
+    // could wipe the run on the next sync.
+    '''
+    INSERT INTO runs (
+      id, external_workout_id, started_at, ended_at, duration_seconds,
+      distance_meters, energy_kcal, avg_heart_rate_bpm, max_heart_rate_bpm,
+      is_indoor, route_available, source_name, source_bundle_id, device_model,
+      created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET
+      started_at      = excluded.started_at,
+      ended_at        = excluded.ended_at,
+      duration_seconds  = excluded.duration_seconds,
+      distance_meters   = excluded.distance_meters,
+      energy_kcal       = excluded.energy_kcal,
+      avg_heart_rate_bpm  = excluded.avg_heart_rate_bpm,
+      max_heart_rate_bpm  = excluded.max_heart_rate_bpm,
+      is_indoor         = excluded.is_indoor,
+      route_available   = excluded.route_available,
+      source_name       = excluded.source_name,
+      source_bundle_id  = excluded.source_bundle_id,
+      device_model      = excluded.device_model,
+      updated_at        = excluded.updated_at
+    ''',
+    [
+      runId,
+      run.externalWorkoutId,
+      run.startedAt,
+      run.endedAt,
+      run.durationSeconds,
+      run.distanceMeters,
+      run.energyKcal,
+      run.avgHeartRateBpm,
+      run.maxHeartRateBpm,
+      run.isIndoor ? 1 : 0,
+      run.routeAvailable ? 1 : 0,
+      run.sourceName,
+      run.sourceBundleId,
+      run.deviceModel,
+      createdAt,
+      updatedAt,
+    ],
+  );
+
+  Future<void> _saveRoutePoints(
+    String runId,
+    List<_RoutePointImport> points, {
+    required String now,
+  }) async {
+    // GPS data for a completed HealthKit run is immutable. Skip the write if
+    // points already exist to avoid generating thousands of DELETE+INSERT CRUD
+    // entries on every re-import, which floods the upload queue.
+    final existing = await _db.getOptional(
+      'SELECT COUNT(*) AS cnt FROM run_route_points WHERE run_id = ?',
       [runId],
     );
-    final heartRateSeriesDynamic =
-        importedRunPayload['heartRateSeries'] as List<dynamic>?;
-    if (heartRateSeriesDynamic == null || heartRateSeriesDynamic.isEmpty) {
+    if ((existing?['cnt'] as int? ?? 0) > 0) {
+      _log.fine('Route points already exist for $runId — skipping.');
       return;
     }
+    if (points.isEmpty) return;
 
-    final nowIsoString = DateTime.now().toIso8601String();
-    for (final rawHeartRatePoint in heartRateSeriesDynamic) {
-      if (rawHeartRatePoint is! Map) {
-        continue;
+    _log.fine('Inserting ${points.length} route points for $runId.');
+    await _db.writeTransaction((tx) async {
+      for (var i = 0; i < points.length; i++) {
+        final p = points[i];
+        await tx.execute(
+          'INSERT INTO run_route_points'
+          '  (id, run_id, point_index, lat, lng, altitude_meters, timestamp, created_at, updated_at)'
+          ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [_uuid.v4(), runId, i, p.lat, p.lng, p.altitudeMeters, p.timestamp, now, now],
+        );
       }
-      final heartRatePointMap = Map<String, dynamic>.from(rawHeartRatePoint);
-      final timestampIsoString = heartRatePointMap['timestamp'] as String?;
-      final bpmValue = _toDouble(heartRatePointMap['bpm'])?.round();
-      if (timestampIsoString == null || bpmValue == null) {
-        continue;
+    });
+  }
+
+  Future<void> _saveHeartRateSamples(
+    String runId,
+    List<_HeartRateSampleImport> samples, {
+    required String now,
+  }) async {
+    // Same rationale as _saveRoutePoints: skip if samples already exist.
+    final existing = await _db.getOptional(
+      'SELECT COUNT(*) AS cnt FROM run_heart_rate_samples WHERE run_id = ?',
+      [runId],
+    );
+    if ((existing?['cnt'] as int? ?? 0) > 0) {
+      _log.fine('HR samples already exist for $runId — skipping.');
+      return;
+    }
+    if (samples.isEmpty) return;
+
+    _log.fine('Inserting ${samples.length} HR samples for $runId.');
+    await _db.writeTransaction((tx) async {
+      for (final s in samples) {
+        await tx.execute(
+          'INSERT INTO run_heart_rate_samples'
+          '  (id, run_id, timestamp, bpm, created_at, updated_at)'
+          ' VALUES (?, ?, ?, ?, ?, ?)',
+          [_uuid.v4(), runId, s.timestamp, s.bpm, now, now],
+        );
       }
-      await _powerSyncDatabase.execute(
-        '''
-        INSERT INTO run_heart_rate_samples (
-          id, run_id, timestamp, bpm, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        ''',
-        [_uuid.v4(), runId, timestampIsoString, bpmValue, nowIsoString, nowIsoString],
+    });
+  }
+
+  FitnessRun _runFromRow(Map<String, dynamic> row) => FitnessRun(
+    id: row['id'] as String,
+    externalWorkoutId: row['external_workout_id'] as String,
+    startedAt: DateTime.parse(row['started_at'] as String),
+    endedAt: DateTime.parse(row['ended_at'] as String),
+    durationSeconds: (row['duration_seconds'] as int?) ?? 0,
+    distanceMeters: _asDouble(row['distance_meters']) ?? 0,
+    energyKcal: _asDouble(row['energy_kcal']),
+    averageHeartRateBpm: _asDouble(row['avg_heart_rate_bpm']),
+    maxHeartRateBpm: _asDouble(row['max_heart_rate_bpm']),
+    isIndoor: (row['is_indoor'] as int?) == 1,
+    routeAvailable: (row['route_available'] as int?) == 1,
+    sourceName: (row['source_name'] as String?) ?? 'Apple Health',
+    sourceBundleId: row['source_bundle_id'] as String?,
+    deviceModel: row['device_model'] as String?,
+    createdAt: _asDateTime(row['created_at']),
+    updatedAt: _asDateTime(row['updated_at']),
+  );
+
+  RunRoutePoint _routePointFromRow(Map<String, dynamic> row) => RunRoutePoint(
+    id: row['id'] as String,
+    runId: row['run_id'] as String,
+    pointIndex: (row['point_index'] as int?) ?? 0,
+    latitude: _asDouble(row['lat']) ?? 0,
+    longitude: _asDouble(row['lng']) ?? 0,
+    altitudeMeters: _asDouble(row['altitude_meters']),
+    recordedAt: _asDateTime(row['timestamp']),
+    createdAt: _asDateTime(row['created_at']),
+    updatedAt: _asDateTime(row['updated_at']),
+  );
+
+  RunHeartRateSample _heartRateSampleFromRow(Map<String, dynamic> row) =>
+      RunHeartRateSample(
+        id: row['id'] as String,
+        runId: row['run_id'] as String,
+        timestamp: DateTime.parse(row['timestamp'] as String),
+        bpm: (row['bpm'] as int?) ?? 0,
+        createdAt: _asDateTime(row['created_at']),
+        updatedAt: _asDateTime(row['updated_at']),
+      );
+}
+
+// Import value types — parse the untyped HealthKit payload once at the
+// boundary. Everything below this point works with typed fields only.
+
+class _RunImport {
+  const _RunImport({
+    required this.externalWorkoutId,
+    required this.startedAt,
+    required this.endedAt,
+    required this.durationSeconds,
+    required this.distanceMeters,
+    required this.energyKcal,
+    required this.avgHeartRateBpm,
+    required this.maxHeartRateBpm,
+    required this.isIndoor,
+    required this.routeAvailable,
+    required this.sourceName,
+    required this.sourceBundleId,
+    required this.deviceModel,
+    required this.routePoints,
+    required this.heartRateSamples,
+  });
+
+  final String externalWorkoutId;
+  final String startedAt;
+  final String endedAt;
+  final int durationSeconds;
+  final double distanceMeters;
+  final double? energyKcal;
+  final double? avgHeartRateBpm;
+  final double? maxHeartRateBpm;
+  final bool isIndoor;
+  final bool routeAvailable;
+  final String sourceName;
+  final String? sourceBundleId;
+  final String? deviceModel;
+  final List<_RoutePointImport> routePoints;
+  final List<_HeartRateSampleImport> heartRateSamples;
+
+  static _RunImport? tryParse(Map<String, dynamic> p) {
+    final externalWorkoutId = p['externalWorkoutId'] as String?;
+    final startedAt = p['startDate'] as String?;
+    final endedAt = p['endDate'] as String?;
+    if (externalWorkoutId == null ||
+        externalWorkoutId.isEmpty ||
+        startedAt == null ||
+        endedAt == null) {
+      return null;
+    }
+    return _RunImport(
+      externalWorkoutId: externalWorkoutId,
+      startedAt: startedAt,
+      endedAt: endedAt,
+      durationSeconds: p['durationSeconds'] as int? ?? 0,
+      distanceMeters: _asDouble(p['distanceMeters']) ?? 0,
+      energyKcal: _asDouble(p['energyKcal']),
+      avgHeartRateBpm: _asDouble(p['avgHeartRateBpm']),
+      maxHeartRateBpm: _asDouble(p['maxHeartRateBpm']),
+      isIndoor: p['isIndoor'] == true,
+      routeAvailable: p['routeAvailable'] == true,
+      sourceName: (p['sourceName'] as String?) ?? 'Apple Health',
+      sourceBundleId: p['sourceBundleId'] as String?,
+      deviceModel: p['deviceModel'] as String?,
+      routePoints: _RoutePointImport.parseList(p['routePoints']),
+      heartRateSamples: _HeartRateSampleImport.parseList(p['heartRateSeries']),
+    );
+  }
+}
+
+class _RoutePointImport {
+  const _RoutePointImport({
+    required this.lat,
+    required this.lng,
+    required this.altitudeMeters,
+    required this.timestamp,
+  });
+
+  final double lat;
+  final double lng;
+  final double? altitudeMeters;
+  final String? timestamp;
+
+  static List<_RoutePointImport> parseList(Object? raw) {
+    if (raw is! List) return const [];
+    final points = <_RoutePointImport>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final p = Map<String, dynamic>.from(item);
+      final lat = _asDouble(p['lat']);
+      final lng = _asDouble(p['lng']);
+      if (lat == null || lng == null) continue;
+      points.add(
+        _RoutePointImport(
+          lat: lat,
+          lng: lng,
+          altitudeMeters: _asDouble(p['altitudeMeters']),
+          timestamp: p['timestamp'] as String?,
+        ),
       );
     }
+    return points;
   }
+}
 
-  FitnessRun _mapRunRow(Map<String, dynamic> runRow) {
-    return FitnessRun(
-      id: runRow['id'] as String,
-      externalWorkoutId: runRow['external_workout_id'] as String,
-      startedAt: DateTime.parse(runRow['started_at'] as String),
-      endedAt: DateTime.parse(runRow['ended_at'] as String),
-      durationSeconds: (runRow['duration_seconds'] as int?) ?? 0,
-      distanceMeters: _toDouble(runRow['distance_meters']) ?? 0,
-      energyKcal: _toDouble(runRow['energy_kcal']),
-      averageHeartRateBpm: _toDouble(runRow['avg_heart_rate_bpm']),
-      maxHeartRateBpm: _toDouble(runRow['max_heart_rate_bpm']),
-      isIndoor: (runRow['is_indoor'] as int?) == 1,
-      routeAvailable: (runRow['route_available'] as int?) == 1,
-      sourceName: (runRow['source_name'] as String?) ?? 'Apple Health',
-      sourceBundleId: runRow['source_bundle_id'] as String?,
-      deviceModel: runRow['device_model'] as String?,
-      createdAt: _tryParseDateTime(runRow['created_at']),
-      updatedAt: _tryParseDateTime(runRow['updated_at']),
-    );
-  }
+class _HeartRateSampleImport {
+  const _HeartRateSampleImport({required this.timestamp, required this.bpm});
 
-  RunRoutePoint _mapRoutePointRow(Map<String, dynamic> routePointRow) {
-    return RunRoutePoint(
-      id: routePointRow['id'] as String,
-      runId: routePointRow['run_id'] as String,
-      pointIndex: (routePointRow['point_index'] as int?) ?? 0,
-      latitude: _toDouble(routePointRow['lat']) ?? 0,
-      longitude: _toDouble(routePointRow['lng']) ?? 0,
-      altitudeMeters: _toDouble(routePointRow['altitude_meters']),
-      recordedAt: _tryParseDateTime(routePointRow['timestamp']),
-      createdAt: _tryParseDateTime(routePointRow['created_at']),
-      updatedAt: _tryParseDateTime(routePointRow['updated_at']),
-    );
-  }
+  final String timestamp;
+  final int bpm;
 
-  RunHeartRateSample _mapHeartRateRow(Map<String, dynamic> heartRateRow) {
-    return RunHeartRateSample(
-      id: heartRateRow['id'] as String,
-      runId: heartRateRow['run_id'] as String,
-      timestamp: DateTime.parse(heartRateRow['timestamp'] as String),
-      bpm: (heartRateRow['bpm'] as int?) ?? 0,
-      createdAt: _tryParseDateTime(heartRateRow['created_at']),
-      updatedAt: _tryParseDateTime(heartRateRow['updated_at']),
-    );
-  }
-
-  DateTime? _tryParseDateTime(Object? rawValue) {
-    final rawString = rawValue as String?;
-    if (rawString == null) {
-      return null;
+  static List<_HeartRateSampleImport> parseList(Object? raw) {
+    if (raw is! List) return const [];
+    final samples = <_HeartRateSampleImport>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final p = Map<String, dynamic>.from(item);
+      final timestamp = p['timestamp'] as String?;
+      final bpm = _asDouble(p['bpm'])?.round();
+      if (timestamp == null || bpm == null) continue;
+      samples.add(_HeartRateSampleImport(timestamp: timestamp, bpm: bpm));
     }
-    return DateTime.tryParse(rawString);
+    return samples;
   }
+}
 
-  double? _toDouble(Object? rawValue) {
-    if (rawValue == null) {
-      return null;
-    }
-    if (rawValue is num) {
-      return rawValue.toDouble();
-    }
-    return double.tryParse('$rawValue');
-  }
+double? _asDouble(Object? value) {
+  if (value == null) return null;
+  if (value is num) return value.toDouble();
+  return double.tryParse('$value');
+}
+
+DateTime? _asDateTime(Object? value) {
+  final string = value as String?;
+  return string == null ? null : DateTime.tryParse(string);
 }
 
 @riverpod
 RunsRepositoryPowerSync runsRepositoryPowerSync(Ref ref) {
-  final databaseAsync = ref.watch(powerSyncDatabaseProvider);
-  final powerSyncDatabase = databaseAsync.value;
-  if (powerSyncDatabase == null) {
-    throw StateError('PowerSync database not initialized');
-  }
-  return RunsRepositoryPowerSync(powerSyncDatabase);
+  final db = ref.watch(powerSyncDatabaseProvider).value;
+  if (db == null) throw StateError('PowerSync database not initialized');
+  return RunsRepositoryPowerSync(db);
 }

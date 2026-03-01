@@ -7,8 +7,10 @@ import 'package:workouts/models/fitness_run.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/run_route_point.dart';
 import 'package:workouts/providers/runs_provider.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/heart_rate_timeline_card.dart';
+import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/widgets/run_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
 class RunDetailScreen extends ConsumerWidget {
@@ -20,7 +22,7 @@ class RunDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final routePointsAsync = ref.watch(runRoutePointsProvider(run.id));
     final heartRateSamplesAsync = ref.watch(runHeartRateSamplesProvider(run.id));
-    final distanceKilometers = run.distanceMeters / 1000;
+    final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Run Detail')),
@@ -28,7 +30,7 @@ class RunDetailScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            _RunSummaryCard(run: run, distanceKilometers: distanceKilometers),
+            _RunSummaryCard(run: run, unitSystem: unitSystem),
             const SizedBox(height: AppSpacing.md),
             routePointsAsync.when(
               data: (routePoints) => _RouteCard(routePoints: routePoints),
@@ -53,7 +55,7 @@ class RunDetailScreen extends ConsumerWidget {
                       ),
                     )
                     .toList();
-                return HeartRateTimelineCard(
+                return RunMetricsCard(
                   samples: chartSamples,
                   routePoints: routePointsAsync.asData?.value ?? [],
                 );
@@ -73,17 +75,13 @@ class RunDetailScreen extends ConsumerWidget {
 }
 
 class _RunSummaryCard extends StatelessWidget {
-  const _RunSummaryCard({required this.run, required this.distanceKilometers});
+  const _RunSummaryCard({required this.run, required this.unitSystem});
 
   final FitnessRun run;
-  final double distanceKilometers;
+  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
-    final averagePaceSecondsPerKilometer = run.distanceMeters > 0
-        ? run.durationSeconds / (run.distanceMeters / 1000)
-        : 0.0;
-
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -94,10 +92,13 @@ class _RunSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${distanceKilometers.toStringAsFixed(2)} km', style: AppTypography.title),
+          Text(
+            formatDistance(run.distanceMeters, unitSystem),
+            style: AppTypography.title,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${_formatDuration(run.durationSeconds)}  ·  ${_formatPace(averagePaceSecondsPerKilometer)}',
+            '${_formatDuration(run.durationSeconds)}  ·  ${formatPace(run.durationSeconds, run.distanceMeters, unitSystem)}',
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
         ],
@@ -114,16 +115,6 @@ class _RunSummaryCard extends StatelessWidget {
       return '${hours}h ${minutes.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s';
     }
     return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
-  }
-
-  String _formatPace(double pacePerKilometerSeconds) {
-    if (pacePerKilometerSeconds <= 0) {
-      return '--:-- /km';
-    }
-    final roundedSeconds = pacePerKilometerSeconds.round();
-    final minutes = roundedSeconds ~/ 60;
-    final seconds = roundedSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')} /km';
   }
 }
 

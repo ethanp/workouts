@@ -1,12 +1,15 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/run_route_point.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/run_formatting.dart';
 
-class HeartRateTimelineCard extends StatelessWidget {
-  const HeartRateTimelineCard({
+class RunMetricsCard extends ConsumerWidget {
+  const RunMetricsCard({
     super.key,
     required this.samples,
     this.routePoints = const [],
@@ -16,7 +19,8 @@ class HeartRateTimelineCard extends StatelessWidget {
   final List<RunRoutePoint> routePoints;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unitSystem = ref.watch(unitSystemProvider);
     final speedSamples = _computeSpeedSamples(routePoints);
 
     return Container(
@@ -30,7 +34,11 @@ class HeartRateTimelineCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MetricsHeader(samples: samples, speedSamples: speedSamples),
+          _MetricsHeader(
+            samples: samples,
+            speedSamples: speedSamples,
+            unitSystem: unitSystem,
+          ),
           const SizedBox(height: AppSpacing.md),
           _TimelinePreview(samples: samples, speedSamples: speedSamples),
         ],
@@ -40,10 +48,15 @@ class HeartRateTimelineCard extends StatelessWidget {
 }
 
 class _MetricsHeader extends StatelessWidget {
-  const _MetricsHeader({required this.samples, required this.speedSamples});
+  const _MetricsHeader({
+    required this.samples,
+    required this.speedSamples,
+    required this.unitSystem,
+  });
 
   final List<HeartRateSample> samples;
   final List<_SpeedSample> speedSamples;
+  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -85,15 +98,15 @@ class _MetricsHeader extends StatelessWidget {
 
   Widget _speedSection() {
     final speeds = speedSamples.map((s) => s.speedKmh).toList();
-    final avg = speeds.reduce((a, b) => a + b) / speeds.length;
-    final max = speeds.reduce((a, b) => a > b ? a : b);
+    final avgKmh = speeds.reduce((a, b) => a + b) / speeds.length;
+    final maxKmh = speeds.reduce((a, b) => a > b ? a : b);
 
     return Row(
       children: [
         _LegendDot(color: _speedColor),
         const SizedBox(width: AppSpacing.xs),
         Text(
-          'Avg ${avg.toStringAsFixed(1)} · Max ${max.toStringAsFixed(1)} km/h',
+          'Avg ${formatSpeed(avgKmh, unitSystem)} · Max ${formatSpeed(maxKmh, unitSystem)}',
           style: AppTypography.caption.copyWith(color: AppColors.textColor3),
         ),
       ],
@@ -126,13 +139,13 @@ class _TimelinePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 120,
-      child: HeartRateMiniChart(samples: samples, speedSamples: speedSamples),
+      child: MetricsMiniChart(samples: samples, speedSamples: speedSamples),
     );
   }
 }
 
-class HeartRateMiniChart extends StatelessWidget {
-  const HeartRateMiniChart({
+class MetricsMiniChart extends StatelessWidget {
+  const MetricsMiniChart({
     super.key,
     required this.samples,
     this.speedSamples = const [],
@@ -187,7 +200,6 @@ class _DualMetricPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Establish shared time domain across both series.
     final allTimes = [
       ...samples.map((s) => s.timestamp),
       ...speedSamples.map((s) => s.timestamp),
@@ -202,11 +214,27 @@ class _DualMetricPainter extends CustomPainter {
     double timeToX(DateTime t) =>
         t.difference(startTime).inMilliseconds / totalMs * size.width;
 
-    // Draw HR line.
     if (samples.length >= 2) {
       final minBpm = samples.map((s) => s.bpm).reduce(math.min);
       final maxBpm = samples.map((s) => s.bpm).reduce(math.max);
-      final bpmRange = (maxBpm - minBpm).clamp(1, 999);
+      final bpmRange = (maxBpm - minBpm).clamp(1, 999).toDouble();
+
+      double bpmToY(int bpm) {
+        final normalized = (bpm - minBpm) / bpmRange;
+        return size.height - normalized * size.height * 0.9 - size.height * 0.05;
+      }
+
+      // Horizontal grid lines every 10 bpm, drawn before the data line.
+      final gridPaint = Paint()
+        ..color = AppColors.borderDepth1.withValues(alpha: 0.6)
+        ..strokeWidth = 0.5
+        ..style = PaintingStyle.stroke;
+
+      final firstTick = (minBpm / 10).ceil() * 10;
+      for (var tick = firstTick; tick <= maxBpm; tick += 10) {
+        final y = bpmToY(tick);
+        canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+      }
 
       final hrPaint = Paint()
         ..color = _hrColor
@@ -216,8 +244,7 @@ class _DualMetricPainter extends CustomPainter {
       final hrPath = Path();
       for (var i = 0; i < samples.length; i++) {
         final x = timeToX(samples[i].timestamp);
-        final normalized = (samples[i].bpm - minBpm) / bpmRange;
-        final y = size.height - normalized * size.height * 0.9 - size.height * 0.05;
+        final y = bpmToY(samples[i].bpm);
         if (i == 0) {
           hrPath.moveTo(x, y);
         } else {
@@ -227,7 +254,6 @@ class _DualMetricPainter extends CustomPainter {
       canvas.drawPath(hrPath, hrPaint);
     }
 
-    // Draw speed line.
     if (speedSamples.length >= 2) {
       final minSpeed = speedSamples.map((s) => s.speedKmh).reduce(math.min);
       final maxSpeed = speedSamples.map((s) => s.speedKmh).reduce(math.max);
@@ -292,9 +318,8 @@ List<_SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
       curr.longitude,
     );
     final speedKmh = (distanceMeters / timeDeltaSeconds) * 3.6;
-    if (speedKmh > maxReasonableSpeedKmh) continue; // Skip GPS noise outliers.
+    if (speedKmh > maxReasonableSpeedKmh) continue;
 
-    // Associate the speed sample with the midpoint timestamp.
     final midMs =
         curr.recordedAt!.difference(prev.recordedAt!).inMilliseconds ~/ 2;
     final midTime = prev.recordedAt!.add(Duration(milliseconds: midMs));

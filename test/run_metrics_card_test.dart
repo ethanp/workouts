@@ -1,10 +1,16 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/widgets/heart_rate_timeline_card.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/widgets/run_metrics_card.dart';
 
 void main() {
   testWidgets('renders avg/max summary and chart', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
     final samples = [
       HeartRateSample(
         id: 's1',
@@ -23,15 +29,17 @@ void main() {
     ];
 
     await tester.pumpWidget(
-      CupertinoApp(
-        home: CupertinoPageScaffold(
-          child: HeartRateTimelineCard(samples: samples),
+      ProviderScope(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        child: CupertinoApp(
+          home: CupertinoPageScaffold(
+            child: RunMetricsCard(samples: samples),
+          ),
         ),
       ),
     );
 
-    expect(find.text('Heart Rate'), findsOneWidget);
-    expect(find.text('Avg 105 BPM · Max 120 BPM'), findsOneWidget);
+    expect(find.text('Avg 105 · Max 120'), findsOneWidget);
     expect(find.byType(CustomPaint), findsWidgets);
   });
 }

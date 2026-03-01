@@ -3,8 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/fitness_run.dart';
 import 'package:workouts/providers/runs_provider.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/screens/run_detail_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 class RunsScreen extends ConsumerWidget {
@@ -163,17 +165,14 @@ class _EmptyRunsState extends StatelessWidget {
   }
 }
 
-class _RunTile extends StatelessWidget {
+class _RunTile extends ConsumerWidget {
   const _RunTile({required this.run});
 
   final FitnessRun run;
 
   @override
-  Widget build(BuildContext context) {
-    final distanceKm = run.distanceMeters / 1000;
-    final pacePerKilometerSeconds = run.distanceMeters > 0
-        ? run.durationSeconds / (run.distanceMeters / 1000)
-        : 0.0;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
@@ -191,10 +190,7 @@ class _RunTile extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  _formatRunDate(run.startedAt),
-                  style: AppTypography.subtitle,
-                ),
+                Text(_formatRunDate(run.startedAt), style: AppTypography.subtitle),
                 if (run.routeAvailable)
                   Text(
                     'Route',
@@ -207,12 +203,12 @@ class _RunTile extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${distanceKm.toStringAsFixed(2)} km',
+              formatDistance(run.distanceMeters, unitSystem),
               style: AppTypography.title.copyWith(color: AppColors.textColor1),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${_formatDuration(run.durationSeconds)}  ·  ${_formatPace(pacePerKilometerSeconds)}',
+              '${_formatDuration(run.durationSeconds)}  ·  ${formatPace(run.durationSeconds, run.distanceMeters, unitSystem)}',
               style: AppTypography.body.copyWith(color: AppColors.textColor3),
             ),
           ],
@@ -235,15 +231,5 @@ class _RunTile extends StatelessWidget {
       return '${hours}h ${minutes.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s';
     }
     return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
-  }
-
-  String _formatPace(double pacePerKilometerSeconds) {
-    if (pacePerKilometerSeconds <= 0) {
-      return '--:-- /km';
-    }
-    final roundedSeconds = pacePerKilometerSeconds.round();
-    final minutes = roundedSeconds ~/ 60;
-    final seconds = roundedSeconds % 60;
-    return '$minutes:${seconds.toString().padLeft(2, '0')} /km';
   }
 }
