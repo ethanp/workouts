@@ -52,3 +52,6 @@ app.*.map.json
 # Generated files
 *.g.dart
 *.freezed.dart
+
+# Deployment tracking
+.deploy_ios_hash

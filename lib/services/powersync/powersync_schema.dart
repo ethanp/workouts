@@ -158,4 +158,15 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
+
+  // Local-only: never synced to Postgres.
+  // One row per run storing precomputed Zone 2 metrics so the calendar query
+  // is a simple join rather than an on-the-fly HR sample scan.
+  Table.localOnly('run_computed_metrics', [
+    Column.integer('zone2_seconds'),
+    Column.integer('has_hr_samples'), // 0 or 1
+    Column.integer('zone2_hr_lower'), // nullable — NULL means "not yet computed"
+    Column.integer('zone2_hr_upper'), // nullable
+    Column.text('computed_at'),
+  ]),
 ]);

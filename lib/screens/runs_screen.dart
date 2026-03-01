@@ -4,66 +4,118 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/fitness_run.dart';
 import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/screens/run_calendar_screen.dart';
 import 'package:workouts/screens/run_detail_screen.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
-class RunsScreen extends ConsumerWidget {
+enum _RunsTab { list, calendar }
+
+class RunsScreen extends ConsumerStatefulWidget {
   const RunsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final runsAsync = ref.watch(runsStreamProvider);
+  ConsumerState<RunsScreen> createState() => _RunsScreenState();
+}
+
+class _RunsScreenState extends ConsumerState<RunsScreen> {
+  _RunsTab _selectedTab = _RunsTab.list;
+
+  @override
+  Widget build(BuildContext context) {
     final importAsync = ref.watch(runImportControllerProvider);
     final importProgress = importAsync.value ?? const RunImportProgress.idle();
     final isImporting = importProgress.inProgress;
+    final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
 
     return CupertinoPageScaffold(
-      navigationBar: navigationBar(isImporting, ref),
+      navigationBar: _navigationBar(isImporting: isImporting, dbReady: dbReady),
       child: SafeArea(
         child: Column(
           children: [
             if (isImporting)
               _ImportProgressBanner(importProgress: importProgress),
-            Expanded(
-              child: runsAsync.when(
-                data: (runs) => runsListView(runs, ref),
-                loading: () =>
-                    const Center(child: CupertinoActivityIndicator()),
-                error: (error, _) => Center(
-                  child: Text(
-                    'Unable to load runs: $error',
-                    style: AppTypography.body.copyWith(color: AppColors.error),
-                  ),
-                ),
-              ),
-            ),
+            _segmentedControl(),
+            Expanded(child: _tabContent()),
           ],
         ),
       ),
     );
   }
 
-  CupertinoNavigationBar navigationBar(bool isImporting, WidgetRef ref) {
+  CupertinoNavigationBar _navigationBar({
+    required bool isImporting,
+    required bool dbReady,
+  }) {
     return CupertinoNavigationBar(
       leading: const SyncStatusIcon(),
       middle: const Text('Runs'),
-      trailing: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: isImporting
-            ? null
-            : () => ref
-                  .read(runImportControllerProvider.notifier)
-                  .importRecentRuns(),
-        child: isImporting
-            ? const CupertinoActivityIndicator()
-            : const Icon(CupertinoIcons.arrow_down_circle),
+      trailing: _selectedTab == _RunsTab.list
+          ? CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: dbReady && !isImporting
+                  ? () => ref
+                        .read(runImportControllerProvider.notifier)
+                        .importRecentRuns()
+                  : null,
+              child: isImporting
+                  ? const CupertinoActivityIndicator()
+                  : const Icon(CupertinoIcons.arrow_down_circle),
+            )
+          : null,
+    );
+  }
+
+  Widget _segmentedControl() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      child: CupertinoSlidingSegmentedControl<_RunsTab>(
+        groupValue: _selectedTab,
+        onValueChanged: (tab) {
+          if (tab != null) setState(() => _selectedTab = tab);
+        },
+        children: const {
+          _RunsTab.list: Text('List'),
+          _RunsTab.calendar: Text('Calendar'),
+        },
       ),
     );
   }
 
-  StatelessWidget runsListView(List<FitnessRun> runs, WidgetRef ref) {
+  Widget _tabContent() {
+    return switch (_selectedTab) {
+      _RunsTab.list => _RunsListTab(ref: ref),
+      _RunsTab.calendar => const RunCalendarScreen(),
+    };
+  }
+}
+
+class _RunsListTab extends StatelessWidget {
+  const _RunsListTab({required this.ref});
+
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final runsAsync = ref.watch(runsStreamProvider);
+    return runsAsync.when(
+      data: (runs) => _runsListView(runs),
+      loading: () => const Center(child: CupertinoActivityIndicator()),
+      error: (error, _) => Center(
+        child: Text(
+          'Unable to load runs: $error',
+          style: AppTypography.body.copyWith(color: AppColors.error),
+        ),
+      ),
+    );
+  }
+
+  Widget _runsListView(List<FitnessRun> runs) {
     return runs.isEmpty
         ? _EmptyRunsState(
             onImport: () => ref

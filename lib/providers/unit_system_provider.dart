@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workouts/services/repositories/runs_repository_powersync.dart';
+import 'package:workouts/utils/zone2_calculator.dart';
 
 part 'unit_system_provider.g.dart';
 
@@ -12,6 +14,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 });
 
 const _kUnitSystemKey = 'unit_system';
+const _kMaxHRKey = 'maxHeartRate';
 
 @Riverpod(keepAlive: true)
 class UnitSystemNotifier extends _$UnitSystemNotifier {
@@ -30,4 +33,55 @@ class UnitSystemNotifier extends _$UnitSystemNotifier {
     await prefs.setString(_kUnitSystemKey, system.name);
     state = system;
   }
+}
+
+@Riverpod(keepAlive: true)
+class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
+  @override
+  int build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    return prefs.getInt(_kMaxHRKey) ?? 190;
+  }
+
+  Future<void> setMaxHeartRate(int hr) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setInt(_kMaxHRKey, hr);
+    state = hr;
+    _recomputeInBackground(hr);
+  }
+
+  void _recomputeInBackground(int maxHR) {
+    final bounds = zone2Bounds(maxHR);
+    final progressNotifier =
+        ref.read(zone2RecomputeProgressProvider.notifier);
+    RunsRepositoryPowerSync repo;
+    try {
+      repo = ref.read(runsRepositoryPowerSyncProvider);
+    } catch (_) {
+      return; // DB not yet initialized
+    }
+    repo
+        .recomputeAllZone2(
+          lowerBpm: bounds.lower,
+          upperBpm: bounds.upper,
+          onProgress: (done, total) {
+            if (ref.mounted) progressNotifier.update(done, total);
+          },
+        )
+        .then((_) {
+          if (ref.mounted) progressNotifier.clear();
+        })
+        .catchError((Object _) {
+          if (ref.mounted) progressNotifier.clear();
+        });
+  }
+}
+
+@Riverpod(keepAlive: true)
+class Zone2RecomputeProgress extends _$Zone2RecomputeProgress {
+  @override
+  (int, int)? build() => null;
+
+  void update(int done, int total) => state = (done, total);
+  void clear() => state = null;
 }

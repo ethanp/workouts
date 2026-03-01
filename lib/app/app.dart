@@ -9,31 +9,15 @@ class WorkoutsApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final initializedSynchronizer = ref.watch(powerSyncDatabaseProvider);
+    // Kick off DB initialization eagerly without blocking the UI.
+    // Each screen handles its own loading state while the DB comes up.
+    ref.watch(powerSyncDatabaseProvider);
 
     return CupertinoApp(
       title: 'Workouts',
       theme: buildAppTheme(),
       debugShowCheckedModeBanner: false,
-      home: initializedSynchronizer.when(
-        data: (_) => const MainTabScreen(),
-        error: (error, stack) => CupertinoPageScaffold(
-          navigationBar: const CupertinoNavigationBar(middle: Text('Error')),
-          child: Center(child: Text('$error')),
-        ),
-        loading: () => const CupertinoPageScaffold(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              spacing: 16,
-              children: [
-                CupertinoActivityIndicator(),
-                Text('Syncing your workouts…'),
-              ],
-            ),
-          ),
-        ),
-      ),
+      home: const MainTabScreen(),
     );
   }
 }

@@ -3,9 +3,11 @@ import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/run_calendar_day.dart';
 import 'package:workouts/models/run_heart_rate_sample.dart';
 import 'package:workouts/models/run_route_point.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/utils/zone2_calculator.dart';
 
 part 'runs_repository_powersync.g.dart';
 
@@ -37,15 +39,49 @@ class RunsRepositoryPowerSync {
       )
       .map((rows) => rows.map(_heartRateSampleFromRow).toList());
 
+  Stream<List<RunCalendarDay>> watchCalendarDays() => _db
+      .watch(
+        '''
+        SELECT
+          DATE(r.started_at, 'localtime') AS day,
+          SUM(r.distance_meters)          AS total_distance_meters,
+          SUM(r.duration_seconds)         AS total_duration_seconds,
+          COALESCE(SUM(m.zone2_seconds), 0) AS total_zone2_seconds,
+          MAX(COALESCE(m.has_hr_samples, 0)) AS has_hr_data,
+          COUNT(r.id)                     AS run_count
+        FROM runs r
+        LEFT JOIN run_computed_metrics m ON m.id = r.id
+        GROUP BY day
+        ORDER BY day ASC
+        ''',
+        // Trigger on both tables so the stream updates when metrics are written.
+        triggerOnTables: const {'runs', 'run_computed_metrics'},
+      )
+      .map(
+        (rows) => rows.map(_calendarDayFromRow).toList(),
+      );
+
+  Future<List<FitnessRun>> getRunsForDate(DateTime localDate) async {
+    final dayString =
+        '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
+    final runRows = await _db.execute(
+      "SELECT * FROM runs WHERE DATE(started_at, 'localtime') = ? ORDER BY started_at ASC",
+      [dayString],
+    );
+    return runRows.map(_runFromRow).toList();
+  }
+
   Future<void> upsertImportedRuns(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
+    int zone2LowerBpm = 114,
+    int zone2UpperBpm = 133,
   }) async {
     _log.info('Starting import of ${payloads.length} runs.');
     for (var i = 0; i < payloads.length; i++) {
       final run = _RunImport.tryParse(payloads[i]);
       if (run != null) {
-        await _upsert(run);
+        await _upsert(run, lowerBpm: zone2LowerBpm, upperBpm: zone2UpperBpm);
       } else {
         _log.warning('Skipping unparseable run payload at index $i.');
       }
@@ -54,7 +90,54 @@ class RunsRepositoryPowerSync {
     _log.info('Import complete.');
   }
 
-  Future<void> _upsert(_RunImport run) async {
+  Future<void> recomputeAllZone2({
+    required int lowerBpm,
+    required int upperBpm,
+    void Function(int done, int total)? onProgress,
+  }) async {
+    final runRows =
+        await _db.execute('SELECT id FROM runs ORDER BY started_at DESC');
+    _log.info('Recomputing Zone 2 for ${runRows.length} runs.');
+    for (var i = 0; i < runRows.length; i++) {
+      await _computeAndStoreMetrics(
+        runRows[i]['id'] as String,
+        lowerBpm: lowerBpm,
+        upperBpm: upperBpm,
+      );
+      onProgress?.call(i + 1, runRows.length);
+    }
+    _log.info('Zone 2 recompute complete.');
+  }
+
+  /// Computes Zone 2 metrics for any runs missing a `run_computed_metrics`
+  /// row, or for runs whose existing row has no HR lower bound (meaning the
+  /// computation ran before HR samples arrived).
+  Future<void> backfillMissingMetrics({
+    required int lowerBpm,
+    required int upperBpm,
+  }) async {
+    final pendingRows = await _db.execute('''
+      SELECT r.id FROM runs r
+      LEFT JOIN run_computed_metrics m ON m.id = r.id
+      WHERE m.id IS NULL OR m.zone2_hr_lower IS NULL
+    ''');
+    if (pendingRows.isEmpty) return;
+    _log.info('Backfilling Zone 2 metrics for ${pendingRows.length} runs.');
+    for (final row in pendingRows) {
+      await _computeAndStoreMetrics(
+        row['id'] as String,
+        lowerBpm: lowerBpm,
+        upperBpm: upperBpm,
+      );
+    }
+    _log.info('Backfill complete.');
+  }
+
+  Future<void> _upsert(
+    _RunImport run, {
+    required int lowerBpm,
+    required int upperBpm,
+  }) async {
     _log.fine(
       'Upserting run ${run.externalWorkoutId} '
       '(${run.routePoints.length} pts, ${run.heartRateSamples.length} HR samples)',
@@ -65,6 +148,70 @@ class RunsRepositoryPowerSync {
     await _saveRun(runId, run, createdAt: createdAt, updatedAt: now);
     await _saveRoutePoints(runId, run.routePoints, now: now);
     await _saveHeartRateSamples(runId, run.heartRateSamples, now: now);
+    await _computeAndStoreMetrics(runId, lowerBpm: lowerBpm, upperBpm: upperBpm);
+  }
+
+  Future<void> _computeAndStoreMetrics(
+    String runId, {
+    required int lowerBpm,
+    required int upperBpm,
+  }) async {
+    final sampleRows = await _db.execute(
+      'SELECT timestamp, bpm FROM run_heart_rate_samples'
+      ' WHERE run_id = ? ORDER BY timestamp ASC',
+      [runId],
+    );
+
+    final int zone2Seconds;
+    final int hasHrSamples;
+    final int? storedLower;
+    final int? storedUpper;
+
+    if (sampleRows.isEmpty) {
+      zone2Seconds = 0;
+      hasHrSamples = 0;
+      storedLower = null;
+      storedUpper = null;
+    } else {
+      final typedSamples = sampleRows
+          .map(
+            (r) => (
+              timestamp: DateTime.parse(r['timestamp'] as String),
+              bpm: r['bpm'] as int,
+            ),
+          )
+          .toList();
+      zone2Seconds = computeZone2Seconds(
+        typedSamples,
+        lowerBpm: lowerBpm,
+        upperBpm: upperBpm,
+      );
+      hasHrSamples = 1;
+      storedLower = lowerBpm;
+      storedUpper = upperBpm;
+    }
+
+    final computedAt = DateTime.now().toUtc().toIso8601String();
+    final existing = await _db.getOptional(
+      'SELECT id FROM run_computed_metrics WHERE id = ?',
+      [runId],
+    );
+    if (existing != null) {
+      await _db.execute(
+        'UPDATE run_computed_metrics'
+        ' SET zone2_seconds = ?, has_hr_samples = ?,'
+        '     zone2_hr_lower = ?, zone2_hr_upper = ?, computed_at = ?'
+        ' WHERE id = ?',
+        [zone2Seconds, hasHrSamples, storedLower, storedUpper, computedAt, runId],
+      );
+    } else {
+      await _db.execute(
+        'INSERT INTO run_computed_metrics'
+        '  (id, zone2_seconds, has_hr_samples, zone2_hr_lower, zone2_hr_upper, computed_at)'
+        ' VALUES (?, ?, ?, ?, ?, ?)',
+        [runId, zone2Seconds, hasHrSamples, storedLower, storedUpper, computedAt],
+      );
+    }
   }
 
   /// Returns the deterministic UUID for [externalWorkoutId], deleting any
@@ -205,6 +352,23 @@ class RunsRepositoryPowerSync {
         );
       }
     });
+  }
+
+  RunCalendarDay _calendarDayFromRow(Map<String, dynamic> row) {
+    final dayString = row['day'] as String;
+    final parts = dayString.split('-');
+    return RunCalendarDay(
+      date: DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      ),
+      totalDistanceMeters: _asDouble(row['total_distance_meters']) ?? 0,
+      totalDurationSeconds: (row['total_duration_seconds'] as int?) ?? 0,
+      zone2Minutes: ((row['total_zone2_seconds'] as int? ?? 0) ~/ 60),
+      hasHrData: (row['has_hr_data'] as int? ?? 0) == 1,
+      runCount: (row['run_count'] as int?) ?? 0,
+    );
   }
 
   FitnessRun _runFromRow(Map<String, dynamic> row) => FitnessRun(

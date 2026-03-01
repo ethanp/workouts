@@ -36,6 +36,8 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             _UnitSystemTile(unitSystem: unitSystem, ref: ref),
             const SizedBox(height: AppSpacing.lg),
+            const _MaxHeartRateTile(),
+            const SizedBox(height: AppSpacing.lg),
             _TrainingInfluencesTile(influencesAsync: influencesAsync),
             const SizedBox(height: AppSpacing.lg),
             _SyncStatusTile(syncStatus: syncStatus),
@@ -117,6 +119,96 @@ class _UnitSystemTile extends StatelessWidget {
               }
             },
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MaxHeartRateTile extends ConsumerStatefulWidget {
+  const _MaxHeartRateTile();
+
+  @override
+  ConsumerState<_MaxHeartRateTile> createState() => _MaxHeartRateTileState();
+}
+
+class _MaxHeartRateTileState extends ConsumerState<_MaxHeartRateTile> {
+  double? _dragValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxHR = ref.watch(maxHeartRateProvider);
+    final recomputeProgress = ref.watch(zone2RecomputeProgressProvider);
+    final displayHR = _dragValue?.round() ?? maxHR;
+    final lowerBound = (displayHR * 0.60).floor();
+    final upperBound = (displayHR * 0.70).ceil();
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundDepth3,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Icon(
+                  CupertinoIcons.heart_fill,
+                  color: AppColors.error,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Max Heart Rate', style: AppTypography.subtitle),
+                    Text(
+                      '$displayHR bpm  ·  Zone 2: $lowerBound–$upperBound',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textColor3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          CupertinoSlider(
+            value: _dragValue ?? maxHR.toDouble(),
+            min: 140,
+            max: 220,
+            divisions: 80,
+            onChanged: (value) => setState(() => _dragValue = value),
+            onChangeEnd: (value) {
+              setState(() => _dragValue = null);
+              ref
+                  .read(maxHeartRateProvider.notifier)
+                  .setMaxHeartRate(value.round());
+            },
+          ),
+          if (recomputeProgress != null)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                'Recomputing Zone 2: ${recomputeProgress.$1}/${recomputeProgress.$2}',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor4,
+                ),
+              ),
+            ),
         ],
       ),
     );
