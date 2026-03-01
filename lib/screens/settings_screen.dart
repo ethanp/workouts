@@ -452,6 +452,9 @@ class _HealthRunImportValidationTileState
   @override
   Widget build(BuildContext context) {
     final runImportAsync = ref.watch(runImportControllerProvider);
+    final runImportProgress =
+        runImportAsync.value ?? const RunImportProgress.idle();
+    final isImportingRuns = runImportProgress.inProgress;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -521,12 +524,12 @@ class _HealthRunImportValidationTileState
           SizedBox(
             width: double.infinity,
             child: CupertinoButton.filled(
-              onPressed: runImportAsync.isLoading
+              onPressed: isImportingRuns
                   ? null
                   : () => ref
                         .read(runImportControllerProvider.notifier)
                         .importRecentRuns(),
-              child: runImportAsync.isLoading
+              child: isImportingRuns
                   ? const CupertinoActivityIndicator(
                       color: CupertinoColors.white,
                     )
@@ -539,10 +542,29 @@ class _HealthRunImportValidationTileState
                     ),
             ),
           ),
-          if (runImportAsync.value != null && runImportAsync.value! > 0) ...[
+          if (isImportingRuns) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Imported ${runImportAsync.value} runs.',
+              'Importing runs ${runImportProgress.processedRuns}/${runImportProgress.totalRuns}',
+              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              child: Container(
+                height: 6,
+                color: AppColors.backgroundDepth3,
+                child: FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: runImportProgress.progressFraction.clamp(0.0, 1.0),
+                  child: Container(color: AppColors.accentPrimary),
+                ),
+              ),
+            ),
+          ] else if (runImportProgress.processedRuns > 0) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Imported ${runImportProgress.processedRuns} runs.',
               style: AppTypography.caption.copyWith(color: AppColors.success),
             ),
           ],

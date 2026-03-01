@@ -13,6 +13,8 @@ class RunsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final runsAsync = ref.watch(runsStreamProvider);
     final importAsync = ref.watch(runImportControllerProvider);
+    final importProgress = importAsync.value ?? const RunImportProgress.idle();
+    final isImporting = importProgress.inProgress;
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -20,37 +22,87 @@ class RunsScreen extends ConsumerWidget {
         middle: const Text('Runs'),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: importAsync.isLoading
+          onPressed: isImporting
               ? null
               : () =>
                     ref.read(runImportControllerProvider.notifier).importRecentRuns(),
-          child: importAsync.isLoading
+          child: isImporting
               ? const CupertinoActivityIndicator()
               : const Icon(CupertinoIcons.arrow_down_circle),
         ),
       ),
       child: SafeArea(
-        child: runsAsync.when(
-          data: (runs) => runs.isEmpty
-              ? _EmptyRunsState(
-                  onImport: () => ref
-                      .read(runImportControllerProvider.notifier)
-                      .importRecentRuns(),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
-                  itemCount: runs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, index) => _RunTile(run: runs[index]),
+        child: Column(
+          children: [
+            if (isImporting)
+              _ImportProgressBanner(importProgress: importProgress),
+            Expanded(
+              child: runsAsync.when(
+                data: (runs) => runs.isEmpty
+                    ? _EmptyRunsState(
+                        onImport: () => ref
+                            .read(runImportControllerProvider.notifier)
+                            .importRecentRuns(),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.all(AppSpacing.lg),
+                        itemCount: runs.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.sm),
+                        itemBuilder: (context, index) => _RunTile(run: runs[index]),
+                      ),
+                loading: () => const Center(child: CupertinoActivityIndicator()),
+                error: (error, _) => Center(
+                  child: Text(
+                    'Unable to load runs: $error',
+                    style: AppTypography.body.copyWith(color: AppColors.error),
+                  ),
                 ),
-          loading: () => const Center(child: CupertinoActivityIndicator()),
-          error: (error, _) => Center(
-            child: Text(
-              'Unable to load runs: $error',
-              style: AppTypography.body.copyWith(color: AppColors.error),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ImportProgressBanner extends StatelessWidget {
+  const _ImportProgressBanner({required this.importProgress});
+
+  final RunImportProgress importProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    final progressFraction = importProgress.progressFraction.clamp(0.0, 1.0);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      color: AppColors.backgroundDepth2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Importing runs ${importProgress.processedRuns}/${importProgress.totalRuns}',
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Container(
+              height: 6,
+              color: AppColors.backgroundDepth3,
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progressFraction,
+                child: Container(color: AppColors.accentPrimary),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
