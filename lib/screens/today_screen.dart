@@ -50,27 +50,17 @@ class TodayScreen extends ConsumerWidget {
         for (final template in items) ...[
           TodayTemplateCard(
             template: template,
-            onStart: () => _startSession(ref, template.id),
+            onStart: () =>
+                ref.read(activeSessionProvider.notifier).start(template.id),
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
         _GenerateWorkoutButton(
-          onSelected: (option) => _handleGeneratedWorkout(context, option, ref),
+          onSelected: (option) =>
+              ref.read(workoutGenerationProvider.notifier).select(option),
         ),
       ],
     );
-  }
-
-  Future<void> _startSession(WidgetRef ref, String templateId) async {
-    await ref.read(activeSessionProvider.notifier).start(templateId);
-  }
-
-  Future<void> _handleGeneratedWorkout(
-    BuildContext context,
-    LlmWorkoutOption option,
-    WidgetRef ref,
-  ) async {
-    await ref.read(workoutGenerationProvider.notifier).select(option);
   }
 }
 
@@ -106,38 +96,44 @@ class _GenerateWorkoutButton extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                CupertinoIcons.sparkles,
-                color: AppColors.textColor2,
-                size: 20,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Need inspiration?', style: AppTypography.subtitle),
-            ],
-          ),
+          headline(),
           const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Generate personalized workout options based on your goals and recent training.',
-            style: AppTypography.body.copyWith(color: AppColors.textColor2),
-          ),
+          subtitle(),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            child: CupertinoButton(
-              color: AppColors.backgroundDepth3,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              onPressed: () async {
-                final option = await WorkoutOptionsSheet.show(context);
-                if (option != null) {
-                  onSelected(option);
-                }
-              },
-              child: const Text('Generate Workout'),
-            ),
-          ),
+          button(context),
         ],
+      ),
+    );
+  }
+
+  Widget subtitle() {
+    return Text(
+      'Generate personalized workout options based on your goals and recent training.',
+      style: AppTypography.body.copyWith(color: AppColors.textColor2),
+    );
+  }
+
+  Widget headline() {
+    return Row(
+      children: [
+        Icon(CupertinoIcons.sparkles, color: AppColors.textColor2, size: 20),
+        const SizedBox(width: AppSpacing.sm),
+        Text('Need inspiration?', style: AppTypography.subtitle),
+      ],
+    );
+  }
+
+  Widget button(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: CupertinoButton(
+        color: AppColors.backgroundDepth3,
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        onPressed: () async {
+          final option = await WorkoutOptionsSheet.show(context);
+          if (option != null) onSelected(option);
+        },
+        child: const Text('Generate Workout'),
       ),
     );
   }

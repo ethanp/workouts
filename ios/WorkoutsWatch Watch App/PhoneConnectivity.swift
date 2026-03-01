@@ -28,6 +28,13 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         session.delegate = self
         session.activate()
     }
+
+    private func canSendMessages(on session: WCSession) -> Bool {
+        guard session.activationState == .activated else {
+            return false
+        }
+        return session.isReachable
+    }
     
     /// Send a heart rate sample to the phone.
     func sendHeartRateSample(
@@ -38,7 +45,8 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         energyKcal: Double?,
         source: String = "watch"
     ) {
-        guard WCSession.default.isReachable else { return }
+        let session = WCSession.default
+        guard canSendMessages(on: session) else { return }
         
         let formatter = ISO8601DateFormatter()
         var payload: [String: Any] = [
@@ -52,15 +60,16 @@ final class PhoneConnectivity: NSObject, ObservableObject {
             payload["energyKcal"] = energy
         }
         
-        WCSession.default.sendMessage(["sample": payload], replyHandler: nil) { error in
+        session.sendMessage(["sample": payload], replyHandler: nil) { error in
             print("Failed to send HR sample: \(error.localizedDescription)")
         }
     }
     
     /// Send buffered samples (e.g., after reconnect).
     func sendBufferedSamples(_ samples: [[String: Any]]) {
-        guard WCSession.default.isReachable, !samples.isEmpty else { return }
-        WCSession.default.sendMessage(["samples": samples], replyHandler: nil) { error in
+        let session = WCSession.default
+        guard canSendMessages(on: session), !samples.isEmpty else { return }
+        session.sendMessage(["samples": samples], replyHandler: nil) { error in
             print("Failed to send buffered samples: \(error.localizedDescription)")
         }
     }

@@ -21,7 +21,7 @@ void main() {
       });
 
       final status = await container.read(
-        healthKitPermissionNotifierProvider.future,
+        healthKitPermissionProvider.future,
       );
       expect(status, HealthPermissionStatus.limited);
     });
@@ -40,9 +40,9 @@ void main() {
       });
 
       await container
-          .read(healthKitPermissionNotifierProvider.notifier)
+          .read(healthKitPermissionProvider.notifier)
           .requestAuthorization();
-      final updated = container.read(healthKitPermissionNotifierProvider);
+      final updated = container.read(healthKitPermissionProvider);
       expect(updated.value, HealthPermissionStatus.authorized);
     });
   });
@@ -59,11 +59,11 @@ void main() {
       });
 
       final notifier = container.read(
-        heartRateTimelineNotifierProvider.notifier,
+        heartRateTimelineProvider.notifier,
       );
       notifier.clear();
 
-      final timeline = container.read(heartRateTimelineNotifierProvider);
+      final timeline = container.read(heartRateTimelineProvider);
       expect(timeline, isEmpty);
     });
   });

@@ -71,6 +71,56 @@ class HealthKitBridge {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchRecentRunningWorkouts({
+    int maxWorkouts = 20,
+    bool includeRoute = false,
+    int maxRoutePoints = 1500,
+    bool includeHeartRateSeries = true,
+  }) async {
+    try {
+      final payload = await _methodChannel.invokeMethod<List<Object?>>(
+        'fetchRecentRunningWorkouts',
+        {
+          'maxWorkouts': maxWorkouts,
+          'includeRoute': includeRoute,
+          'maxRoutePoints': maxRoutePoints,
+          'includeHeartRateSeries': includeHeartRateSeries,
+        },
+      );
+      if (payload == null) {
+        return const [];
+      }
+      return payload
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
+  Future<Map<String, dynamic>> validateRunningWorkoutFields({
+    int maxWorkouts = 20,
+  }) async {
+    try {
+      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+        'validateRunningWorkoutFields',
+        {'maxWorkouts': maxWorkouts},
+      );
+      if (payload == null) {
+        return const {};
+      }
+      return Map<String, dynamic>.from(
+        payload.map((key, value) => MapEntry('$key', value)),
+      );
+    } on MissingPluginException {
+      return const {};
+    } on PlatformException {
+      return const {};
+    }
+  }
+
   HealthPermissionStatus _mapStatus(String? status) {
     return switch (status) {
       'authorized' => HealthPermissionStatus.authorized,

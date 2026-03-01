@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
@@ -36,6 +38,8 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             _PermissionStatusTile(permissionAsync: permissionAsync, ref: ref),
             const SizedBox(height: AppSpacing.lg),
+            const _HealthRunImportValidationTile(),
+            const SizedBox(height: AppSpacing.lg),
             _HealthDataActions(exportAsync: exportAsync, ref: ref),
           ],
         ),
@@ -58,9 +62,7 @@ class _TrainingInfluencesTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
-        CupertinoPageRoute<void>(
-          builder: (_) => const InfluencesScreen(),
-        ),
+        CupertinoPageRoute<void>(builder: (_) => const InfluencesScreen()),
       ),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -427,5 +429,368 @@ class _HealthDataActions extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _HealthRunImportValidationTile extends ConsumerStatefulWidget {
+  const _HealthRunImportValidationTile();
+
+  @override
+  ConsumerState<_HealthRunImportValidationTile> createState() =>
+      _HealthRunImportValidationTileState();
+}
+
+class _HealthRunImportValidationTileState
+    extends ConsumerState<_HealthRunImportValidationTile> {
+  bool _isLoadingPreview = false;
+  bool _isLoadingValidation = false;
+  List<Map<String, dynamic>> _previewRuns = const [];
+  Map<String, dynamic> _validationSummary = const {};
+  String? _errorMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Run Import Validation', style: AppTypography.subtitle),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Fetch recent Apple Health runs and verify which fields are populated before finalizing schema.',
+            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: CupertinoButton.filled(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  onPressed: _isLoadingPreview || _isLoadingValidation
+                      ? null
+                      : _loadPreviewRuns,
+                  child: _isLoadingPreview
+                      ? const CupertinoActivityIndicator(
+                          color: CupertinoColors.white,
+                        )
+                      : const Text(
+                          'Preview Runs',
+                          style: TextStyle(
+                            color: CupertinoColors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
+                  color: AppColors.backgroundDepth3,
+                  onPressed: _isLoadingPreview || _isLoadingValidation
+                      ? null
+                      : _validateFields,
+                  child: _isLoadingValidation
+                      ? const CupertinoActivityIndicator()
+                      : Text(
+                          'Validate Fields',
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textColor1,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+          if (_errorMessage != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              _errorMessage!,
+              style: AppTypography.caption.copyWith(color: AppColors.error),
+            ),
+          ],
+          if (_previewRuns.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Preview (${_previewRuns.length} runs)',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor4,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            ..._previewRuns.take(3).map(_buildPreviewRow),
+            ..._buildRouteMapPreview(),
+          ],
+          if (_validationSummary.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _buildCoverageSummary(_validationSummary),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPreviewRow(Map<String, dynamic> runMap) {
+    final distanceMeters = (runMap['distanceMeters'] as num?)?.toDouble();
+    final durationSeconds = (runMap['durationSeconds'] as num?)?.toInt();
+    final avgPaceSecondsPerKilometer =
+        distanceMeters != null && durationSeconds != null && distanceMeters > 0
+        ? (durationSeconds / (distanceMeters / 1000))
+        : null;
+
+    final distanceKmText = distanceMeters == null
+        ? '-'
+        : (distanceMeters / 1000).toStringAsFixed(2);
+    final paceText = avgPaceSecondsPerKilometer == null
+        ? '--:--/km'
+        : _formatPace(avgPaceSecondsPerKilometer);
+    final startDate = runMap['startDate'] as String? ?? 'unknown date';
+    final routeAvailable = runMap['routeAvailable'] == true;
+    final heartRateSampleCount = runMap['heartRateSampleCount'] as int? ?? 0;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Text(
+        '$startDate  |  $distanceKmText km  |  $paceText  |  HR samples: $heartRateSampleCount  |  route: ${routeAvailable ? "yes" : "no"}',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  List<Widget> _buildRouteMapPreview() {
+    final firstRunWithRoutePoints = _previewRuns.firstWhere((runPayload) {
+      final routePointsRaw = runPayload['routePoints'];
+      if (routePointsRaw is! List) {
+        return false;
+      }
+      return routePointsRaw.isNotEmpty;
+    }, orElse: () => const {});
+    if (firstRunWithRoutePoints.isEmpty) {
+      return [
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'No route points available in this preview set.',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+      ];
+    }
+
+    final routeLatLngPoints = _extractRouteLatLngPoints(
+      firstRunWithRoutePoints,
+    );
+    if (routeLatLngPoints.length < 2) {
+      return [
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Route exists but has insufficient points for polyline rendering.',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+      ];
+    }
+
+    final routeBounds = LatLngBounds.fromPoints(routeLatLngPoints);
+    return [
+      const SizedBox(height: AppSpacing.md),
+      Text(
+        'Route preview',
+        style: AppTypography.caption.copyWith(
+          color: AppColors.textColor4,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: SizedBox(
+          height: 220,
+          child: FlutterMap(
+            options: MapOptions(
+              initialCameraFit: CameraFit.bounds(
+                bounds: routeBounds,
+                padding: const EdgeInsets.all(24),
+              ),
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.workouts.app',
+              ),
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: routeLatLngPoints,
+                    strokeWidth: 4,
+                    color: AppColors.accentPrimary,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        'OpenStreetMap preview from imported Health route points.',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+      ),
+    ];
+  }
+
+  List<LatLng> _extractRouteLatLngPoints(Map<String, dynamic> runPayload) {
+    final routePointsRaw = runPayload['routePoints'];
+    if (routePointsRaw is! List) {
+      return const [];
+    }
+    final latLngPoints = <LatLng>[];
+    for (final rawPoint in routePointsRaw) {
+      if (rawPoint is! Map) {
+        continue;
+      }
+      final pointMap = Map<String, dynamic>.from(rawPoint);
+      final latitude = (pointMap['lat'] as num?)?.toDouble();
+      final longitude = (pointMap['lng'] as num?)?.toDouble();
+      if (latitude == null || longitude == null) {
+        continue;
+      }
+      latLngPoints.add(LatLng(latitude, longitude));
+    }
+    return latLngPoints;
+  }
+
+  Widget _buildCoverageSummary(Map<String, dynamic> validationSummary) {
+    final workoutCount = validationSummary['workoutCount'] as int? ?? 0;
+    final coverageMap =
+        (validationSummary['fieldCoverage'] as Map?)?.map(
+          (key, value) => MapEntry('$key', Map<String, dynamic>.from(value)),
+        ) ??
+        const <String, Map<String, dynamic>>{};
+
+    final orderedFields = [
+      'distanceMeters',
+      'energyKcal',
+      'avgHeartRateBpm',
+      'maxHeartRateBpm',
+      'heartRateSampleCount',
+      'routeAvailable',
+      'sourceName',
+      'deviceModel',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Coverage ($workoutCount workouts)',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textColor4,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (validationSummary['totalHeartRateSamples'] != null) ...[
+          Text(
+            'Total HR samples: ${validationSummary['totalHeartRateSamples']} '
+            'across ${validationSummary['workoutsWithHeartRateSamples'] ?? 0} workouts',
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        const SizedBox(height: AppSpacing.xs),
+        ...orderedFields.map((fieldName) {
+          final fieldSummary = coverageMap[fieldName];
+          final presentCount = fieldSummary?['present'] as int? ?? 0;
+          final missingCount = fieldSummary?['missing'] as int? ?? workoutCount;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 2),
+            child: Text(
+              '$fieldName: $presentCount present, $missingCount missing',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  String _formatPace(double secondsPerKilometer) {
+    final wholeSeconds = secondsPerKilometer.round();
+    final minutes = wholeSeconds ~/ 60;
+    final seconds = wholeSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}/km';
+  }
+
+  Future<void> _loadPreviewRuns() async {
+    setState(() {
+      _isLoadingPreview = true;
+      _errorMessage = null;
+    });
+    try {
+      final healthKitBridge = ref.read(healthKitBridgeProvider);
+      final runs = await healthKitBridge.fetchRecentRunningWorkouts(
+        maxWorkouts: 8,
+        includeRoute: true,
+        maxRoutePoints: 1500,
+        includeHeartRateSeries: true,
+      );
+      if (!mounted) return;
+      setState(() {
+        _previewRuns = runs;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '$error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingPreview = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _validateFields() async {
+    setState(() {
+      _isLoadingValidation = true;
+      _errorMessage = null;
+    });
+    try {
+      final healthKitBridge = ref.read(healthKitBridgeProvider);
+      final validationSummary = await healthKitBridge
+          .validateRunningWorkoutFields(maxWorkouts: 30);
+      if (!mounted) return;
+      setState(() {
+        _validationSummary = validationSummary;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = '$error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingValidation = false;
+        });
+      }
+    }
   }
 }
