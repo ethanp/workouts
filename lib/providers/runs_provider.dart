@@ -86,10 +86,8 @@ Future<void> runMetricsBackfill(Ref ref) async {
   final db = ref.watch(powerSyncDatabaseProvider).value;
   if (db == null) return; // Rebuilds automatically when DB resolves.
   final maxHR = ref.watch(maxHeartRateProvider);
-  final bounds = zone2Bounds(maxHR);
-  await RunsRepositoryPowerSync(
-    db,
-  ).backfillMissingMetrics(lowerBpm: bounds.lower, upperBpm: bounds.upper);
+  final zone2 = Zone2Calculator(maxHeartRate: maxHR);
+  await RunsRepositoryPowerSync(db).backfillMissingMetrics(zone2: zone2);
 }
 
 @riverpod
@@ -137,11 +135,10 @@ class RunImportController extends _$RunImportController {
       }
 
       final maxHR = ref.read(maxHeartRateProvider);
-      final bounds = zone2Bounds(maxHR);
+      final zone2 = Zone2Calculator(maxHeartRate: maxHR);
       final newCount = await runsRepository.upsertImportedRuns(
         importedRuns,
-        zone2LowerBpm: bounds.lower,
-        zone2UpperBpm: bounds.upper,
+        zone2: zone2,
         onProgress: (processedRuns, totalRuns) {
           if (ref.mounted) {
             state = AsyncValue.data(

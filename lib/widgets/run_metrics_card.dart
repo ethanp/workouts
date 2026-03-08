@@ -55,7 +55,7 @@ class _MetricsHeader extends StatelessWidget {
   });
 
   final List<HeartRateSample> samples;
-  final List<_SpeedSample> speedSamples;
+  final List<SpeedSample> speedSamples;
   final UnitSystem unitSystem;
 
   @override
@@ -133,7 +133,7 @@ class _TimelinePreview extends StatelessWidget {
   const _TimelinePreview({required this.samples, required this.speedSamples});
 
   final List<HeartRateSample> samples;
-  final List<_SpeedSample> speedSamples;
+  final List<SpeedSample> speedSamples;
 
   @override
   Widget build(BuildContext context) {
@@ -152,7 +152,7 @@ class MetricsMiniChart extends StatelessWidget {
   });
 
   final List<HeartRateSample> samples;
-  final List<_SpeedSample> speedSamples;
+  final List<SpeedSample> speedSamples;
 
   @override
   Widget build(BuildContext context) {
@@ -196,7 +196,7 @@ class _DualMetricPainter extends CustomPainter {
   _DualMetricPainter({required this.samples, required this.speedSamples});
 
   final List<HeartRateSample> samples;
-  final List<_SpeedSample> speedSamples;
+  final List<SpeedSample> speedSamples;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -286,14 +286,14 @@ class _DualMetricPainter extends CustomPainter {
   }
 }
 
-class _SpeedSample {
-  const _SpeedSample({required this.timestamp, required this.speedKmh});
+class SpeedSample {
+  const SpeedSample({required this.timestamp, required this.speedKmh});
 
   final DateTime timestamp;
   final double speedKmh;
 }
 
-List<_SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
+List<SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
   final timedPoints = points
       .where((p) => p.recordedAt != null)
       .toList()
@@ -302,7 +302,7 @@ List<_SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
   if (timedPoints.length < 2) return [];
 
   const maxReasonableSpeedKmh = 35.0;
-  final rawSamples = <_SpeedSample>[];
+  final rawSamples = <SpeedSample>[];
 
   for (var i = 1; i < timedPoints.length; i++) {
     final prev = timedPoints[i - 1];
@@ -323,7 +323,7 @@ List<_SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
     final midMs =
         curr.recordedAt!.difference(prev.recordedAt!).inMilliseconds ~/ 2;
     final midTime = prev.recordedAt!.add(Duration(milliseconds: midMs));
-    rawSamples.add(_SpeedSample(timestamp: midTime, speedKmh: speedKmh));
+    rawSamples.add(SpeedSample(timestamp: midTime, speedKmh: speedKmh));
   }
 
   return _rollingAverage(rawSamples, windowSize: 9);
@@ -348,8 +348,8 @@ double _haversineMeters(
   return earthRadius * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
 }
 
-List<_SpeedSample> _rollingAverage(
-  List<_SpeedSample> samples, {
+List<SpeedSample> _rollingAverage(
+  List<SpeedSample> samples, {
   required int windowSize,
 }) {
   if (samples.length <= windowSize) return samples;
@@ -360,6 +360,6 @@ List<_SpeedSample> _rollingAverage(
     final window = samples.sublist(start, end);
     final avg =
         window.map((s) => s.speedKmh).reduce((a, b) => a + b) / window.length;
-    return _SpeedSample(timestamp: samples[i].timestamp, speedKmh: avg);
+    return SpeedSample(timestamp: samples[i].timestamp, speedKmh: avg);
   });
 }

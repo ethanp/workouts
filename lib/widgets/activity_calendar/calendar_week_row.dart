@@ -2,12 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/activity_calendar/calendar_constants.dart';
 import 'package:workouts/widgets/activity_calendar/calendar_day_cell.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/activity_calendar/calendar_helpers.dart';
 
 class CalendarWeekRow extends StatelessWidget {
+  static const summaryWidth = 60.0;
+
   const CalendarWeekRow({
     super.key,
     required this.monthDate,
@@ -31,16 +31,34 @@ class CalendarWeekRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final (cells, ownsWeek) = _dayCells();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ...cells,
+          _WeekSummary(
+            ownsWeek: ownsWeek,
+            week: week,
+            firstWeekday: firstWeekday,
+            monthDate: monthDate,
+            activityData: activityData,
+            globalMax: globalMax,
+            unitSystem: unitSystem,
+          ),
+        ],
+      ),
+    );
+  }
+
+  (List<Widget>, bool) _dayCells() {
     final cells = <Widget>[];
-    var activeDays = 0;
-    var weekRunMeters = 0.0;
-    var weekSessionMinutes = 0;
-    var weekZone2Minutes = 0;
-    var weekHasHrData = false;
     var ownsWeek = false;
 
-    for (var day = 0; day < daysPerWeek; day++) {
-      final dayOffset = week * daysPerWeek + day - (firstWeekday - 1);
+    for (var day = 0; day < DateTime.daysPerWeek; day++) {
+      final dayOffset = week * DateTime.daysPerWeek + day - (firstWeekday - 1);
       final isInMonth = dayOffset >= 0 && dayOffset < daysInMonth;
 
       if (isInMonth) {
@@ -58,119 +76,102 @@ class CalendarWeekRow extends StatelessWidget {
       }
     }
 
-    if (ownsWeek) {
-      final sundayOffset = week * daysPerWeek + 6 - (firstWeekday - 1);
-      final sunday =
-          DateTime(monthDate.year, monthDate.month, sundayOffset + 1);
-      final monday = sunday.subtract(const Duration(days: 6));
-      for (var i = 0; i < daysPerWeek; i++) {
-        final date = monday.add(Duration(days: i));
-        final entry = activityData[date];
-        if (entry != null && entry.hasActivity) {
-          activeDays++;
-          weekRunMeters += entry.totalRunDistanceMeters;
-          weekSessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
-          weekZone2Minutes += entry.runZone2Minutes;
-          if (entry.runHasHrData) weekHasHrData = true;
-        }
-      }
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ...cells,
-          _WeekSummary(
-            ownsWeek: ownsWeek,
-            activeDays: activeDays,
-            runMeters: weekRunMeters,
-            sessionMinutes: weekSessionMinutes,
-            zone2Minutes: weekZone2Minutes,
-            hasHrData: weekHasHrData,
-            globalMax: globalMax,
-            unitSystem: unitSystem,
-          ),
-        ],
-      ),
-    );
+    return (cells, ownsWeek);
   }
+
 }
 
 class _WeekSummary extends StatelessWidget {
+  static const _summaryFontSize = 10.0;
+  static const _daysBadgeWidth = 18.0;
+
   const _WeekSummary({
     required this.ownsWeek,
-    required this.activeDays,
-    required this.runMeters,
-    required this.sessionMinutes,
-    required this.zone2Minutes,
-    required this.hasHrData,
+    required this.week,
+    required this.firstWeekday,
+    required this.monthDate,
+    required this.activityData,
     required this.globalMax,
     required this.unitSystem,
   });
 
   final bool ownsWeek;
-  final int activeDays;
-  final double runMeters;
-  final int sessionMinutes;
-  final int zone2Minutes;
-  final bool hasHrData;
+  final int week;
+  final int firstWeekday;
+  final DateTime monthDate;
+  final Map<DateTime, ActivityCalendarDay> activityData;
   final WeekMax globalMax;
   final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
+    final stats = ownsWeek ? _aggregate() : null;
+
     return Padding(
       padding: const EdgeInsets.only(left: 8),
       child: SizedBox(
-        width: calendarSummaryWidth,
-        child: ownsWeek && activeDays > 0 ? _content() : null,
+        width: CalendarWeekRow.summaryWidth,
+        child: stats != null && stats.activeDays > 0
+            ? _content(stats)
+            : null,
       ),
     );
   }
 
-  Widget _content() {
-    final intensity = intensityForDay(
+  _WeekStats _aggregate() {
+    final sundayOffset =
+        week * DateTime.daysPerWeek + 6 - (firstWeekday - 1);
+    final sunday =
+        DateTime(monthDate.year, monthDate.month, sundayOffset + 1);
+    final monday = sunday.subtract(const Duration(days: 6));
+
+    var activeDays = 0;
+    var runMeters = 0.0;
+    var sessionMinutes = 0;
+    var zone2Minutes = 0;
+    var hasHrData = false;
+
+    for (var i = 0; i < DateTime.daysPerWeek; i++) {
+      final date = monday.add(Duration(days: i));
+      final entry = activityData[date];
+      if (entry != null && entry.hasActivity) {
+        activeDays++;
+        runMeters += entry.totalRunDistanceMeters;
+        sessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
+        zone2Minutes += entry.runZone2Minutes;
+        if (entry.runHasHrData) hasHrData = true;
+      }
+    }
+
+    return _WeekStats(
+      activeDays: activeDays,
       runMeters: runMeters,
       sessionMinutes: sessionMinutes,
-      globalMax: globalMax,
+      zone2Minutes: zone2Minutes,
+      hasHrData: hasHrData,
     );
-    final parts = <String>[];
-    if (runMeters > 0) parts.add(Format.distanceCompact(runMeters, unitSystem));
-    if (sessionMinutes > 0) parts.add('${sessionMinutes}m');
-    final summaryLabel = parts.isEmpty ? '' : parts.join(' · ');
-    final summaryColor = CupertinoColors.white.withValues(
-      alpha: 0.4 + intensity * 0.6,
+  }
+
+  Widget _content(_WeekStats stats) {
+    final intensity = CalendarDayCell.intensityForDay(
+      runMeters: stats.runMeters,
+      sessionMinutes: stats.sessionMinutes,
+      globalMax: globalMax,
     );
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        _daysBadge(),
+        _daysBadge(stats.activeDays),
         const SizedBox(width: 4),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                summaryLabel,
-                style: TextStyle(
-                  fontSize: calendarSummaryFontSize,
-                  fontWeight:
-                      intensity > 0.5 ? FontWeight.w600 : FontWeight.normal,
-                  color: summaryColor,
-                ),
-              ),
-              if (hasHrData && zone2Minutes > 0)
-                Text(
-                  '${zone2Minutes}z',
-                  style: TextStyle(
-                    fontSize: calendarSummaryFontSize - 1,
-                    color: AppColors.textColor4,
-                  ),
-                ),
+              _activityLabel(stats, intensity),
+              if (stats.hasHrData && stats.zone2Minutes > 0)
+                _zone2Label(stats.zone2Minutes),
             ],
           ),
         ),
@@ -178,14 +179,43 @@ class _WeekSummary extends StatelessWidget {
     );
   }
 
-  Widget _daysBadge() {
-    final intensity = activeDays / daysPerWeek;
+  Widget _activityLabel(_WeekStats stats, double intensity) {
+    final parts = <String>[];
+    if (stats.runMeters > 0) {
+      parts.add(Format.distanceCompact(stats.runMeters, unitSystem));
+    }
+    if (stats.sessionMinutes > 0) parts.add('${stats.sessionMinutes}m');
+
+    return Text(
+      parts.join(' · '),
+      style: TextStyle(
+        fontSize: _summaryFontSize,
+        fontWeight: intensity > 0.5 ? FontWeight.w600 : FontWeight.normal,
+        color: CupertinoColors.white.withValues(
+          alpha: 0.4 + intensity * 0.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _zone2Label(int zone2Minutes) {
+    return Text(
+      '${zone2Minutes}z',
+      style: TextStyle(
+        fontSize: _summaryFontSize - 1,
+        color: AppColors.textColor4,
+      ),
+    );
+  }
+
+  Widget _daysBadge(int activeDays) {
+    final intensity = activeDays / DateTime.daysPerWeek;
     return SizedBox(
-      width: calendarDaysBadgeWidth,
+      width: _daysBadgeWidth,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: intensityColor(intensity * 0.7),
+          color: CalendarDayCell.intensityColor(intensity * 0.7),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
@@ -193,11 +223,27 @@ class _WeekSummary extends StatelessWidget {
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: CupertinoColors.white,
-            fontSize: calendarSummaryFontSize,
+            fontSize: _summaryFontSize,
             fontWeight: FontWeight.w600,
           ),
         ),
       ),
     );
   }
+}
+
+class _WeekStats {
+  const _WeekStats({
+    required this.activeDays,
+    required this.runMeters,
+    required this.sessionMinutes,
+    required this.zone2Minutes,
+    required this.hasHrData,
+  });
+
+  final int activeDays;
+  final double runMeters;
+  final int sessionMinutes;
+  final int zone2Minutes;
+  final bool hasHrData;
 }

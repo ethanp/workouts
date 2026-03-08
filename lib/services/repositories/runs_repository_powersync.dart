@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -84,26 +83,20 @@ class RunsRepositoryPowerSync {
       await tx.execute('DELETE FROM runs WHERE id = ?', [runId]);
     });
     _log.info('Deleted run $runId (queued for upload).');
-    debugPrint('[RunsRepository] Deleted run $runId (queued for upload).');
   }
 
   /// Returns the number of newly inserted runs (skipped ones not counted).
   Future<int> upsertImportedRuns(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
-    int zone2LowerBpm = 114,
-    int zone2UpperBpm = 133,
+    required Zone2Calculator zone2,
   }) async {
     _log.info('Starting import of ${payloads.length} runs.');
     var inserted = 0;
     for (var i = 0; i < payloads.length; i++) {
       final run = _RunImport.tryParse(payloads[i]);
       if (run != null) {
-        final wasNew = await _upsert(
-          run,
-          lowerBpm: zone2LowerBpm,
-          upperBpm: zone2UpperBpm,
-        );
+        final wasNew = await _upsert(run, zone2: zone2);
         if (wasNew) inserted++;
       } else {
         _log.warning('Skipping unparseable run payload at index $i.');
@@ -117,8 +110,7 @@ class RunsRepositoryPowerSync {
   }
 
   Future<void> recomputeAllZone2({
-    required int lowerBpm,
-    required int upperBpm,
+    required Zone2Calculator zone2,
     void Function(int done, int total)? onProgress,
   }) async {
     final runRows = await _db.execute(
@@ -126,11 +118,7 @@ class RunsRepositoryPowerSync {
     );
     _log.info('Recomputing Zone 2 for ${runRows.length} runs.');
     for (var i = 0; i < runRows.length; i++) {
-      await _computeAndStoreMetrics(
-        runRows[i]['id'] as String,
-        lowerBpm: lowerBpm,
-        upperBpm: upperBpm,
-      );
+      await _computeAndStoreMetrics(runRows[i]['id'] as String, zone2: zone2);
       onProgress?.call(i + 1, runRows.length);
     }
     _log.info('Zone 2 recompute complete.');
@@ -139,10 +127,7 @@ class RunsRepositoryPowerSync {
   /// Computes Zone 2 metrics for any runs missing a `run_computed_metrics`
   /// row, or for runs whose existing row has no HR lower bound (meaning the
   /// computation ran before HR samples arrived).
-  Future<void> backfillMissingMetrics({
-    required int lowerBpm,
-    required int upperBpm,
-  }) async {
+  Future<void> backfillMissingMetrics({required Zone2Calculator zone2}) async {
     final pendingRows = await _db.execute('''
       SELECT r.id FROM runs r
       LEFT JOIN run_computed_metrics m ON m.id = r.id
@@ -151,11 +136,7 @@ class RunsRepositoryPowerSync {
     if (pendingRows.isEmpty) return;
     _log.info('Backfilling Zone 2 metrics for ${pendingRows.length} runs.');
     for (final row in pendingRows) {
-      await _computeAndStoreMetrics(
-        row['id'] as String,
-        lowerBpm: lowerBpm,
-        upperBpm: upperBpm,
-      );
+      await _computeAndStoreMetrics(row['id'] as String, zone2: zone2);
     }
     _log.info('Backfill complete.');
   }
@@ -163,8 +144,7 @@ class RunsRepositoryPowerSync {
   /// Returns true if the run was newly inserted, false if already stored.
   Future<bool> _upsert(
     _RunImport run, {
-    required int lowerBpm,
-    required int upperBpm,
+    required Zone2Calculator zone2,
   }) async {
     final runId = await _resolveRunId(run.externalWorkoutId);
     if (await _existingCreatedAt(runId) != null) {
@@ -179,18 +159,13 @@ class RunsRepositoryPowerSync {
     await _saveRun(runId, run, createdAt: now, updatedAt: now);
     await _saveRoutePoints(runId, run.routePoints, now: now);
     await _saveHeartRateSamples(runId, run.heartRateSamples, now: now);
-    await _computeAndStoreMetrics(
-      runId,
-      lowerBpm: lowerBpm,
-      upperBpm: upperBpm,
-    );
+    await _computeAndStoreMetrics(runId, zone2: zone2);
     return true;
   }
 
   Future<void> _computeAndStoreMetrics(
     String runId, {
-    required int lowerBpm,
-    required int upperBpm,
+    required Zone2Calculator zone2,
   }) async {
     final sampleRows = await _db.execute(
       'SELECT timestamp, bpm FROM run_heart_rate_samples'
@@ -211,20 +186,16 @@ class RunsRepositoryPowerSync {
     } else {
       final typedSamples = sampleRows
           .map(
-            (r) => (
+            (r) => TimestampedHeartRate(
               timestamp: DateTime.parse(r['timestamp'] as String),
               bpm: r['bpm'] as int,
             ),
           )
           .toList();
-      zone2Seconds = computeZone2Seconds(
-        typedSamples,
-        lowerBpm: lowerBpm,
-        upperBpm: upperBpm,
-      );
+      zone2Seconds = zone2.seconds(typedSamples);
       hasHrSamples = 1;
-      storedLower = lowerBpm;
-      storedUpper = upperBpm;
+      storedLower = zone2.lowerBpm;
+      storedUpper = zone2.upperBpm;
     }
 
     final computedAt = DateTime.now().toUtc().toIso8601String();

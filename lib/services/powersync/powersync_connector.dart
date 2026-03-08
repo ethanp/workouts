@@ -1,17 +1,20 @@
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
+import 'package:workouts/services/powersync/postgrest_uploader.dart';
 
 final _log = Logger('PowerSyncConnector');
 
 String _jwtSecret() => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
+/// Generates an HS256 JWT for PowerSync authentication.
+///
+/// Claims follow the PowerSync custom auth spec:
+/// https://docs.powersync.com/installation/authentication-setup/custom
 String generatePowerSyncToken({String userId = 'default'}) {
   final jwt = JWT(
     {
@@ -30,24 +33,13 @@ String generatePowerSyncToken({String userId = 'default'}) {
 }
 
 class WorkoutsBackendConnector extends PowerSyncBackendConnector {
-  WorkoutsBackendConnector(this.powersyncUrl, this.postgrestUrl);
+  WorkoutsBackendConnector(this.powersyncUrl, String postgrestUrl)
+      : _uploader = PostgRestUploader(postgrestUrl);
 
   final String powersyncUrl;
-  final String postgrestUrl;
+  final PostgRestUploader _uploader;
 
-  // Run-table ops must precede child-table ops in every batch to satisfy FK
-  // constraints (run_route_points.run_id and run_heart_rate_samples.run_id
-  // reference runs.id). Child ops within a batch are uploaded concurrently.
-  static const _childUploadConcurrency = 30;
-
-  static const _runChildTables = {'run_route_points', 'run_heart_rate_samples'};
-
-  // Natural unique keys used by PostgREST to resolve duplicate-key conflicts
-  // without generating a DELETE event on the server.
-  static const _childTableConflictColumns = {
-    'run_route_points': 'run_id,point_index',
-    'run_heart_rate_samples': 'run_id,timestamp',
-  };
+  static const _chunkConcurrency = 30;
 
   @override
   Future<PowerSyncCredentials?> fetchCredentials() async {
@@ -63,167 +55,142 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
   Future<void> uploadData(PowerSyncDatabase database) async {
     final batch = await database.getCrudBatch(limit: 1000);
     if (batch == null) {
-      final remainingRows = await database.execute(
-        'SELECT COUNT(*) AS cnt FROM ps_crud',
-      );
-      final totalRemaining = remainingRows.first['cnt'] as int? ?? 0;
-      if (totalRemaining == 0) {
-        _log.info('Upload: no batch, queue empty.');
-        debugPrint('[PowerSyncConnector] Upload: no batch, queue empty.');
-      } else {
-        _log.info(
-          'Upload: no batch available, but $totalRemaining ops still in queue.',
-        );
-        debugPrint(
-          '[PowerSyncConnector] Upload: no batch, $totalRemaining ops in queue.',
-        );
-      }
+      _logEmptyBatch(await _queueDepth(database));
       return;
     }
 
-    final totalInBatch = batch.crud.length;
-    final remainingRows = await database.execute(
-      'SELECT COUNT(*) AS cnt FROM ps_crud',
-    );
-    final totalRemaining = remainingRows.first['cnt'] as int? ?? 0;
-
+    final queueDepth = await _queueDepth(database);
     _log.info(
-      'Processing upload batch: $totalInBatch ops in this batch, '
-      '$totalRemaining total remaining in queue.',
-    );
-    debugPrint(
-      '[PowerSyncConnector] Processing upload batch: $totalInBatch ops, '
-      '$totalRemaining remaining.',
+      'Processing upload batch: ${batch.crud.length} ops, '
+      '$queueDepth total remaining in queue.',
     );
 
-    var uploaded = 0;
-    var discarded = 0;
-
-    // Reuse a single HTTP client across all ops so connections are kept alive
-    // and pooled rather than opened/closed per request.
-    final client = http.Client();
-    try {
-      final runOps = batch.crud.where((op) => op.table == 'runs').toList();
-      final childOps = batch.crud.where((op) => op.table != 'runs').toList();
-
-      for (final op in runOps) {
-        if (await _uploadOperation(op, client)) {
-          discarded++;
-        } else {
-          uploaded++;
-        }
-      }
-
-      for (var i = 0; i < childOps.length; i += _childUploadConcurrency) {
-        final chunk = childOps.sublist(
-          i,
-          math.min(i + _childUploadConcurrency, childOps.length),
-        );
-        final results = await Future.wait(
-          chunk.map((op) => _uploadOperation(op, client)),
-        );
-        for (final wasDiscarded in results) {
-          if (wasDiscarded) {
-            discarded++;
-          } else {
-            uploaded++;
-          }
-        }
-      }
-    } finally {
-      client.close();
-    }
-
+    final (uploaded, discarded) = await _processBatch(batch);
     await batch.complete();
 
     _log.info(
       'Batch complete: $uploaded uploaded, $discarded discarded. '
-      '${totalRemaining - totalInBatch} ops still queued.',
-    );
-    debugPrint(
-      '[PowerSyncConnector] Batch complete: $uploaded uploaded, $discarded discarded.',
+      '${queueDepth - batch.crud.length} ops still queued.',
     );
   }
 
-  /// Returns true if the entry was discarded rather than uploaded.
-  Future<bool> _uploadOperation(CrudEntry op, http.Client client) async {
-    final table = op.table;
-    final data = op.opData;
-
-    try {
-      switch (op.op) {
-        case UpdateType.put:
-          final conflictColumns = _childTableConflictColumns[table];
-          final putUrl = conflictColumns != null
-              ? '$postgrestUrl/$table?on_conflict=$conflictColumns'
-              : '$postgrestUrl/$table';
-          final response = await client.post(
-            Uri.parse(putUrl),
-            headers: {
-              'Content-Type': 'application/json',
-              'Prefer': 'resolution=merge-duplicates',
-            },
-            body: jsonEncode({...?data, 'id': op.id}),
-          );
-          if (response.statusCode == 409) {
-            final body = response.body;
-            if (body.contains('"23505"') && table == 'runs') {
-              // Server has this run under an old random UUID. Delete it
-              // (cascades child rows) then reinsert with the deterministic UUID.
-              final externalId = data?['external_workout_id'] as String?;
-              if (externalId != null) {
-                await client.delete(
-                  Uri.parse(
-                    '$postgrestUrl/$table?external_workout_id=eq.$externalId',
-                  ),
-                  headers: {'Content-Type': 'application/json'},
-                );
-                final retryResponse = await client.post(
-                  Uri.parse('$postgrestUrl/$table'),
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Prefer': 'resolution=merge-duplicates',
-                  },
-                  body: jsonEncode({...?data, 'id': op.id}),
-                );
-                if (retryResponse.statusCode >= 400) {
-                  throw Exception(
-                    'PostgREST error on retry after DELETE: '
-                    '${retryResponse.statusCode} ${retryResponse.body}',
-                  );
-                }
-              }
-            } else if (body.contains('"23503"') &&
-                _runChildTables.contains(table)) {
-              // FK violation: child row references a run_id that no longer
-              // exists on the server. Discard — modifying the DB here would
-              // generate new CRUD entries and cause an upload loop.
-              return true;
-            } else {
-              throw Exception('PostgREST error: ${response.statusCode} $body');
-            }
-          } else if (response.statusCode >= 400) {
-            throw Exception(
-              'PostgREST error: ${response.statusCode} ${response.body}',
-            );
-          }
-
-        case UpdateType.patch:
-          await client.patch(
-            Uri.parse('$postgrestUrl/$table?id=eq.${op.id}'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode(data),
-          );
-
-        case UpdateType.delete:
-          await client.delete(
-            Uri.parse('$postgrestUrl/$table?id=eq.${op.id}'),
-          );
-      }
-    } catch (e) {
-      _log.severe('Upload error for $table ${op.id}: $e');
-      rethrow;
+  void _logEmptyBatch(int queueDepth) {
+    if (queueDepth == 0) {
+      _log.info('Upload: no batch, queue empty.');
+    } else {
+      _log.info(
+        'Upload: no batch available, but $queueDepth ops still in queue.',
+      );
     }
-    return false;
+  }
+
+  Future<int> _queueDepth(PowerSyncDatabase database) async {
+    final rows = await database.execute(
+      'SELECT COUNT(*) AS cnt FROM ps_crud',
+    );
+    return rows.first['cnt'] as int? ?? 0;
+  }
+
+  /// Uploads ops tier-by-tier so FK parent rows exist before their children.
+  /// Within each tier, ops are uploaded in concurrent chunks.
+  Future<(int, int)> _processBatch(CrudBatch batch) async {
+    var uploaded = 0;
+    var discarded = 0;
+
+    void tally(bool wasDiscarded) {
+      if (wasDiscarded) {
+        discarded++;
+      } else {
+        uploaded++;
+      }
+    }
+
+    final client = http.Client();
+    try {
+      for (final tier in _UploadGraph.tiers) {
+        final tierOps =
+            batch.crud.where((op) => tier.contains(op.table)).toList();
+        await _uploadChunked(tierOps, client, tally);
+      }
+
+      final knownTables = _UploadGraph.allTables;
+      final unknownOps =
+          batch.crud.where((op) => !knownTables.contains(op.table)).toList();
+      await _uploadChunked(unknownOps, client, tally);
+    } finally {
+      client.close();
+    }
+
+    return (uploaded, discarded);
+  }
+
+  Future<void> _uploadChunked(
+    List<CrudEntry> ops,
+    http.Client client,
+    void Function(bool) tally,
+  ) async {
+    for (var i = 0; i < ops.length; i += _chunkConcurrency) {
+      final chunk = ops.sublist(
+        i,
+        math.min(i + _chunkConcurrency, ops.length),
+      );
+      final results = await Future.wait(
+        chunk.map((op) => _uploader.upload(op, client)),
+      );
+      results.forEach(tally);
+    }
+  }
+}
+
+/// FK dependency graph for upload ordering, derived from init.sql.
+///
+/// Each table declares the tables it depends on via foreign keys.
+/// [tiers] is computed via topological sort so that every table in tier N
+/// only references tables in tiers 0..N-1.
+class _UploadGraph {
+  _UploadGraph._();
+
+  /// table → tables it holds foreign keys to.
+  static const dependencies = <String, Set<String>>{
+    'exercises': {},
+    'workout_templates': {},
+    'fitness_goals': {},
+    'runs': {},
+    'training_influences': {},
+    'workout_blocks': {'workout_templates'},
+    'sessions': {'workout_templates'},
+    'background_notes': {'fitness_goals'},
+    'run_route_points': {'runs'},
+    'run_heart_rate_samples': {'runs'},
+    'workout_block_exercises': {'workout_blocks', 'exercises'},
+    'session_blocks': {'sessions'},
+    'session_notes': {'sessions'},
+    'heart_rate_samples': {'sessions'},
+    'session_block_exercises': {'session_blocks', 'exercises'},
+    'session_set_logs': {'session_blocks', 'exercises'},
+  };
+
+  static final tiers = _topologicalTiers();
+  static final allTables = dependencies.keys.toSet();
+
+  static List<Set<String>> _topologicalTiers() {
+    final remaining = Map.of(dependencies);
+    final placed = <String>{};
+    final result = <Set<String>>[];
+
+    while (remaining.isNotEmpty) {
+      final tier = remaining.entries
+          .where((e) => e.value.every(placed.contains))
+          .map((e) => e.key)
+          .toSet();
+      if (tier.isEmpty) {
+        throw StateError('Circular FK dependency in: ${remaining.keys}');
+      }
+      result.add(tier);
+      placed.addAll(tier);
+      tier.forEach(remaining.remove);
+    }
+
+    return result;
   }
 }

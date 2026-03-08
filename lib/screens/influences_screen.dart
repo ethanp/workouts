@@ -4,6 +4,7 @@ import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/providers/influences_provider.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/error_bus.dart';
 
 class InfluencesScreen extends ConsumerWidget {
   const InfluencesScreen({super.key});
@@ -62,33 +63,38 @@ class _InfluencesList extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.borderDepth1),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                CupertinoIcons.lightbulb,
-                color: AppColors.textColor2,
-                size: 20,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Select coaches and philosophies to incorporate their training principles into your generated workouts.',
-                  style: AppTypography.body.copyWith(color: AppColors.textColor2),
-                ),
-              ),
-            ],
-          ),
-        ),
+        _explanationBanner(),
         ...influences.map((influence) => _InfluenceCard(influence: influence)),
       ],
+    );
+  }
+
+  Widget _explanationBanner() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            CupertinoIcons.lightbulb,
+            color: AppColors.textColor2,
+            size: 20,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Select coaches and philosophies to incorporate their '
+              'training principles into your generated workouts.',
+              style: AppTypography.body.copyWith(color: AppColors.textColor2),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -105,6 +111,8 @@ class _InfluenceCard extends ConsumerStatefulWidget {
 class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
   bool _isExpanded = false;
 
+  void _toggleExpanded() => setState(() => _isExpanded = !_isExpanded);
+
   @override
   Widget build(BuildContext context) {
     final influence = widget.influence;
@@ -116,129 +124,140 @@ class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: influence.isActive
-              ? AppColors.accentPrimary.withOpacity(0.5)
+              ? AppColors.accentPrimary.withValues(alpha: 0.5)
               : AppColors.borderDepth1,
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with toggle
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isExpanded = !_isExpanded),
-                    behavior: HitTestBehavior.opaque,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(influence.name, style: AppTypography.subtitle),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          influence.description,
-                          style: AppTypography.body.copyWith(
-                            color: AppColors.textColor2,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                CupertinoSwitch(
-                  value: influence.isActive,
-                  onChanged: (value) => _toggleInfluence(value),
-                  activeTrackColor: AppColors.accentPrimary,
-                ),
-              ],
-            ),
-          ),
-
-          // Expand/collapse indicator
-          GestureDetector(
-            onTap: () => setState(() => _isExpanded = !_isExpanded),
-            behavior: HitTestBehavior.opaque,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _isExpanded
-                        ? CupertinoIcons.chevron_up
-                        : CupertinoIcons.chevron_down,
-                    size: 16,
-                    color: AppColors.textColor3,
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(
-                    _isExpanded ? 'Hide principles' : 'Show principles',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textColor3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Expanded content - principles
+          _header(influence),
+          _expandToggle(),
           if (_isExpanded) ...[
             Container(height: 1, color: AppColors.borderDepth1),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Key Principles',
-                    style: AppTypography.body.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textColor1,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  ...influence.principles.map(
-                    (principle) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '•',
-                            style: AppTypography.body.copyWith(
-                              color: AppColors.accentPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Expanded(
-                            child: Text(
-                              principle,
-                              style: AppTypography.body.copyWith(
-                                color: AppColors.textColor2,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _principlesList(influence.principles),
           ],
         ],
       ),
     );
   }
 
+  Widget _header(TrainingInfluence influence) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: _toggleExpanded,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(influence.name, style: AppTypography.subtitle),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    influence.description,
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.textColor2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          CupertinoSwitch(
+            value: influence.isActive,
+            onChanged: _toggleInfluence,
+            activeTrackColor: AppColors.accentPrimary,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _expandToggle() {
+    return GestureDetector(
+      onTap: _toggleExpanded,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _isExpanded
+                  ? CupertinoIcons.chevron_up
+                  : CupertinoIcons.chevron_down,
+              size: 16,
+              color: AppColors.textColor3,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              _isExpanded ? 'Hide principles' : 'Show principles',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _principlesList(List<String> principles) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Key Principles',
+            style: AppTypography.body.copyWith(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textColor1,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ...principles.map(
+            (principle) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '•',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.accentPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      principle,
+                      style: AppTypography.body.copyWith(
+                        color: AppColors.textColor2,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _toggleInfluence(bool isActive) async {
-    await ref
-        .read(influencesRepositoryPowerSyncProvider)
-        .toggleInfluence(widget.influence.id, isActive);
+    try {
+      await ref
+          .read(influencesRepositoryPowerSyncProvider)
+          .toggleInfluence(widget.influence.id, isActive);
+    } catch (error) {
+      errorBus.add('Toggle influence ${widget.influence.name}: $error');
+    }
   }
 }

@@ -2,11 +2,42 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/activity_calendar/calendar_constants.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/activity_calendar/calendar_helpers.dart';
+
+class WeekMax {
+  const WeekMax({required this.maxRunMeters, required this.maxSessionMinutes});
+
+  final double maxRunMeters;
+  final int maxSessionMinutes;
+}
 
 class CalendarDayCell extends StatelessWidget {
+  static const cellSize = 39.0;
+  static const cellMargin = 2.0;
+
+  static Color intensityColor(double intensity) {
+    return Color.lerp(
+      AppColors.accentPrimary.withValues(alpha: 0.15),
+      AppColors.accentPrimary.withValues(alpha: 0.9),
+      intensity,
+    )!;
+  }
+
+  static double intensityForDay({
+    required double runMeters,
+    required int sessionMinutes,
+    required WeekMax globalMax,
+  }) {
+    if (runMeters > 0 && globalMax.maxRunMeters > 0) {
+      return (runMeters / globalMax.maxRunMeters).clamp(0.0, 1.0);
+    }
+    if (sessionMinutes > 0 && globalMax.maxSessionMinutes > 0) {
+      return (sessionMinutes / globalMax.maxSessionMinutes).clamp(0.0, 1.0) *
+          0.5;
+    }
+    return 0.0;
+  }
+
   const CalendarDayCell({
     super.key,
     required this.date,
@@ -43,9 +74,9 @@ class CalendarDayCell extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: calendarCellSize,
-        height: calendarCellSize,
-        margin: const EdgeInsets.all(calendarCellMargin),
+        width: cellSize,
+        height: cellSize,
+        margin: const EdgeInsets.all(cellMargin),
         decoration: BoxDecoration(
           color: cellColor,
           borderRadius: BorderRadius.circular(6),
@@ -144,6 +175,9 @@ class EmptyDayCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SizedBox(width: calendarCellSize, height: calendarCellSize);
+    return const SizedBox(
+      width: CalendarDayCell.cellSize,
+      height: CalendarDayCell.cellSize,
+    );
   }
 }

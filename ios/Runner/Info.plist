@@ -44,6 +44,10 @@
 		<true />
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true />
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>googlegmail</string>
+		</array>
 		<key>NSHealthShareUsageDescription</key>
 		<string>Workouts needs access to your Health data to log sessions and sync with Apple Health.</string>
 		<key>NSHealthUpdateUsageDescription</key>

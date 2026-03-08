@@ -51,7 +51,7 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
   }
 
   void _recomputeInBackground(int maxHR) {
-    final bounds = zone2Bounds(maxHR);
+    final zone2 = Zone2Calculator(maxHeartRate: maxHR);
     final progressNotifier =
         ref.read(zone2RecomputeProgressProvider.notifier);
     RunsRepositoryPowerSync repo;
@@ -62,8 +62,7 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
     }
     repo
         .recomputeAllZone2(
-          lowerBpm: bounds.lower,
-          upperBpm: bounds.upper,
+          zone2: zone2,
           onProgress: (done, total) {
             if (ref.mounted) progressNotifier.update(done, total);
           },

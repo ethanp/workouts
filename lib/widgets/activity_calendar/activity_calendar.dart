@@ -4,7 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/activity_calendar/calendar_constants.dart';
+import 'package:workouts/widgets/activity_calendar/calendar_day_cell.dart';
 import 'package:workouts/widgets/activity_calendar/calendar_week_row.dart';
 
 class ActivityCalendar extends StatelessWidget {
@@ -182,7 +182,7 @@ class ActivityCalendar extends StatelessWidget {
       children: [
         for (final label in _dayLabels)
           SizedBox(
-            width: calendarCellSize + calendarCellMargin * 2,
+            width: CalendarDayCell.cellSize + CalendarDayCell.cellMargin * 2,
             child: Text(
               label,
               textAlign: TextAlign.center,
@@ -192,7 +192,7 @@ class ActivityCalendar extends StatelessWidget {
               ),
             ),
           ),
-        const SizedBox(width: calendarSummaryWidth + 8),
+        const SizedBox(width: CalendarWeekRow.summaryWidth + 8),
       ],
     );
   }
@@ -200,7 +200,7 @@ class ActivityCalendar extends StatelessWidget {
   List<Widget> _weekRows(DateTime monthDate, int daysInMonth, WeekMax globalMax) {
     final firstWeekday = DateTime(monthDate.year, monthDate.month, 1).weekday;
     final totalDays = firstWeekday - 1 + daysInMonth;
-    final weeksInMonth = (totalDays / daysPerWeek).ceil();
+    final weeksInMonth = (totalDays / DateTime.daysPerWeek).ceil();
 
     return List.generate(weeksInMonth, (week) {
       return CalendarWeekRow(

@@ -163,9 +163,6 @@ Future<void> activityMetricsBackfill(Ref ref) async {
   if (db == null) return;
 
   final maxHR = ref.watch(maxHeartRateProvider);
-  final bounds = zone2Bounds(maxHR);
-  await RunsRepositoryPowerSync(db).backfillMissingMetrics(
-    lowerBpm: bounds.lower,
-    upperBpm: bounds.upper,
-  );
+  final zone2 = Zone2Calculator(maxHeartRate: maxHR);
+  await RunsRepositoryPowerSync(db).backfillMissingMetrics(zone2: zone2);
 }

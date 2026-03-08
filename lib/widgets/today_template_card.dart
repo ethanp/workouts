@@ -111,7 +111,7 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
       ),
       color: AppColors.accentPrimary,
       borderRadius: BorderRadius.circular(AppRadius.md),
-      minSize: 0,
+      minimumSize: Size.zero,
       onPressed: widget.onStart,
       child: const Text(
         'Start',
