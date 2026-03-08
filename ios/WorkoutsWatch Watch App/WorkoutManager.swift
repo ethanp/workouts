@@ -129,7 +129,7 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
     }
     
-    func stopWorkout() {
+    func stopWorkout(notifyPhone: Bool = false) {
         samplingTimer?.invalidate()
         samplingTimer = nil
         
@@ -141,6 +141,9 @@ final class WorkoutManager: NSObject, ObservableObject {
                     self?.isPaused = false
                     self?.currentHeartRate = 0
                     self?.flushBuffer()
+                    if notifyPhone {
+                        PhoneConnectivity.shared.sendWorkoutStopped()
+                    }
                 }
             }
         }

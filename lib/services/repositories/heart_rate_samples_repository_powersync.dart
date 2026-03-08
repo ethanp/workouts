@@ -47,7 +47,7 @@ class HeartRateSamplesRepository {
   Future<void> addSample(HeartRateSample sample) async {
     await _db.execute(
       '''
-      INSERT INTO heart_rate_samples (
+      INSERT OR IGNORE INTO heart_rate_samples (
         id, session_id, timestamp, bpm, source, energy_kcal, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ''',

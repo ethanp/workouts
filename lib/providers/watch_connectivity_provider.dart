@@ -3,12 +3,13 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
 
+const _watchBridge = WatchConnectivityBridge();
+
 final watchConnectionStatusProvider = StreamProvider<bool>((ref) {
-  final bridge = WatchConnectivityBridge();
   final controller = StreamController<bool>();
   controller.add(false);
 
-  final subscription = bridge.connectionStream().listen(
+  final subscription = _watchBridge.connectionStream().listen(
     controller.add,
     onError: (_) => controller.add(false),
   );
@@ -19,4 +20,8 @@ final watchConnectionStatusProvider = StreamProvider<bool>((ref) {
   });
 
   return controller.stream;
+});
+
+final watchCommandStreamProvider = StreamProvider<String>((ref) {
+  return _watchBridge.commandStream();
 });

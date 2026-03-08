@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
@@ -5,8 +6,10 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
+import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'active_session_provider.g.dart';
@@ -18,7 +21,21 @@ const _watchBridge = WatchConnectivityBridge();
 class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   @override
   Future<Session?> build() async {
+    final commandStream = ref.watch(watchCommandStreamProvider);
+    commandStream.whenData((command) {
+      if (command == 'workoutStopped' && state.value != null) {
+        complete();
+      }
+    });
     return null;
+  }
+
+  Future<void> _sendWatchCommand(Future<void> Function() command) async {
+    try {
+      await command();
+    } on PlatformException catch (e) {
+      errorBus.add('Watch: ${e.message}');
+    }
   }
 
   void _invalidateSessionStreamsIfMounted() {
@@ -35,8 +52,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       state = AsyncValue.data(session);
       ref.invalidate(heartRateTimelineProvider);
       ref.read(sessionUIVisibilityProvider.notifier).show();
-      // Notify watch to start heart rate streaming
-      _watchBridge.startWatchWorkout(sessionId: session.id);
+      _sendWatchCommand(() =>
+          _watchBridge.startWatchWorkout(sessionId: session.id));
     }
   }
 
@@ -44,8 +61,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     state = AsyncValue.data(session);
     // Automatically show session UI when resuming
     ref.read(sessionUIVisibilityProvider.notifier).show();
-    // Notify watch to resume heart rate streaming
-    _watchBridge.startWatchWorkout(sessionId: session.id);
+    _sendWatchCommand(() =>
+        _watchBridge.startWatchWorkout(sessionId: session.id));
   }
 
   Future<void> logSet({
@@ -116,8 +133,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       state = const AsyncValue.data(null);
       _invalidateSessionStreamsIfMounted();
       ref.read(sessionUIVisibilityProvider.notifier).hide();
-      // Notify watch to stop heart rate streaming
-      _watchBridge.stopWatchWorkout();
+      _sendWatchCommand(_watchBridge.stopWatchWorkout);
     }
   }
 
@@ -130,8 +146,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     await repository.pauseSession(current);
     final updatedSession = await repository.fetchSessionById(current.id);
     state = AsyncValue.data(updatedSession);
-    // Notify watch to pause heart rate streaming
-    _watchBridge.pauseWatchWorkout();
+    _sendWatchCommand(_watchBridge.pauseWatchWorkout);
   }
 
   Future<void> resume() async {
@@ -143,8 +158,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     await repository.resumeSession(current);
     final updatedSession = await repository.fetchSessionById(current.id);
     state = AsyncValue.data(updatedSession);
-    // Notify watch to resume heart rate streaming
-    _watchBridge.resumeWatchWorkout();
+    _sendWatchCommand(_watchBridge.resumeWatchWorkout);
   }
 
   Future<void> discard() async {
@@ -157,8 +171,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       state = const AsyncValue.data(null);
       _invalidateSessionStreamsIfMounted();
       ref.read(sessionUIVisibilityProvider.notifier).hide();
-      // Notify watch to stop heart rate streaming
-      _watchBridge.stopWatchWorkout();
+      _sendWatchCommand(_watchBridge.stopWatchWorkout);
     }
   }
 

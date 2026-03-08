@@ -6,6 +6,7 @@ import UIKit
   private let healthKitBridge = HealthKitBridge()
   private let heartRateStreamHandler = HeartRateStreamHandler()
   private let watchConnectivityStreamHandler = WatchConnectivityStreamHandler()
+  private let watchCommandStreamHandler = WatchCommandStreamHandler()
 
   override func application(
     _ application: UIApplication,
@@ -37,6 +38,11 @@ import UIKit
         name: "com.workouts/watch_connectivity",
         binaryMessenger: messenger
       ).setStreamHandler(watchConnectivityStreamHandler)
+
+      FlutterEventChannel(
+        name: "com.workouts/watch_commands",
+        binaryMessenger: messenger
+      ).setStreamHandler(watchCommandStreamHandler)
       
       // Watch workout control channel
       let watchChannel = FlutterMethodChannel(
@@ -54,7 +60,8 @@ import UIKit
 
     WatchSessionManager.shared.configureSession(
       connectivityHandler: watchConnectivityStreamHandler,
-      heartRateHandler: heartRateStreamHandler
+      heartRateHandler: heartRateStreamHandler,
+      watchCommandHandler: watchCommandStreamHandler
     )
     return didFinish
   }
@@ -106,7 +113,7 @@ import UIKit
     }
   }
 
-  private func handleWatchMethodCall(call: FlutterMethodCall, result: FlutterResult) {
+  private func handleWatchMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {
     switch call.method {
     case "startWorkout":
       guard let arguments = call.arguments as? [String: Any],
@@ -117,18 +124,15 @@ import UIKit
       let samplingIntervalSeconds = arguments["samplingIntervalSeconds"] as? Double ?? 5.0
       WatchSessionManager.shared.sendStartWorkout(
         sessionId: sessionId,
-        samplingIntervalSeconds: samplingIntervalSeconds
+        samplingIntervalSeconds: samplingIntervalSeconds,
+        result: result
       )
-      result(nil)
     case "stopWorkout":
-      WatchSessionManager.shared.sendStopWorkout()
-      result(nil)
+      WatchSessionManager.shared.sendStopWorkout(result: result)
     case "pauseWorkout":
-      WatchSessionManager.shared.sendPauseWorkout()
-      result(nil)
+      WatchSessionManager.shared.sendPauseWorkout(result: result)
     case "resumeWorkout":
-      WatchSessionManager.shared.sendResumeWorkout()
-      result(nil)
+      WatchSessionManager.shared.sendResumeWorkout(result: result)
     default:
       result(FlutterMethodNotImplemented)
     }

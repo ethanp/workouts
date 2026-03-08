@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +45,9 @@ class HistoryChartsTab extends ConsumerWidget {
   ) {
     final weeklyAggregates = _aggregateByWeek(days);
     final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
-    final divisor = unitSystem == UnitSystem.imperial ? metersPerMile : 1000.0;
+    final metersPerUnit = unitSystem == UnitSystem.imperial
+        ? metersPerMile
+        : 1000.0;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -58,26 +62,32 @@ class HistoryChartsTab extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
           title: 'Weekly Distance',
-          weeks: _weekDataList(weeklyAggregates,
-              valueFor: (w) => w.totalRunMeters / divisor),
+          weeks: _weekDataList(
+            weeklyAggregates,
+            valueFor: (week) => week.totalRunMeters / metersPerUnit,
+          ),
           barColor: AppColors.accentPrimary,
-          formatValue: (v) => '${v.toStringAsFixed(1)}$distanceUnit',
+          formatValue: (value) => '${value.toStringAsFixed(1)}$distanceUnit',
         ),
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
           title: 'Weekly Activity Days',
-          weeks: _weekDataList(weeklyAggregates,
-              valueFor: (w) => w.activeDays.toDouble()),
+          weeks: _weekDataList(
+            weeklyAggregates,
+            valueFor: (week) => week.activeDays.toDouble(),
+          ),
           barColor: const Color(0xFF64D2FF),
-          formatValue: (v) => '${v.round()}d',
+          formatValue: (value) => '${value.round()}d',
         ),
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
           title: 'Weekly Zone 2',
-          weeks: _weekDataList(weeklyAggregates,
-              valueFor: (w) => w.zone2Minutes.toDouble()),
+          weeks: _weekDataList(
+            weeklyAggregates,
+            valueFor: (week) => week.zone2Minutes.toDouble(),
+          ),
           barColor: const Color(0xFF30D158),
-          formatValue: (v) => '${v.round()}m',
+          formatValue: (value) => '${value.round()}m',
         ),
         const SizedBox(height: AppSpacing.lg),
         PaceTrendChart(
@@ -96,65 +106,78 @@ class HistoryChartsTab extends ConsumerWidget {
     required double Function(WeekAggregate) valueFor,
   }) {
     return aggregates
-        .map((w) => WeekData(
-              label: w.label,
-              value: valueFor(w),
-              weekStart: w.weekStart,
-              isCurrent: w.isCurrent,
-              includeInAverage: !w.beforeData,
-            ))
+        .map(
+          (aggregate) => WeekData(
+            label: aggregate.label,
+            value: valueFor(aggregate),
+            weekStart: aggregate.weekStart,
+            isCurrent: aggregate.isCurrent,
+            includeInAverage: !aggregate.beforeData,
+          ),
+        )
         .toList();
   }
 
   List<PacePoint> _pacePoints(List<FitnessRun> runs, UnitSystem unitSystem) {
-    final qualifying = runs
-        .where((r) => r.distanceMeters >= metersPerMile && r.durationSeconds > 0)
-        .toList()
-      ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+    final qualifyingRuns =
+        runs
+            .where(
+              (run) =>
+                  run.distanceMeters >= metersPerMile &&
+                  run.durationSeconds > 0,
+            )
+            .toList()
+          ..sort((runA, runB) => runA.startedAt.compareTo(runB.startedAt));
 
-    final divisor = unitSystem == UnitSystem.imperial ? metersPerMile : 1000.0;
+    final metersPerUnit = unitSystem == UnitSystem.imperial
+        ? metersPerMile
+        : 1000.0;
 
-    return qualifying
-        .map((r) => PacePoint(
-              date: r.startedAt,
-              paceSecondsPerUnit:
-                  r.durationSeconds / (r.distanceMeters / divisor),
-            ))
+    return qualifyingRuns
+        .map(
+          (run) => PacePoint(
+            date: run.startedAt,
+            paceSecondsPerUnit:
+                run.durationSeconds / (run.distanceMeters / metersPerUnit),
+          ),
+        )
         .toList();
   }
 
-  List<WeekAggregate> _aggregateByWeek(List<ActivityCalendarDay> days) {
-    final now = DateTime.now();
-    final currentMonday = DateTime(now.year, now.month, now.day)
-        .subtract(Duration(days: now.weekday - 1));
+  static DateTime _mondayOf(DateTime date) =>
+      DateTime(date.year, date.month, date.day - (date.weekday - 1));
 
+  List<WeekAggregate> _aggregateByWeek(List<ActivityCalendarDay> days) {
+    final currentMonday = _mondayOf(DateTime.now());
     final earliestMonday = _earliestActivityMonday(days) ?? currentMonday;
 
-    final weekCount =
-        ((currentMonday.difference(earliestMonday).inDays ~/ 7) + 1)
-            .clamp(1, 200);
+    final weekCount = math.max(
+      1,
+      (currentMonday.difference(earliestMonday).inDays ~/ 7) + 1,
+    );
 
     final byMonday = <DateTime, WeekAggregate>{};
-    for (var i = 0; i < weekCount; i++) {
-      final monday =
-          currentMonday.subtract(Duration(days: 7 * (weekCount - 1 - i)));
+    for (var weekIndex = 0; weekIndex < weekCount; weekIndex++) {
+      final monday = DateTime(
+        currentMonday.year,
+        currentMonday.month,
+        currentMonday.day - 7 * (weekCount - 1 - weekIndex),
+      );
       byMonday[monday] = WeekAggregate(
         label: '${monday.month}/${monday.day}',
         weekStart: monday,
-        isCurrent: i == weekCount - 1,
+        isCurrent: weekIndex == weekCount - 1,
         beforeData: monday.isBefore(earliestMonday),
       );
     }
 
-    for (final d in days) {
-      if (!d.hasActivity) continue;
-      final monday = d.date.subtract(Duration(days: d.date.weekday - 1));
-      final key = DateTime(monday.year, monday.month, monday.day);
-      final agg = byMonday[key];
-      if (agg == null) continue;
-      agg.totalRunMeters += d.totalRunDistanceMeters;
-      agg.zone2Minutes += d.totalZone2Minutes;
-      agg.activeDays++;
+    for (final ActivityCalendarDay day in days) {
+      if (!day.hasActivity) continue;
+      final monday = _mondayOf(day.date);
+      final aggregate = byMonday[monday]!;
+      aggregate.totalRunMeters += day.totalRunDistanceMeters;
+      aggregate.zone2Minutes += day.totalZone2Minutes;
+      aggregate.activeDays++;
     }
 
     return byMonday.values.toList();
@@ -162,13 +185,12 @@ class HistoryChartsTab extends ConsumerWidget {
 
   DateTime? _earliestActivityMonday(List<ActivityCalendarDay> days) {
     DateTime? earliest;
-    for (final d in days) {
-      if (!d.hasActivity) continue;
-      if (earliest == null || d.date.isBefore(earliest)) earliest = d.date;
+    for (final day in days) {
+      if (!day.hasActivity) continue;
+      if (earliest == null || day.date.isBefore(earliest)) earliest = day.date;
     }
     if (earliest == null) return null;
-    return DateTime(earliest.year, earliest.month, earliest.day)
-        .subtract(Duration(days: earliest.weekday - 1));
+    return _mondayOf(earliest);
   }
 }
 
@@ -199,8 +221,9 @@ class _FourWeekSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final fourWeeksAgo = now.subtract(const Duration(days: 28));
-    final recentDays =
-        days.where((d) => d.date.isAfter(fourWeeksAgo) && d.hasActivity);
+    final recentDays = days.where(
+      (day) => day.date.isAfter(fourWeeksAgo) && day.hasActivity,
+    );
 
     var totalMeters = 0.0;
     var totalRunSeconds = 0;
@@ -208,17 +231,19 @@ class _FourWeekSummary extends StatelessWidget {
     var totalZone2 = 0;
     var activityDayCount = 0;
 
-    for (final d in recentDays) {
-      totalMeters += d.totalRunDistanceMeters;
-      totalRunSeconds += d.totalRunDurationSeconds;
-      totalSessionMinutes += d.totalSessionDurationSeconds ~/ 60;
-      totalZone2 += d.totalZone2Minutes;
+    for (final day in recentDays) {
+      totalMeters += day.totalRunDistanceMeters;
+      totalRunSeconds += day.totalRunDurationSeconds;
+      totalSessionMinutes += day.totalSessionDurationSeconds ~/ 60;
+      totalZone2 += day.totalZone2Minutes;
       activityDayCount++;
     }
 
-    final divisor = unitSystem == UnitSystem.imperial ? metersPerMile : 1000.0;
+    final metersPerUnit = unitSystem == UnitSystem.imperial
+        ? metersPerMile
+        : 1000.0;
     final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
-    final distance = totalMeters / divisor;
+    final distance = totalMeters / metersPerUnit;
     final runHours = totalRunSeconds ~/ 3600;
     final runMinutes = (totalRunSeconds % 3600) ~/ 60;
 
@@ -241,9 +266,7 @@ class _FourWeekSummary extends StatelessWidget {
                 'distance',
               ),
               _statCell(
-                runHours > 0
-                    ? '${runHours}h ${runMinutes}m'
-                    : '${runMinutes}m',
+                runHours > 0 ? '${runHours}h ${runMinutes}m' : '${runMinutes}m',
                 'run time',
               ),
               _statCell('$activityDayCount', 'active days'),
@@ -254,8 +277,9 @@ class _FourWeekSummary extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               '${totalSessionMinutes}m session time',
-              style:
-                  AppTypography.caption.copyWith(color: AppColors.textColor3),
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
             ),
           ],
         ],
@@ -269,9 +293,7 @@ class _FourWeekSummary extends StatelessWidget {
         children: [
           Text(
             value,
-            style: AppTypography.subtitle.copyWith(
-              color: AppColors.textColor1,
-            ),
+            style: AppTypography.subtitle.copyWith(color: AppColors.textColor1),
           ),
           const SizedBox(height: 2),
           Text(

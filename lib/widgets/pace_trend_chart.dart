@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/widgets/chart_date_axis.dart';
 
 class PacePoint {
   const PacePoint({required this.date, required this.paceSecondsPerUnit});
@@ -179,19 +180,17 @@ class _PaceTrendPainter extends CustomPainter {
   final DateTime? displayStart;
   final DateTime? displayEnd;
 
-  static const _leftPadding = 42.0;
-  static const _rightPadding = 12.0;
-  static const _topPadding = 8.0;
-  static const _bottomPadding = 24.0;
-
   @override
   void paint(Canvas canvas, Size size) {
-    final chartLeft = _leftPadding;
-    final chartRight = size.width - _rightPadding;
-    final chartTop = _topPadding;
-    final chartBottom = size.height - _bottomPadding;
-    final chartWidth = chartRight - chartLeft;
-    final chartHeight = chartBottom - chartTop;
+    final layout = ChartDateLayout(
+      size: size,
+      leftPadding: 42,
+      rightPadding: 12,
+      topPadding: 8,
+      bottomPadding: 24,
+      minDate: displayStart ?? points.first.date,
+      maxDate: displayEnd ?? points.last.date,
+    );
 
     final minPace = points.fold(double.infinity,
         (m, p) => math.min(m, p.paceSecondsPerUnit));
@@ -202,43 +201,31 @@ class _PaceTrendPainter extends CustomPainter {
     final paddedMax = maxPace + paceRange * 0.15;
     final effectiveRange = paddedMax - paddedMin;
 
-    final minDate = displayStart ?? points.first.date;
-    final maxDate = displayEnd ?? points.last.date;
-    final dateRange = maxDate.difference(minDate).inSeconds.toDouble();
-
-    double xForDate(DateTime date) {
-      if (dateRange == 0) return chartLeft + chartWidth / 2;
-      final fraction = date.difference(minDate).inSeconds / dateRange;
-      return chartLeft + fraction * chartWidth;
-    }
-
     double yForPace(double pace) {
-      if (effectiveRange == 0) return chartTop + chartHeight / 2;
+      if (effectiveRange == 0) return layout.top + layout.height / 2;
       final fraction = (pace - paddedMin) / effectiveRange;
-      return chartBottom - (1.0 - fraction) * chartHeight;
+      return layout.bottom - (1.0 - fraction) * layout.height;
     }
 
-    _drawGridLines(canvas, size, chartLeft, chartRight, chartTop, chartBottom,
-        paddedMin, paddedMax);
+    _drawGridLines(canvas, layout, paddedMin, paddedMax);
+    drawChartYearBoundaries(canvas, layout);
+    drawChartDateLabels(canvas, layout, labelColor: labelColor);
 
-    _drawYearBoundaries(canvas, minDate, maxDate, chartTop, chartBottom, xForDate);
-    _drawDateLabels(canvas, chartBottom, minDate, maxDate, xForDate);
-
+    final dateRange =
+        layout.maxDate.difference(layout.minDate).inSeconds.toDouble();
     final trendLine =
-        PaceTrendChart._computeTrendLine(points, dateRange, minDate);
+        PaceTrendChart._computeTrendLine(points, dateRange, layout.minDate);
 
     final trendPaint = Paint()
       ..color = trendColor.withValues(alpha: 0.7)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
-    final startX = chartLeft;
-    final endX = chartRight;
     final startPace = trendLine.intercept;
     final endPace = trendLine.intercept + trendLine.slope * dateRange;
     canvas.drawLine(
-      Offset(startX, yForPace(startPace)),
-      Offset(endX, yForPace(endPace)),
+      Offset(layout.left, yForPace(startPace)),
+      Offset(layout.right, yForPace(endPace)),
       trendPaint,
     );
 
@@ -249,15 +236,19 @@ class _PaceTrendPainter extends CustomPainter {
       ..strokeWidth = 2;
 
     for (final p in points) {
-      final x = xForDate(p.date);
+      final x = layout.xForDate(p.date);
       final y = yForPace(p.paceSecondsPerUnit);
       canvas.drawCircle(Offset(x, y), 4, dotPaint);
       canvas.drawCircle(Offset(x, y), 6, dotBorderPaint);
     }
   }
 
-  void _drawGridLines(Canvas canvas, Size size, double left, double right,
-      double top, double bottom, double minPace, double maxPace) {
+  void _drawGridLines(
+    Canvas canvas,
+    ChartDateLayout layout,
+    double minPace,
+    double maxPace,
+  ) {
     final gridPaint = Paint()
       ..color = gridColor.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -270,8 +261,12 @@ class _PaceTrendPainter extends CustomPainter {
 
     for (var pace = firstLine; pace <= maxPace; pace += stepSeconds) {
       final fraction = (pace - minPace) / range;
-      final y = bottom - (1.0 - fraction) * (bottom - top);
-      canvas.drawLine(Offset(left, y), Offset(right, y), gridPaint);
+      final y = layout.bottom - (1.0 - fraction) * layout.height;
+      canvas.drawLine(
+        Offset(layout.left, y),
+        Offset(layout.right, y),
+        gridPaint,
+      );
 
       final label = Format.paceValue(pace);
 
@@ -284,108 +279,9 @@ class _PaceTrendPainter extends CustomPainter {
       )..layout();
       textPainter.paint(
         canvas,
-        Offset(left - textPainter.width - 4, y - textPainter.height / 2),
+        Offset(layout.left - textPainter.width - 4, y - textPainter.height / 2),
       );
     }
-  }
-
-  void _drawYearBoundaries(
-    Canvas canvas,
-    DateTime minDate,
-    DateTime maxDate,
-    double chartTop,
-    double chartBottom,
-    double Function(DateTime) xForDate,
-  ) {
-    if (minDate.year == maxDate.year) return;
-
-    final linePaint = Paint()
-      ..color = AppColors.textColor4.withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-
-    for (var year = minDate.year + 1; year <= maxDate.year; year++) {
-      final DateTime jan1 = DateTime(year);
-      final double x = xForDate(jan1);
-      canvas.drawLine(
-        Offset(x, chartTop),
-        Offset(x, chartBottom),
-        linePaint,
-      );
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: '$year',
-          style: TextStyle(
-            color: AppColors.textColor4.withValues(alpha: 0.6),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      textPainter.paint(canvas, Offset(x + 4, chartTop + 2));
-    }
-  }
-
-  void _drawDateLabels(Canvas canvas, double chartBottom, DateTime minDate,
-      DateTime maxDate, double Function(DateTime) xForDate) {
-    final spansDays = maxDate.difference(minDate).inDays;
-
-    const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-
-    String formatLabel(DateTime date) {
-      if (spansDays > 60) return months[date.month];
-      return '${date.month}/${date.day}';
-    }
-
-    final ticks = _dateTicks(minDate, maxDate);
-    for (final date in ticks) {
-      final label = formatLabel(date);
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: label,
-          style: TextStyle(color: labelColor, fontSize: 10),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      final x = (xForDate(date) - textPainter.width / 2)
-          .clamp(_leftPadding - 4, _leftPadding + 400);
-      textPainter.paint(canvas, Offset(x, chartBottom + 6));
-    }
-  }
-
-  List<DateTime> _dateTicks(DateTime minDate, DateTime maxDate) {
-    final spansDays = maxDate.difference(minDate).inDays;
-
-    if (spansDays > 90) {
-      final ticks = <DateTime>[];
-      var cursor = DateTime(minDate.year, minDate.month);
-      final stepMonths = spansDays > 365 ? 3 : 2;
-      cursor = DateTime(cursor.year, cursor.month + stepMonths);
-      while (cursor.isBefore(maxDate)) {
-        ticks.add(cursor);
-        cursor = DateTime(cursor.year, cursor.month + stepMonths);
-      }
-      return [minDate, ...ticks, maxDate];
-    }
-
-    if (spansDays > 14) {
-      final ticks = <DateTime>[minDate];
-      final stepDays = (spansDays / 5).round().clamp(7, 30);
-      var cursor = minDate.add(Duration(days: stepDays));
-      while (cursor.isBefore(maxDate.subtract(Duration(days: stepDays ~/ 2)))) {
-        ticks.add(cursor);
-        cursor = cursor.add(Duration(days: stepDays));
-      }
-      ticks.add(maxDate);
-      return ticks;
-    }
-
-    return [minDate, maxDate];
   }
 
   double _niceStep(double range, int targetLines) {

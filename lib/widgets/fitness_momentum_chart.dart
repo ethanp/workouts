@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/momentum_scorer.dart';
+import 'package:workouts/widgets/chart_date_axis.dart';
 
 export 'package:workouts/utils/momentum_scorer.dart'
     show MomentumDayScore, MomentumScorer;
@@ -96,46 +97,28 @@ class FitnessMomentumChart extends StatelessWidget {
   }
 }
 
-class _ChartLayout {
-  _ChartLayout(
+class _MomentumLayout extends ChartDateLayout {
+  _MomentumLayout(
     Size size,
     this.scores, {
     DateTime? displayStart,
     DateTime? displayEnd,
-  }) {
-    left = _leftPadding;
-    right = size.width - _rightPadding;
-    top = _topPadding;
-    bottom = size.height - _bottomPadding;
-    width = right - left;
-    height = bottom - top;
-
+  }) : super(
+          size: size,
+          leftPadding: 32,
+          rightPadding: 12,
+          topPadding: 8,
+          bottomPadding: 24,
+          minDate: displayStart ?? scores.first.date,
+          maxDate: displayEnd ?? scores.last.date,
+        ) {
     final maxScore =
         scores.fold(0.0, (maxSoFar, point) => math.max(maxSoFar, point.score));
     yMax = math.max(maxScore * 1.15, 10.0).clamp(0.0, 105.0);
-
-    minDate = displayStart ?? scores.first.date;
-    maxDate = displayEnd ?? scores.last.date;
-    _dateRangeSeconds =
-        maxDate.difference(minDate).inSeconds.toDouble();
   }
-
-  static const _leftPadding = 32.0;
-  static const _rightPadding = 12.0;
-  static const _topPadding = 8.0;
-  static const _bottomPadding = 24.0;
 
   final List<MomentumDayScore> scores;
-  late final double left, right, top, bottom, width, height;
   late final double yMax;
-  late final DateTime minDate, maxDate;
-  late final double _dateRangeSeconds;
-
-  double xForDate(DateTime date) {
-    if (_dateRangeSeconds == 0) return left + width / 2;
-    return left +
-        (date.difference(minDate).inSeconds / _dateRangeSeconds) * width;
-  }
 
   double yForScore(double score) => bottom - (score / yMax) * height;
 }
@@ -155,21 +138,21 @@ class _MomentumPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final layout = _ChartLayout(
+    final layout = _MomentumLayout(
       size,
       scores,
       displayStart: displayStart,
       displayEnd: displayEnd,
     );
     _drawGrid(canvas, layout);
-    _drawYearBoundaries(canvas, layout);
-    _drawDateLabels(canvas, layout);
+    drawChartYearBoundaries(canvas, layout);
+    drawChartDateLabels(canvas, layout);
     _drawFill(canvas, layout);
     _drawLine(canvas, layout);
     _drawEndpoint(canvas, layout);
   }
 
-  void _drawGrid(Canvas canvas, _ChartLayout layout) {
+  void _drawGrid(Canvas canvas, _MomentumLayout layout) {
     final gridPaint = Paint()
       ..color = AppColors.borderDepth1.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -196,102 +179,7 @@ class _MomentumPainter extends CustomPainter {
     }
   }
 
-  void _drawYearBoundaries(Canvas canvas, _ChartLayout layout) {
-    if (layout.minDate.year == layout.maxDate.year) return;
-
-    final linePaint = Paint()
-      ..color = AppColors.textColor4.withValues(alpha: 0.3)
-      ..strokeWidth = 1;
-
-    for (var year = layout.minDate.year + 1;
-        year <= layout.maxDate.year;
-        year++) {
-      final jan1 = DateTime(year);
-      final x = layout.xForDate(jan1);
-      canvas.drawLine(
-          Offset(x, layout.top), Offset(x, layout.bottom), linePaint);
-
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: '$year',
-          style: TextStyle(
-            color: AppColors.textColor4.withValues(alpha: 0.6),
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      textPainter.paint(
-        canvas,
-        Offset(x + 4, layout.top + 2),
-      );
-    }
-  }
-
-  void _drawDateLabels(Canvas canvas, _ChartLayout layout) {
-    final spanDays = layout.maxDate.difference(layout.minDate).inDays;
-
-    const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-
-    String formatLabel(DateTime date) {
-      if (spanDays > 60) return months[date.month];
-      return '${date.month}/${date.day}';
-    }
-
-    for (final date in _dateTicks(layout)) {
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: formatLabel(date),
-          style: TextStyle(color: AppColors.textColor4, fontSize: 10),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-
-      final x = (layout.xForDate(date) - textPainter.width / 2)
-          .clamp(layout.left - 4, layout.right - textPainter.width + 4);
-      textPainter.paint(canvas, Offset(x, layout.bottom + 6));
-    }
-  }
-
-  List<DateTime> _dateTicks(_ChartLayout layout) {
-    final spanDays = layout.maxDate.difference(layout.minDate).inDays;
-    if (spanDays <= 0) return [layout.minDate];
-
-    final targetCount = math.max(3, (layout.width / 70).round());
-
-    if (spanDays > 90) {
-      final monthStep = math.max(1, (spanDays / 30 / targetCount).ceil());
-      final ticks = <DateTime>[];
-      var cursor =
-          DateTime(layout.minDate.year, layout.minDate.month + monthStep);
-      while (cursor.isBefore(layout.maxDate)) {
-        ticks.add(cursor);
-        cursor = DateTime(cursor.year, cursor.month + monthStep);
-      }
-      return [layout.minDate, ...ticks, layout.maxDate];
-    }
-
-    final stepDays = math.max(1, (spanDays / targetCount).round());
-    final ticks = <DateTime>[layout.minDate];
-    final minDate = layout.minDate;
-    var cursor =
-        DateTime(minDate.year, minDate.month, minDate.day + stepDays);
-    final minGap = stepDays ~/ 2;
-    final maxDate = layout.maxDate;
-    while (cursor.isBefore(
-        DateTime(maxDate.year, maxDate.month, maxDate.day - minGap))) {
-      ticks.add(cursor);
-      cursor = DateTime(cursor.year, cursor.month, cursor.day + stepDays);
-    }
-    ticks.add(layout.maxDate);
-    return ticks;
-  }
-
-  void _drawFill(Canvas canvas, _ChartLayout layout) {
+  void _drawFill(Canvas canvas, _MomentumLayout layout) {
     final fillPath = Path();
     for (var i = 0; i < scores.length; i++) {
       final x = layout.xForDate(scores[i].date);
@@ -318,7 +206,7 @@ class _MomentumPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
   }
 
-  void _drawLine(Canvas canvas, _ChartLayout layout) {
+  void _drawLine(Canvas canvas, _MomentumLayout layout) {
     final path = Path();
     for (var i = 0; i < scores.length; i++) {
       final x = layout.xForDate(scores[i].date);
@@ -338,7 +226,7 @@ class _MomentumPainter extends CustomPainter {
     canvas.drawPath(path, linePaint);
   }
 
-  void _drawEndpoint(Canvas canvas, _ChartLayout layout) {
+  void _drawEndpoint(Canvas canvas, _MomentumLayout layout) {
     final lastX = layout.xForDate(scores.last.date);
     final lastY = layout.yForScore(scores.last.score);
     canvas.drawCircle(

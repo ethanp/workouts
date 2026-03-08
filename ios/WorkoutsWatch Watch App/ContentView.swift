@@ -110,7 +110,7 @@ struct WorkoutActiveView: View {
                 }
                 
                 Button {
-                    workoutManager.stopWorkout()
+                    workoutManager.stopWorkout(notifyPhone: true)
                 } label: {
                     Image(systemName: "stop.fill")
                         .font(.title3)

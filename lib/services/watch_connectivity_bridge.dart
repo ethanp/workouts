@@ -9,6 +9,10 @@ class WatchConnectivityBridge {
     'com.workouts/watch_connectivity',
   );
 
+  static const EventChannel _commandChannel = EventChannel(
+    'com.workouts/watch_commands',
+  );
+
   static const MethodChannel _workoutChannel = MethodChannel(
     'com.workouts/watch_workout',
   );
@@ -28,6 +32,13 @@ class WatchConnectivityBridge {
     };
 
     return controller.stream;
+  }
+
+  Stream<String> commandStream() {
+    return _commandChannel
+        .receiveBroadcastStream()
+        .where((event) => event is String)
+        .cast<String>();
   }
 
   /// Tell the watch to start a workout session for heart rate streaming.

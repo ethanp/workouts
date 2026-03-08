@@ -6,6 +6,7 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
 
   private weak var connectivityHandler: WatchConnectivityStreamHandler?
   private weak var heartRateHandler: HeartRateStreamHandler?
+  private weak var watchCommandHandler: WatchCommandStreamHandler?
   private let dateFormatter = ISO8601DateFormatter()
 
   private override init() {
@@ -14,10 +15,12 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
 
   func configureSession(
     connectivityHandler: WatchConnectivityStreamHandler,
-    heartRateHandler: HeartRateStreamHandler
+    heartRateHandler: HeartRateStreamHandler,
+    watchCommandHandler: WatchCommandStreamHandler
   ) {
     self.connectivityHandler = connectivityHandler
     self.heartRateHandler = heartRateHandler
+    self.watchCommandHandler = watchCommandHandler
     guard WCSession.isSupported() else {
       connectivityHandler.send(isConnected: false)
       return
@@ -40,10 +43,10 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
     return session.isReachable
   }
 
-  func sendStartWorkout(sessionId: String, samplingIntervalSeconds: Double = 5.0) {
+  func sendStartWorkout(sessionId: String, samplingIntervalSeconds: Double = 5.0, result: @escaping FlutterResult) {
     let session = WCSession.default
     guard canSendMessages(on: session) else {
-      print("[WatchSession] Watch not reachable, cannot send startWorkout")
+      result(FlutterError(code: "watch_unreachable", message: "Watch is not reachable", details: nil))
       return
     }
     let message: [String: Any] = [
@@ -51,32 +54,42 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
       "sessionId": sessionId,
       "samplingIntervalSeconds": samplingIntervalSeconds
     ]
-    session.sendMessage(message, replyHandler: nil) { error in
-      print("[WatchSession] Failed to send startWorkout: \(error.localizedDescription)")
+    session.sendMessage(message, replyHandler: { _ in result(nil) }) { error in
+      result(FlutterError(code: "watch_send_failed", message: error.localizedDescription, details: nil))
     }
   }
 
-  func sendStopWorkout() {
+  func sendStopWorkout(result: @escaping FlutterResult) {
     let session = WCSession.default
     guard canSendMessages(on: session) else {
-      print("[WatchSession] Watch not reachable, cannot send stopWorkout")
+      result(FlutterError(code: "watch_unreachable", message: "Watch is not reachable", details: nil))
       return
     }
-    session.sendMessage(["command": "stopWorkout"], replyHandler: nil) { error in
-      print("[WatchSession] Failed to send stopWorkout: \(error.localizedDescription)")
+    session.sendMessage(["command": "stopWorkout"], replyHandler: { _ in result(nil) }) { error in
+      result(FlutterError(code: "watch_send_failed", message: error.localizedDescription, details: nil))
     }
   }
 
-  func sendPauseWorkout() {
+  func sendPauseWorkout(result: @escaping FlutterResult) {
     let session = WCSession.default
-    guard canSendMessages(on: session) else { return }
-    session.sendMessage(["command": "pauseWorkout"], replyHandler: nil, errorHandler: nil)
+    guard canSendMessages(on: session) else {
+      result(FlutterError(code: "watch_unreachable", message: "Watch is not reachable", details: nil))
+      return
+    }
+    session.sendMessage(["command": "pauseWorkout"], replyHandler: { _ in result(nil) }) { error in
+      result(FlutterError(code: "watch_send_failed", message: error.localizedDescription, details: nil))
+    }
   }
 
-  func sendResumeWorkout() {
+  func sendResumeWorkout(result: @escaping FlutterResult) {
     let session = WCSession.default
-    guard canSendMessages(on: session) else { return }
-    session.sendMessage(["command": "resumeWorkout"], replyHandler: nil, errorHandler: nil)
+    guard canSendMessages(on: session) else {
+      result(FlutterError(code: "watch_unreachable", message: "Watch is not reachable", details: nil))
+      return
+    }
+    session.sendMessage(["command": "resumeWorkout"], replyHandler: { _ in result(nil) }) { error in
+      result(FlutterError(code: "watch_send_failed", message: error.localizedDescription, details: nil))
+    }
   }
 
   func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
@@ -97,6 +110,10 @@ final class WatchSessionManager: NSObject, WCSessionDelegate {
   }
 
   func session(_ session: WCSession, didReceiveMessage message: [String : Any]) {
+    if let command = message["command"] as? String {
+      watchCommandHandler?.send(command: command)
+      return
+    }
     if let samples = message["samples"] as? [[String: Any]] {
       samples.forEach { sendHeartRateSample($0) }
       return

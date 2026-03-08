@@ -65,6 +65,15 @@ final class PhoneConnectivity: NSObject, ObservableObject {
         }
     }
     
+    /// Tell the phone that the user stopped the workout from the Watch.
+    func sendWorkoutStopped() {
+        let session = WCSession.default
+        guard canSendMessages(on: session) else { return }
+        session.sendMessage(["command": "workoutStopped"], replyHandler: nil) { error in
+            print("Failed to send workoutStopped: \(error.localizedDescription)")
+        }
+    }
+
     /// Send buffered samples (e.g., after reconnect).
     func sendBufferedSamples(_ samples: [[String: Any]]) {
         let session = WCSession.default

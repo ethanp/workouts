@@ -19,6 +19,24 @@ final class HeartRateStreamHandler: NSObject, FlutterStreamHandler {
   }
 }
 
+final class WatchCommandStreamHandler: NSObject, FlutterStreamHandler {
+  private var eventSink: FlutterEventSink?
+
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    self.eventSink = events
+    return nil
+  }
+
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    eventSink = nil
+    return nil
+  }
+
+  func send(command: String) {
+    eventSink?(command)
+  }
+}
+
 final class WatchConnectivityStreamHandler: NSObject, FlutterStreamHandler {
   private var eventSink: FlutterEventSink?
 

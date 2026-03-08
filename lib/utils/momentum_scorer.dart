@@ -10,6 +10,11 @@ class MomentumDayScore {
 }
 
 /// Extracts a normalized 0–1 value from an [ActivityCalendarDay].
+///
+/// [extract] returns null when the aspect doesn't apply to the day
+/// (e.g. run aspects on a session-only day) — these are excluded from the
+/// weighted average. A return of 0.0 means the aspect applies but has no
+/// value (e.g. session TRIMP without HR data) and counts as zero.
 class MomentumAspect {
   const MomentumAspect({
     required this.name,
@@ -20,15 +25,11 @@ class MomentumAspect {
 
   final String name;
   final double weight;
-
-  /// Returns the raw value from a day (e.g. distance in meters, TRIMP).
-  final double Function(ActivityCalendarDay day) extract;
-
-  /// The daily target value that maps to 1.0 intensity.
+  final double? Function(ActivityCalendarDay day) extract;
   final double target;
 
-  double normalized(ActivityCalendarDay day) =>
-      target > 0 ? (extract(day) / target).clamp(0.0, 1.0) : 0.0;
+  double normalized(double raw) =>
+      target > 0 ? (raw / target).clamp(0.0, 1.0) : 0.0;
 }
 
 const defaultAspects = [
@@ -70,14 +71,18 @@ const defaultAspects = [
   ),
 ];
 
-double _runTrimp(ActivityCalendarDay day) => day.runTrimp;
-double _runDistance(ActivityCalendarDay day) => day.totalRunDistanceMeters;
-double _runDuration(ActivityCalendarDay day) =>
-    day.totalRunDurationSeconds.toDouble();
-double _runZone2(ActivityCalendarDay day) => day.runZone2Minutes.toDouble();
-double _sessionTrimp(ActivityCalendarDay day) => day.sessionTrimp;
-double _sessionDuration(ActivityCalendarDay day) =>
-    day.totalSessionDurationSeconds.toDouble();
+double? _runTrimp(ActivityCalendarDay day) =>
+    day.runCount > 0 ? day.runTrimp : null;
+double? _runDistance(ActivityCalendarDay day) =>
+    day.runCount > 0 ? day.totalRunDistanceMeters : null;
+double? _runDuration(ActivityCalendarDay day) =>
+    day.runCount > 0 ? day.totalRunDurationSeconds.toDouble() : null;
+double? _runZone2(ActivityCalendarDay day) =>
+    day.runCount > 0 ? day.runZone2Minutes.toDouble() : null;
+double? _sessionTrimp(ActivityCalendarDay day) =>
+    day.sessionCount > 0 ? day.sessionTrimp : null;
+double? _sessionDuration(ActivityCalendarDay day) =>
+    day.sessionCount > 0 ? day.totalSessionDurationSeconds.toDouble() : null;
 
 /// Computes a fitness momentum score over a trailing window of days.
 ///
@@ -132,10 +137,10 @@ class MomentumScorer {
     var totalWeight = 0.0;
 
     for (final aspect in aspects) {
-      final raw = aspect.extract(day);
-      if (raw <= 0) continue;
-      weightedSum += aspect.weight * aspect.normalized(day);
+      final double? raw = aspect.extract(day);
+      if (raw == null) continue; // aspect not applicable (e.g. run aspect on session-only day)
       totalWeight += aspect.weight;
+      weightedSum += aspect.weight * aspect.normalized(raw);
     }
 
     return totalWeight > 0 ? weightedSum / totalWeight : 0.0;
