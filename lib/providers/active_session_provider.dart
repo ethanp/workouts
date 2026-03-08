@@ -4,8 +4,10 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'active_session_provider.g.dart';
 
@@ -69,12 +71,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       unitRemaining: unitRemaining,
     );
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    await repository.logSet(
-      session: current,
-      block: block,
-      exercise: exercise,
-      log: log,
-    );
+    await repository.logSet(session: current, setLog: log);
     final updatedSession = await repository.fetchSessionById(current.id);
     state = AsyncValue.data(updatedSession);
   }
@@ -103,7 +100,18 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    await repository.completeSession(current, notes: notes, feeling: feeling);
+    final maxHR = ref.read(maxHeartRateProvider);
+    final restingHR = ref.read(restingHeartRateProvider);
+    final trainingLoad = TrainingLoadCalculator(
+      maxHeartRate: maxHR,
+      restingHeartRate: restingHR,
+    );
+    await repository.completeSession(
+      current,
+      notes: notes,
+      feeling: feeling,
+      trainingLoad: trainingLoad,
+    );
     if (ref.mounted) {
       state = const AsyncValue.data(null);
       _invalidateSessionStreamsIfMounted();

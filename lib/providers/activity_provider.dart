@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/activity_item.dart';
@@ -12,7 +13,7 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/runs_repository_powersync.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
-import 'package:workouts/utils/zone2_calculator.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'activity_provider.g.dart';
 
@@ -82,44 +83,54 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   void emit() {
     if (lastRunDays != null && lastSessionDays != null) {
       final byDate = <DateTime, ActivityCalendarDay>{};
-      for (final rd in lastRunDays!) {
-        byDate[rd.date] = ActivityCalendarDay(
-          date: rd.date,
-          totalRunDistanceMeters: rd.totalDistanceMeters,
-          totalRunDurationSeconds: rd.totalDurationSeconds,
-          runZone2Minutes: rd.zone2Minutes,
-          runHasHrData: rd.hasHrData,
-          runCount: rd.runCount,
+      for (final runDay in lastRunDays!) {
+        byDate[runDay.date] = ActivityCalendarDay(
+          date: runDay.date,
+          totalRunDistanceMeters: runDay.totalDistanceMeters,
+          totalRunDurationSeconds: runDay.totalDurationSeconds,
+          runZone2Minutes: runDay.zone2Minutes,
+          runTrimp: runDay.trimp,
+          runHasHrData: runDay.hasHrData,
+          runCount: runDay.runCount,
           totalSessionDurationSeconds: 0,
+          sessionZone2Minutes: 0,
+          sessionTrimp: 0,
           sessionCount: 0,
         );
       }
-      for (final sd in lastSessionDays!) {
+      for (final sessionDay in lastSessionDays!) {
         byDate.update(
-          sd.date,
-          (a) => ActivityCalendarDay(
-            date: a.date,
-            totalRunDistanceMeters: a.totalRunDistanceMeters,
-            totalRunDurationSeconds: a.totalRunDurationSeconds,
-            runZone2Minutes: a.runZone2Minutes,
-            runHasHrData: a.runHasHrData,
-            runCount: a.runCount,
-            totalSessionDurationSeconds: sd.totalDurationSeconds,
-            sessionCount: sd.sessionCount,
+          sessionDay.date,
+          (existing) => ActivityCalendarDay(
+            date: existing.date,
+            totalRunDistanceMeters: existing.totalRunDistanceMeters,
+            totalRunDurationSeconds: existing.totalRunDurationSeconds,
+            runZone2Minutes: existing.runZone2Minutes,
+            runTrimp: existing.runTrimp,
+            runHasHrData: existing.runHasHrData,
+            runCount: existing.runCount,
+            totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
+            sessionZone2Minutes: sessionDay.zone2Minutes,
+            sessionTrimp: sessionDay.trimp,
+            sessionCount: sessionDay.sessionCount,
           ),
           ifAbsent: () => ActivityCalendarDay(
-            date: sd.date,
+            date: sessionDay.date,
             totalRunDistanceMeters: 0,
             totalRunDurationSeconds: 0,
             runZone2Minutes: 0,
+            runTrimp: 0,
             runHasHrData: false,
             runCount: 0,
-            totalSessionDurationSeconds: sd.totalDurationSeconds,
-            sessionCount: sd.sessionCount,
+            totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
+            sessionZone2Minutes: sessionDay.zone2Minutes,
+            sessionTrimp: sessionDay.trimp,
+            sessionCount: sessionDay.sessionCount,
           ),
         );
       }
-      final days = byDate.values.toList()..sort((a, b) => a.date.compareTo(b.date));
+      final days = byDate.values.toList()
+        ..sort((dayA, dayB) => dayA.date.compareTo(dayB.date));
       ctrl.add(days);
     }
   }
@@ -134,6 +145,27 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   });
 
   return ctrl.stream;
+}
+
+/// Shared display date range derived from activity data.
+/// All charts should use this so their x-axes are aligned.
+@riverpod
+DateTimeRange? chartDateRange(Ref ref) {
+  final days = ref.watch(activityCalendarDaysProvider).value;
+  if (days == null || days.isEmpty) return null;
+
+  DateTime? earliest;
+  for (final day in days) {
+    if (!day.hasActivity) continue;
+    if (earliest == null || day.date.isBefore(earliest)) earliest = day.date;
+  }
+  if (earliest == null) return null;
+
+  final now = DateTime.now();
+  return DateTimeRange(
+    start: DateTime(earliest.year, earliest.month, earliest.day),
+    end: DateTime(now.year, now.month, now.day),
+  );
 }
 
 @riverpod
@@ -163,6 +195,14 @@ Future<void> activityMetricsBackfill(Ref ref) async {
   if (db == null) return;
 
   final maxHR = ref.watch(maxHeartRateProvider);
-  final zone2 = Zone2Calculator(maxHeartRate: maxHR);
-  await RunsRepositoryPowerSync(db).backfillMissingMetrics(zone2: zone2);
+  final restingHR = ref.watch(restingHeartRateProvider);
+  final trainingLoad = TrainingLoadCalculator(
+    maxHeartRate: maxHR,
+    restingHeartRate: restingHR,
+  );
+  await RunsRepositoryPowerSync(db).backfillMissingMetrics(trainingLoad: trainingLoad);
+
+  final templateRepo = ref.watch(templateRepositoryPowerSyncProvider);
+  await SessionRepositoryPowerSync(db, templateRepo)
+      .backfillMissingMetrics(trainingLoad: trainingLoad);
 }

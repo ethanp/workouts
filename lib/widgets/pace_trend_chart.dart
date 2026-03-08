@@ -17,11 +17,18 @@ class PaceTrendChart extends StatelessWidget {
     required this.title,
     required this.points,
     required this.unitLabel,
+    this.displayStart,
+    this.displayEnd,
   });
 
   final String title;
   final List<PacePoint> points;
   final String unitLabel;
+
+  /// Override the x-axis date range to align with other charts.
+  /// Falls back to the data range when null.
+  final DateTime? displayStart;
+  final DateTime? displayEnd;
 
   @override
   Widget build(BuildContext context) {
@@ -141,6 +148,8 @@ class PaceTrendChart extends StatelessWidget {
             trendColor: const Color(0xFFFF9F0A),
             labelColor: AppColors.textColor4,
             gridColor: AppColors.borderDepth1,
+            displayStart: displayStart,
+            displayEnd: displayEnd,
           ),
         );
       },
@@ -157,6 +166,8 @@ class _PaceTrendPainter extends CustomPainter {
     required this.trendColor,
     required this.labelColor,
     required this.gridColor,
+    this.displayStart,
+    this.displayEnd,
   });
 
   final List<PacePoint> points;
@@ -165,6 +176,8 @@ class _PaceTrendPainter extends CustomPainter {
   final Color trendColor;
   final Color labelColor;
   final Color gridColor;
+  final DateTime? displayStart;
+  final DateTime? displayEnd;
 
   static const _leftPadding = 42.0;
   static const _rightPadding = 12.0;
@@ -189,8 +202,8 @@ class _PaceTrendPainter extends CustomPainter {
     final paddedMax = maxPace + paceRange * 0.15;
     final effectiveRange = paddedMax - paddedMin;
 
-    final minDate = points.first.date;
-    final maxDate = points.last.date;
+    final minDate = displayStart ?? points.first.date;
+    final maxDate = displayEnd ?? points.last.date;
     final dateRange = maxDate.difference(minDate).inSeconds.toDouble();
 
     double xForDate(DateTime date) {
@@ -208,6 +221,7 @@ class _PaceTrendPainter extends CustomPainter {
     _drawGridLines(canvas, size, chartLeft, chartRight, chartTop, chartBottom,
         paddedMin, paddedMax);
 
+    _drawYearBoundaries(canvas, minDate, maxDate, chartTop, chartBottom, xForDate);
     _drawDateLabels(canvas, chartBottom, minDate, maxDate, xForDate);
 
     final trendLine =
@@ -275,6 +289,44 @@ class _PaceTrendPainter extends CustomPainter {
     }
   }
 
+  void _drawYearBoundaries(
+    Canvas canvas,
+    DateTime minDate,
+    DateTime maxDate,
+    double chartTop,
+    double chartBottom,
+    double Function(DateTime) xForDate,
+  ) {
+    if (minDate.year == maxDate.year) return;
+
+    final linePaint = Paint()
+      ..color = AppColors.textColor4.withValues(alpha: 0.3)
+      ..strokeWidth = 1;
+
+    for (var year = minDate.year + 1; year <= maxDate.year; year++) {
+      final DateTime jan1 = DateTime(year);
+      final double x = xForDate(jan1);
+      canvas.drawLine(
+        Offset(x, chartTop),
+        Offset(x, chartBottom),
+        linePaint,
+      );
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '$year',
+          style: TextStyle(
+            color: AppColors.textColor4.withValues(alpha: 0.6),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(canvas, Offset(x + 4, chartTop + 2));
+    }
+  }
+
   void _drawDateLabels(Canvas canvas, double chartBottom, DateTime minDate,
       DateTime maxDate, double Function(DateTime) xForDate) {
     final spansDays = maxDate.difference(minDate).inDays;
@@ -285,9 +337,7 @@ class _PaceTrendPainter extends CustomPainter {
     ];
 
     String formatLabel(DateTime date) {
-      final mon = months[date.month];
-      if (spansDays > 365) return "$mon '${date.year % 100}";
-      if (spansDays > 60) return mon;
+      if (spansDays > 60) return months[date.month];
       return '${date.month}/${date.day}';
     }
 

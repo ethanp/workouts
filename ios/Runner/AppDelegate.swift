@@ -93,6 +93,14 @@ import UIKit
           result(count as NSNumber)
         }
       }
+    case "fetchRestingHeartRate":
+      let isoDate = (call.arguments as? [String: Any])?["date"] as? String
+      let targetDate = isoDate.flatMap { ISO8601DateFormatter().date(from: $0) }
+      healthKitBridge.fetchRestingHeartRate(nearDate: targetDate) { bpm in
+        DispatchQueue.main.async {
+          result(bpm.map { $0 as NSNumber })
+        }
+      }
     default:
       result(FlutterMethodNotImplemented)
     }

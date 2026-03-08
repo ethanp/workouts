@@ -2,7 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/services/repositories/runs_repository_powersync.dart';
-import 'package:workouts/utils/zone2_calculator.dart';
+import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'unit_system_provider.g.dart';
 
@@ -15,6 +16,7 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 
 const _kUnitSystemKey = 'unit_system';
 const _kMaxHRKey = 'maxHeartRate';
+const _kRestingHRKey = 'restingHeartRate';
 
 @Riverpod(keepAlive: true)
 class UnitSystemNotifier extends _$UnitSystemNotifier {
@@ -51,22 +53,46 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
   }
 
   void _recomputeInBackground(int maxHR) {
-    final zone2 = Zone2Calculator(maxHeartRate: maxHR);
+    final restingHR = ref.read(restingHeartRateProvider);
+    final trainingLoad = TrainingLoadCalculator(
+      maxHeartRate: maxHR,
+      restingHeartRate: restingHR,
+    );
     final progressNotifier =
-        ref.read(zone2RecomputeProgressProvider.notifier);
-    RunsRepositoryPowerSync repo;
+        ref.read(metricsRecomputeProgressProvider.notifier);
+    RunsRepositoryPowerSync runsRepo;
+    SessionRepositoryPowerSync sessionRepo;
     try {
-      repo = ref.read(runsRepositoryPowerSyncProvider);
+      runsRepo = ref.read(runsRepositoryPowerSyncProvider);
+      sessionRepo = ref.read(sessionRepositoryPowerSyncProvider);
     } catch (_) {
       return; // DB not yet initialized
     }
-    repo
-        .recomputeAllZone2(
-          zone2: zone2,
-          onProgress: (done, total) {
-            if (ref.mounted) progressNotifier.update(done, total);
-          },
-        )
+    int runsDone = 0, runsTotal = 0;
+    int sessionsDone = 0, sessionsTotal = 0;
+    void reportCombinedProgress() {
+      final int done = runsDone + sessionsDone;
+      final int total = runsTotal + sessionsTotal;
+      if (ref.mounted && total > 0) progressNotifier.update(done, total);
+    }
+    Future.wait([
+      runsRepo.recomputeZone2(
+        trainingLoad: trainingLoad,
+        onProgress: (done, total) {
+          runsDone = done;
+          runsTotal = total;
+          reportCombinedProgress();
+        },
+      ),
+      sessionRepo.recomputeZone2(
+        trainingLoad: trainingLoad,
+        onProgress: (done, total) {
+          sessionsDone = done;
+          sessionsTotal = total;
+          reportCombinedProgress();
+        },
+      ),
+    ])
         .then((_) {
           if (ref.mounted) progressNotifier.clear();
         })
@@ -77,7 +103,22 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
 }
 
 @Riverpod(keepAlive: true)
-class Zone2RecomputeProgress extends _$Zone2RecomputeProgress {
+class RestingHeartRateNotifier extends _$RestingHeartRateNotifier {
+  @override
+  int build() {
+    final prefs = ref.watch(sharedPreferencesProvider);
+    return prefs.getInt(_kRestingHRKey) ?? 60;
+  }
+
+  Future<void> setRestingHeartRate(int hr) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    await prefs.setInt(_kRestingHRKey, hr);
+    state = hr;
+  }
+}
+
+@Riverpod(keepAlive: true)
+class MetricsRecomputeProgress extends _$MetricsRecomputeProgress {
   @override
   (int, int)? build() => null;
 

@@ -6,6 +6,7 @@ class RunCalendarDay {
     required this.totalDistanceMeters,
     required this.totalDurationSeconds,
     required this.zone2Minutes,
+    required this.trimp,
     required this.hasHrData,
     required this.runCount,
   });
@@ -17,6 +18,9 @@ class RunCalendarDay {
   /// Total Zone 2 minutes across all runs that day.
   /// Zero when [hasHrData] is false.
   final int zone2Minutes;
+
+  /// Sum of Banister TRIMP across all runs that day.
+  final double trimp;
 
   /// True if at least one run that day has heart rate samples stored.
   final bool hasHrData;

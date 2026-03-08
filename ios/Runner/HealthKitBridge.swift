@@ -40,8 +40,11 @@ final class HealthKitBridge {
     }
 
     let routeType = HKSeriesType.workoutRoute()
+    var toRead: Set<HKObjectType> = [HKObjectType.workoutType(), heartRateType, energyType, distanceType, flightsType, routeType]
+    if let restingHRType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) {
+      toRead.insert(restingHRType)
+    }
     let toShare: Set = [HKObjectType.workoutType(), heartRateType, energyType]
-    let toRead: Set = [HKObjectType.workoutType(), heartRateType, energyType, distanceType, flightsType, routeType]
     healthStore.requestAuthorization(toShare: toShare, read: toRead) { [weak self] _, _ in
       guard let self else {
         completion("unknown")
@@ -212,6 +215,39 @@ final class HealthKitBridge {
       }
       completion(payload)
     }
+  }
+
+  func fetchRestingHeartRate(completion: @escaping (Int?) -> Void) {
+    fetchRestingHeartRate(nearDate: nil, completion: completion)
+  }
+
+  func fetchRestingHeartRate(nearDate: Date?, completion: @escaping (Int?) -> Void) {
+    guard HKHealthStore.isHealthDataAvailable(),
+          let restingHRType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) else {
+      completion(nil)
+      return
+    }
+    let predicate: NSPredicate?
+    if let target = nearDate {
+      let calendar = Calendar.current
+      let windowStart = calendar.date(byAdding: .day, value: -7, to: target)!
+      let windowEnd = calendar.date(byAdding: .day, value: 1, to: target)!
+      predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: .strictStartDate)
+    } else {
+      predicate = nil
+    }
+    let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+    let query = HKSampleQuery(
+      sampleType: restingHRType,
+      predicate: predicate,
+      limit: 1,
+      sortDescriptors: [sortDescriptor]
+    ) { _, samples, _ in
+      let bpm = (samples?.first as? HKQuantitySample)?
+        .quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+      completion(bpm != nil ? Int(bpm!) : nil)
+    }
+    healthStore.execute(query)
   }
 
   private func fetchHeartRateStats(

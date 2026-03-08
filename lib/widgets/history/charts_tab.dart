@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/fitness_run.dart';
@@ -19,9 +20,11 @@ class HistoryChartsTab extends ConsumerWidget {
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
     final runsAsync = ref.watch(runsStreamProvider);
     final unitSystem = ref.watch(unitSystemProvider);
+    final chartRange = ref.watch(chartDateRangeProvider);
 
     return calendarAsync.when(
-      data: (days) => _buildCharts(days, runsAsync.value ?? [], unitSystem),
+      data: (days) =>
+          _buildCharts(days, runsAsync.value ?? [], unitSystem, chartRange),
       loading: () => const Center(child: CupertinoActivityIndicator()),
       error: (error, _) => Center(
         child: Text(
@@ -36,6 +39,7 @@ class HistoryChartsTab extends ConsumerWidget {
     List<ActivityCalendarDay> days,
     List<FitnessRun> runs,
     UnitSystem unitSystem,
+    DateTimeRange? chartRange,
   ) {
     final weeklyAggregates = _aggregateByWeek(days);
     final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
@@ -46,7 +50,11 @@ class HistoryChartsTab extends ConsumerWidget {
       children: [
         _FourWeekSummary(days: days, unitSystem: unitSystem),
         const SizedBox(height: AppSpacing.lg),
-        FitnessMomentumChart(days: days),
+        FitnessMomentumChart(
+          days: days,
+          displayStart: chartRange?.start,
+          displayEnd: chartRange?.end,
+        ),
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
           title: 'Weekly Distance',
@@ -76,6 +84,8 @@ class HistoryChartsTab extends ConsumerWidget {
           title: '1 Mi Pace',
           points: _pacePoints(runs, unitSystem),
           unitLabel: unitSystem == UnitSystem.imperial ? 'mi' : 'km',
+          displayStart: chartRange?.start,
+          displayEnd: chartRange?.end,
         ),
       ],
     );
@@ -89,6 +99,7 @@ class HistoryChartsTab extends ConsumerWidget {
         .map((w) => WeekData(
               label: w.label,
               value: valueFor(w),
+              weekStart: w.weekStart,
               isCurrent: w.isCurrent,
               includeInAverage: !w.beforeData,
             ))
@@ -129,6 +140,7 @@ class HistoryChartsTab extends ConsumerWidget {
           currentMonday.subtract(Duration(days: 7 * (weekCount - 1 - i)));
       byMonday[monday] = WeekAggregate(
         label: '${monday.month}/${monday.day}',
+        weekStart: monday,
         isCurrent: i == weekCount - 1,
         beforeData: monday.isBefore(earliestMonday),
       );
@@ -141,7 +153,7 @@ class HistoryChartsTab extends ConsumerWidget {
       final agg = byMonday[key];
       if (agg == null) continue;
       agg.totalRunMeters += d.totalRunDistanceMeters;
-      agg.zone2Minutes += d.runZone2Minutes;
+      agg.zone2Minutes += d.totalZone2Minutes;
       agg.activeDays++;
     }
 
@@ -163,11 +175,13 @@ class HistoryChartsTab extends ConsumerWidget {
 class WeekAggregate {
   WeekAggregate({
     required this.label,
+    required this.weekStart,
     this.isCurrent = false,
     this.beforeData = false,
   });
 
   final String label;
+  final DateTime weekStart;
   final bool isCurrent;
   final bool beforeData;
   double totalRunMeters = 0;
@@ -198,7 +212,7 @@ class _FourWeekSummary extends StatelessWidget {
       totalMeters += d.totalRunDistanceMeters;
       totalRunSeconds += d.totalRunDurationSeconds;
       totalSessionMinutes += d.totalSessionDurationSeconds ~/ 60;
-      totalZone2 += d.runZone2Minutes;
+      totalZone2 += d.totalZone2Minutes;
       activityDayCount++;
     }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:workouts/theme/app_theme.dart';
@@ -133,11 +134,15 @@ class _ErrorToast extends StatelessWidget {
   }
 
   Widget _messageBody() {
-    return Text(
-      message,
-      style: AppTypography.caption.copyWith(color: AppColors.textColor2),
-      maxLines: 4,
-      overflow: TextOverflow.ellipsis,
+    return SelectableRegion(
+      focusNode: FocusNode(),
+      selectionControls: cupertinoTextSelectionHandleControls,
+      child: Text(
+        message,
+        style: AppTypography.caption.copyWith(color: AppColors.textColor2),
+        maxLines: 4,
+        overflow: TextOverflow.ellipsis,
+      ),
     );
   }
 
@@ -160,6 +165,14 @@ class _ErrorToast extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.sm),
           onPressed: () => _emailError(message),
           child: const Text('Email to me', style: buttonTextStyle),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        CupertinoButton(
+          padding: buttonPadding,
+          color: AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          onPressed: () => Clipboard.setData(ClipboardData(text: message)),
+          child: const Text('Copy', style: buttonTextStyle),
         ),
         const SizedBox(width: AppSpacing.sm),
         CupertinoButton(

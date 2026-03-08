@@ -6,136 +6,171 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
+import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
+import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
+import 'package:workouts/services/repositories/session_metrics_store.dart';
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
+
 part 'session_repository_powersync.g.dart';
 
 const _uuid = Uuid();
-
 final _log = Logger('SessionRepository');
 
 class SessionRepositoryPowerSync {
-  SessionRepositoryPowerSync(this._db, this._templateRepository);
+  SessionRepositoryPowerSync(this._powerSync, this._templateRepository);
 
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
   final TemplateRepositoryPowerSync _templateRepository;
+  late final SessionMetricsStore _metricsStore =
+      SessionMetricsStore(_powerSync);
 
-  /// Start a new session from a template.
   Future<Session> startSession(String templateId) async {
-    final templates = await _templateRepository.fetchTemplates();
-    final template = templates.firstWhere((item) => item.id == templateId);
+    final List<WorkoutTemplate> templates =
+        await _templateRepository.fetchTemplates();
+    final WorkoutTemplate template =
+        templates.firstWhere((item) => item.id == templateId);
 
-    final sessionId = _uuid.v4();
-    final now = DateTime.now().toIso8601String();
+    final String sessionId = _uuid.v4();
+    final String now = DateTime.now().toIso8601String();
 
-    // Insert session
-    await _db.execute(
-      '''
-      INSERT INTO sessions (
-        id, template_id, started_at, paused_at, total_paused_duration_seconds, updated_at
-      ) VALUES (?, ?, ?, NULL, 0, ?)
-      ''',
-      [sessionId, templateId, now, now],
-    );
-
-    final sessionBlocks = <SessionBlock>[];
-    var blockIndex = 0;
-
-    // Create session blocks from template blocks
-    for (final templateBlock in template.blocks) {
-      final totalRounds = templateBlock.rounds <= 0 ? 1 : templateBlock.rounds;
-      final hasMultipleRounds = totalRounds > 1;
-
-      for (var round = 0; round < totalRounds; round++) {
-        final blockId = _uuid.v4();
-
-        // Insert session block
-        await _db.execute(
-          '''
-          INSERT INTO session_blocks (
-            id, session_id, block_index, type, target_duration_seconds,
-            notes, round_index, total_rounds
-          ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
-          ''',
-          [
-            blockId,
-            sessionId,
-            blockIndex,
-            templateBlock.type.name,
-            templateBlock.targetDuration.inSeconds,
-            hasMultipleRounds ? round + 1 : null,
-            hasMultipleRounds ? totalRounds : null,
-          ],
-        );
-
-        // Insert session block exercises from template block exercises
-        for (
-          var exerciseIndex = 0;
-          exerciseIndex < templateBlock.exercises.length;
-          exerciseIndex++
-        ) {
-          final exercise = templateBlock.exercises[exerciseIndex];
-
-          await _db.execute(
-            '''
-            INSERT INTO session_block_exercises (
-              id, block_id, exercise_id, exercise_index, prescription,
-              setup_duration_seconds, work_duration_seconds, rest_duration_seconds
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''',
-            [
-              _uuid.v4(),
-              blockId,
-              exercise.id,
-              exerciseIndex,
-              exercise.prescription,
-              exercise.setupDuration?.inSeconds,
-              exercise.workDuration?.inSeconds,
-              exercise.restDuration?.inSeconds,
-            ],
-          );
-        }
-
-        // Build SessionBlock model
-        sessionBlocks.add(
-          SessionBlock(
-            id: blockId,
-            sessionId: sessionId,
-            type: templateBlock.type,
-            blockIndex: blockIndex,
-            exercises: templateBlock.exercises,
-            logs: const [],
-            targetDuration: templateBlock.targetDuration,
-            roundIndex: hasMultipleRounds ? round + 1 : null,
-            totalRounds: hasMultipleRounds ? totalRounds : null,
-          ),
-        );
-
-        blockIndex++;
-      }
-    }
+    await _insertSessionRow(sessionId, templateId, now);
+    final List<SessionBlock> blocks =
+        await _materializeBlocks(sessionId, template.blocks);
 
     return Session(
       id: sessionId,
       templateId: templateId,
       startedAt: DateTime.now(),
-      blocks: sessionBlocks,
+      blocks: blocks,
     );
   }
 
-  /// Log a completed set.
+  Future<void> _insertSessionRow(
+    String sessionId,
+    String templateId,
+    String now,
+  ) => _powerSync.execute(
+    '''
+    INSERT INTO sessions (
+      id, template_id, started_at, paused_at, total_paused_duration_seconds,
+      updated_at
+    ) VALUES (?, ?, ?, NULL, 0, ?)
+    ''',
+    [sessionId, templateId, now, now],
+  );
+
+  Future<List<SessionBlock>> _materializeBlocks(
+    String sessionId,
+    List<WorkoutBlock> templateBlocks,
+  ) async {
+    final List<SessionBlock> sessionBlocks = [];
+    var blockIndex = 0;
+
+    for (final WorkoutBlock templateBlock in templateBlocks) {
+      final int totalRounds =
+          templateBlock.rounds <= 0 ? 1 : templateBlock.rounds;
+      final bool hasMultipleRounds = totalRounds > 1;
+
+      for (var roundIndex = 0; roundIndex < totalRounds; roundIndex++) {
+        final SessionBlock block = await _materializeSingleBlock(
+          sessionId: sessionId,
+          templateBlock: templateBlock,
+          blockIndex: blockIndex,
+          roundIndex: roundIndex,
+          totalRounds: totalRounds,
+          hasMultipleRounds: hasMultipleRounds,
+        );
+        sessionBlocks.add(block);
+        blockIndex++;
+      }
+    }
+
+    return sessionBlocks;
+  }
+
+  Future<SessionBlock> _materializeSingleBlock({
+    required String sessionId,
+    required WorkoutBlock templateBlock,
+    required int blockIndex,
+    required int roundIndex,
+    required int totalRounds,
+    required bool hasMultipleRounds,
+  }) async {
+    final String blockId = _uuid.v4();
+
+    await _powerSync.execute(
+      '''
+      INSERT INTO session_blocks (
+        id, session_id, block_index, type, target_duration_seconds,
+        notes, round_index, total_rounds
+      ) VALUES (?, ?, ?, ?, ?, NULL, ?, ?)
+      ''',
+      [
+        blockId,
+        sessionId,
+        blockIndex,
+        templateBlock.type.name,
+        templateBlock.targetDuration.inSeconds,
+        hasMultipleRounds ? roundIndex + 1 : null,
+        hasMultipleRounds ? totalRounds : null,
+      ],
+    );
+
+    await _insertBlockExercises(blockId, templateBlock.exercises);
+
+    return SessionBlock(
+      id: blockId,
+      sessionId: sessionId,
+      type: templateBlock.type,
+      blockIndex: blockIndex,
+      exercises: templateBlock.exercises,
+      logs: const [],
+      targetDuration: templateBlock.targetDuration,
+      roundIndex: hasMultipleRounds ? roundIndex + 1 : null,
+      totalRounds: hasMultipleRounds ? totalRounds : null,
+    );
+  }
+
+  Future<void> _insertBlockExercises(
+    String blockId,
+    List<WorkoutExercise> exercises,
+  ) async {
+    for (var exerciseIndex = 0;
+        exerciseIndex < exercises.length;
+        exerciseIndex++) {
+      final WorkoutExercise exercise = exercises[exerciseIndex];
+      await _powerSync.execute(
+        '''
+        INSERT INTO session_block_exercises (
+          id, block_id, exercise_id, exercise_index, prescription,
+          setup_duration_seconds, work_duration_seconds, rest_duration_seconds
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''',
+        [
+          _uuid.v4(),
+          blockId,
+          exercise.id,
+          exerciseIndex,
+          exercise.prescription,
+          exercise.setupDuration?.inSeconds,
+          exercise.workDuration?.inSeconds,
+          exercise.restDuration?.inSeconds,
+        ],
+      );
+    }
+  }
+
   Future<void> logSet({
     required Session session,
-    required SessionBlock block,
-    required WorkoutExercise exercise,
-    required SessionSetLog log,
+    required SessionSetLog setLog,
   }) async {
-    final now = DateTime.now().toIso8601String();
+    final String now = DateTime.now().toIso8601String();
 
-    // Insert set log
-    await _db.execute(
+    await _powerSync.execute(
       '''
       INSERT INTO session_set_logs (
         id, block_id, exercise_id, set_index,
@@ -143,32 +178,27 @@ class SessionRepositoryPowerSync {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       ''',
       [
-        log.id,
-        log.sessionBlockId,
-        log.exerciseId,
-        log.setIndex,
-        log.weightKg,
-        log.reps,
-        log.duration?.inSeconds,
-        log.unitRemaining,
+        setLog.id,
+        setLog.sessionBlockId,
+        setLog.exerciseId,
+        setLog.setIndex,
+        setLog.weightKg,
+        setLog.reps,
+        setLog.duration?.inSeconds,
+        setLog.unitRemaining,
       ],
     );
 
-    // Update session updated_at
-    await _db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      now,
-      session.id,
-    ]);
+    await _touchSessionUpdatedAt(session.id, now);
   }
 
-  /// Remove the last logged set for an exercise in a block.
+  /// Removes the most recent logged set for an exercise in a block.
   Future<void> unlogSet({
     required Session session,
     required SessionBlock block,
     required WorkoutExercise exercise,
   }) async {
-    // Find the highest set_index for this block/exercise
-    final logRows = await _db.getAll(
+    final List<Map<String, dynamic>> latestLogRows = await _powerSync.getAll(
       '''
       SELECT set_index FROM session_set_logs
       WHERE block_id = ? AND exercise_id = ?
@@ -178,30 +208,27 @@ class SessionRepositoryPowerSync {
       [block.id, exercise.id],
     );
 
-    if (logRows.isEmpty) return;
+    if (latestLogRows.isEmpty) return;
 
-    final setIndex = logRows.first['set_index'] as int;
+    final int latestSetIndex = latestLogRows.first['set_index'] as int;
 
-    // Delete the log
-    await _db.execute(
+    await _powerSync.execute(
       '''
       DELETE FROM session_set_logs
       WHERE block_id = ? AND exercise_id = ? AND set_index = ?
       ''',
-      [block.id, exercise.id, setIndex],
+      [block.id, exercise.id, latestSetIndex],
     );
 
-    // Update session updated_at
-    await _db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      DateTime.now().toIso8601String(),
+    await _touchSessionUpdatedAt(
       session.id,
-    ]);
+      DateTime.now().toIso8601String(),
+    );
   }
 
-  /// Fetch a session by ID with all related data.
+  /// Fetches a session by ID, eagerly loading all blocks, exercises, and logs.
   Future<Session> fetchSessionById(String sessionId) async {
-    // Fetch session
-    final sessionRows = await _db.getAll(
+    final List<Map<String, dynamic>> sessionRows = await _powerSync.getAll(
       'SELECT * FROM sessions WHERE id = ?',
       [sessionId],
     );
@@ -210,10 +237,9 @@ class SessionRepositoryPowerSync {
       throw Exception('Session not found: $sessionId');
     }
 
-    final sessionRow = sessionRows.first;
+    final Map<String, dynamic> sessionRow = sessionRows.first;
 
-    // Fetch blocks
-    final blockRows = await _db.getAll(
+    final List<Map<String, dynamic>> blockRows = await _powerSync.getAll(
       '''
       SELECT * FROM session_blocks
       WHERE session_id = ?
@@ -222,13 +248,12 @@ class SessionRepositoryPowerSync {
       [sessionId],
     );
 
-    final blocks = <SessionBlock>[];
+    final List<SessionBlock> blocks = [];
+    for (final Map<String, dynamic> blockRow in blockRows) {
+      final String blockId = blockRow['id'] as String;
 
-    for (final blockRow in blockRows) {
-      final blockId = blockRow['id'] as String;
-
-      // Fetch exercises for this block
-      final exerciseRows = await _db.getAll(
+      final List<Map<String, dynamic>> exerciseRows =
+          await _powerSync.getAll(
         '''
         SELECT 
           e.id as e_id,
@@ -248,12 +273,13 @@ class SessionRepositoryPowerSync {
         [blockId],
       );
 
-      final exercises = exerciseRows
-          .map((row) => mappers.sessionExerciseFromJoinRow(row))
+      final List<WorkoutExercise> exercises = exerciseRows
+          .map(
+            (exerciseRow) => mappers.sessionExerciseFromJoinRow(exerciseRow),
+          )
           .toList();
 
-      // Fetch logs for this block
-      final logRows = await _db.getAll(
+      final List<Map<String, dynamic>> logRows = await _powerSync.getAll(
         '''
         SELECT * FROM session_set_logs
         WHERE block_id = ?
@@ -262,8 +288,8 @@ class SessionRepositoryPowerSync {
         [blockId],
       );
 
-      final logs = logRows
-          .map((row) => mappers.sessionSetLogFromRow(row))
+      final List<SessionSetLog> logs = logRows
+          .map((logRow) => mappers.sessionSetLogFromRow(logRow))
           .toList();
 
       blocks.add(mappers.sessionBlockFromRow(blockRow, exercises, logs));
@@ -272,97 +298,86 @@ class SessionRepositoryPowerSync {
     return mappers.sessionFromRow(sessionRow, blocks);
   }
 
-  /// Fetch all sessions, ordered by started_at DESC.
   Future<List<Session>> fetchSessions() async {
-    final sessionRows = await _db.getAll(
+    final List<Map<String, dynamic>> sessionRows = await _powerSync.getAll(
       'SELECT * FROM sessions ORDER BY started_at DESC',
     );
 
-    final sessions = <Session>[];
-
-    for (final sessionRow in sessionRows) {
-      final sessionId = sessionRow['id'] as String;
+    final List<Session> sessions = [];
+    for (final Map<String, dynamic> sessionRow in sessionRows) {
+      final String sessionId = sessionRow['id'] as String;
       sessions.add(await fetchSessionById(sessionId));
     }
-
     return sessions;
   }
 
-  /// Watch all sessions (reactive stream).
   Stream<List<Session>> watchSessions() {
-    return _db
+    return _powerSync
         .watch('SELECT * FROM sessions ORDER BY started_at DESC')
         .asyncMap((sessionRows) async {
-          final sessions = <Session>[];
-          for (final sessionRow in sessionRows) {
-            final sessionId = sessionRow['id'] as String;
+          final List<Session> sessions = [];
+          for (final Map<String, dynamic> sessionRow in sessionRows) {
+            final String sessionId = sessionRow['id'] as String;
             sessions.add(await fetchSessionById(sessionId));
           }
           return sessions;
         });
   }
 
-  Stream<List<SessionCalendarDay>> watchSessionCalendarDays() => _db
+  Stream<List<SessionCalendarDay>> watchSessionCalendarDays() => _powerSync
       .watch(
         '''
         SELECT
           DATE(s.started_at, 'localtime') AS day,
-          SUM(s.duration_seconds)         AS total_duration_seconds,
-          COUNT(s.id)                     AS session_count
+          SUM(s.duration_seconds)           AS total_duration_seconds,
+          COALESCE(SUM(m.zone2_seconds), 0) AS total_zone2_seconds,
+          COALESCE(SUM(m.trimp), 0.0)       AS total_trimp,
+          COUNT(s.id)                       AS session_count
         FROM sessions s
+        LEFT JOIN session_computed_metrics m ON m.id = s.id
         WHERE s.completed_at IS NOT NULL
         GROUP BY day
         ORDER BY day ASC
         ''',
-        triggerOnTables: const {'sessions'},
+        triggerOnTables: const {'sessions', 'session_computed_metrics'},
       )
-      .map((rows) => rows.map(_sessionCalendarDayFromRow).toList());
+      .map(
+        (dayRows) => dayRows.map(_calendarDayFromRow).toList(),
+      );
 
   Future<List<Session>> getSessionsForDate(DateTime localDate) async {
-    final dayString =
+    final String dayString =
         '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
-    final sessionRows = await _db.getAll(
-      "SELECT id FROM sessions WHERE completed_at IS NOT NULL AND DATE(started_at, 'localtime') = ? ORDER BY started_at ASC",
+    final List<Map<String, dynamic>> sessionRows = await _powerSync.getAll(
+      "SELECT id FROM sessions WHERE completed_at IS NOT NULL"
+      " AND DATE(started_at, 'localtime') = ?"
+      " ORDER BY started_at ASC",
       [dayString],
     );
-    final sessions = <Session>[];
-    for (final row in sessionRows) {
-      sessions.add(await fetchSessionById(row['id'] as String));
+    final List<Session> sessions = [];
+    for (final Map<String, dynamic> sessionRow in sessionRows) {
+      sessions.add(await fetchSessionById(sessionRow['id'] as String));
     }
     return sessions;
   }
 
-  SessionCalendarDay _sessionCalendarDayFromRow(Map<String, dynamic> row) {
-    final dayString = row['day'] as String;
-    final parts = dayString.split('-');
-    return SessionCalendarDay(
-      date: DateTime(
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-        int.parse(parts[2]),
-      ),
-      totalDurationSeconds: (row['total_duration_seconds'] as int?) ?? 0,
-      sessionCount: (row['session_count'] as int?) ?? 0,
-    );
-  }
-
-  /// Complete a session.
   Future<void> completeSession(
     Session session, {
     String? notes,
     String? feeling,
+    TrainingLoadCalculator? trainingLoad,
   }) async {
-    final now = DateTime.now().toIso8601String();
-    final completedAt = DateTime.now();
+    final String now = DateTime.now().toIso8601String();
+    final DateTime completedAt = DateTime.now();
 
-    // Calculate duration (subtract paused time if needed)
-    var duration = completedAt.difference(session.startedAt);
+    Duration activeDuration =
+        completedAt.difference(session.startedAt);
     if (session.isPaused && session.pausedAt != null) {
-      duration -= DateTime.now().difference(session.pausedAt!);
+      activeDuration -= DateTime.now().difference(session.pausedAt!);
     }
-    duration -= session.totalPausedDuration;
+    activeDuration -= session.totalPausedDuration;
 
-    final statsRow = await _db.getAll(
+    final List<Map<String, dynamic>> heartRateStats = await _powerSync.getAll(
       '''
       SELECT AVG(bpm) as avg_bpm, MAX(bpm) as max_bpm
       FROM heart_rate_samples
@@ -370,10 +385,10 @@ class SessionRepositoryPowerSync {
       ''',
       [session.id],
     );
-    final avgBpm = statsRow.first['avg_bpm'] as num?;
-    final maxBpm = statsRow.first['max_bpm'] as int?;
+    final num? avgBpm = heartRateStats.first['avg_bpm'] as num?;
+    final int? maxBpm = heartRateStats.first['max_bpm'] as int?;
 
-    await _db.execute(
+    await _powerSync.execute(
       '''
       UPDATE sessions
       SET completed_at = ?, duration_seconds = ?, notes = ?, paused_at = NULL,
@@ -382,7 +397,7 @@ class SessionRepositoryPowerSync {
       ''',
       [
         completedAt.toIso8601String(),
-        duration.inSeconds,
+        activeDuration.inSeconds,
         notes ?? '',
         avgBpm?.round(),
         maxBpm,
@@ -390,63 +405,67 @@ class SessionRepositoryPowerSync {
         session.id,
       ],
     );
+
+    if (trainingLoad != null) {
+      await _metricsStore.computeAndStore(
+        session.id,
+        trainingLoad: trainingLoad,
+      );
+    }
   }
 
-  /// Discard (delete) a session.
   Future<void> discardSession(String sessionId) async {
-    await _db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);
+    await _powerSync.execute(
+      'DELETE FROM sessions WHERE id = ?',
+      [sessionId],
+    );
     _log.info('Deleted session $sessionId (queued for upload).');
   }
 
-  /// Discard all in-progress sessions.
   Future<void> discardAllInProgressSessions() async {
-    await _db.execute('DELETE FROM sessions WHERE completed_at IS NULL');
+    await _powerSync.execute(
+      'DELETE FROM sessions WHERE completed_at IS NULL',
+    );
   }
 
-  /// Fetch session history (all sessions, sorted with in-progress first).
+  /// Returns all sessions sorted with in-progress first, then by most recent.
   Future<List<Session>> history() async {
-    final sessions = await fetchSessions();
+    final List<Session> sessions = await fetchSessions();
 
-    // Sort with in-progress sessions first, then by most recent
-    sessions.sort((a, b) {
-      // In-progress sessions (no completedAt) come first
-      if (a.completedAt == null && b.completedAt != null) return -1;
-      if (a.completedAt != null && b.completedAt == null) return 1;
-
-      // Within same status, sort by most recent first
-      if (a.completedAt == null && b.completedAt == null) {
-        return b.startedAt.compareTo(a.startedAt);
-      } else {
-        return b.completedAt!.compareTo(a.completedAt!);
+    sessions.sort((sessionA, sessionB) {
+      if (sessionA.completedAt == null && sessionB.completedAt != null) {
+        return -1;
       }
+      if (sessionA.completedAt != null && sessionB.completedAt == null) {
+        return 1;
+      }
+      if (sessionA.completedAt == null && sessionB.completedAt == null) {
+        return sessionB.startedAt.compareTo(sessionA.startedAt);
+      }
+      return sessionB.completedAt!.compareTo(sessionA.completedAt!);
     });
 
     return sessions;
   }
 
-  /// Pause a session.
   Future<void> pauseSession(Session session) async {
-    final now = DateTime.now().toIso8601String();
-
-    await _db.execute(
+    final String now = DateTime.now().toIso8601String();
+    await _powerSync.execute(
       'UPDATE sessions SET paused_at = ?, updated_at = ? WHERE id = ?',
       [now, now, session.id],
     );
   }
 
-  /// Resume a session.
   Future<void> resumeSession(Session session) async {
-    final now = DateTime.now().toIso8601String();
+    final String now = DateTime.now().toIso8601String();
+    if (session.pausedAt == null) return;
 
-    // Calculate total paused duration
-    final pausedAtStr = session.pausedAt?.toIso8601String();
-    if (pausedAtStr == null) return;
+    final Duration pauseDuration =
+        DateTime.now().difference(session.pausedAt!);
+    final Duration totalPausedDuration =
+        session.totalPausedDuration + pauseDuration;
 
-    final pausedAt = DateTime.parse(pausedAtStr);
-    final pauseDuration = DateTime.now().difference(pausedAt);
-    final totalPausedDuration = session.totalPausedDuration + pauseDuration;
-
-    await _db.execute(
+    await _powerSync.execute(
       '''
       UPDATE sessions
       SET paused_at = NULL, total_paused_duration_seconds = ?, updated_at = ?
@@ -456,18 +475,17 @@ class SessionRepositoryPowerSync {
     );
   }
 
-  /// Add an exercise to a session block.
   Future<Session> addExercise(
     Session session,
     String blockId,
     WorkoutExercise exercise,
   ) async {
-    // Find the target block
-    final targetBlock = session.blocks.firstWhere((b) => b.id == blockId);
-    final siblingIds = _findSiblingBlockIds(session, targetBlock);
+    final SessionBlock targetBlock =
+        session.blocks.firstWhere((block) => block.id == blockId);
+    final Set<String> siblingBlockIds =
+        _findSiblingBlockIds(session, targetBlock);
 
-    // Find max exercise_index for this block
-    final exerciseRows = await _db.getAll(
+    final List<Map<String, dynamic>> indexRows = await _powerSync.getAll(
       '''
       SELECT exercise_index FROM session_block_exercises
       WHERE block_id = ?
@@ -477,13 +495,12 @@ class SessionRepositoryPowerSync {
       [blockId],
     );
 
-    final nextIndex = exerciseRows.isEmpty
+    final int nextExerciseIndex = indexRows.isEmpty
         ? 0
-        : (exerciseRows.first['exercise_index'] as int) + 1;
+        : (indexRows.first['exercise_index'] as int) + 1;
 
-    // Insert exercise into all sibling blocks
-    for (final siblingId in siblingIds) {
-      await _db.execute(
+    for (final String siblingBlockId in siblingBlockIds) {
+      await _powerSync.execute(
         '''
         INSERT INTO session_block_exercises (
           id, block_id, exercise_id, exercise_index, prescription,
@@ -492,9 +509,9 @@ class SessionRepositoryPowerSync {
         ''',
         [
           _uuid.v4(),
-          siblingId,
+          siblingBlockId,
           exercise.id,
-          nextIndex,
+          nextExerciseIndex,
           exercise.prescription,
           exercise.setupDuration?.inSeconds,
           exercise.workDuration?.inSeconds,
@@ -503,73 +520,103 @@ class SessionRepositoryPowerSync {
       );
     }
 
-    // Update session updated_at
-    await _db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      DateTime.now().toIso8601String(),
+    await _touchSessionUpdatedAt(
       session.id,
-    ]);
-
+      DateTime.now().toIso8601String(),
+    );
     return fetchSessionById(session.id);
   }
 
-  /// Remove an exercise from a session block.
   Future<Session> removeExercise(
     Session session,
     String blockId,
     String exerciseId,
   ) async {
-    final targetBlock = session.blocks.firstWhere((b) => b.id == blockId);
-    final siblingIds = _findSiblingBlockIds(session, targetBlock);
+    final SessionBlock targetBlock =
+        session.blocks.firstWhere((block) => block.id == blockId);
+    final Set<String> siblingBlockIds =
+        _findSiblingBlockIds(session, targetBlock);
 
-    // Delete exercise from all sibling blocks
-    for (final siblingId in siblingIds) {
-      // Delete logs first (cascade should handle this, but be explicit)
-      await _db.execute(
-        '''
-        DELETE FROM session_set_logs
-        WHERE block_id = ? AND exercise_id = ?
-        ''',
-        [siblingId, exerciseId],
+    for (final String siblingBlockId in siblingBlockIds) {
+      await _powerSync.execute(
+        'DELETE FROM session_set_logs WHERE block_id = ? AND exercise_id = ?',
+        [siblingBlockId, exerciseId],
       );
-
-      // Delete exercise from block
-      await _db.execute(
-        '''
-        DELETE FROM session_block_exercises
-        WHERE block_id = ? AND exercise_id = ?
-        ''',
-        [siblingId, exerciseId],
+      await _powerSync.execute(
+        'DELETE FROM session_block_exercises'
+        ' WHERE block_id = ? AND exercise_id = ?',
+        [siblingBlockId, exerciseId],
       );
     }
 
-    // Update session updated_at
-    await _db.execute('UPDATE sessions SET updated_at = ? WHERE id = ?', [
-      DateTime.now().toIso8601String(),
+    await _touchSessionUpdatedAt(
       session.id,
-    ]);
-
+      DateTime.now().toIso8601String(),
+    );
     return fetchSessionById(session.id);
   }
 
-  /// Find sibling block IDs (blocks that share rounds).
+  /// Recomputes zone2 for all completed sessions (triggered by max HR change).
+  /// Preserves existing TRIMP values computed with their original resting HR.
+  Future<void> recomputeZone2({
+    required TrainingLoadCalculator trainingLoad,
+    void Function(int done, int total)? onProgress,
+  }) => _metricsStore.recomputeAllZone2(
+    trainingLoad: trainingLoad,
+    onProgress: onProgress,
+  );
+
+  /// Backfills metrics for completed sessions missing a
+  /// `session_computed_metrics` row.
+  Future<void> backfillMissingMetrics({
+    required TrainingLoadCalculator trainingLoad,
+  }) => _metricsStore.backfillMissing(trainingLoad: trainingLoad);
+
+  /// Returns sibling block IDs — blocks that share the same round structure,
+  /// so that exercises added to one round propagate to all rounds.
   Set<String> _findSiblingBlockIds(Session session, SessionBlock target) {
     if (target.totalRounds == null) return {target.id};
     return session.blocks
         .where(
-          (b) => b.type == target.type && b.totalRounds == target.totalRounds,
+          (block) =>
+              block.type == target.type &&
+              block.totalRounds == target.totalRounds,
         )
-        .map((b) => b.id)
+        .map((block) => block.id)
         .toSet();
+  }
+
+  Future<void> _touchSessionUpdatedAt(String sessionId, String now) =>
+      _powerSync.execute(
+        'UPDATE sessions SET updated_at = ? WHERE id = ?',
+        [now, sessionId],
+      );
+
+  SessionCalendarDay _calendarDayFromRow(Map<String, dynamic> dayRow) {
+    final String dayString = dayRow['day'] as String;
+    final List<String> parts = dayString.split('-');
+    return SessionCalendarDay(
+      date: DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      ),
+      totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
+      zone2Minutes: ((dayRow['total_zone2_seconds'] as int? ?? 0) ~/ 60),
+      trimp: (dayRow['total_trimp'] as num?)?.toDouble() ?? 0,
+      sessionCount: (dayRow['session_count'] as int?) ?? 0,
+    );
   }
 }
 
 @riverpod
 SessionRepositoryPowerSync sessionRepositoryPowerSync(Ref ref) {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.value;
-  if (db == null) {
+  final PowerSyncDatabase? powerSync =
+      ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSync == null) {
     throw StateError('PowerSync database not initialized');
   }
-  final templateRepo = ref.watch(templateRepositoryPowerSyncProvider);
-  return SessionRepositoryPowerSync(db, templateRepo);
+  final TemplateRepositoryPowerSync templateRepo =
+      ref.watch(templateRepositoryPowerSyncProvider);
+  return SessionRepositoryPowerSync(powerSync, templateRepo);
 }

@@ -93,7 +93,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
   @override
   Widget build(BuildContext context) {
     final maxHR = ref.watch(maxHeartRateProvider);
-    final recomputeProgress = ref.watch(zone2RecomputeProgressProvider);
+    final recomputeProgress = ref.watch(metricsRecomputeProgressProvider);
     final displayHR = _dragValue?.round() ?? maxHR;
     final lowerBound = (displayHR * 0.60).floor();
     final upperBound = (displayHR * 0.70).ceil();
@@ -164,6 +164,106 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class RestingHeartRateTile extends ConsumerStatefulWidget {
+  const RestingHeartRateTile({super.key});
+
+  @override
+  ConsumerState<RestingHeartRateTile> createState() =>
+      _RestingHeartRateTileState();
+}
+
+class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
+  double? _dragValue;
+  bool _syncing = false;
+
+  Future<void> _syncFromHealthKit() async {
+    setState(() => _syncing = true);
+    try {
+      final bridge = ref.read(healthKitBridgeProvider);
+      final bpm = await bridge.fetchRestingHeartRate();
+      if (bpm != null && mounted) {
+        ref.read(restingHeartRateProvider.notifier).setRestingHeartRate(bpm);
+      }
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final restingHR = ref.watch(restingHeartRateProvider);
+    final displayHR = _dragValue?.round() ?? restingHR;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.backgroundDepth3,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Icon(
+                  CupertinoIcons.heart,
+                  color: Color(0xFF64D2FF),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Resting Heart Rate', style: AppTypography.subtitle),
+                    Text(
+                      '$displayHR bpm',
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.textColor3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              CupertinoButton(
+                padding: EdgeInsets.zero,
+                onPressed: _syncing ? null : _syncFromHealthKit,
+                child: _syncing
+                    ? const CupertinoActivityIndicator()
+                    : const Icon(CupertinoIcons.arrow_2_circlepath,
+                        size: 20, color: AppColors.accentPrimary),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          CupertinoSlider(
+            value: _dragValue ?? restingHR.toDouble(),
+            min: 30,
+            max: 100,
+            divisions: 70,
+            onChanged: (value) => setState(() => _dragValue = value),
+            onChangeEnd: (value) {
+              setState(() => _dragValue = null);
+              ref
+                  .read(restingHeartRateProvider.notifier)
+                  .setRestingHeartRate(value.round());
+            },
+          ),
         ],
       ),
     );

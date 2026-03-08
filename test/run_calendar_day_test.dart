@@ -9,6 +9,7 @@ void main() {
         totalDistanceMeters: 8045,
         totalDurationSeconds: 2400,
         zone2Minutes: 18,
+        trimp: 45.0,
         hasHrData: true,
         runCount: 1,
       );
@@ -21,6 +22,7 @@ void main() {
         totalDistanceMeters: 0,
         totalDurationSeconds: 0,
         zone2Minutes: 0,
+        trimp: 0,
         hasHrData: false,
         runCount: 0,
       );
@@ -33,6 +35,7 @@ void main() {
         totalDistanceMeters: 16090,
         totalDurationSeconds: 5400,
         zone2Minutes: 0,
+        trimp: 20.0,
         hasHrData: true,
         runCount: 1,
       );
@@ -41,12 +44,12 @@ void main() {
     });
 
     test('multiple runs on same day aggregate correctly by construction', () {
-      // Simulates what the SQL GROUP BY would produce.
       final day = RunCalendarDay(
         date: DateTime(2026, 3, 20),
-        totalDistanceMeters: 8045 + 4023,  // two runs
+        totalDistanceMeters: 8045 + 4023,
         totalDurationSeconds: 2400 + 1200,
         zone2Minutes: 18 + 12,
+        trimp: 45.0 + 30.0,
         hasHrData: true,
         runCount: 2,
       );

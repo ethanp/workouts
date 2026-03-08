@@ -9,7 +9,7 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/runs_repository_powersync.dart';
-import 'package:workouts/utils/zone2_calculator.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'runs_provider.g.dart';
 
@@ -86,8 +86,12 @@ Future<void> runMetricsBackfill(Ref ref) async {
   final db = ref.watch(powerSyncDatabaseProvider).value;
   if (db == null) return; // Rebuilds automatically when DB resolves.
   final maxHR = ref.watch(maxHeartRateProvider);
-  final zone2 = Zone2Calculator(maxHeartRate: maxHR);
-  await RunsRepositoryPowerSync(db).backfillMissingMetrics(zone2: zone2);
+  final restingHR = ref.watch(restingHeartRateProvider);
+  final trainingLoad = TrainingLoadCalculator(
+    maxHeartRate: maxHR,
+    restingHeartRate: restingHR,
+  );
+  await RunsRepositoryPowerSync(db).backfillMissingMetrics(trainingLoad: trainingLoad);
 }
 
 @riverpod
@@ -135,10 +139,14 @@ class RunImportController extends _$RunImportController {
       }
 
       final maxHR = ref.read(maxHeartRateProvider);
-      final zone2 = Zone2Calculator(maxHeartRate: maxHR);
+      final restingHR = ref.read(restingHeartRateProvider);
+      final trainingLoad = TrainingLoadCalculator(
+        maxHeartRate: maxHR,
+        restingHeartRate: restingHR,
+      );
       final newCount = await runsRepository.upsertImportedRuns(
         importedRuns,
-        zone2: zone2,
+        trainingLoad: trainingLoad,
         onProgress: (processedRuns, totalRuns) {
           if (ref.mounted) {
             state = AsyncValue.data(

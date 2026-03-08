@@ -9,9 +9,12 @@ void main() {
         totalRunDistanceMeters: 5000,
         totalRunDurationSeconds: 1800,
         runZone2Minutes: 10,
+        runTrimp: 30.0,
         runHasHrData: true,
         runCount: 1,
         totalSessionDurationSeconds: 0,
+        sessionZone2Minutes: 0,
+        sessionTrimp: 0,
         sessionCount: 0,
       );
       expect(day.hasActivity, isTrue);
@@ -23,9 +26,12 @@ void main() {
         totalRunDistanceMeters: 0,
         totalRunDurationSeconds: 0,
         runZone2Minutes: 0,
+        runTrimp: 0,
         runHasHrData: false,
         runCount: 0,
         totalSessionDurationSeconds: 2700,
+        sessionZone2Minutes: 5,
+        sessionTrimp: 15.0,
         sessionCount: 1,
       );
       expect(day.hasActivity, isTrue);
@@ -37,12 +43,17 @@ void main() {
         totalRunDistanceMeters: 8045,
         totalRunDurationSeconds: 2400,
         runZone2Minutes: 18,
+        runTrimp: 45.0,
         runHasHrData: true,
         runCount: 1,
         totalSessionDurationSeconds: 1800,
+        sessionZone2Minutes: 3,
+        sessionTrimp: 10.0,
         sessionCount: 1,
       );
       expect(day.hasActivity, isTrue);
+      expect(day.totalZone2Minutes, 21);
+      expect(day.totalTrimp, 55.0);
     });
 
     test('hasActivity is false when no runs or sessions', () {
@@ -51,9 +62,12 @@ void main() {
         totalRunDistanceMeters: 0,
         totalRunDurationSeconds: 0,
         runZone2Minutes: 0,
+        runTrimp: 0,
         runHasHrData: false,
         runCount: 0,
         totalSessionDurationSeconds: 0,
+        sessionZone2Minutes: 0,
+        sessionTrimp: 0,
         sessionCount: 0,
       );
       expect(day.hasActivity, isFalse);
