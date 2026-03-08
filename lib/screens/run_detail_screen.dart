@@ -93,12 +93,12 @@ class _RunSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            formatDistance(run.distanceMeters, unitSystem),
+            Format.distance(run.distanceMeters, unitSystem),
             style: AppTypography.title,
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${_formatDuration(run.durationSeconds)}  ·  ${formatPace(run.durationSeconds, run.distanceMeters, unitSystem)}',
+            '${Format.duration(run.durationSeconds)}  ·  ${Format.pace(run.durationSeconds, run.distanceMeters, unitSystem)}',
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
         ],
@@ -106,16 +106,6 @@ class _RunSummaryCard extends StatelessWidget {
     );
   }
 
-  String _formatDuration(int durationSeconds) {
-    final duration = Duration(seconds: durationSeconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-    if (hours > 0) {
-      return '${hours}h ${minutes.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s';
-    }
-    return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
-  }
 }
 
 class _RouteCard extends StatelessWidget {

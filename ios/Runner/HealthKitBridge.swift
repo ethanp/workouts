@@ -51,17 +51,25 @@ final class HealthKitBridge {
     }
   }
 
-  func delete(workoutUUIDs: [String], completion: @escaping (Bool, Error?) -> Void) {
-    let uuids = workoutUUIDs.compactMap(UUID.init(uuidString:))
-    guard !uuids.isEmpty else {
-      completion(true, nil)
+  func countRunningWorkouts(completion: @escaping (Int, Error?) -> Void) {
+    guard HKHealthStore.isHealthDataAvailable() else {
+      completion(0, nil)
       return
     }
-
-    let predicate = HKQuery.predicateForObjects(with: Set(uuids))
-    healthStore.deleteObjects(of: .workoutType(), predicate: predicate) { success, _, error in
-      completion(success, error)
+    let predicate = HKQuery.predicateForWorkouts(with: .running)
+    let query = HKSampleQuery(
+      sampleType: .workoutType(),
+      predicate: predicate,
+      limit: HKObjectQueryNoLimit,
+      sortDescriptors: nil
+    ) { _, samples, error in
+      if let error {
+        completion(0, error)
+        return
+      }
+      completion(samples?.count ?? 0, nil)
     }
+    healthStore.execute(query)
   }
 
   func fetchRecentRunningWorkouts(

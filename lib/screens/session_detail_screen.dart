@@ -8,6 +8,7 @@ import 'package:workouts/providers/heart_rate_samples_provider.dart';
 import 'package:workouts/providers/session_notes_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
 import 'package:workouts/widgets/run_metrics_card.dart';
 
@@ -86,7 +87,7 @@ class SessionDetailScreen extends ConsumerWidget {
           _buildSummaryRow(
             icon: CupertinoIcons.calendar,
             label: 'Completed',
-            value: _formatDateTime(session.completedAt ?? session.startedAt),
+            value: Format.dateTime(session.completedAt ?? session.startedAt),
           ),
           if (session.feeling?.isNotEmpty ?? false) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -162,15 +163,6 @@ class SessionDetailScreen extends ConsumerWidget {
     return widgets;
   }
 
-  String _formatDateTime(DateTime date) {
-    final local = date.toLocal();
-    final hour = local.hour > 12
-        ? local.hour - 12
-        : (local.hour == 0 ? 12 : local.hour);
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour >= 12 ? 'PM' : 'AM';
-    return '${local.month}/${local.day}/${local.year} at $hour:$minute $period';
-  }
 
   String _getDurationText(Duration? duration) {
     if (duration == null) return 'N/A';
@@ -401,7 +393,7 @@ class _SessionNotesCard extends StatelessWidget {
                 Text(note.content, style: AppTypography.body),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  _formatTime(note.timestamp),
+                  Format.time(note.timestamp),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textColor4,
                   ),
@@ -423,15 +415,6 @@ class _SessionNotesCard extends StatelessWidget {
     };
   }
 
-  String _formatTime(DateTime time) {
-    final local = time.toLocal();
-    final hour = local.hour > 12
-        ? local.hour - 12
-        : (local.hour == 0 ? 12 : local.hour);
-    final minute = local.minute.toString().padLeft(2, '0');
-    final period = local.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
 }
 
 class _SessionHeartRateCard extends StatelessWidget {

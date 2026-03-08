@@ -18,19 +18,25 @@ class RunImportProgress {
     required this.totalRuns,
     required this.processedRuns,
     required this.inProgress,
+    this.newRuns = 0,
     this.completedAt,
+    this.status = '',
   });
 
   const RunImportProgress.idle()
     : totalRuns = 0,
       processedRuns = 0,
+      newRuns = 0,
       inProgress = false,
-      completedAt = null;
+      completedAt = null,
+      status = '';
 
   final int totalRuns;
   final int processedRuns;
+  final int newRuns;
   final bool inProgress;
   final DateTime? completedAt;
+  final String status;
 
   double get progressFraction {
     if (totalRuns <= 0) {
@@ -81,10 +87,9 @@ Future<void> runMetricsBackfill(Ref ref) async {
   if (db == null) return; // Rebuilds automatically when DB resolves.
   final maxHR = ref.watch(maxHeartRateProvider);
   final bounds = zone2Bounds(maxHR);
-  await RunsRepositoryPowerSync(db).backfillMissingMetrics(
-    lowerBpm: bounds.lower,
-    upperBpm: bounds.upper,
-  );
+  await RunsRepositoryPowerSync(
+    db,
+  ).backfillMissingMetrics(lowerBpm: bounds.lower, upperBpm: bounds.upper);
 }
 
 @riverpod
@@ -103,6 +108,17 @@ class RunImportController extends _$RunImportController {
     try {
       final healthKitBridge = ref.read(healthKitBridgeProvider);
       final runsRepository = RunsRepositoryPowerSync(db);
+      if (ref.mounted) {
+        state = AsyncValue.data(
+          RunImportProgress(
+            totalRuns: 0,
+            processedRuns: 0,
+            inProgress: true,
+            status:
+                'Fetching last 30 runs from Apple Health (route + heart rate)…',
+          ),
+        );
+      }
       final importedRuns = await healthKitBridge.fetchRecentRunningWorkouts(
         maxWorkouts: maxWorkouts,
         includeRoute: true,
@@ -115,13 +131,14 @@ class RunImportController extends _$RunImportController {
             totalRuns: importedRuns.length,
             processedRuns: 0,
             inProgress: true,
+            status: 'Adding new runs (skips ones already stored)…',
           ),
         );
       }
 
       final maxHR = ref.read(maxHeartRateProvider);
       final bounds = zone2Bounds(maxHR);
-      await runsRepository.upsertImportedRuns(
+      final newCount = await runsRepository.upsertImportedRuns(
         importedRuns,
         zone2LowerBpm: bounds.lower,
         zone2UpperBpm: bounds.upper,
@@ -132,6 +149,7 @@ class RunImportController extends _$RunImportController {
                 totalRuns: totalRuns,
                 processedRuns: processedRuns,
                 inProgress: true,
+                status: 'Adding new runs (skips ones already stored)…',
               ),
             );
           }
@@ -140,14 +158,24 @@ class RunImportController extends _$RunImportController {
 
       if (ref.mounted) {
         ref.invalidate(runsStreamProvider);
+        final doneStatus = importedRuns.isEmpty
+            ? 'No runs found. Check Apple Health permissions in Settings.'
+            : 'Done. Found ${importedRuns.length} runs, $newCount new.';
         state = AsyncValue.data(
           RunImportProgress(
             totalRuns: importedRuns.length,
             processedRuns: importedRuns.length,
+            newRuns: newCount,
             inProgress: false,
             completedAt: DateTime.now(),
+            status: doneStatus,
           ),
         );
+        Future.delayed(const Duration(seconds: 3), () {
+          if (ref.mounted) {
+            state = const AsyncValue.data(RunImportProgress.idle());
+          }
+        });
       }
     } catch (error, stackTrace) {
       if (ref.mounted) {

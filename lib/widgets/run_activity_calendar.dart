@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/run_calendar_day.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/run_formatting.dart';
 
 const double _cellSize = 39;
 const double _cellMargin = 2;
@@ -29,7 +30,6 @@ class RunActivityCalendar extends StatefulWidget {
 }
 
 class _RunActivityCalendarState extends State<RunActivityCalendar> {
-  static const _metersPerMile = 1609.344;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +326,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
   }) {
     final intensity =
         globalMaxMeters > 0 ? (totalMeters / globalMaxMeters).clamp(0.0, 1.0) : 0.0;
-    final distanceLabel = _formatDistanceShort(totalMeters);
+    final distanceLabel = Format.distanceCompact(totalMeters, widget.unitSystem);
     final summaryColor = CupertinoColors.white.withValues(
       alpha: 0.4 + intensity * 0.6,
     );
@@ -477,7 +477,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _formatDistanceCell(entry!.totalDistanceMeters),
+                Format.distanceCompact(entry!.totalDistanceMeters, widget.unitSystem),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -523,25 +523,4 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
     )!;
   }
 
-  String _formatDistanceCell(double meters) {
-    if (widget.unitSystem == UnitSystem.imperial) {
-      final miles = meters / _metersPerMile;
-      if (miles >= 10) return '${miles.round()}mi';
-      return '${miles.toStringAsFixed(1)}mi';
-    }
-    final km = meters / 1000;
-    if (km >= 10) return '${km.round()}km';
-    return '${km.toStringAsFixed(1)}km';
-  }
-
-  String _formatDistanceShort(double meters) {
-    if (widget.unitSystem == UnitSystem.imperial) {
-      final miles = meters / _metersPerMile;
-      return miles >= 10
-          ? '${miles.round()}mi'
-          : '${miles.toStringAsFixed(1)}mi';
-    }
-    final km = meters / 1000;
-    return km >= 10 ? '${km.round()}km' : '${km.toStringAsFixed(1)}km';
-  }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 
@@ -65,50 +64,6 @@ void main() {
 
       final timeline = container.read(heartRateTimelineProvider);
       expect(timeline, isEmpty);
-    });
-  });
-
-  group('HealthExportController', () {
-    test('clears exports when bridge deletion succeeds', () async {
-      final bridge = FakeHealthKitBridge(deleteResult: true);
-      final container = ProviderContainer(
-        overrides: [healthKitBridgeProvider.overrideWithValue(bridge)],
-      );
-      addTearDown(() {
-        bridge.dispose();
-        container.dispose();
-      });
-
-      final notifier = container.read(healthExportControllerProvider.notifier);
-      notifier.state = AsyncValue.data(
-        const HealthExportSummary(exportedWorkoutUUIDs: ['a', 'b']),
-      );
-
-      await notifier.deleteAllExports();
-      final state = container.read(healthExportControllerProvider);
-      expect(state.value?.remainingCount, 0);
-      expect(state.value?.lastError, isNull);
-    });
-
-    test('persists error message when deletion fails', () async {
-      final bridge = FakeHealthKitBridge(deleteResult: false);
-      final container = ProviderContainer(
-        overrides: [healthKitBridgeProvider.overrideWithValue(bridge)],
-      );
-      addTearDown(() {
-        bridge.dispose();
-        container.dispose();
-      });
-
-      final notifier = container.read(healthExportControllerProvider.notifier);
-      notifier.state = AsyncValue.data(
-        const HealthExportSummary(exportedWorkoutUUIDs: ['a']),
-      );
-
-      await notifier.deleteAllExports();
-      final state = container.read(healthExportControllerProvider);
-      expect(state.value?.remainingCount, 1);
-      expect(state.value?.lastError, isNotEmpty);
     });
   });
 }

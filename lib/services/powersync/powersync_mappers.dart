@@ -197,28 +197,3 @@ Session sessionFromRow(
   );
 }
 
-/// Format a duration for display (e.g. "1h 30m" or "5m 30s").
-String formatDuration(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60);
-  final seconds = duration.inSeconds.remainder(60);
-  if (hours > 0) {
-    return '${hours}h ${minutes}m';
-  }
-  if (minutes > 0) {
-    return '${minutes}m ${seconds}s';
-  }
-  return '${seconds}s';
-}
-
-/// Format a duration for timer display (e.g. "01:30:45" or "05:30").
-String formatDurationTimer(Duration duration) {
-  final safeDuration = duration.isNegative ? Duration.zero : duration;
-  final hours = safeDuration.inHours;
-  final minutes = safeDuration.inMinutes.remainder(60);
-  final seconds = safeDuration.inSeconds.remainder(60);
-  if (hours > 0) {
-    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
-  return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-}

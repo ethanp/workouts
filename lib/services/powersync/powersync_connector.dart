@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -68,9 +69,13 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
       final totalRemaining = remainingRows.first['cnt'] as int? ?? 0;
       if (totalRemaining == 0) {
         _log.info('Upload: no batch, queue empty.');
+        debugPrint('[PowerSyncConnector] Upload: no batch, queue empty.');
       } else {
         _log.info(
           'Upload: no batch available, but $totalRemaining ops still in queue.',
+        );
+        debugPrint(
+          '[PowerSyncConnector] Upload: no batch, $totalRemaining ops in queue.',
         );
       }
       return;
@@ -85,6 +90,10 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
     _log.info(
       'Processing upload batch: $totalInBatch ops in this batch, '
       '$totalRemaining total remaining in queue.',
+    );
+    debugPrint(
+      '[PowerSyncConnector] Processing upload batch: $totalInBatch ops, '
+      '$totalRemaining remaining.',
     );
 
     var uploaded = 0;
@@ -130,6 +139,9 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
     _log.info(
       'Batch complete: $uploaded uploaded, $discarded discarded. '
       '${totalRemaining - totalInBatch} ops still queued.',
+    );
+    debugPrint(
+      '[PowerSyncConnector] Batch complete: $uploaded uploaded, $discarded discarded.',
     );
   }
 

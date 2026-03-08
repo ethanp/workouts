@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:workouts/models/health_export_summary.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/providers/active_session_provider.dart';
@@ -78,52 +77,3 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
   }
 }
 
-@riverpod
-class HealthExportController extends _$HealthExportController {
-  @override
-  Future<HealthExportSummary> build() async {
-    return const HealthExportSummary(exportedWorkoutUUIDs: []);
-  }
-
-  Future<void> deleteAllExports() async {
-    final snapshot = state.value;
-    if (snapshot == null || snapshot.exportedWorkoutUUIDs.isEmpty) {
-      state = AsyncValue.data(
-        (snapshot ?? const HealthExportSummary(exportedWorkoutUUIDs: []))
-            .copyWith(clearError: true),
-      );
-      return;
-    }
-
-    state = const AsyncValue.loading();
-    final bridge = ref.read(healthKitBridgeProvider);
-    final result = await AsyncValue.guard(
-      () => bridge.deleteWorkouts(snapshot.exportedWorkoutUUIDs),
-    );
-
-    result.when(
-      data: (success) {
-        if (success) {
-          state = AsyncValue.data(
-            HealthExportSummary(
-              exportedWorkoutUUIDs: const [],
-              lastDeletionAt: DateTime.now(),
-            ),
-          );
-        } else {
-          state = AsyncValue.data(
-            snapshot.copyWith(
-              lastError: 'Unable to remove workouts from HealthKit.',
-            ),
-          );
-        }
-      },
-      loading: () {
-        // Keep current loading state
-      },
-      error: (error, stackTrace) {
-        state = AsyncValue.error(error, stackTrace);
-      },
-    );
-  }
-}

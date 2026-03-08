@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -57,9 +58,7 @@ class RunsRepositoryPowerSync {
         // Trigger on both tables so the stream updates when metrics are written.
         triggerOnTables: const {'runs', 'run_computed_metrics'},
       )
-      .map(
-        (rows) => rows.map(_calendarDayFromRow).toList(),
-      );
+      .map((rows) => rows.map(_calendarDayFromRow).toList());
 
   Future<List<FitnessRun>> getRunsForDate(DateTime localDate) async {
     final dayString =
@@ -73,31 +72,48 @@ class RunsRepositoryPowerSync {
 
   Future<void> deleteRun(String runId) async {
     await _db.writeTransaction((tx) async {
-      await tx.execute('DELETE FROM run_route_points WHERE run_id = ?', [runId]);
-      await tx.execute('DELETE FROM run_heart_rate_samples WHERE run_id = ?', [runId]);
-      await tx.execute('DELETE FROM run_computed_metrics WHERE id = ?', [runId]);
+      await tx.execute('DELETE FROM run_route_points WHERE run_id = ?', [
+        runId,
+      ]);
+      await tx.execute('DELETE FROM run_heart_rate_samples WHERE run_id = ?', [
+        runId,
+      ]);
+      await tx.execute('DELETE FROM run_computed_metrics WHERE id = ?', [
+        runId,
+      ]);
       await tx.execute('DELETE FROM runs WHERE id = ?', [runId]);
     });
     _log.info('Deleted run $runId (queued for upload).');
+    debugPrint('[RunsRepository] Deleted run $runId (queued for upload).');
   }
 
-  Future<void> upsertImportedRuns(
+  /// Returns the number of newly inserted runs (skipped ones not counted).
+  Future<int> upsertImportedRuns(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
     int zone2LowerBpm = 114,
     int zone2UpperBpm = 133,
   }) async {
     _log.info('Starting import of ${payloads.length} runs.');
+    var inserted = 0;
     for (var i = 0; i < payloads.length; i++) {
       final run = _RunImport.tryParse(payloads[i]);
       if (run != null) {
-        await _upsert(run, lowerBpm: zone2LowerBpm, upperBpm: zone2UpperBpm);
+        final wasNew = await _upsert(
+          run,
+          lowerBpm: zone2LowerBpm,
+          upperBpm: zone2UpperBpm,
+        );
+        if (wasNew) inserted++;
       } else {
         _log.warning('Skipping unparseable run payload at index $i.');
       }
       onProgress?.call(i + 1, payloads.length);
     }
-    _log.info('Import complete.');
+    _log.info(
+      'Import complete: $inserted new, ${payloads.length - inserted} already stored.',
+    );
+    return inserted;
   }
 
   Future<void> recomputeAllZone2({
@@ -105,8 +121,9 @@ class RunsRepositoryPowerSync {
     required int upperBpm,
     void Function(int done, int total)? onProgress,
   }) async {
-    final runRows =
-        await _db.execute('SELECT id FROM runs ORDER BY started_at DESC');
+    final runRows = await _db.execute(
+      'SELECT id FROM runs ORDER BY started_at DESC',
+    );
     _log.info('Recomputing Zone 2 for ${runRows.length} runs.');
     for (var i = 0; i < runRows.length; i++) {
       await _computeAndStoreMetrics(
@@ -143,22 +160,31 @@ class RunsRepositoryPowerSync {
     _log.info('Backfill complete.');
   }
 
-  Future<void> _upsert(
+  /// Returns true if the run was newly inserted, false if already stored.
+  Future<bool> _upsert(
     _RunImport run, {
     required int lowerBpm,
     required int upperBpm,
   }) async {
+    final runId = await _resolveRunId(run.externalWorkoutId);
+    if (await _existingCreatedAt(runId) != null) {
+      _log.fine('Skipping run ${run.externalWorkoutId} (already stored).');
+      return false;
+    }
     _log.fine(
-      'Upserting run ${run.externalWorkoutId} '
+      'Inserting run ${run.externalWorkoutId} '
       '(${run.routePoints.length} pts, ${run.heartRateSamples.length} HR samples)',
     );
-    final runId = await _resolveRunId(run.externalWorkoutId);
     final now = DateTime.now().toIso8601String();
-    final createdAt = await _existingCreatedAt(runId) ?? now;
-    await _saveRun(runId, run, createdAt: createdAt, updatedAt: now);
+    await _saveRun(runId, run, createdAt: now, updatedAt: now);
     await _saveRoutePoints(runId, run.routePoints, now: now);
     await _saveHeartRateSamples(runId, run.heartRateSamples, now: now);
-    await _computeAndStoreMetrics(runId, lowerBpm: lowerBpm, upperBpm: upperBpm);
+    await _computeAndStoreMetrics(
+      runId,
+      lowerBpm: lowerBpm,
+      upperBpm: upperBpm,
+    );
+    return true;
   }
 
   Future<void> _computeAndStoreMetrics(
@@ -212,14 +238,28 @@ class RunsRepositoryPowerSync {
         ' SET zone2_seconds = ?, has_hr_samples = ?,'
         '     zone2_hr_lower = ?, zone2_hr_upper = ?, computed_at = ?'
         ' WHERE id = ?',
-        [zone2Seconds, hasHrSamples, storedLower, storedUpper, computedAt, runId],
+        [
+          zone2Seconds,
+          hasHrSamples,
+          storedLower,
+          storedUpper,
+          computedAt,
+          runId,
+        ],
       );
     } else {
       await _db.execute(
         'INSERT INTO run_computed_metrics'
         '  (id, zone2_seconds, has_hr_samples, zone2_hr_lower, zone2_hr_upper, computed_at)'
         ' VALUES (?, ?, ?, ?, ?, ?)',
-        [runId, zone2Seconds, hasHrSamples, storedLower, storedUpper, computedAt],
+        [
+          runId,
+          zone2Seconds,
+          hasHrSamples,
+          storedLower,
+          storedUpper,
+          computedAt,
+        ],
       );
     }
   }
@@ -257,10 +297,6 @@ class RunsRepositoryPowerSync {
     required String createdAt,
     required String updatedAt,
   }) => _db.execute(
-    // ON CONFLICT DO UPDATE avoids a DELETE+INSERT pair (which INSERT OR REPLACE
-    // would produce). A DELETE CRUD entry would be uploaded to the server and
-    // temporarily remove the run, creating a window where a PowerSync checkpoint
-    // could wipe the run on the next sync.
     '''
     INSERT INTO runs (
       id, external_workout_id, started_at, ended_at, duration_seconds,
@@ -268,20 +304,6 @@ class RunsRepositoryPowerSync {
       is_indoor, route_available, source_name, source_bundle_id, device_model,
       created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      started_at      = excluded.started_at,
-      ended_at        = excluded.ended_at,
-      duration_seconds  = excluded.duration_seconds,
-      distance_meters   = excluded.distance_meters,
-      energy_kcal       = excluded.energy_kcal,
-      avg_heart_rate_bpm  = excluded.avg_heart_rate_bpm,
-      max_heart_rate_bpm  = excluded.max_heart_rate_bpm,
-      is_indoor         = excluded.is_indoor,
-      route_available   = excluded.route_available,
-      source_name       = excluded.source_name,
-      source_bundle_id  = excluded.source_bundle_id,
-      device_model      = excluded.device_model,
-      updated_at        = excluded.updated_at
     ''',
     [
       runId,
@@ -329,7 +351,17 @@ class RunsRepositoryPowerSync {
           'INSERT INTO run_route_points'
           '  (id, run_id, point_index, lat, lng, altitude_meters, timestamp, created_at, updated_at)'
           ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [_uuid.v4(), runId, i, p.lat, p.lng, p.altitudeMeters, p.timestamp, now, now],
+          [
+            _uuid.v4(),
+            runId,
+            i,
+            p.lat,
+            p.lng,
+            p.altitudeMeters,
+            p.timestamp,
+            now,
+            now,
+          ],
         );
       }
     });

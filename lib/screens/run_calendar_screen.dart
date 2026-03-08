@@ -105,7 +105,7 @@ class _DayDetailSheetState extends State<_DayDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final dayLabel = _formatDate(widget.date);
+    final dayLabel = Format.dateFull(widget.date);
     return CupertinoActionSheet(
       title: Text(dayLabel),
       message: _runs == null
@@ -128,13 +128,7 @@ class _DayDetailSheetState extends State<_DayDetailSheet> {
   }
 
   Widget _runRow(FitnessRun run) {
-    final durationSeconds = run.durationSeconds;
-    final hours = durationSeconds ~/ 3600;
-    final minutes = (durationSeconds % 3600) ~/ 60;
-    final seconds = durationSeconds % 60;
-    final duration = hours > 0
-        ? '${hours}h ${minutes.toString().padLeft(2, '0')}m'
-        : '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
+    final duration = Format.durationShort(run.durationSeconds);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -142,7 +136,7 @@ class _DayDetailSheetState extends State<_DayDetailSheet> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            formatDistance(run.distanceMeters, UnitSystem.imperial),
+            Format.distance(run.distanceMeters, UnitSystem.imperial),
             style: AppTypography.body,
           ),
           Text(duration, style: AppTypography.caption),
@@ -151,11 +145,4 @@ class _DayDetailSheetState extends State<_DayDetailSheet> {
     );
   }
 
-  String _formatDate(DateTime date) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
-  }
 }

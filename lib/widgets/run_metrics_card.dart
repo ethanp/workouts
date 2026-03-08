@@ -106,7 +106,7 @@ class _MetricsHeader extends StatelessWidget {
         _LegendDot(color: _speedColor),
         const SizedBox(width: AppSpacing.xs),
         Text(
-          'Avg ${formatSpeed(avgKmh, unitSystem)} · Max ${formatSpeed(maxKmh, unitSystem)}',
+          'Avg ${Format.speed(avgKmh, unitSystem)} · Max ${Format.speed(maxKmh, unitSystem)}',
           style: AppTypography.caption.copyWith(color: AppColors.textColor3),
         ),
       ],

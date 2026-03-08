@@ -242,7 +242,7 @@ class _RunTile extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_formatRunDate(run.startedAt), style: AppTypography.subtitle),
+                Text(Format.dateIso(run.startedAt), style: AppTypography.subtitle),
                 if (run.routeAvailable)
                   Text(
                     'Route',
@@ -255,12 +255,12 @@ class _RunTile extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              formatDistance(run.distanceMeters, unitSystem),
+              Format.distance(run.distanceMeters, unitSystem),
               style: AppTypography.title.copyWith(color: AppColors.textColor1),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '${_formatDuration(run.durationSeconds)}  ·  ${formatPace(run.durationSeconds, run.distanceMeters, unitSystem)}',
+              '${Format.duration(run.durationSeconds)}  ·  ${Format.pace(run.durationSeconds, run.distanceMeters, unitSystem)}',
               style: AppTypography.body.copyWith(color: AppColors.textColor3),
             ),
           ],
@@ -269,19 +269,4 @@ class _RunTile extends ConsumerWidget {
     );
   }
 
-  String _formatRunDate(DateTime startedAt) {
-    final localDate = startedAt.toLocal();
-    return '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
-  }
-
-  String _formatDuration(int durationSeconds) {
-    final duration = Duration(seconds: durationSeconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-    if (hours > 0) {
-      return '${hours}h ${minutes.toString().padLeft(2, '0')}m ${seconds.toString().padLeft(2, '0')}s';
-    }
-    return '${minutes}m ${seconds.toString().padLeft(2, '0')}s';
-  }
 }

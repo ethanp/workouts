@@ -55,19 +55,16 @@ class HealthKitBridge {
         });
   }
 
-  Future<bool> deleteWorkouts(List<String> uuids) async {
-    if (uuids.isEmpty) {
-      return true;
-    }
+  Future<int> countRunningWorkouts() async {
     try {
-      final result = await _methodChannel.invokeMethod<bool>('deleteWorkouts', {
-        'uuids': uuids,
-      });
-      return result ?? false;
+      final count = await _methodChannel.invokeMethod<int>(
+        'countRunningWorkouts',
+      );
+      return count ?? 0;
     } on MissingPluginException {
-      return false;
+      return -1;
     } on PlatformException {
-      return false;
+      return -1;
     }
   }
 

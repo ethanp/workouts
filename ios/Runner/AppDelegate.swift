@@ -83,19 +83,14 @@ import UIKit
           result(payload)
         }
       }
-    case "deleteWorkouts":
-      guard let arguments = call.arguments as? [String: Any],
-            let uuids = arguments["uuids"] as? [String] else {
-        result(FlutterError(code: "invalid_args", message: "Expected uuids array", details: nil))
-        return
-      }
-      healthKitBridge.delete(workoutUUIDs: uuids) { success, error in
+    case "countRunningWorkouts":
+      healthKitBridge.countRunningWorkouts { count, error in
         DispatchQueue.main.async {
           if let error {
-            result(FlutterError(code: "delete_failed", message: error.localizedDescription, details: nil))
+            result(FlutterError(code: "count_failed", message: error.localizedDescription, details: nil))
             return
           }
-          result(success)
+          result(count as NSNumber)
         }
       }
     default:

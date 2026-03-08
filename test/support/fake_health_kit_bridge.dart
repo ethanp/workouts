@@ -8,12 +8,10 @@ class FakeHealthKitBridge extends HealthKitBridge {
   FakeHealthKitBridge({
     this.status = HealthPermissionStatus.unknown,
     this.requestedStatus = HealthPermissionStatus.authorized,
-    this.deleteResult = true,
   });
 
   HealthPermissionStatus status;
   HealthPermissionStatus requestedStatus;
-  bool deleteResult;
 
   final _controller = StreamController<HeartRateSample>.broadcast();
 
@@ -27,7 +25,7 @@ class FakeHealthKitBridge extends HealthKitBridge {
   Stream<HeartRateSample> heartRateStream() => _controller.stream;
 
   @override
-  Future<bool> deleteWorkouts(List<String> uuids) async => deleteResult;
+  Future<int> countRunningWorkouts() async => 0;
 
   void emit(HeartRateSample sample) => _controller.add(sample);
 

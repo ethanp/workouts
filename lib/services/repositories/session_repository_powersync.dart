@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -396,6 +397,7 @@ class SessionRepositoryPowerSync {
   Future<void> discardSession(String sessionId) async {
     await _db.execute('DELETE FROM sessions WHERE id = ?', [sessionId]);
     _log.info('Deleted session $sessionId (queued for upload).');
+    debugPrint('[SessionRepository] Deleted session $sessionId (queued for upload).');
   }
 
   /// Discard all in-progress sessions.
