@@ -128,7 +128,7 @@ class _WeekSummary extends StatelessWidget {
     var activeDays = 0;
     var runMeters = 0.0;
     var sessionMinutes = 0;
-    var zone2Minutes = 0;
+    var gteZone2Minutes = 0;
     var hasHrData = false;
 
     for (var i = 0; i < DateTime.daysPerWeek; i++) {
@@ -138,7 +138,7 @@ class _WeekSummary extends StatelessWidget {
         activeDays++;
         runMeters += entry.totalRunDistanceMeters;
         sessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
-        zone2Minutes += entry.runZone2Minutes;
+        gteZone2Minutes += entry.runGteZone2Minutes;
         if (entry.runHasHrData) hasHrData = true;
       }
     }
@@ -147,7 +147,7 @@ class _WeekSummary extends StatelessWidget {
       activeDays: activeDays,
       runMeters: runMeters,
       sessionMinutes: sessionMinutes,
-      zone2Minutes: zone2Minutes,
+      gteZone2Minutes: gteZone2Minutes,
       hasHrData: hasHrData,
     );
   }
@@ -170,8 +170,8 @@ class _WeekSummary extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               _activityLabel(stats, intensity),
-              if (stats.hasHrData && stats.zone2Minutes > 0)
-                _zone2Label(stats.zone2Minutes),
+              if (stats.hasHrData && stats.gteZone2Minutes > 0)
+                _zoneLabel(stats.gteZone2Minutes),
             ],
           ),
         ),
@@ -198,9 +198,9 @@ class _WeekSummary extends StatelessWidget {
     );
   }
 
-  Widget _zone2Label(int zone2Minutes) {
+  Widget _zoneLabel(int gteZone2Minutes) {
     return Text(
-      '${zone2Minutes}z',
+      '${gteZone2Minutes}z',
       style: TextStyle(
         fontSize: _summaryFontSize - 1,
         color: AppColors.textColor4,
@@ -237,13 +237,13 @@ class _WeekStats {
     required this.activeDays,
     required this.runMeters,
     required this.sessionMinutes,
-    required this.zone2Minutes,
+    required this.gteZone2Minutes,
     required this.hasHrData,
   });
 
   final int activeDays;
   final double runMeters;
   final int sessionMinutes;
-  final int zone2Minutes;
+  final int gteZone2Minutes;
   final bool hasHrData;
 }

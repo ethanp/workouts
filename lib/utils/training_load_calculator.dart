@@ -8,43 +8,86 @@ class TimestampedHeartRate {
   final int bpm;
 }
 
-class TrainingLoadResult {
-  const TrainingLoadResult({required this.zone2Seconds, required this.trimp});
+class ZoneTimeResult {
+  const ZoneTimeResult({
+    this.zone1Seconds = 0,
+    this.zone2Seconds = 0,
+    this.zone3Seconds = 0,
+    this.zone4Seconds = 0,
+    this.zone5Seconds = 0,
+  });
 
+  final int zone1Seconds;
   final int zone2Seconds;
+  final int zone3Seconds;
+  final int zone4Seconds;
+  final int zone5Seconds;
+
+  int get gteZone2Seconds =>
+      zone2Seconds + zone3Seconds + zone4Seconds + zone5Seconds;
+
+  int get totalSeconds =>
+      zone1Seconds + zone2Seconds + zone3Seconds + zone4Seconds + zone5Seconds;
+
+  int operator [](int zoneIndex) => switch (zoneIndex) {
+        0 => zone1Seconds,
+        1 => zone2Seconds,
+        2 => zone3Seconds,
+        3 => zone4Seconds,
+        4 => zone5Seconds,
+        _ => 0,
+      };
+}
+
+class TrainingLoadResult {
+  const TrainingLoadResult({
+    this.zoneTime = const ZoneTimeResult(),
+    this.trimp = 0,
+  });
+
+  final ZoneTimeResult zoneTime;
   final double trimp;
 }
 
-/// Computes both Zone 2 time and Banister TRIMP from a continuous HR series.
+/// Computes per-zone time and Banister TRIMP from a continuous HR series.
+///
+/// Standard 5-zone model (% of max HR):
+///   Zone 1: 50-60%, Zone 2: 60-70%, Zone 3: 70-80%,
+///   Zone 4: 80-90%, Zone 5: 90-100%
 ///
 /// TRIMP formula per interval:
 ///   HRratio = (bpm - restingHR) / (maxHR - restingHR)
 ///   TRIMP += (gapMinutes) * HRratio * 0.64 * e^(1.92 * HRratio)
-///
-/// Zone 2 is defined as 60–70% of max HR.
 class TrainingLoadCalculator {
   TrainingLoadCalculator({
     required this.maxHeartRate,
     required this.restingHeartRate,
-  })  : zone2Lower = (maxHeartRate * 0.60).floor(),
-        zone2Upper = (maxHeartRate * 0.70).ceil(),
+  })  : zoneBoundaries = [
+          (maxHeartRate * 0.50).floor(),
+          (maxHeartRate * 0.60).floor(),
+          (maxHeartRate * 0.70).floor(),
+          (maxHeartRate * 0.80).floor(),
+          (maxHeartRate * 0.90).floor(),
+        ],
         _hrReserve = (maxHeartRate - restingHeartRate).toDouble();
 
   final int maxHeartRate;
   final int restingHeartRate;
-  final int zone2Lower;
-  final int zone2Upper;
+
+  /// Zone lower bounds: [zone1Lower, zone2Lower, zone3Lower, zone4Lower, zone5Lower].
+  final List<int> zoneBoundaries;
+
   final double _hrReserve;
+
+  int get zone2Lower => zoneBoundaries[1];
 
   TrainingLoadResult compute(
     List<TimestampedHeartRate> samples, {
     int maxGapSeconds = 30,
   }) {
-    if (samples.length < 2) {
-      return const TrainingLoadResult(zone2Seconds: 0, trimp: 0);
-    }
+    if (samples.length < 2) return const TrainingLoadResult();
 
-    var zone2Total = 0;
+    final zoneTotals = List.filled(5, 0);
     var trimpTotal = 0.0;
 
     for (var i = 0; i < samples.length - 1; i++) {
@@ -57,20 +100,36 @@ class TrainingLoadCalculator {
 
       if (gapSeconds <= 0) continue;
 
-      if (bpm >= zone2Lower && bpm <= zone2Upper) {
-        zone2Total += gapSeconds;
-      }
+      final zone = _zoneForBpm(bpm);
+      if (zone >= 0) zoneTotals[zone] += gapSeconds;
 
-      if (_hrReserve > 0 && bpm > restingHeartRate) {
-        final hrRatio = (bpm - restingHeartRate) / _hrReserve;
-        final gapMinutes = gapSeconds / 60.0;
-        trimpTotal += gapMinutes * hrRatio * 0.64 * math.exp(1.92 * hrRatio);
-      }
+      trimpTotal += _trimpForInterval(bpm, gapSeconds);
     }
 
     return TrainingLoadResult(
-      zone2Seconds: zone2Total,
+      zoneTime: ZoneTimeResult(
+        zone1Seconds: zoneTotals[0],
+        zone2Seconds: zoneTotals[1],
+        zone3Seconds: zoneTotals[2],
+        zone4Seconds: zoneTotals[3],
+        zone5Seconds: zoneTotals[4],
+      ),
       trimp: trimpTotal,
     );
+  }
+
+  /// Maps a BPM to a zone index (0-4), or -1 if below zone 1.
+  int _zoneForBpm(int bpm) {
+    for (var z = 4; z >= 0; z--) {
+      if (bpm >= zoneBoundaries[z]) return z;
+    }
+    return -1;
+  }
+
+  double _trimpForInterval(int bpm, int gapSeconds) {
+    if (_hrReserve <= 0 || bpm <= restingHeartRate) return 0;
+    final hrRatio = (bpm - restingHeartRate) / _hrReserve;
+    final gapMinutes = gapSeconds / 60.0;
+    return gapMinutes * hrRatio * 0.64 * math.exp(1.92 * hrRatio);
   }
 }

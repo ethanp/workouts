@@ -5,7 +5,7 @@ import 'package:workouts/utils/training_load_calculator.dart';
 final _log = Logger('SessionMetricsStore');
 
 /// Manages the `session_computed_metrics` local-only table: computing, storing,
-/// backfilling, and recomputing zone2/TRIMP for individual sessions.
+/// backfilling, and recomputing zone times and TRIMP for individual sessions.
 class SessionMetricsStore {
   SessionMetricsStore(this._powerSync);
 
@@ -15,74 +15,13 @@ class SessionMetricsStore {
     String sessionId, {
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final List<TimestampedHeartRate> hrSamples =
-        await loadHrSamples(sessionId);
-
-    final int zone2Seconds;
-    final double trimp;
-    final int hasHrSamples;
-    final int? zone2Lower;
-    final int? zone2Upper;
-
-    if (hrSamples.isEmpty) {
-      zone2Seconds = 0;
-      trimp = 0;
-      hasHrSamples = 0;
-      zone2Lower = null;
-      zone2Upper = null;
-    } else {
-      final TrainingLoadResult loadResult = trainingLoad.compute(hrSamples);
-      zone2Seconds = loadResult.zone2Seconds;
-      trimp = loadResult.trimp;
-      hasHrSamples = 1;
-      zone2Lower = trainingLoad.zone2Lower;
-      zone2Upper = trainingLoad.zone2Upper;
-    }
-
-    final String computedAt = DateTime.now().toUtc().toIso8601String();
-    final Map<String, dynamic>? metricsRow = await _powerSync.getOptional(
-      'SELECT id FROM session_computed_metrics WHERE id = ?',
-      [sessionId],
-    );
-    if (metricsRow != null) {
-      await _powerSync.execute(
-        'UPDATE session_computed_metrics'
-        ' SET zone2_seconds = ?, trimp = ?, has_hr_samples = ?,'
-        '     zone2_hr_lower = ?, zone2_hr_upper = ?,'
-        '     resting_hr = ?, computed_at = ?'
-        ' WHERE id = ?',
-        [
-          zone2Seconds,
-          trimp,
-          hasHrSamples,
-          zone2Lower,
-          zone2Upper,
-          trainingLoad.restingHeartRate,
-          computedAt,
-          sessionId,
-        ],
-      );
-    } else {
-      await _powerSync.execute(
-        'INSERT INTO session_computed_metrics'
-        '  (id, zone2_seconds, trimp, has_hr_samples,'
-        '   zone2_hr_lower, zone2_hr_upper, resting_hr, computed_at)'
-        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          sessionId,
-          zone2Seconds,
-          trimp,
-          hasHrSamples,
-          zone2Lower,
-          zone2Upper,
-          trainingLoad.restingHeartRate,
-          computedAt,
-        ],
-      );
-    }
+    final result =
+        await _loadAndCompute(sessionId, trainingLoad: trainingLoad);
+    await _persistMetrics(sessionId, result,
+        restingHr: trainingLoad.restingHeartRate);
   }
 
-  Future<void> recomputeAllZone2({
+  Future<void> recomputeAllZones({
     required TrainingLoadCalculator trainingLoad,
     void Function(int done, int total)? onProgress,
   }) async {
@@ -91,18 +30,18 @@ class SessionMetricsStore {
       " ORDER BY started_at DESC",
     );
     _log.info(
-      'Recomputing session zone 2 for ${sessionRows.length} sessions.',
+      'Recomputing session zones for ${sessionRows.length} sessions.',
     );
     for (var sessionIndex = 0;
         sessionIndex < sessionRows.length;
         sessionIndex++) {
-      await _recomputeZone2Only(
+      await _recomputeZones(
         sessionRows[sessionIndex]['id'] as String,
         trainingLoad: trainingLoad,
       );
       onProgress?.call(sessionIndex + 1, sessionRows.length);
     }
-    _log.info('Session zone 2 recompute complete.');
+    _log.info('Session zone recompute complete.');
   }
 
   Future<void> backfillMissing({
@@ -113,7 +52,7 @@ class SessionMetricsStore {
       SELECT s.id FROM sessions s
       LEFT JOIN session_computed_metrics m ON m.id = s.id
       WHERE s.completed_at IS NOT NULL
-        AND (m.id IS NULL OR m.zone2_hr_lower IS NULL)
+        AND (m.id IS NULL OR m.zone1_seconds IS NULL)
     ''');
     if (pendingRows.isEmpty) return;
     _log.info(
@@ -126,71 +65,6 @@ class SessionMetricsStore {
       );
     }
     _log.info('Session metrics backfill complete.');
-  }
-
-  /// Recomputes only zone2 for a single session, preserving existing
-  /// TRIMP + resting_hr.
-  Future<void> _recomputeZone2Only(
-    String sessionId, {
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
-    final List<TimestampedHeartRate> hrSamples =
-        await loadHrSamples(sessionId);
-
-    final int zone2Seconds;
-    final int hasHrSamples;
-    final int? zone2Lower;
-    final int? zone2Upper;
-
-    if (hrSamples.isEmpty) {
-      zone2Seconds = 0;
-      hasHrSamples = 0;
-      zone2Lower = null;
-      zone2Upper = null;
-    } else {
-      final TrainingLoadResult loadResult = trainingLoad.compute(hrSamples);
-      zone2Seconds = loadResult.zone2Seconds;
-      hasHrSamples = 1;
-      zone2Lower = trainingLoad.zone2Lower;
-      zone2Upper = trainingLoad.zone2Upper;
-    }
-
-    final String computedAt = DateTime.now().toUtc().toIso8601String();
-    final Map<String, dynamic>? metricsRow = await _powerSync.getOptional(
-      'SELECT id FROM session_computed_metrics WHERE id = ?',
-      [sessionId],
-    );
-    if (metricsRow != null) {
-      await _powerSync.execute(
-        'UPDATE session_computed_metrics'
-        ' SET zone2_seconds = ?, has_hr_samples = ?,'
-        '     zone2_hr_lower = ?, zone2_hr_upper = ?, computed_at = ?'
-        ' WHERE id = ?',
-        [
-          zone2Seconds,
-          hasHrSamples,
-          zone2Lower,
-          zone2Upper,
-          computedAt,
-          sessionId,
-        ],
-      );
-    } else {
-      await _powerSync.execute(
-        'INSERT INTO session_computed_metrics'
-        '  (id, zone2_seconds, has_hr_samples,'
-        '   zone2_hr_lower, zone2_hr_upper, computed_at)'
-        ' VALUES (?, ?, ?, ?, ?, ?)',
-        [
-          sessionId,
-          zone2Seconds,
-          hasHrSamples,
-          zone2Lower,
-          zone2Upper,
-          computedAt,
-        ],
-      );
-    }
   }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String sessionId) async {
@@ -208,4 +82,123 @@ class SessionMetricsStore {
         )
         .toList();
   }
+
+  Future<_ComputedMetrics> _loadAndCompute(
+    String sessionId, {
+    required TrainingLoadCalculator trainingLoad,
+  }) async {
+    final hrSamples = await loadHrSamples(sessionId);
+    if (hrSamples.isEmpty) {
+      return const _ComputedMetrics(
+        result: TrainingLoadResult(),
+        hasHrSamples: false,
+      );
+    }
+    return _ComputedMetrics(
+      result: trainingLoad.compute(hrSamples),
+      hasHrSamples: true,
+    );
+  }
+
+  Future<void> _persistMetrics(
+    String sessionId,
+    _ComputedMetrics metrics, {
+    required int restingHr,
+  }) async {
+    final zone = metrics.result.zoneTime;
+    final computedAt = DateTime.now().toUtc().toIso8601String();
+    final hasHr = metrics.hasHrSamples ? 1 : 0;
+
+    final existing = await _powerSync.getOptional(
+      'SELECT id FROM session_computed_metrics WHERE id = ?',
+      [sessionId],
+    );
+    if (existing != null) {
+      await _powerSync.execute(
+        'UPDATE session_computed_metrics'
+        ' SET zone1_seconds = ?, zone2_seconds = ?, zone3_seconds = ?,'
+        '     zone4_seconds = ?, zone5_seconds = ?,'
+        '     trimp = ?, has_hr_samples = ?, resting_hr = ?, computed_at = ?'
+        ' WHERE id = ?',
+        [
+          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
+          zone.zone4Seconds, zone.zone5Seconds,
+          metrics.result.trimp, hasHr, restingHr, computedAt, sessionId,
+        ],
+      );
+    } else {
+      await _powerSync.execute(
+        'INSERT INTO session_computed_metrics'
+        '  (id, zone1_seconds, zone2_seconds, zone3_seconds,'
+        '   zone4_seconds, zone5_seconds,'
+        '   trimp, has_hr_samples, resting_hr, computed_at)'
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          sessionId,
+          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
+          zone.zone4Seconds, zone.zone5Seconds,
+          metrics.result.trimp, hasHr, restingHr, computedAt,
+        ],
+      );
+    }
+  }
+
+  /// Recomputes only zone times for a single session, preserving existing TRIMP.
+  Future<void> _recomputeZones(
+    String sessionId, {
+    required TrainingLoadCalculator trainingLoad,
+  }) async {
+    final hrSamples = await loadHrSamples(sessionId);
+
+    final ZoneTimeResult zone;
+    final int hasHr;
+    if (hrSamples.isEmpty) {
+      zone = const ZoneTimeResult();
+      hasHr = 0;
+    } else {
+      zone = trainingLoad.compute(hrSamples).zoneTime;
+      hasHr = 1;
+    }
+
+    final computedAt = DateTime.now().toUtc().toIso8601String();
+    final existing = await _powerSync.getOptional(
+      'SELECT id FROM session_computed_metrics WHERE id = ?',
+      [sessionId],
+    );
+    if (existing != null) {
+      await _powerSync.execute(
+        'UPDATE session_computed_metrics'
+        ' SET zone1_seconds = ?, zone2_seconds = ?, zone3_seconds = ?,'
+        '     zone4_seconds = ?, zone5_seconds = ?,'
+        '     has_hr_samples = ?, computed_at = ?'
+        ' WHERE id = ?',
+        [
+          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
+          zone.zone4Seconds, zone.zone5Seconds,
+          hasHr, computedAt, sessionId,
+        ],
+      );
+    } else {
+      await _powerSync.execute(
+        'INSERT INTO session_computed_metrics'
+        '  (id, zone1_seconds, zone2_seconds, zone3_seconds,'
+        '   zone4_seconds, zone5_seconds,'
+        '   has_hr_samples, computed_at)'
+        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          sessionId,
+          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
+          zone.zone4Seconds, zone.zone5Seconds,
+          hasHr, computedAt,
+        ],
+      );
+    }
+  }
+}
+
+class _ComputedMetrics {
+  const _ComputedMetrics({required this.result, required this.hasHrSamples});
+
+  final TrainingLoadResult result;
+  final bool hasHrSamples;
 }

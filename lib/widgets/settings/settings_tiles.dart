@@ -95,8 +95,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
     final maxHR = ref.watch(maxHeartRateProvider);
     final recomputeProgress = ref.watch(metricsRecomputeProgressProvider);
     final displayHR = _dragValue?.round() ?? maxHR;
-    final lowerBound = (displayHR * 0.60).floor();
-    final upperBound = (displayHR * 0.70).ceil();
+    final zone2Lower = (displayHR * 0.60).floor();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -130,7 +129,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
                   children: [
                     Text('Max Heart Rate', style: AppTypography.subtitle),
                     Text(
-                      '$displayHR bpm  ·  Zone 2: $lowerBound–$upperBound',
+                      '$displayHR bpm  ·  >= Zone 2: $zone2Lower+ bpm',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textColor3,
                       ),
@@ -158,7 +157,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(
-                'Recomputing Zone 2: ${recomputeProgress.$1}/${recomputeProgress.$2}',
+                'Recomputing zones: ${recomputeProgress.$1}/${recomputeProgress.$2}',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.textColor4,
                 ),

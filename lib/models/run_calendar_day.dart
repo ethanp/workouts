@@ -5,7 +5,11 @@ class RunCalendarDay {
     required this.date,
     required this.totalDistanceMeters,
     required this.totalDurationSeconds,
+    required this.zone1Minutes,
     required this.zone2Minutes,
+    required this.zone3Minutes,
+    required this.zone4Minutes,
+    required this.zone5Minutes,
     required this.trimp,
     required this.hasHrData,
     required this.runCount,
@@ -15,9 +19,14 @@ class RunCalendarDay {
   final double totalDistanceMeters;
   final int totalDurationSeconds;
 
-  /// Total Zone 2 minutes across all runs that day.
-  /// Zero when [hasHrData] is false.
+  final int zone1Minutes;
   final int zone2Minutes;
+  final int zone3Minutes;
+  final int zone4Minutes;
+  final int zone5Minutes;
+
+  int get gteZone2Minutes =>
+      zone2Minutes + zone3Minutes + zone4Minutes + zone5Minutes;
 
   /// Sum of Banister TRIMP across all runs that day.
   final double trimp;

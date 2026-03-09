@@ -123,7 +123,7 @@ class CalendarDayCell extends StatelessWidget {
       children: [
         Positioned(left: 3, top: 2, child: _dayNumber(textColor)),
         Positioned(right: 2, top: 12, child: _activityLabel(textColor)),
-        Positioned(right: 2, bottom: 2, child: _zone2Label(textColor)),
+        Positioned(right: 2, bottom: 2, child: _zoneLabel(textColor)),
       ],
     );
   }
@@ -158,12 +158,12 @@ class CalendarDayCell extends StatelessWidget {
     );
   }
 
-  Widget _zone2Label(Color textColor) {
-    if (!entry!.runHasHrData || entry!.runZone2Minutes <= 0) {
+  Widget _zoneLabel(Color textColor) {
+    if (!entry!.runHasHrData || entry!.runGteZone2Minutes <= 0) {
       return const SizedBox.shrink();
     }
     return Text(
-      '${entry!.runZone2Minutes}z',
+      '${entry!.runGteZone2Minutes}z',
       textAlign: TextAlign.right,
       style: TextStyle(fontSize: 8, color: textColor.withValues(alpha: 0.75)),
     );

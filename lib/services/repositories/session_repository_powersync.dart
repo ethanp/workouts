@@ -330,7 +330,11 @@ class SessionRepositoryPowerSync {
         SELECT
           DATE(s.started_at, 'localtime') AS day,
           SUM(s.duration_seconds)           AS total_duration_seconds,
+          COALESCE(SUM(m.zone1_seconds), 0) AS total_zone1_seconds,
           COALESCE(SUM(m.zone2_seconds), 0) AS total_zone2_seconds,
+          COALESCE(SUM(m.zone3_seconds), 0) AS total_zone3_seconds,
+          COALESCE(SUM(m.zone4_seconds), 0) AS total_zone4_seconds,
+          COALESCE(SUM(m.zone5_seconds), 0) AS total_zone5_seconds,
           COALESCE(SUM(m.trimp), 0.0)       AS total_trimp,
           COUNT(s.id)                       AS session_count
         FROM sessions s
@@ -556,12 +560,12 @@ class SessionRepositoryPowerSync {
     return fetchSessionById(session.id);
   }
 
-  /// Recomputes zone2 for all completed sessions (triggered by max HR change).
+  /// Recomputes zones for all completed sessions (triggered by max HR change).
   /// Preserves existing TRIMP values computed with their original resting HR.
-  Future<void> recomputeZone2({
+  Future<void> recomputeZones({
     required TrainingLoadCalculator trainingLoad,
     void Function(int done, int total)? onProgress,
-  }) => _metricsStore.recomputeAllZone2(
+  }) => _metricsStore.recomputeAllZones(
     trainingLoad: trainingLoad,
     onProgress: onProgress,
   );
@@ -595,6 +599,7 @@ class SessionRepositoryPowerSync {
   SessionCalendarDay _calendarDayFromRow(Map<String, dynamic> dayRow) {
     final String dayString = dayRow['day'] as String;
     final List<String> parts = dayString.split('-');
+    final zoneMinutes = _zoneMinutesFromRow(dayRow);
     return SessionCalendarDay(
       date: DateTime(
         int.parse(parts[0]),
@@ -602,11 +607,20 @@ class SessionRepositoryPowerSync {
         int.parse(parts[2]),
       ),
       totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
-      zone2Minutes: ((dayRow['total_zone2_seconds'] as int? ?? 0) ~/ 60),
+      zone1Minutes: zoneMinutes[0],
+      zone2Minutes: zoneMinutes[1],
+      zone3Minutes: zoneMinutes[2],
+      zone4Minutes: zoneMinutes[3],
+      zone5Minutes: zoneMinutes[4],
       trimp: (dayRow['total_trimp'] as num?)?.toDouble() ?? 0,
       sessionCount: (dayRow['session_count'] as int?) ?? 0,
     );
   }
+
+  List<int> _zoneMinutesFromRow(Map<String, dynamic> row) => [
+        for (var z = 1; z <= 5; z++)
+          ((row['total_zone${z}_seconds'] as int? ?? 0) ~/ 60),
+      ];
 }
 
 @riverpod

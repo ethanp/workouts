@@ -240,7 +240,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
     final cells = <Widget>[];
     var activeDays = 0;
     var weekTotalMeters = 0.0;
-    var weekZone2Minutes = 0;
+    var weekGteZone2Minutes = 0;
     var weekHasHrData = false;
     var ownsWeek = false;
 
@@ -267,7 +267,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
         if (entry != null && entry.hasActivity) {
           activeDays++;
           weekTotalMeters += entry.totalDistanceMeters;
-          weekZone2Minutes += entry.zone2Minutes;
+          weekGteZone2Minutes += entry.gteZone2Minutes;
           if (entry.hasHrData) weekHasHrData = true;
         }
       }
@@ -283,7 +283,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
             ownsWeek: ownsWeek,
             activeDays: activeDays,
             totalMeters: weekTotalMeters,
-            zone2Minutes: weekZone2Minutes,
+            gteZone2Minutes: weekGteZone2Minutes,
             hasHrData: weekHasHrData,
             globalMaxMeters: globalMaxMeters,
           ),
@@ -296,7 +296,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
     required bool ownsWeek,
     required int activeDays,
     required double totalMeters,
-    required int zone2Minutes,
+    required int gteZone2Minutes,
     required bool hasHrData,
     required double globalMaxMeters,
   }) {
@@ -308,7 +308,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
             ? _weekSummaryContent(
                 activeDays: activeDays,
                 totalMeters: totalMeters,
-                zone2Minutes: zone2Minutes,
+                gteZone2Minutes: gteZone2Minutes,
                 hasHrData: hasHrData,
                 globalMaxMeters: globalMaxMeters,
               )
@@ -320,7 +320,7 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
   Widget _weekSummaryContent({
     required int activeDays,
     required double totalMeters,
-    required int zone2Minutes,
+    required int gteZone2Minutes,
     required bool hasHrData,
     required double globalMaxMeters,
   }) {
@@ -351,9 +351,9 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
                   color: summaryColor,
                 ),
               ),
-              if (hasHrData && zone2Minutes > 0)
+              if (hasHrData && gteZone2Minutes > 0)
                 Text(
-                  '${zone2Minutes}z',
+                  '${gteZone2Minutes}z',
                   style: TextStyle(
                     fontSize: _summaryFontSize - 1,
                     color: AppColors.textColor4,
@@ -484,9 +484,9 @@ class _RunActivityCalendarState extends State<RunActivityCalendar> {
                   color: textColor,
                 ),
               ),
-              if (entry.hasHrData && entry.zone2Minutes > 0)
+              if (entry.hasHrData && entry.gteZone2Minutes > 0)
                 Text(
-                  '${entry.zone2Minutes}z',
+                  '${entry.gteZone2Minutes}z',
                   style: TextStyle(
                     fontSize: 8,
                     color: textColor.withValues(alpha: 0.75),

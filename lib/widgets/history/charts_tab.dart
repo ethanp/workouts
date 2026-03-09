@@ -13,6 +13,7 @@ import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/fitness_momentum_chart.dart';
 import 'package:workouts/widgets/run_trend_chart.dart';
 import 'package:workouts/widgets/weekly_bar_chart.dart';
+import 'package:workouts/widgets/weekly_stacked_zone_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
 
 class HistoryChartsTab extends ConsumerWidget {
@@ -101,14 +102,8 @@ class HistoryChartsTab extends ConsumerWidget {
           formatValue: (value) => '${value.round()}d',
         ),
         const SizedBox(height: AppSpacing.lg),
-        WeeklyBarChart(
-          title: 'Weekly Zone 2',
-          weeks: _weekDataList(
-            visibleWeeks,
-            valueFor: (week) => week.zone2Minutes.toDouble(),
-          ),
-          barColor: const Color(0xFF30D158),
-          formatValue: (value) => '${value.round()}m',
+        WeeklyStackedZoneChart(
+          weeks: _weekZoneDataList(visibleWeeks),
         ),
         const SizedBox(height: AppSpacing.lg),
         RunTrendChart(
@@ -182,6 +177,24 @@ class HistoryChartsTab extends ConsumerWidget {
             label: aggregate.label,
             value: valueFor(aggregate),
             weekStart: aggregate.weekStart,
+            isCurrent: aggregate.isCurrent,
+            includeInAverage: !aggregate.beforeData,
+          ),
+        )
+        .toList();
+  }
+
+  List<WeekZoneData> _weekZoneDataList(List<WeekAggregate> aggregates) {
+    return aggregates
+        .map(
+          (aggregate) => WeekZoneData(
+            label: aggregate.label,
+            weekStart: aggregate.weekStart,
+            zone1Minutes: aggregate.zone1Minutes,
+            zone2Minutes: aggregate.zone2Minutes,
+            zone3Minutes: aggregate.zone3Minutes,
+            zone4Minutes: aggregate.zone4Minutes,
+            zone5Minutes: aggregate.zone5Minutes,
             isCurrent: aggregate.isCurrent,
             includeInAverage: !aggregate.beforeData,
           ),
@@ -344,7 +357,11 @@ class HistoryChartsTab extends ConsumerWidget {
       final monday = _mondayOf(day.date);
       final aggregate = byMonday[monday]!;
       aggregate.totalRunMeters += day.totalRunDistanceMeters;
+      aggregate.zone1Minutes += day.totalZone1Minutes;
       aggregate.zone2Minutes += day.totalZone2Minutes;
+      aggregate.zone3Minutes += day.totalZone3Minutes;
+      aggregate.zone4Minutes += day.totalZone4Minutes;
+      aggregate.zone5Minutes += day.totalZone5Minutes;
       aggregate.activeDays++;
     }
 
@@ -375,8 +392,15 @@ class WeekAggregate {
   final bool isCurrent;
   final bool beforeData;
   double totalRunMeters = 0;
+  int zone1Minutes = 0;
   int zone2Minutes = 0;
+  int zone3Minutes = 0;
+  int zone4Minutes = 0;
+  int zone5Minutes = 0;
   int activeDays = 0;
+
+  int get gteZone2Minutes =>
+      zone2Minutes + zone3Minutes + zone4Minutes + zone5Minutes;
 }
 
 class _FourWeekSummary extends StatelessWidget {
@@ -396,14 +420,14 @@ class _FourWeekSummary extends StatelessWidget {
     var totalMeters = 0.0;
     var totalRunSeconds = 0;
     var totalSessionMinutes = 0;
-    var totalZone2 = 0;
+    var totalGteZone2 = 0;
     var activityDayCount = 0;
 
     for (final day in recentDays) {
       totalMeters += day.totalRunDistanceMeters;
       totalRunSeconds += day.totalRunDurationSeconds;
       totalSessionMinutes += day.totalSessionDurationSeconds ~/ 60;
-      totalZone2 += day.totalZone2Minutes;
+      totalGteZone2 += day.totalGteZone2Minutes;
       activityDayCount++;
     }
 
@@ -438,7 +462,7 @@ class _FourWeekSummary extends StatelessWidget {
                 runHours > 0 ? '${runHours}h ${runMinutes}m' : '${runMinutes}m',
               ),
               _statCell('active days', '$activityDayCount'),
-              _statCell('zone 2', '${totalZone2}m'),
+              _statCell('>= zone 2', '${totalGteZone2}m'),
             ],
           ),
           if (totalSessionMinutes > 0) ...[

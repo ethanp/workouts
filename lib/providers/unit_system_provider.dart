@@ -76,7 +76,7 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
       if (ref.mounted && total > 0) progressNotifier.update(done, total);
     }
     Future.wait([
-      runsRepo.recomputeZone2(
+      runsRepo.recomputeZones(
         trainingLoad: trainingLoad,
         onProgress: (done, total) {
           runsDone = done;
@@ -84,7 +84,7 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
           reportCombinedProgress();
         },
       ),
-      sessionRepo.recomputeZone2(
+      sessionRepo.recomputeZones(
         trainingLoad: trainingLoad,
         onProgress: (done, total) {
           sessionsDone = done;
