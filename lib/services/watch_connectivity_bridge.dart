@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
@@ -18,6 +19,8 @@ class WatchConnectivityBridge {
   );
 
   Stream<bool> connectionStream() {
+    if (!Platform.isIOS) return Stream.value(false);
+
     final controller = StreamController<bool>.broadcast();
     controller.add(false);
 
@@ -35,35 +38,37 @@ class WatchConnectivityBridge {
   }
 
   Stream<String> commandStream() {
+    if (!Platform.isIOS) return const Stream.empty();
+
     return _commandChannel
         .receiveBroadcastStream()
         .where((event) => event is String)
         .cast<String>();
   }
 
-  /// Tell the watch to start a workout session for heart rate streaming.
   Future<void> startWatchWorkout({
     required String sessionId,
     double samplingIntervalSeconds = 5.0,
   }) async {
+    if (!Platform.isIOS) return;
     await _workoutChannel.invokeMethod('startWorkout', {
       'sessionId': sessionId,
       'samplingIntervalSeconds': samplingIntervalSeconds,
     });
   }
 
-  /// Tell the watch to stop the current workout session.
   Future<void> stopWatchWorkout() async {
+    if (!Platform.isIOS) return;
     await _workoutChannel.invokeMethod('stopWorkout');
   }
 
-  /// Tell the watch to pause the current workout session.
   Future<void> pauseWatchWorkout() async {
+    if (!Platform.isIOS) return;
     await _workoutChannel.invokeMethod('pauseWorkout');
   }
 
-  /// Tell the watch to resume the current workout session.
   Future<void> resumeWatchWorkout() async {
+    if (!Platform.isIOS) return;
     await _workoutChannel.invokeMethod('resumeWorkout');
   }
 }

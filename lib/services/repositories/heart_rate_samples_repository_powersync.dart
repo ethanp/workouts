@@ -15,12 +15,12 @@ HeartRateSamplesRepository heartRateSamplesRepositoryPowerSync(Ref ref) {
 }
 
 class HeartRateSamplesRepository {
-  HeartRateSamplesRepository(this._db);
+  HeartRateSamplesRepository(this._powerSync);
 
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
 
   Stream<List<HeartRateSample>> watchSamplesForSession(String sessionId) {
-    return _db
+    return _powerSync
         .watch(
           '''
           SELECT * FROM heart_rate_samples
@@ -33,7 +33,7 @@ class HeartRateSamplesRepository {
   }
 
   Future<List<HeartRateSample>> fetchSamplesForSession(String sessionId) async {
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       '''
       SELECT * FROM heart_rate_samples
       WHERE session_id = ?
@@ -45,7 +45,7 @@ class HeartRateSamplesRepository {
   }
 
   Future<void> addSample(HeartRateSample sample) async {
-    await _db.execute(
+    await _powerSync.execute(
       '''
       INSERT OR IGNORE INTO heart_rate_samples (
         id, session_id, timestamp, bpm, source, energy_kcal, created_at, updated_at

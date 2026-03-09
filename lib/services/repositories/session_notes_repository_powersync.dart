@@ -15,13 +15,13 @@ SessionNotesRepository sessionNotesRepositoryPowerSync(Ref ref) {
 }
 
 class SessionNotesRepository {
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
 
-  SessionNotesRepository(this._db);
+  SessionNotesRepository(this._powerSync);
 
   /// Watch all notes for a session.
   Stream<List<SessionNote>> watchNotesForSession(String sessionId) {
-    return _db
+    return _powerSync
         .watch(
           'SELECT * FROM session_notes WHERE session_id = ? ORDER BY timestamp ASC',
           parameters: [sessionId],
@@ -31,7 +31,7 @@ class SessionNotesRepository {
 
   /// Fetch all notes for a session.
   Future<List<SessionNote>> fetchNotesForSession(String sessionId) async {
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       'SELECT * FROM session_notes WHERE session_id = ? ORDER BY timestamp ASC',
       [sessionId],
     );
@@ -40,13 +40,13 @@ class SessionNotesRepository {
 
   /// Save a new note or update existing.
   Future<void> saveNote(SessionNote note) async {
-    final existing = await _db.getOptional(
+    final existing = await _powerSync.getOptional(
       'SELECT id FROM session_notes WHERE id = ?',
       [note.id],
     );
     final now = DateTime.now().toIso8601String();
     if (existing == null) {
-      await _db.execute(
+      await _powerSync.execute(
         '''
         INSERT INTO session_notes (
           id, session_id, exercise_id, block_id, content, note_type, source, timestamp, created_at, updated_at
@@ -66,7 +66,7 @@ class SessionNotesRepository {
         ],
       );
     } else {
-      await _db.execute(
+      await _powerSync.execute(
         '''
         UPDATE session_notes
         SET content = ?, note_type = ?, updated_at = ?
@@ -79,7 +79,7 @@ class SessionNotesRepository {
 
   /// Delete a note.
   Future<void> deleteNote(String id) async {
-    await _db.execute('DELETE FROM session_notes WHERE id = ?', [id]);
+    await _powerSync.execute('DELETE FROM session_notes WHERE id = ?', [id]);
   }
 
   SessionNote _mapRowToNote(Map<String, dynamic> row) {

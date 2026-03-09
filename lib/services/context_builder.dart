@@ -7,6 +7,7 @@ import 'package:workouts/services/repositories/background_notes_repository_power
 import 'package:workouts/services/repositories/goals_repository_powersync.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/template_repository_powersync.dart';
 
 part 'context_builder.g.dart';
 
@@ -16,12 +17,14 @@ class WorkoutContext {
   final List<BackgroundNote> backgroundNotes;
   final List<Session> recentSessions;
   final List<TrainingInfluence> influences;
+  final List<String> knownExerciseNames;
 
   WorkoutContext({
     required this.goals,
     required this.backgroundNotes,
     required this.recentSessions,
     required this.influences,
+    required this.knownExerciseNames,
   });
 
   bool get isEmpty => goals.isEmpty && backgroundNotes.isEmpty && influences.isEmpty;
@@ -32,12 +35,14 @@ class ContextBuilder {
   final BackgroundNotesRepositoryPowerSync notesRepo;
   final SessionRepositoryPowerSync sessionRepo;
   final InfluencesRepositoryPowerSync influencesRepo;
+  final TemplateRepositoryPowerSync templateRepo;
 
   ContextBuilder({
     required this.goalsRepo,
     required this.notesRepo,
     required this.sessionRepo,
     required this.influencesRepo,
+    required this.templateRepo,
   });
 
   Future<WorkoutContext> build() async {
@@ -59,14 +64,16 @@ class ContextBuilder {
         .take(10) // Limit to last 10 sessions for token budget
         .toList();
 
-    // Fetch active training influences
     final activeInfluences = await influencesRepo.fetchActiveInfluences();
+
+    final exerciseNames = await templateRepo.fetchExerciseNames();
 
     return WorkoutContext(
       goals: activeGoals,
       backgroundNotes: activeNotes,
       recentSessions: recentSessions,
       influences: activeInfluences,
+      knownExerciseNames: exerciseNames,
     );
   }
 }
@@ -78,5 +85,6 @@ ContextBuilder contextBuilder(Ref ref) {
     notesRepo: ref.watch(backgroundNotesRepositoryPowerSyncProvider),
     sessionRepo: ref.watch(sessionRepositoryPowerSyncProvider),
     influencesRepo: ref.watch(influencesRepositoryPowerSyncProvider),
+    templateRepo: ref.watch(templateRepositoryPowerSyncProvider),
   );
 }

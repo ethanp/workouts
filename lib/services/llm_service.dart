@@ -146,6 +146,8 @@ Consider:
 - User constraints (injuries, time limits, equipment)
 - Recovery needs
 
+IMPORTANT: The user already has a library of exercises. When suggesting an exercise that matches or is equivalent to one in their library, you MUST use the exact name from their library. Only introduce a new name if the exercise is genuinely novel. This prevents duplicates like "KB Swing" vs "Kettlebell Swing" or "RDL" vs "Romanian Deadlift".
+
 Respond in JSON format with this exact structure:
 {
   "options": [
@@ -179,6 +181,7 @@ Respond in JSON format with this exact structure:
     appendInfluencesPrompt(buffer, ctx);
     appendNotesPrompt(buffer, ctx);
     appendRecentNotesPrompt(buffer, ctx);
+    _appendExerciseLibrary(buffer, ctx);
     appendCallToAction(buffer, feedback);
 
     return buffer.toString();
@@ -197,6 +200,21 @@ Respond in JSON format with this exact structure:
           buffer.writeln('- $principle');
         }
         buffer.writeln();
+      }
+    }
+    buffer.writeln();
+  }
+
+  void _appendExerciseLibrary(StringBuffer buffer, WorkoutContext ctx) {
+    buffer.writeln('## My Exercise Library');
+    if (ctx.knownExerciseNames.isEmpty) {
+      buffer.writeln('No exercises yet.');
+    } else {
+      buffer.writeln(
+        'Reuse these exact names when the same or equivalent exercise is intended:',
+      );
+      for (final name in ctx.knownExerciseNames) {
+        buffer.writeln('- $name');
       }
     }
     buffer.writeln();

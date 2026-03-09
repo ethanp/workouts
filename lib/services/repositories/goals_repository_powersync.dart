@@ -9,19 +9,19 @@ part 'goals_repository_powersync.g.dart';
 const _uuid = Uuid();
 
 class GoalsRepositoryPowerSync {
-  GoalsRepositoryPowerSync(this._db);
+  GoalsRepositoryPowerSync(this._powerSync);
 
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
 
   Future<List<FitnessGoal>> fetchGoals() async {
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       'SELECT * FROM fitness_goals ORDER BY priority ASC, created_at DESC',
     );
     return rows.map(_goalFromRow).toList();
   }
 
   Stream<List<FitnessGoal>> watchGoals() {
-    return _db
+    return _powerSync
         .watch(
           'SELECT * FROM fitness_goals ORDER BY priority ASC, created_at DESC',
         )
@@ -29,7 +29,7 @@ class GoalsRepositoryPowerSync {
   }
 
   Stream<List<FitnessGoal>> watchActiveGoals() {
-    return _db
+    return _powerSync
         .watch(
           "SELECT * FROM fitness_goals WHERE status = 'active' ORDER BY priority ASC, created_at DESC",
         )
@@ -40,7 +40,7 @@ class GoalsRepositoryPowerSync {
     final now = DateTime.now().toIso8601String();
     final id = goal.id.isEmpty ? _uuid.v4() : goal.id;
 
-    await _db.execute(
+    await _powerSync.execute(
       '''
       INSERT OR REPLACE INTO fitness_goals (
         id, title, description, category, priority, 
@@ -63,7 +63,7 @@ class GoalsRepositoryPowerSync {
 
   Future<void> updateGoalStatus(String goalId, GoalStatus status) async {
     final now = DateTime.now().toIso8601String();
-    await _db.execute(
+    await _powerSync.execute(
       'UPDATE fitness_goals SET status = ?, updated_at = ? WHERE id = ?',
       [status.name, now, goalId],
     );
@@ -71,14 +71,14 @@ class GoalsRepositoryPowerSync {
 
   Future<void> updateGoalPriority(String goalId, int priority) async {
     final now = DateTime.now().toIso8601String();
-    await _db.execute(
+    await _powerSync.execute(
       'UPDATE fitness_goals SET priority = ?, updated_at = ? WHERE id = ?',
       [priority, now, goalId],
     );
   }
 
   Future<void> deleteGoal(String goalId) async {
-    await _db.execute('DELETE FROM fitness_goals WHERE id = ?', [goalId]);
+    await _powerSync.execute('DELETE FROM fitness_goals WHERE id = ?', [goalId]);
   }
 
   FitnessGoal _goalFromRow(Map<String, dynamic> row) {

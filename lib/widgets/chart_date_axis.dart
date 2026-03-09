@@ -3,6 +3,11 @@ import 'dart:math' as math;
 import 'package:flutter/painting.dart';
 import 'package:workouts/theme/app_theme.dart';
 
+const _months = [
+  '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
 class ChartDateLayout {
   ChartDateLayout({
     required Size size,
@@ -32,102 +37,105 @@ class ChartDateLayout {
     return left +
         (date.difference(minDate).inSeconds / _dateRangeSeconds) * width;
   }
-}
 
-const _months = [
-  '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
+  DateTime dateForX(double x) {
+    if (width == 0) return minDate;
+    final fraction = ((x - left) / width).clamp(0.0, 1.0);
+    final seconds = (fraction * _dateRangeSeconds).round();
+    return minDate.add(Duration(seconds: seconds));
+  }
 
-List<DateTime> chartDateTicks(ChartDateLayout layout) {
-  final spanDays = layout.maxDate.difference(layout.minDate).inDays;
-  if (spanDays <= 0) return [layout.minDate];
+  List<DateTime> dateTicks() {
+    final spanDays = maxDate.difference(minDate).inDays;
+    if (spanDays <= 0) return [minDate];
 
-  final targetCount = math.max(3, (layout.width / 70).round());
+    final targetCount = math.max(3, (width / 70).round());
 
-  if (spanDays > 90) {
-    final monthStep = math.max(1, (spanDays / 30 / targetCount).ceil());
-    final ticks = <DateTime>[];
-    var cursor = DateTime(layout.minDate.year, layout.minDate.month + monthStep);
-    while (cursor.isBefore(layout.maxDate)) {
-      ticks.add(cursor);
-      cursor = DateTime(cursor.year, cursor.month + monthStep);
+    if (spanDays > 90) {
+      final monthStep = math.max(1, (spanDays / 30 / targetCount).ceil());
+      final ticks = <DateTime>[];
+      var cursor = DateTime(minDate.year, minDate.month + monthStep);
+      while (cursor.isBefore(maxDate)) {
+        ticks.add(cursor);
+        cursor = DateTime(cursor.year, cursor.month + monthStep);
+      }
+      return [minDate, ...ticks, maxDate];
     }
-    return [layout.minDate, ...ticks, layout.maxDate];
+
+    final stepDays = math.max(1, (spanDays / targetCount).round());
+    final ticks = <DateTime>[minDate];
+    var cursor = DateTime(minDate.year, minDate.month, minDate.day + stepDays);
+    final minGap = stepDays ~/ 2;
+    while (cursor.isBefore(
+        DateTime(maxDate.year, maxDate.month, maxDate.day - minGap))) {
+      ticks.add(cursor);
+      cursor = DateTime(cursor.year, cursor.month, cursor.day + stepDays);
+    }
+    ticks.add(maxDate);
+    return ticks;
   }
 
-  final stepDays = math.max(1, (spanDays / targetCount).round());
-  final ticks = <DateTime>[layout.minDate];
-  final minDate = layout.minDate;
-  var cursor = DateTime(minDate.year, minDate.month, minDate.day + stepDays);
-  final minGap = stepDays ~/ 2;
-  final maxDate = layout.maxDate;
-  while (cursor.isBefore(
-      DateTime(maxDate.year, maxDate.month, maxDate.day - minGap))) {
-    ticks.add(cursor);
-    cursor = DateTime(cursor.year, cursor.month, cursor.day + stepDays);
-  }
-  ticks.add(layout.maxDate);
-  return ticks;
-}
+  void drawDateLabels(Canvas canvas, {Color? labelColor}) {
+    final spanDays = maxDate.difference(minDate).inDays;
+    final color = labelColor ?? AppColors.textColor4;
 
-void drawChartDateLabels(
-  Canvas canvas,
-  ChartDateLayout layout, {
-  Color? labelColor,
-}) {
-  final spanDays = layout.maxDate.difference(layout.minDate).inDays;
-  final color = labelColor ?? AppColors.textColor4;
+    String formatLabel(DateTime date) {
+      if (spanDays > 60) return _months[date.month];
+      return '${date.month}/${date.day}';
+    }
 
-  String formatLabel(DateTime date) {
-    if (spanDays > 60) return _months[date.month];
-    return '${date.month}/${date.day}';
-  }
-
-  for (final date in chartDateTicks(layout)) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: formatLabel(date),
-        style: TextStyle(color: color, fontSize: 10),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    final x = (layout.xForDate(date) - textPainter.width / 2)
-        .clamp(layout.left - 4, layout.right - textPainter.width + 4);
-    textPainter.paint(canvas, Offset(x, layout.bottom + 6));
-  }
-}
-
-void drawChartYearBoundaries(Canvas canvas, ChartDateLayout layout) {
-  if (layout.minDate.year == layout.maxDate.year) return;
-
-  final linePaint = Paint()
-    ..color = AppColors.textColor4.withValues(alpha: 0.3)
-    ..strokeWidth = 1;
-
-  for (var year = layout.minDate.year + 1;
-      year <= layout.maxDate.year;
-      year++) {
-    final DateTime jan1 = DateTime(year);
-    final double x = layout.xForDate(jan1);
-    canvas.drawLine(
-      Offset(x, layout.top),
-      Offset(x, layout.bottom),
-      linePaint,
-    );
-
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: '$year',
-        style: TextStyle(
-          color: AppColors.textColor4.withValues(alpha: 0.6),
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
+    for (final date in dateTicks()) {
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: formatLabel(date),
+          style: TextStyle(color: color, fontSize: 10),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainter.paint(canvas, Offset(x + 4, layout.top + 2));
+        textDirection: TextDirection.ltr,
+      )..layout();
+
+      final x = (xForDate(date) - textPainter.width / 2)
+          .clamp(left - 4, right - textPainter.width + 4);
+      textPainter.paint(canvas, Offset(x, bottom + 6));
+    }
+  }
+
+  void drawAxes(Canvas canvas, {bool xAxis = true, bool yAxis = true}) {
+    final axisPaint = Paint()
+      ..color = AppColors.textColor4.withValues(alpha: 0.5)
+      ..strokeWidth = 1;
+
+    if (xAxis) {
+      canvas.drawLine(Offset(left, bottom), Offset(right, bottom), axisPaint);
+    }
+    if (yAxis) {
+      canvas.drawLine(Offset(left, top), Offset(left, bottom), axisPaint);
+    }
+  }
+
+  void drawYearBoundaries(Canvas canvas) {
+    if (minDate.year == maxDate.year) return;
+
+    final linePaint = Paint()
+      ..color = AppColors.textColor4.withValues(alpha: 0.3)
+      ..strokeWidth = 1;
+
+    for (var year = minDate.year + 1; year <= maxDate.year; year++) {
+      final DateTime jan1 = DateTime(year);
+      final double x = xForDate(jan1);
+      canvas.drawLine(Offset(x, top), Offset(x, bottom), linePaint);
+
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: '$year',
+          style: TextStyle(
+            color: AppColors.textColor4.withValues(alpha: 0.6),
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(canvas, Offset(x + 4, top + 2));
+    }
   }
 }

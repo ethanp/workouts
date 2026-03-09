@@ -120,49 +120,30 @@ class _MomentumLayout extends ChartDateLayout {
   final List<MomentumDayScore> scores;
   late final double yMax;
 
-  double yForScore(double score) => bottom - (score / yMax) * height;
-}
-
-class _MomentumPainter extends CustomPainter {
-  _MomentumPainter({
-    required this.scores,
-    this.displayStart,
-    this.displayEnd,
-  });
-
-  final List<MomentumDayScore> scores;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
-
   static const _lineColor = Color(0xFF30D158);
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final layout = _MomentumLayout(
-      size,
-      scores,
-      displayStart: displayStart,
-      displayEnd: displayEnd,
-    );
-    _drawGrid(canvas, layout);
-    drawChartYearBoundaries(canvas, layout);
-    drawChartDateLabels(canvas, layout);
-    _drawFill(canvas, layout);
-    _drawLine(canvas, layout);
-    _drawEndpoint(canvas, layout);
+  double yForScore(double score) => bottom - (score / yMax) * height;
+
+  void paintAll(Canvas canvas) {
+    _drawGrid(canvas);
+    drawAxes(canvas);
+    drawYearBoundaries(canvas);
+    drawDateLabels(canvas);
+    _drawFill(canvas);
+    _drawLine(canvas);
+    _drawEndpoint(canvas);
   }
 
-  void _drawGrid(Canvas canvas, _MomentumLayout layout) {
+  void _drawGrid(Canvas canvas) {
     final gridPaint = Paint()
       ..color = AppColors.borderDepth1.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
 
-    final step = layout.yMax > 60 ? 25.0 : (layout.yMax > 30 ? 10.0 : 5.0);
+    final step = yMax > 60 ? 25.0 : (yMax > 30 ? 10.0 : 5.0);
 
-    for (var val = step; val < layout.yMax; val += step) {
-      final y = layout.yForScore(val);
-      canvas.drawLine(
-          Offset(layout.left, y), Offset(layout.right, y), gridPaint);
+    for (var val = step; val < yMax; val += step) {
+      final y = yForScore(val);
+      canvas.drawLine(Offset(left, y), Offset(right, y), gridPaint);
 
       final textPainter = TextPainter(
         text: TextSpan(
@@ -173,31 +154,30 @@ class _MomentumPainter extends CustomPainter {
       )..layout();
       textPainter.paint(
         canvas,
-        Offset(
-            layout.left - textPainter.width - 4, y - textPainter.height / 2),
+        Offset(left - textPainter.width - 4, y - textPainter.height / 2),
       );
     }
   }
 
-  void _drawFill(Canvas canvas, _MomentumLayout layout) {
+  void _drawFill(Canvas canvas) {
     final fillPath = Path();
     for (var i = 0; i < scores.length; i++) {
-      final x = layout.xForDate(scores[i].date);
-      final y = layout.yForScore(scores[i].score);
+      final x = xForDate(scores[i].date);
+      final y = yForScore(scores[i].score);
       if (i == 0) {
-        fillPath.moveTo(x, layout.bottom);
+        fillPath.moveTo(x, bottom);
         fillPath.lineTo(x, y);
       } else {
         fillPath.lineTo(x, y);
       }
     }
-    fillPath.lineTo(layout.xForDate(scores.last.date), layout.bottom);
+    fillPath.lineTo(xForDate(scores.last.date), bottom);
     fillPath.close();
 
     final fillPaint = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(0, layout.top),
-        Offset(0, layout.bottom),
+        Offset(0, top),
+        Offset(0, bottom),
         [
           _lineColor.withValues(alpha: 0.35),
           _lineColor.withValues(alpha: 0.02),
@@ -206,11 +186,11 @@ class _MomentumPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
   }
 
-  void _drawLine(Canvas canvas, _MomentumLayout layout) {
+  void _drawLine(Canvas canvas) {
     final path = Path();
     for (var i = 0; i < scores.length; i++) {
-      final x = layout.xForDate(scores[i].date);
-      final y = layout.yForScore(scores[i].score);
+      final x = xForDate(scores[i].date);
+      final y = yForScore(scores[i].score);
       if (i == 0) {
         path.moveTo(x, y);
       } else {
@@ -226,11 +206,33 @@ class _MomentumPainter extends CustomPainter {
     canvas.drawPath(path, linePaint);
   }
 
-  void _drawEndpoint(Canvas canvas, _MomentumLayout layout) {
-    final lastX = layout.xForDate(scores.last.date);
-    final lastY = layout.yForScore(scores.last.score);
-    canvas.drawCircle(
-        Offset(lastX, lastY), 4, Paint()..color = _lineColor);
+  void _drawEndpoint(Canvas canvas) {
+    final lastX = xForDate(scores.last.date);
+    final lastY = yForScore(scores.last.score);
+    canvas.drawCircle(Offset(lastX, lastY), 4, Paint()..color = _lineColor);
+  }
+}
+
+class _MomentumPainter extends CustomPainter {
+  _MomentumPainter({
+    required this.scores,
+    this.displayStart,
+    this.displayEnd,
+  });
+
+  final List<MomentumDayScore> scores;
+  final DateTime? displayStart;
+  final DateTime? displayEnd;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final layout = _MomentumLayout(
+      size,
+      scores,
+      displayStart: displayStart,
+      displayEnd: displayEnd,
+    );
+    layout.paintAll(canvas);
   }
 
   @override

@@ -37,7 +37,7 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
     _log.info('Selecting workout option: ${option.title}');
     final template = await ref
         .read(templateRepositoryPowerSyncProvider)
-        .createEphemeralFromOption(option);
+        .createFromLlmOption(option);
     await ref.read(activeSessionProvider.notifier).start(template.id);
     cancel();
   }

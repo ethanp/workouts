@@ -97,7 +97,16 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
     final boundaries = _yearBoundaryIndices();
     final barsAndLabels = Column(
       children: [
-        SizedBox(height: 140, child: _bars()),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: AppColors.textColor4.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+          child: SizedBox(height: 140, child: _bars()),
+        ),
         const SizedBox(height: AppSpacing.xs),
         _labels(),
       ],

@@ -9,25 +9,25 @@ part 'background_notes_repository_powersync.g.dart';
 const _uuid = Uuid();
 
 class BackgroundNotesRepositoryPowerSync {
-  BackgroundNotesRepositoryPowerSync(this._db);
+  BackgroundNotesRepositoryPowerSync(this._powerSync);
 
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
 
   Future<List<BackgroundNote>> fetchNotes() async {
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       'SELECT * FROM background_notes ORDER BY created_at DESC',
     );
     return rows.map(_noteFromRow).toList();
   }
 
   Stream<List<BackgroundNote>> watchNotes() {
-    return _db
+    return _powerSync
         .watch('SELECT * FROM background_notes ORDER BY created_at DESC')
         .map((rows) => rows.map(_noteFromRow).toList());
   }
 
   Stream<List<BackgroundNote>> watchActiveNotes() {
-    return _db
+    return _powerSync
         .watch(
           'SELECT * FROM background_notes WHERE is_active = 1 ORDER BY created_at DESC',
         )
@@ -35,7 +35,7 @@ class BackgroundNotesRepositoryPowerSync {
   }
 
   Stream<List<BackgroundNote>> watchNotesForGoal(String goalId) {
-    return _db
+    return _powerSync
         .watch(
           'SELECT * FROM background_notes WHERE goal_id = ? ORDER BY created_at DESC',
           parameters: [goalId],
@@ -47,7 +47,7 @@ class BackgroundNotesRepositoryPowerSync {
     final now = DateTime.now().toIso8601String();
     final id = note.id.isEmpty ? _uuid.v4() : note.id;
 
-    await _db.execute(
+    await _powerSync.execute(
       '''
       INSERT OR REPLACE INTO background_notes (
         id, goal_id, category, content, is_active, source, created_at, updated_at
@@ -68,7 +68,7 @@ class BackgroundNotesRepositoryPowerSync {
 
   Future<void> archiveNote(String noteId) async {
     final now = DateTime.now().toIso8601String();
-    await _db.execute(
+    await _powerSync.execute(
       'UPDATE background_notes SET is_active = 0, updated_at = ? WHERE id = ?',
       [now, noteId],
     );
@@ -76,14 +76,14 @@ class BackgroundNotesRepositoryPowerSync {
 
   Future<void> activateNote(String noteId) async {
     final now = DateTime.now().toIso8601String();
-    await _db.execute(
+    await _powerSync.execute(
       'UPDATE background_notes SET is_active = 1, updated_at = ? WHERE id = ?',
       [now, noteId],
     );
   }
 
   Future<void> deleteNote(String noteId) async {
-    await _db.execute('DELETE FROM background_notes WHERE id = ?', [noteId]);
+    await _powerSync.execute('DELETE FROM background_notes WHERE id = ?', [noteId]);
   }
 
   BackgroundNote _noteFromRow(Map<String, dynamic> row) {

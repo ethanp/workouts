@@ -8,13 +8,13 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 part 'influences_repository_powersync.g.dart';
 
 class InfluencesRepositoryPowerSync {
-  InfluencesRepositoryPowerSync(this._db);
+  InfluencesRepositoryPowerSync(this._powerSync);
 
-  final PowerSyncDatabase _db;
+  final PowerSyncDatabase _powerSync;
 
   Future<List<TrainingInfluence>> fetchInfluences() async {
     await _ensureSeeded();
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       'SELECT * FROM training_influences ORDER BY name ASC',
     );
     return rows.map(_influenceFromRow).toList();
@@ -23,14 +23,14 @@ class InfluencesRepositoryPowerSync {
   Stream<List<TrainingInfluence>> watchInfluences() {
     // Seed on first access, then watch
     return _ensureSeeded().asStream().asyncExpand((_) {
-      return _db
+      return _powerSync
           .watch('SELECT * FROM training_influences ORDER BY name ASC')
           .map((rows) => rows.map(_influenceFromRow).toList());
     });
   }
 
   Future<void> _ensureSeeded() async {
-    final count = await _db.get('SELECT COUNT(*) as cnt FROM training_influences');
+    final count = await _powerSync.get('SELECT COUNT(*) as cnt FROM training_influences');
     if ((count['cnt'] as int) == 0) {
       await seedInfluencesIfEmpty();
     }
@@ -38,7 +38,7 @@ class InfluencesRepositoryPowerSync {
 
   Stream<List<TrainingInfluence>> watchActiveInfluences() {
     return _ensureSeeded().asStream().asyncExpand((_) {
-      return _db
+      return _powerSync
           .watch(
             'SELECT * FROM training_influences WHERE is_active = 1 ORDER BY name ASC',
           )
@@ -48,7 +48,7 @@ class InfluencesRepositoryPowerSync {
 
   Future<List<TrainingInfluence>> fetchActiveInfluences() async {
     await _ensureSeeded();
-    final rows = await _db.getAll(
+    final rows = await _powerSync.getAll(
       'SELECT * FROM training_influences WHERE is_active = 1 ORDER BY name ASC',
     );
     return rows.map(_influenceFromRow).toList();
@@ -56,20 +56,20 @@ class InfluencesRepositoryPowerSync {
 
   Future<void> toggleInfluence(String id, bool isActive) async {
     final now = DateTime.now().toIso8601String();
-    await _db.execute(
+    await _powerSync.execute(
       'UPDATE training_influences SET is_active = ?, updated_at = ? WHERE id = ?',
       [isActive ? 1 : 0, now, id],
     );
   }
 
   Future<void> seedInfluencesIfEmpty() async {
-    final count = await _db.get('SELECT COUNT(*) as cnt FROM training_influences');
+    final count = await _powerSync.get('SELECT COUNT(*) as cnt FROM training_influences');
     if ((count['cnt'] as int) > 0) return;
 
     final now = DateTime.now().toIso8601String();
 
     for (final influence in seedInfluences) {
-      await _db.execute(
+      await _powerSync.execute(
         '''
         INSERT INTO training_influences (
           id, name, description, principles, is_active, created_at, updated_at
