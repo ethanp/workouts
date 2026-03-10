@@ -124,8 +124,9 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('runs', [
+  Table('cardio_workouts', [
     Column.text('external_workout_id'),
+    Column.text('activity_type'),
     Column.text('started_at'),
     Column.text('ended_at'),
     Column.integer('duration_seconds'),
@@ -133,7 +134,6 @@ const schema = Schema([
     Column.real('energy_kcal'),
     Column.real('avg_heart_rate_bpm'),
     Column.real('max_heart_rate_bpm'),
-    Column.integer('is_indoor'),
     Column.integer('route_available'),
     Column.text('source_name'),
     Column.text('source_bundle_id'),
@@ -141,8 +141,8 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('run_route_points', [
-    Column.text('run_id'),
+  Table('cardio_route_points', [
+    Column.text('workout_id'),
     Column.integer('point_index'),
     Column.real('lat'),
     Column.real('lng'),
@@ -151,15 +151,22 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('run_heart_rate_samples', [
-    Column.text('run_id'),
+  Table('cardio_heart_rate_samples', [
+    Column.text('workout_id'),
     Column.text('timestamp'),
     Column.integer('bpm'),
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
+  Table('cardio_best_efforts', [
+    Column.text('workout_id'),
+    Column.real('distance_meters'),
+    Column.real('elapsed_seconds'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
 
-  Table.localOnly('run_computed_metrics', [
+  Table.localOnly('cardio_computed_metrics', [
     Column.integer('zone1_seconds'),
     Column.integer('zone2_seconds'),
     Column.integer('zone3_seconds'),

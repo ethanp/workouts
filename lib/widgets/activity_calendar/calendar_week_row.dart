@@ -126,7 +126,7 @@ class _WeekSummary extends StatelessWidget {
     final monday = sunday.subtract(const Duration(days: 6));
 
     var activeDays = 0;
-    var runMeters = 0.0;
+    var cardioMeters = 0.0;
     var sessionMinutes = 0;
     var gteZone2Minutes = 0;
     var hasHrData = false;
@@ -136,16 +136,16 @@ class _WeekSummary extends StatelessWidget {
       final entry = activityData[date];
       if (entry != null && entry.hasActivity) {
         activeDays++;
-        runMeters += entry.totalRunDistanceMeters;
+        cardioMeters += entry.totalCardioDistanceMeters;
         sessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
-        gteZone2Minutes += entry.runGteZone2Minutes;
-        if (entry.runHasHrData) hasHrData = true;
+        gteZone2Minutes += entry.cardioZoneTime.gteZone2Minutes;
+        if (entry.cardioHasHrData) hasHrData = true;
       }
     }
 
     return _WeekStats(
       activeDays: activeDays,
-      runMeters: runMeters,
+      cardioMeters: cardioMeters,
       sessionMinutes: sessionMinutes,
       gteZone2Minutes: gteZone2Minutes,
       hasHrData: hasHrData,
@@ -154,7 +154,7 @@ class _WeekSummary extends StatelessWidget {
 
   Widget _content(_WeekStats stats) {
     final intensity = CalendarDayCell.intensityForDay(
-      runMeters: stats.runMeters,
+      cardioMeters: stats.cardioMeters,
       sessionMinutes: stats.sessionMinutes,
       globalMax: globalMax,
     );
@@ -181,8 +181,8 @@ class _WeekSummary extends StatelessWidget {
 
   Widget _activityLabel(_WeekStats stats, double intensity) {
     final parts = <String>[];
-    if (stats.runMeters > 0) {
-      parts.add(Format.distanceCompact(stats.runMeters, unitSystem));
+    if (stats.cardioMeters > 0) {
+      parts.add(Format.distanceCompact(stats.cardioMeters, unitSystem));
     }
     if (stats.sessionMinutes > 0) parts.add('${stats.sessionMinutes}m');
 
@@ -235,14 +235,14 @@ class _WeekSummary extends StatelessWidget {
 class _WeekStats {
   const _WeekStats({
     required this.activeDays,
-    required this.runMeters,
+    required this.cardioMeters,
     required this.sessionMinutes,
     required this.gteZone2Minutes,
     required this.hasHrData,
   });
 
   final int activeDays;
-  final double runMeters;
+  final double cardioMeters;
   final int sessionMinutes;
   final int gteZone2Minutes;
   final bool hasHrData;

@@ -3,8 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
-import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
@@ -29,9 +29,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final sessionHistory = ref.watch(sessionHistoryProvider);
-    final importAsync = ref.watch(runImportControllerProvider);
+    final importAsync = ref.watch(cardioImportControllerProvider);
     final importProgress =
-        importAsync.value ?? const RunImportProgress.idle();
+        importAsync.value ?? const CardioImportProgress.idle();
     final isImporting = importProgress.inProgress;
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
     final syncState = ref.watch(syncStateProvider);
@@ -90,8 +90,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     if (_selectedTab == HistoryTab.list && dbReady && !isImporting) {
       return CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: () =>
-            ref.read(runImportControllerProvider.notifier).importRecentRuns(),
+        onPressed: () => ref
+            .read(cardioImportControllerProvider.notifier)
+            .importRecentWorkouts(),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -170,7 +171,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 class ImportProgressBanner extends StatelessWidget {
   const ImportProgressBanner({super.key, required this.importProgress});
 
-  final RunImportProgress importProgress;
+  final CardioImportProgress importProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -190,16 +191,16 @@ class ImportProgressBanner extends StatelessWidget {
           Text(
             importProgress.status.isNotEmpty
                 ? importProgress.status
-                : 'Fetches last 30 runs with route and heart rate. '
-                    'Only new runs are added.',
+                : 'Fetches recent cardio workouts with route and heart rate. '
+                    'Only new workouts are added.',
             style:
                 AppTypography.caption.copyWith(color: AppColors.textColor3),
           ),
           if (importProgress.inProgress &&
-              importProgress.totalRuns > 0) ...[
+              importProgress.totalWorkouts > 0) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '${importProgress.processedRuns}/${importProgress.totalRuns}',
+              '${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
               style: AppTypography.caption.copyWith(
                 color: AppColors.textColor2,
                 fontWeight: FontWeight.w500,

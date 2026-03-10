@@ -2,19 +2,19 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_item.dart';
-import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/activity_provider.dart';
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/history_provider.dart';
-import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/screens/run_detail_screen.dart';
+import 'package:workouts/screens/cardio_detail_screen.dart';
 import 'package:workouts/screens/session_detail_screen.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/repositories/runs_repository_powersync.dart';
+import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -32,8 +32,8 @@ class HistoryActivityListTab extends ConsumerWidget {
           ? EmptyActivityPlaceholder(
               onImport: dbReady
                   ? () => ref
-                      .read(runImportControllerProvider.notifier)
-                      .importRecentRuns()
+                      .read(cardioImportControllerProvider.notifier)
+                      .importRecentWorkouts()
                   : null,
             )
           : ListView.separated(
@@ -57,11 +57,11 @@ class HistoryActivityListTab extends ConsumerWidget {
   Widget _buildActivityTile(
       BuildContext context, WidgetRef ref, ActivityItem item) {
     return switch (item) {
-      ActivityRun(:final run) => DismissibleActivityTile(
-          key: Key('run-${run.id}'),
+      ActivityCardio(:final workout) => DismissibleActivityTile(
+          key: Key('cardio-${workout.id}'),
           item: item,
-          onDelete: () => _deleteRun(ref, run),
-          child: RunListTile(run: run),
+          onDelete: () => _deleteWorkout(ref, workout),
+          child: CardioWorkoutListTile(workout: workout),
         ),
       ActivitySession(:final session) => DismissibleActivityTile(
           key: Key('session-${session.id}'),
@@ -82,9 +82,9 @@ class HistoryActivityListTab extends ConsumerWidget {
     }
   }
 
-  Future<void> _deleteRun(WidgetRef ref, FitnessRun run) async {
-    final repository = ref.read(runsRepositoryPowerSyncProvider);
-    await repository.deleteRun(run.id);
+  Future<void> _deleteWorkout(WidgetRef ref, CardioWorkout workout) async {
+    final cardioRepo = ref.read(cardioRepositoryPowerSyncProvider);
+    await cardioRepo.deleteWorkout(workout.id);
   }
 }
 
@@ -103,9 +103,9 @@ class DismissibleActivityTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (title, content) = switch (item) {
-      ActivityRun() => (
-          'Delete Run',
-          'This will remove the run from this app. It will stay in Apple Health '
+      ActivityCardio() => (
+          'Delete Workout',
+          'This will remove the workout from this app. It will stay in Apple Health '
               'and may be re-imported if you run Import again.',
         ),
       ActivitySession() => (
@@ -198,7 +198,7 @@ class EmptyActivityPlaceholder extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Import runs from Apple Health or complete workout sessions '
+            'Import cardio workouts from Apple Health or complete workout sessions '
             'to see them here.',
             textAlign: TextAlign.center,
             style: AppTypography.body.copyWith(color: AppColors.textColor4),
@@ -207,7 +207,7 @@ class EmptyActivityPlaceholder extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             CupertinoButton.filled(
               onPressed: onImport,
-              child: const Text('Import Runs'),
+              child: const Text('Import Workouts'),
             ),
           ],
         ],
@@ -216,10 +216,10 @@ class EmptyActivityPlaceholder extends StatelessWidget {
   }
 }
 
-class RunListTile extends ConsumerWidget {
-  const RunListTile({super.key, required this.run});
+class CardioWorkoutListTile extends ConsumerWidget {
+  const CardioWorkoutListTile({super.key, required this.workout});
 
-  final FitnessRun run;
+  final CardioWorkout workout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -227,7 +227,8 @@ class RunListTile extends ConsumerWidget {
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () => context.push((_) => RunDetailScreen(run: run)),
+      onPressed: () =>
+          context.push((_) => CardioDetailScreen(workout: workout)),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -245,16 +246,14 @@ class RunListTile extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    Format.dateIso(run.startedAt),
+                    '${workout.activityType.displayName}  ·  ${Format.dateIso(workout.startedAt)}',
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textColor3,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${Format.distance(run.distanceMeters, unitSystem)}  ·  '
-                    '${Format.duration(run.durationSeconds)}  ·  '
-                    '${Format.pace(run.durationSeconds, run.distanceMeters, unitSystem)}',
+                    _summaryText(unitSystem),
                     style: AppTypography.body.copyWith(
                       color: AppColors.textColor1,
                     ),
@@ -262,7 +261,7 @@ class RunListTile extends ConsumerWidget {
                 ],
               ),
             ),
-            if (run.routeAvailable)
+            if (workout.activityType.hasRoute && workout.routeAvailable)
               Padding(
                 padding: const EdgeInsets.only(left: AppSpacing.sm),
                 child: Icon(
@@ -283,6 +282,15 @@ class RunListTile extends ConsumerWidget {
     );
   }
 
+  String _summaryText(UnitSystem unitSystem) {
+    final duration = Format.duration(workout.durationSeconds);
+    if (!workout.activityType.hasDistance || workout.distanceMeters <= 0) {
+      return duration;
+    }
+    return '${Format.distance(workout.distanceMeters, unitSystem)}  ·  '
+        '$duration  ·  '
+        '${Format.pace(workout.durationSeconds, workout.distanceMeters, unitSystem)}';
+  }
 }
 
 class SessionListTile extends ConsumerWidget {
@@ -421,7 +429,6 @@ class SessionListTile extends ConsumerWidget {
       ),
     );
   }
-
 
   Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
     if (session.completedAt == null) {

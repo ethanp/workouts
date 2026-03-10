@@ -60,7 +60,7 @@ Future<PowerSyncDatabase> initPowerSync() async {
     await db.initialize();
     _log.info('Database initialized successfully');
 
-    await _purgeOrphanedRunChildCrudEntries(db);
+    await _purgeOrphanedCardioChildCrudEntries(db);
 
     _log.info('Connecting to PowerSync service...');
     await reconnectPowerSync(db);
@@ -84,34 +84,31 @@ Future<String> getDatabasePath() async {
   return p.join(dir.path, 'powersync.db');
 }
 
-/// Bulk-removes CRUD queue entries for run child tables whose run_id no longer
-/// exists in the local runs table. Covers PUT entries (which carry run_id in
-/// their data payload) and DELETE entries (which have no data payload, so
-/// json_extract returns NULL — safe to drop since the server handles cascade
-/// deletes when the parent run DELETE is uploaded).
-Future<void> _purgeOrphanedRunChildCrudEntries(PowerSyncDatabase db) async {
+/// Bulk-removes CRUD queue entries for cardio child tables whose workout_id
+/// no longer exists in the local cardio_workouts table.
+Future<void> _purgeOrphanedCardioChildCrudEntries(PowerSyncDatabase db) async {
   try {
     final countRows = await db.execute('''
       SELECT COUNT(*) AS cnt FROM ps_crud
-      WHERE json_extract(data, '\$.type') IN ('run_route_points', 'run_heart_rate_samples')
+      WHERE json_extract(data, '\$.type') IN ('cardio_route_points', 'cardio_heart_rate_samples')
         AND (
-          json_extract(data, '\$.data.run_id') IS NULL
-          OR json_extract(data, '\$.data.run_id') NOT IN (SELECT id FROM runs)
+          json_extract(data, '\$.data.workout_id') IS NULL
+          OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
         )
     ''');
     final orphanCount = countRows.first['cnt'] as int? ?? 0;
     if (orphanCount > 0) {
       await db.execute('''
         DELETE FROM ps_crud
-        WHERE json_extract(data, '\$.type') IN ('run_route_points', 'run_heart_rate_samples')
+        WHERE json_extract(data, '\$.type') IN ('cardio_route_points', 'cardio_heart_rate_samples')
           AND (
-            json_extract(data, '\$.data.run_id') IS NULL
-            OR json_extract(data, '\$.data.run_id') NOT IN (SELECT id FROM runs)
+            json_extract(data, '\$.data.workout_id') IS NULL
+            OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
           )
       ''');
-      _log.info('Purged $orphanCount orphaned run child CRUD entries.');
+      _log.info('Purged $orphanCount orphaned cardio child CRUD entries.');
     }
   } catch (e) {
-    _log.warning('Could not purge orphaned run CRUD entries: $e');
+    _log.warning('Could not purge orphaned cardio CRUD entries: $e');
   }
 }

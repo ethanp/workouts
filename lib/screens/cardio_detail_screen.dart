@@ -3,34 +3,34 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/models/run_route_point.dart';
-import 'package:workouts/providers/runs_provider.dart';
+import 'package:workouts/models/cardio_route_point.dart';
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/run_metrics_card.dart';
+import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
-class RunDetailScreen extends ConsumerWidget {
-  const RunDetailScreen({super.key, required this.run});
+class CardioDetailScreen extends ConsumerWidget {
+  const CardioDetailScreen({super.key, required this.workout});
 
-  final FitnessRun run;
+  final CardioWorkout workout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final routePointsAsync = ref.watch(runRoutePointsProvider(run.id));
-    final heartRateSamplesAsync = ref.watch(runHeartRateSamplesProvider(run.id));
+    final routePointsAsync = ref.watch(cardioRoutePointsProvider(workout.id));
+    final heartRateSamplesAsync = ref.watch(cardioHeartRateSamplesProvider(workout.id));
     final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('Run Detail')),
+      navigationBar: const CupertinoNavigationBar(middle: Text('Workout Detail')),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            _RunSummaryCard(run: run, unitSystem: unitSystem),
+            _WorkoutSummaryCard(workout: workout, unitSystem: unitSystem),
             const SizedBox(height: AppSpacing.md),
             routePointsAsync.when(
               data: (routePoints) => _RouteCard(routePoints: routePoints),
@@ -43,19 +43,19 @@ class RunDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             heartRateSamplesAsync.when(
-              data: (runHeartRateSamples) {
-                final chartSamples = runHeartRateSamples
+              data: (cardioHeartRateSamples) {
+                final chartSamples = cardioHeartRateSamples
                     .map(
-                      (runHeartRateSample) => HeartRateSample(
-                        id: runHeartRateSample.id,
-                        sessionId: runHeartRateSample.runId,
-                        timestamp: runHeartRateSample.timestamp,
-                        bpm: runHeartRateSample.bpm,
-                        source: 'run_import',
+                      (cardioHeartRateSample) => HeartRateSample(
+                        id: cardioHeartRateSample.id,
+                        sessionId: cardioHeartRateSample.workoutId,
+                        timestamp: cardioHeartRateSample.timestamp,
+                        bpm: cardioHeartRateSample.bpm,
+                        source: 'cardio_import',
                       ),
                     )
                     .toList();
-                return RunMetricsCard(
+                return CardioMetricsCard(
                   samples: chartSamples,
                   routePoints: routePointsAsync.asData?.value ?? [],
                 );
@@ -74,10 +74,10 @@ class RunDetailScreen extends ConsumerWidget {
   }
 }
 
-class _RunSummaryCard extends StatelessWidget {
-  const _RunSummaryCard({required this.run, required this.unitSystem});
+class _WorkoutSummaryCard extends StatelessWidget {
+  const _WorkoutSummaryCard({required this.workout, required this.unitSystem});
 
-  final FitnessRun run;
+  final CardioWorkout workout;
   final UnitSystem unitSystem;
 
   @override
@@ -92,13 +92,16 @@ class _RunSummaryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            Format.distance(run.distanceMeters, unitSystem),
-            style: AppTypography.title,
-          ),
+          Text(workout.activityType.displayName, style: AppTypography.subtitle),
+          const SizedBox(height: AppSpacing.xs),
+          if (workout.activityType.hasDistance)
+            Text(
+              Format.distance(workout.distanceMeters, unitSystem),
+              style: AppTypography.title,
+            ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${Format.duration(run.durationSeconds)}  ·  ${Format.pace(run.durationSeconds, run.distanceMeters, unitSystem)}',
+            _subtitleText(),
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
         ],
@@ -106,12 +109,19 @@ class _RunSummaryCard extends StatelessWidget {
     );
   }
 
+  String _subtitleText() {
+    final duration = Format.duration(workout.durationSeconds);
+    if (!workout.activityType.hasDistance || workout.distanceMeters <= 0) {
+      return duration;
+    }
+    return '$duration  ·  ${Format.pace(workout.durationSeconds, workout.distanceMeters, unitSystem)}';
+  }
 }
 
 class _RouteCard extends StatelessWidget {
   const _RouteCard({required this.routePoints});
 
-  final List<RunRoutePoint> routePoints;
+  final List<CardioRoutePoint> routePoints;
 
   @override
   Widget build(BuildContext context) {
@@ -124,7 +134,7 @@ class _RouteCard extends StatelessWidget {
           border: Border.all(color: AppColors.borderDepth1),
         ),
         child: Text(
-          'Route unavailable for this run.',
+          'Route unavailable for this workout.',
           style: AppTypography.body.copyWith(color: AppColors.textColor3),
         ),
       );

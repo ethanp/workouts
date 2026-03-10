@@ -54,12 +54,19 @@ final class HealthKitBridge {
     }
   }
 
-  func countRunningWorkouts(completion: @escaping (Int, Error?) -> Void) {
+  private static let cardioActivityTypes: [HKWorkoutActivityType] = [
+    .running, .elliptical, .stairClimbing, .rowing
+  ]
+
+  func countCardioWorkouts(completion: @escaping (Int, Error?) -> Void) {
     guard HKHealthStore.isHealthDataAvailable() else {
       completion(0, nil)
       return
     }
-    let predicate = HKQuery.predicateForWorkouts(with: .running)
+    let predicates = Self.cardioActivityTypes.map {
+      HKQuery.predicateForWorkouts(with: $0)
+    }
+    let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
     let query = HKSampleQuery(
       sampleType: .workoutType(),
       predicate: predicate,
@@ -75,7 +82,7 @@ final class HealthKitBridge {
     healthStore.execute(query)
   }
 
-  func fetchRecentRunningWorkouts(
+  func fetchRecentCardioWorkouts(
     maxWorkouts: Int,
     includeRoute: Bool,
     maxRoutePoints: Int,
@@ -87,12 +94,15 @@ final class HealthKitBridge {
       return
     }
     let workoutType = HKObjectType.workoutType()
-    let runningPredicate = HKQuery.predicateForWorkouts(with: .running)
+    let predicates = Self.cardioActivityTypes.map {
+      HKQuery.predicateForWorkouts(with: $0)
+    }
+    let predicate = NSCompoundPredicate(orPredicateWithSubpredicates: predicates)
     let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
 
     let query = HKSampleQuery(
       sampleType: workoutType,
-      predicate: runningPredicate,
+      predicate: predicate,
       limit: max(1, maxWorkouts),
       sortDescriptors: [sortDescriptor]
     ) { [weak self] _, samples, error in
@@ -115,7 +125,7 @@ final class HealthKitBridge {
 
       for (index, workout) in workouts.enumerated() {
         dispatchGroup.enter()
-        self.serializeRunningWorkout(
+        self.serializeCardioWorkout(
           workout: workout,
           includeRoute: includeRoute,
           maxRoutePoints: maxRoutePoints,
@@ -135,7 +145,18 @@ final class HealthKitBridge {
     healthStore.execute(query)
   }
 
-  private func serializeRunningWorkout(
+  private func activityTypeKey(for workout: HKWorkout) -> String {
+    let isIndoor = (workout.metadata?[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false
+    switch workout.workoutActivityType {
+    case .running: return isIndoor ? "indoorRun" : "outdoorRun"
+    case .elliptical: return "elliptical"
+    case .stairClimbing: return "stairClimbing"
+    case .rowing: return "rowing"
+    default: return "outdoorRun"
+    }
+  }
+
+  private func serializeCardioWorkout(
     workout: HKWorkout,
     includeRoute: Bool,
     maxRoutePoints: Int,
@@ -187,10 +208,10 @@ final class HealthKitBridge {
       let deviceModel = workout.device?.model
       let metadata = workout.metadata ?? [:]
       let elevationAscended = metadata[HKMetadataKeyElevationAscended] as? Double
-      let isIndoor = (metadata[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue
 
       var payload: [String: Any] = [
         "externalWorkoutId": workout.uuid.uuidString,
+        "activityType": self.activityTypeKey(for: workout),
         "startDate": self.dateFormatter.string(from: workout.startDate),
         "endDate": self.dateFormatter.string(from: workout.endDate),
         "durationSeconds": Int(workout.duration),
@@ -199,7 +220,6 @@ final class HealthKitBridge {
         "avgHeartRateBpm": avgHeartRateBpm as Any,
         "maxHeartRateBpm": maxHeartRateBpm as Any,
         "heartRateSampleCount": heartRateSeries?.count ?? 0,
-        "isIndoor": isIndoor as Any,
         "routeAvailable": routeAvailable,
         "sourceName": sourceName,
         "sourceBundleId": sourceBundleId,

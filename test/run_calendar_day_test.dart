@@ -1,80 +1,80 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:workouts/models/run_calendar_day.dart';
+import 'package:workouts/models/cardio_calendar_day.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 
-RunCalendarDay _day({
-  int zone1 = 0,
-  int zone2 = 0,
-  int zone3 = 0,
-  int zone4 = 0,
-  int zone5 = 0,
+CardioCalendarDay _day({
+  HrZoneTime zoneTime = HrZoneTime.zero,
   double trimp = 0,
   bool hasHrData = false,
-  int runCount = 0,
+  int workoutCount = 0,
   double distance = 0,
   int duration = 0,
 }) =>
-    RunCalendarDay(
+    CardioCalendarDay(
       date: DateTime(2026, 3, 1),
       totalDistanceMeters: distance,
       totalDurationSeconds: duration,
-      zone1Minutes: zone1,
-      zone2Minutes: zone2,
-      zone3Minutes: zone3,
-      zone4Minutes: zone4,
-      zone5Minutes: zone5,
+      zoneTime: zoneTime,
       trimp: trimp,
       hasHrData: hasHrData,
-      runCount: runCount,
+      workoutCount: workoutCount,
     );
 
 void main() {
-  group('RunCalendarDay', () {
-    test('hasActivity is true when runCount > 0', () {
+  group('CardioCalendarDay', () {
+    test('hasActivity is true when workoutCount > 0', () {
       final day = _day(
         distance: 8045,
         duration: 2400,
-        zone2: 18,
+        zoneTime: const HrZoneTime(zone2: 1080),
         trimp: 45.0,
         hasHrData: true,
-        runCount: 1,
+        workoutCount: 1,
       );
       expect(day.hasActivity, isTrue);
     });
 
-    test('hasActivity is false when runCount is 0', () {
+    test('hasActivity is false when workoutCount is 0', () {
       expect(_day().hasActivity, isFalse);
     });
 
-    test('gteZone2Minutes sums zones 2-5', () {
+    test('zoneTime.gteZone2Minutes sums zones 2-5 in minutes', () {
       final day = _day(
-        zone1: 5,
-        zone2: 10,
-        zone3: 8,
-        zone4: 3,
-        zone5: 1,
+        zoneTime: const HrZoneTime(
+          zone1: 300,
+          zone2: 600,
+          zone3: 480,
+          zone4: 180,
+          zone5: 60,
+        ),
         hasHrData: true,
-        runCount: 1,
+        workoutCount: 1,
       );
-      expect(day.gteZone2Minutes, 22);
+      expect(day.zoneTime.gteZone2, 1320);
+      expect(day.zoneTime.gteZone2Minutes, 22);
     });
 
-    test('gteZone2Minutes excludes zone 1', () {
-      final day = _day(zone1: 15, hasHrData: true, runCount: 1);
-      expect(day.gteZone2Minutes, 0);
+    test('gteZone2 excludes zone 1', () {
+      final day = _day(
+        zoneTime: const HrZoneTime(zone1: 900),
+        hasHrData: true,
+        workoutCount: 1,
+      );
+      expect(day.zoneTime.gteZone2, 0);
     });
 
-    test('zone2Minutes can be zero even with HR data', () {
+    test('zone2 can be zero even with HR data', () {
       final day = _day(
         distance: 16090,
         duration: 5400,
-        zone1: 20,
+        zoneTime: const HrZoneTime(zone1: 1200),
         trimp: 20.0,
         hasHrData: true,
-        runCount: 1,
+        workoutCount: 1,
       );
       expect(day.hasHrData, isTrue);
-      expect(day.zone2Minutes, 0);
-      expect(day.gteZone2Minutes, 0);
+      expect(day.zoneTime.zone2, 0);
+      expect(day.zoneTime.gteZone2, 0);
     });
   });
 }

@@ -10,7 +10,7 @@ import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
-import 'package:workouts/widgets/run_metrics_card.dart';
+import 'package:workouts/widgets/cardio_metrics_card.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({super.key, required this.session});

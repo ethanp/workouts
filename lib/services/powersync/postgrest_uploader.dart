@@ -15,8 +15,9 @@ class PostgRestUploader {
   // Tables that have FK dependencies — if the parent row is gone from the
   // server, we discard the child op rather than retrying forever.
   static const _childTables = {
-    'run_route_points',
-    'run_heart_rate_samples',
+    'cardio_route_points',
+    'cardio_heart_rate_samples',
+    'cardio_best_efforts',
     'workout_blocks',
     'workout_block_exercises',
     'session_blocks',
@@ -37,8 +38,9 @@ class PostgRestUploader {
     'session_blocks': 'session_id,block_index',
     'session_block_exercises': 'block_id,exercise_id,exercise_index',
     'session_set_logs': 'block_id,exercise_id,set_index',
-    'run_route_points': 'run_id,point_index',
-    'run_heart_rate_samples': 'run_id,timestamp',
+    'cardio_route_points': 'workout_id,point_index',
+    'cardio_heart_rate_samples': 'workout_id,timestamp',
+    'cardio_best_efforts': 'workout_id,distance_meters',
   };
 
   /// Returns true if the entry was discarded rather than uploaded.
@@ -117,7 +119,7 @@ class PostgRestUploader {
       return _patchExerciseByName(data, client);
     }
 
-    if (responseBody.contains('"23505"') && table == 'runs') {
+    if (responseBody.contains('"23505"') && table == 'cardio_workouts') {
       final externalId = data?['external_workout_id'] as String?;
       if (externalId != null) {
         await client.delete(

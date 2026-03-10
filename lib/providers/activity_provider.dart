@@ -4,13 +4,14 @@ import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/activity_item.dart';
-import 'package:workouts/models/fitness_run.dart';
-import 'package:workouts/models/run_calendar_day.dart';
+import 'package:workouts/models/cardio_calendar_day.dart';
+import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/repositories/runs_repository_powersync.dart';
+import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
@@ -28,21 +29,21 @@ Stream<List<ActivityItem>> activityList(Ref ref) {
   final db = ref.watch(powerSyncDatabaseProvider).value;
   if (db == null) return _pendingStream(ref);
 
-  final runsRepo = RunsRepositoryPowerSync(db);
+  final cardioRepo = CardioRepositoryPowerSync(db);
   final sessionRepo = SessionRepositoryPowerSync(
     db,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
-  List<FitnessRun>? lastRuns;
+  List<CardioWorkout>? lastCardioWorkouts;
   List<Session>? lastSessions;
   final ctrl = StreamController<List<ActivityItem>>();
   ref.onDispose(ctrl.close);
 
   void emit() {
-    if (lastRuns != null && lastSessions != null) {
+    if (lastCardioWorkouts != null && lastSessions != null) {
       final items = <ActivityItem>[
-        ...lastRuns!.map((r) => ActivityRun(r)),
+        ...lastCardioWorkouts!.map((w) => ActivityCardio(w)),
         ...lastSessions!
             .where((s) => s.completedAt != null)
             .map((s) => ActivitySession(s)),
@@ -52,8 +53,8 @@ Stream<List<ActivityItem>> activityList(Ref ref) {
     }
   }
 
-  runsRepo.watchRuns().listen((r) {
-    lastRuns = r;
+  cardioRepo.watchCardioWorkouts().listen((w) {
+    lastCardioWorkouts = w;
     emit();
   });
   sessionRepo.watchSessions().listen((s) {
@@ -69,88 +70,75 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   final db = ref.watch(powerSyncDatabaseProvider).value;
   if (db == null) return _pendingStream(ref);
 
-  final runsRepo = RunsRepositoryPowerSync(db);
+  final cardioRepo = CardioRepositoryPowerSync(db);
   final sessionRepo = SessionRepositoryPowerSync(
     db,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
-  List<RunCalendarDay>? lastRunDays;
+  List<CardioCalendarDay>? lastCardioDays;
   List<SessionCalendarDay>? lastSessionDays;
   final ctrl = StreamController<List<ActivityCalendarDay>>();
   ref.onDispose(ctrl.close);
 
+  ActivityCalendarDay activityDayFromCardio(CardioCalendarDay cardioDay) =>
+      ActivityCalendarDay(
+        date: cardioDay.date,
+        totalCardioDistanceMeters: cardioDay.totalDistanceMeters,
+        totalCardioDurationSeconds: cardioDay.totalDurationSeconds,
+        cardioZoneTime: cardioDay.zoneTime,
+        cardioTrimp: cardioDay.trimp,
+        cardioHasHrData: cardioDay.hasHrData,
+        cardioCount: cardioDay.workoutCount,
+        totalSessionDurationSeconds: 0,
+        sessionZoneTime: HrZoneTime.zero,
+        sessionTrimp: 0,
+        sessionCount: 0,
+      );
+
+  ActivityCalendarDay mergeSessionInto(
+    ActivityCalendarDay existing,
+    SessionCalendarDay sessionDay,
+  ) => ActivityCalendarDay(
+    date: existing.date,
+    totalCardioDistanceMeters: existing.totalCardioDistanceMeters,
+    totalCardioDurationSeconds: existing.totalCardioDurationSeconds,
+    cardioZoneTime: existing.cardioZoneTime,
+    cardioTrimp: existing.cardioTrimp,
+    cardioHasHrData: existing.cardioHasHrData,
+    cardioCount: existing.cardioCount,
+    totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
+    sessionZoneTime: sessionDay.zoneTime,
+    sessionTrimp: sessionDay.trimp,
+    sessionCount: sessionDay.sessionCount,
+  );
+
+  ActivityCalendarDay activityDayFromSession(SessionCalendarDay sessionDay) =>
+      ActivityCalendarDay(
+        date: sessionDay.date,
+        totalCardioDistanceMeters: 0,
+        totalCardioDurationSeconds: 0,
+        cardioZoneTime: HrZoneTime.zero,
+        cardioTrimp: 0,
+        cardioHasHrData: false,
+        cardioCount: 0,
+        totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
+        sessionZoneTime: sessionDay.zoneTime,
+        sessionTrimp: sessionDay.trimp,
+        sessionCount: sessionDay.sessionCount,
+      );
+
   void emit() {
-    if (lastRunDays != null && lastSessionDays != null) {
+    if (lastCardioDays != null && lastSessionDays != null) {
       final byDate = <DateTime, ActivityCalendarDay>{};
-      for (final runDay in lastRunDays!) {
-        byDate[runDay.date] = ActivityCalendarDay(
-          date: runDay.date,
-          totalRunDistanceMeters: runDay.totalDistanceMeters,
-          totalRunDurationSeconds: runDay.totalDurationSeconds,
-          runZone1Minutes: runDay.zone1Minutes,
-          runZone2Minutes: runDay.zone2Minutes,
-          runZone3Minutes: runDay.zone3Minutes,
-          runZone4Minutes: runDay.zone4Minutes,
-          runZone5Minutes: runDay.zone5Minutes,
-          runTrimp: runDay.trimp,
-          runHasHrData: runDay.hasHrData,
-          runCount: runDay.runCount,
-          totalSessionDurationSeconds: 0,
-          sessionZone1Minutes: 0,
-          sessionZone2Minutes: 0,
-          sessionZone3Minutes: 0,
-          sessionZone4Minutes: 0,
-          sessionZone5Minutes: 0,
-          sessionTrimp: 0,
-          sessionCount: 0,
-        );
+      for (final cardioDay in lastCardioDays!) {
+        byDate[cardioDay.date] = activityDayFromCardio(cardioDay);
       }
       for (final sessionDay in lastSessionDays!) {
         byDate.update(
           sessionDay.date,
-          (existing) => ActivityCalendarDay(
-            date: existing.date,
-            totalRunDistanceMeters: existing.totalRunDistanceMeters,
-            totalRunDurationSeconds: existing.totalRunDurationSeconds,
-            runZone1Minutes: existing.runZone1Minutes,
-            runZone2Minutes: existing.runZone2Minutes,
-            runZone3Minutes: existing.runZone3Minutes,
-            runZone4Minutes: existing.runZone4Minutes,
-            runZone5Minutes: existing.runZone5Minutes,
-            runTrimp: existing.runTrimp,
-            runHasHrData: existing.runHasHrData,
-            runCount: existing.runCount,
-            totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
-            sessionZone1Minutes: sessionDay.zone1Minutes,
-            sessionZone2Minutes: sessionDay.zone2Minutes,
-            sessionZone3Minutes: sessionDay.zone3Minutes,
-            sessionZone4Minutes: sessionDay.zone4Minutes,
-            sessionZone5Minutes: sessionDay.zone5Minutes,
-            sessionTrimp: sessionDay.trimp,
-            sessionCount: sessionDay.sessionCount,
-          ),
-          ifAbsent: () => ActivityCalendarDay(
-            date: sessionDay.date,
-            totalRunDistanceMeters: 0,
-            totalRunDurationSeconds: 0,
-            runZone1Minutes: 0,
-            runZone2Minutes: 0,
-            runZone3Minutes: 0,
-            runZone4Minutes: 0,
-            runZone5Minutes: 0,
-            runTrimp: 0,
-            runHasHrData: false,
-            runCount: 0,
-            totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
-            sessionZone1Minutes: sessionDay.zone1Minutes,
-            sessionZone2Minutes: sessionDay.zone2Minutes,
-            sessionZone3Minutes: sessionDay.zone3Minutes,
-            sessionZone4Minutes: sessionDay.zone4Minutes,
-            sessionZone5Minutes: sessionDay.zone5Minutes,
-            sessionTrimp: sessionDay.trimp,
-            sessionCount: sessionDay.sessionCount,
-          ),
+          (existing) => mergeSessionInto(existing, sessionDay),
+          ifAbsent: () => activityDayFromSession(sessionDay),
         );
       }
       final days = byDate.values.toList()
@@ -159,8 +147,8 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
     }
   }
 
-  runsRepo.watchCalendarDays().listen((r) {
-    lastRunDays = r;
+  cardioRepo.watchCalendarDays().listen((c) {
+    lastCardioDays = c;
     emit();
   });
   sessionRepo.watchSessionCalendarDays().listen((s) {
@@ -171,8 +159,6 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   return ctrl.stream;
 }
 
-/// Shared display date range derived from activity data.
-/// All charts should use this so their x-axes are aligned.
 @riverpod
 DateTimeRange? chartDateRange(Ref ref) {
   final days = ref.watch(activityCalendarDaysProvider).value;
@@ -197,16 +183,16 @@ Future<List<ActivityItem>> activityForDate(Ref ref, DateTime date) async {
   final db = ref.watch(powerSyncDatabaseProvider).value;
   if (db == null) return [];
 
-  final runsRepo = RunsRepositoryPowerSync(db);
+  final cardioRepo = CardioRepositoryPowerSync(db);
   final sessionRepo = SessionRepositoryPowerSync(
     db,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
-  final runs = await runsRepo.getRunsForDate(date);
+  final cardioWorkouts = await cardioRepo.getWorkoutsForDate(date);
   final sessions = await sessionRepo.getSessionsForDate(date);
   final items = <ActivityItem>[
-    ...runs.map((r) => ActivityRun(r)),
+    ...cardioWorkouts.map((w) => ActivityCardio(w)),
     ...sessions.map((s) => ActivitySession(s)),
   ];
   items.sort((a, b) => a.startedAt.compareTo(b.startedAt));
@@ -214,19 +200,46 @@ Future<List<ActivityItem>> activityForDate(Ref ref, DateTime date) async {
 }
 
 @riverpod
-Future<void> activityMetricsBackfill(Ref ref) async {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) return;
+class MetricsBackfillController extends _$MetricsBackfillController {
+  @override
+  MetricsBackfillStatus build() => const MetricsBackfillStatus.idle();
 
-  final maxHR = ref.watch(maxHeartRateProvider);
-  final restingHR = ref.watch(restingHeartRateProvider);
-  final trainingLoad = TrainingLoadCalculator(
-    maxHeartRate: maxHR,
-    restingHeartRate: restingHR,
-  );
-  await RunsRepositoryPowerSync(db).backfillMissingMetrics(trainingLoad: trainingLoad);
+  Future<void> runBackfill() async {
+    if (state.inProgress) return;
+    final db = ref.read(powerSyncDatabaseProvider).value;
+    if (db == null) return;
 
-  final templateRepo = ref.watch(templateRepositoryPowerSyncProvider);
-  await SessionRepositoryPowerSync(db, templateRepo)
-      .backfillMissingMetrics(trainingLoad: trainingLoad);
+    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling zone metrics...');
+    final maxHR = ref.read(maxHeartRateProvider);
+    final restingHR = ref.read(restingHeartRateProvider);
+    final trainingLoad = TrainingLoadCalculator(
+      maxHeartRate: maxHR,
+      restingHeartRate: restingHR,
+    );
+    final cardioRepository = CardioRepositoryPowerSync(db);
+    await cardioRepository.backfillMissingMetrics(trainingLoad: trainingLoad);
+
+    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling best efforts...');
+    await cardioRepository.backfillMissingBestEfforts();
+
+    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling session metrics...');
+    final templateRepo = ref.read(templateRepositoryPowerSyncProvider);
+    await SessionRepositoryPowerSync(db, templateRepo)
+        .backfillMissingMetrics(trainingLoad: trainingLoad);
+
+    state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
+    Future.delayed(const Duration(seconds: 3), () {
+      if (ref.exists(metricsBackfillControllerProvider)) {
+        state = const MetricsBackfillStatus.idle();
+      }
+    });
+  }
+}
+
+class MetricsBackfillStatus {
+  const MetricsBackfillStatus({this.inProgress = false, this.label = ''});
+  const MetricsBackfillStatus.idle() : inProgress = false, label = '';
+
+  final bool inProgress;
+  final String label;
 }

@@ -2,42 +2,42 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class RunImportSnapshot {
-  const RunImportSnapshot({
-    required this.localRuns,
-    required this.importedRuns,
-    required this.healthKitRuns,
+class CardioImportSnapshot {
+  const CardioImportSnapshot({
+    required this.localWorkouts,
+    required this.importedWorkouts,
+    required this.healthKitWorkouts,
     required this.fetchedAt,
   });
 
-  final int localRuns;
-  final int importedRuns;
-  final int healthKitRuns;
+  final int localWorkouts;
+  final int importedWorkouts;
+  final int healthKitWorkouts;
   final DateTime fetchedAt;
 }
 
-class RunImportDebugTile extends ConsumerStatefulWidget {
-  const RunImportDebugTile({super.key});
+class CardioImportDebugTile extends ConsumerStatefulWidget {
+  const CardioImportDebugTile({super.key});
 
   @override
-  ConsumerState<RunImportDebugTile> createState() =>
-      _RunImportDebugTileState();
+  ConsumerState<CardioImportDebugTile> createState() =>
+      _CardioImportDebugTileState();
 }
 
-class _RunImportDebugTileState extends ConsumerState<RunImportDebugTile> {
+class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
   bool _expanded = false;
-  AsyncValue<RunImportSnapshot>? _snapshot;
+  AsyncValue<CardioImportSnapshot>? _snapshot;
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(runImportControllerProvider, (previous, next) {
+    ref.listen(cardioImportControllerProvider, (previous, next) {
       final progress = next.value;
       if (progress != null &&
           !progress.inProgress &&
@@ -63,24 +63,25 @@ class _RunImportDebugTileState extends ConsumerState<RunImportDebugTile> {
     }
   }
 
-  Future<RunImportSnapshot> _fetchSnapshot() async {
+  Future<CardioImportSnapshot> _fetchSnapshot() async {
     final db = await ref.read(powerSyncDatabaseProvider.future);
     final bridge = ref.read(healthKitBridgeProvider);
 
-    final totalRows = await db.execute('SELECT COUNT(*) AS cnt FROM runs');
-    final localRuns = totalRows.first['cnt'] as int? ?? 0;
+    final totalRows =
+        await db.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+    final localWorkouts = totalRows.first['cnt'] as int? ?? 0;
 
     final importedRows = await db.execute(
-      'SELECT COUNT(*) AS cnt FROM runs WHERE external_workout_id IS NOT NULL',
+      'SELECT COUNT(*) AS cnt FROM cardio_workouts WHERE external_workout_id IS NOT NULL',
     );
-    final importedRuns = importedRows.first['cnt'] as int? ?? 0;
+    final importedWorkouts = importedRows.first['cnt'] as int? ?? 0;
 
-    final healthKitRuns = await bridge.countRunningWorkouts();
+    final healthKitWorkouts = await bridge.countCardioWorkouts();
 
-    return RunImportSnapshot(
-      localRuns: localRuns,
-      importedRuns: importedRuns,
-      healthKitRuns: healthKitRuns,
+    return CardioImportSnapshot(
+      localWorkouts: localWorkouts,
+      importedWorkouts: importedWorkouts,
+      healthKitWorkouts: healthKitWorkouts,
       fetchedAt: DateTime.now(),
     );
   }
@@ -155,21 +156,23 @@ class _RunImportDebugTileState extends ConsumerState<RunImportDebugTile> {
     }
 
     final snap = _snapshot!.value!;
-    final manualRuns = snap.localRuns - snap.importedRuns;
+    final manualWorkouts = snap.localWorkouts - snap.importedWorkouts;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Compares runs stored locally with running workouts in Apple Health.',
+          'Compares cardio workouts stored locally with those in Apple Health.',
           style: AppTypography.caption.copyWith(color: AppColors.textColor3),
         ),
         const SizedBox(height: AppSpacing.md),
-        DebugRow('Local runs (total)', '${snap.localRuns}'),
-        DebugRow('  Imported from Health', '${snap.importedRuns}'),
-        if (manualRuns > 0) DebugRow('  Other', '$manualRuns'),
+        DebugRow('Local workouts (total)', '${snap.localWorkouts}'),
+        DebugRow('  Imported from Health', '${snap.importedWorkouts}'),
+        if (manualWorkouts > 0) DebugRow('  Other', '$manualWorkouts'),
         DebugRow(
-          'HealthKit running workouts',
-          snap.healthKitRuns >= 0 ? '${snap.healthKitRuns}' : 'Unavailable',
+          'HealthKit cardio workouts',
+          snap.healthKitWorkouts >= 0
+              ? '${snap.healthKitWorkouts}'
+              : 'Unavailable',
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
@@ -205,8 +208,8 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   bool _expanded = false;
   bool _reconnecting = false;
   Map<String, int> _crudQueue = {};
-  int _localRuns = 0;
-  int _serverRuns = -1;
+  int _localWorkouts = 0;
+  int _serverWorkouts = -1;
   DateTime? _crudFetchedAt;
 
   void _toggle() {
@@ -227,16 +230,17 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
           (row['tbl'] as String? ?? 'unknown'): row['cnt'] as int? ?? 0,
       };
 
-      final localRunRows = await db.execute('SELECT COUNT(*) AS cnt FROM runs');
-      final localRuns = localRunRows.first['cnt'] as int? ?? 0;
+      final workoutRows =
+          await db.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+      final localWorkouts = workoutRows.first['cnt'] as int? ?? 0;
 
-      int serverRuns = -1;
+      int serverWorkouts = -1;
       try {
         final postgrestUrl = dotenv.env['POSTGREST_URL'] ?? '';
         if (postgrestUrl.isNotEmpty) {
           final response = await http
               .get(
-                Uri.parse('$postgrestUrl/runs?select=id&limit=1'),
+                Uri.parse('$postgrestUrl/cardio_workouts?select=id&limit=1'),
                 headers: {'Prefer': 'count=exact'},
               )
               .timeout(const Duration(seconds: 5));
@@ -244,7 +248,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
           if (contentRange != null) {
             final parts = contentRange.split('/');
             if (parts.length >= 2) {
-              serverRuns = int.tryParse(parts.last) ?? -1;
+              serverWorkouts = int.tryParse(parts.last) ?? -1;
             }
           }
         }
@@ -253,8 +257,8 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       if (mounted) {
         setState(() {
           _crudQueue = crudQueue;
-          _localRuns = localRuns;
-          _serverRuns = serverRuns;
+          _localWorkouts = localWorkouts;
+          _serverWorkouts = serverWorkouts;
           _crudFetchedAt = DateTime.now();
         });
       }
@@ -416,10 +420,10 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DebugRow('Local runs', '$_localRuns'),
+        DebugRow('Local workouts', '$_localWorkouts'),
         DebugRow(
-          'Server runs',
-          _serverRuns >= 0 ? '$_serverRuns' : 'Unavailable',
+          'Server workouts',
+          _serverWorkouts >= 0 ? '$_serverWorkouts' : 'Unavailable',
         ),
       ],
     );

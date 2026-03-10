@@ -34,27 +34,27 @@ class MomentumAspect {
 
 const defaultAspects = [
   MomentumAspect(
-    name: 'Run TRIMP',
+    name: 'Cardio TRIMP',
     weight: 3.0,
-    extract: _runTrimp,
+    extract: _cardioTrimp,
     target: 50.0,
   ),
   MomentumAspect(
-    name: 'Run Distance',
+    name: 'Cardio Distance',
     weight: 2.0,
-    extract: _runDistance,
+    extract: _cardioDistance,
     target: 5000.0,
   ),
   MomentumAspect(
-    name: 'Run Duration',
+    name: 'Cardio Duration',
     weight: 1.0,
-    extract: _runDuration,
+    extract: _cardioDuration,
     target: 1800.0,
   ),
   MomentumAspect(
-    name: 'Run >= Zone 2',
+    name: 'Cardio >= Zone 2',
     weight: 2.0,
-    extract: _runGteZone2,
+    extract: _cardioGteZone2,
     target: 30.0,
   ),
   MomentumAspect(
@@ -71,14 +71,14 @@ const defaultAspects = [
   ),
 ];
 
-double? _runTrimp(ActivityCalendarDay day) =>
-    day.runCount > 0 ? day.runTrimp : null;
-double? _runDistance(ActivityCalendarDay day) =>
-    day.runCount > 0 ? day.totalRunDistanceMeters : null;
-double? _runDuration(ActivityCalendarDay day) =>
-    day.runCount > 0 ? day.totalRunDurationSeconds.toDouble() : null;
-double? _runGteZone2(ActivityCalendarDay day) =>
-    day.runCount > 0 ? day.runGteZone2Minutes.toDouble() : null;
+double? _cardioTrimp(ActivityCalendarDay day) =>
+    day.cardioCount > 0 ? day.cardioTrimp : null;
+double? _cardioDistance(ActivityCalendarDay day) =>
+    day.cardioCount > 0 ? day.totalCardioDistanceMeters : null;
+double? _cardioDuration(ActivityCalendarDay day) =>
+    day.cardioCount > 0 ? day.totalCardioDurationSeconds.toDouble() : null;
+double? _cardioGteZone2(ActivityCalendarDay day) =>
+    day.cardioCount > 0 ? day.cardioZoneTime.gteZone2Minutes.toDouble() : null;
 double? _sessionTrimp(ActivityCalendarDay day) =>
     day.sessionCount > 0 ? day.sessionTrimp : null;
 double? _sessionDuration(ActivityCalendarDay day) =>

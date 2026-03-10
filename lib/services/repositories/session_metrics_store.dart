@@ -1,5 +1,6 @@
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 final _log = Logger('SessionMetricsStore');
@@ -121,8 +122,8 @@ class SessionMetricsStore {
         '     trimp = ?, has_hr_samples = ?, resting_hr = ?, computed_at = ?'
         ' WHERE id = ?',
         [
-          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
-          zone.zone4Seconds, zone.zone5Seconds,
+          zone.zone1, zone.zone2, zone.zone3,
+          zone.zone4, zone.zone5,
           metrics.result.trimp, hasHr, restingHr, computedAt, sessionId,
         ],
       );
@@ -135,8 +136,8 @@ class SessionMetricsStore {
         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
           sessionId,
-          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
-          zone.zone4Seconds, zone.zone5Seconds,
+          zone.zone1, zone.zone2, zone.zone3,
+          zone.zone4, zone.zone5,
           metrics.result.trimp, hasHr, restingHr, computedAt,
         ],
       );
@@ -150,10 +151,10 @@ class SessionMetricsStore {
   }) async {
     final hrSamples = await loadHrSamples(sessionId);
 
-    final ZoneTimeResult zone;
+    final HrZoneTime zone;
     final int hasHr;
     if (hrSamples.isEmpty) {
-      zone = const ZoneTimeResult();
+      zone = HrZoneTime.zero;
       hasHr = 0;
     } else {
       zone = trainingLoad.compute(hrSamples).zoneTime;
@@ -173,8 +174,8 @@ class SessionMetricsStore {
         '     has_hr_samples = ?, computed_at = ?'
         ' WHERE id = ?',
         [
-          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
-          zone.zone4Seconds, zone.zone5Seconds,
+          zone.zone1, zone.zone2, zone.zone3,
+          zone.zone4, zone.zone5,
           hasHr, computedAt, sessionId,
         ],
       );
@@ -187,8 +188,8 @@ class SessionMetricsStore {
         ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
         [
           sessionId,
-          zone.zone1Seconds, zone.zone2Seconds, zone.zone3Seconds,
-          zone.zone4Seconds, zone.zone5Seconds,
+          zone.zone1, zone.zone2, zone.zone3,
+          zone.zone4, zone.zone5,
           hasHr, computedAt,
         ],
       );

@@ -3,6 +3,25 @@ import 'package:workouts/providers/unit_system_provider.dart';
 const metersPerMile = 1609.344;
 const _kmhToMph = 0.621371;
 
+enum DistanceBucket {
+  fourHundredMeters(400, '400m'),
+  halfMile(metersPerMile / 2, '1/2 mi'),
+  oneMile(metersPerMile, '1 mi'),
+  fiveK(5000, '5k'),
+  fiveMiles(metersPerMile * 5, '5 mi');
+
+  const DistanceBucket(this.meters, this.label);
+  final double meters;
+  final String label;
+
+  static DistanceBucket? fromMeters(double meters) {
+    for (final bucket in values) {
+      if ((bucket.meters - meters).abs() < 0.01) return bucket;
+    }
+    return null;
+  }
+}
+
 class Format {
   Format._();
 

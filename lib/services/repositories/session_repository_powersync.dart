@@ -5,6 +5,7 @@ import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -599,7 +600,6 @@ class SessionRepositoryPowerSync {
   SessionCalendarDay _calendarDayFromRow(Map<String, dynamic> dayRow) {
     final String dayString = dayRow['day'] as String;
     final List<String> parts = dayString.split('-');
-    final zoneMinutes = _zoneMinutesFromRow(dayRow);
     return SessionCalendarDay(
       date: DateTime(
         int.parse(parts[0]),
@@ -607,20 +607,11 @@ class SessionRepositoryPowerSync {
         int.parse(parts[2]),
       ),
       totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
-      zone1Minutes: zoneMinutes[0],
-      zone2Minutes: zoneMinutes[1],
-      zone3Minutes: zoneMinutes[2],
-      zone4Minutes: zoneMinutes[3],
-      zone5Minutes: zoneMinutes[4],
+      zoneTime: HrZoneTime.fromRow(dayRow),
       trimp: (dayRow['total_trimp'] as num?)?.toDouble() ?? 0,
       sessionCount: (dayRow['session_count'] as int?) ?? 0,
     );
   }
-
-  List<int> _zoneMinutesFromRow(Map<String, dynamic> row) => [
-        for (var z = 1; z <= 5; z++)
-          ((row['total_zone${z}_seconds'] as int? ?? 0) ~/ 60),
-      ];
 }
 
 @riverpod

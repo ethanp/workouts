@@ -5,9 +5,9 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class WeekMax {
-  const WeekMax({required this.maxRunMeters, required this.maxSessionMinutes});
+  const WeekMax({required this.maxCardioMeters, required this.maxSessionMinutes});
 
-  final double maxRunMeters;
+  final double maxCardioMeters;
   final int maxSessionMinutes;
 }
 
@@ -24,12 +24,12 @@ class CalendarDayCell extends StatelessWidget {
   }
 
   static double intensityForDay({
-    required double runMeters,
+    required double cardioMeters,
     required int sessionMinutes,
     required WeekMax globalMax,
   }) {
-    if (runMeters > 0 && globalMax.maxRunMeters > 0) {
-      return (runMeters / globalMax.maxRunMeters).clamp(0.0, 1.0);
+    if (cardioMeters > 0 && globalMax.maxCardioMeters > 0) {
+      return (cardioMeters / globalMax.maxCardioMeters).clamp(0.0, 1.0);
     }
     if (sessionMinutes > 0 && globalMax.maxSessionMinutes > 0) {
       return (sessionMinutes / globalMax.maxSessionMinutes).clamp(0.0, 1.0) *
@@ -62,7 +62,7 @@ class CalendarDayCell extends StatelessWidget {
 
     final intensity = hasActivity
         ? intensityForDay(
-            runMeters: entry!.totalRunDistanceMeters,
+            cardioMeters: entry!.totalCardioDistanceMeters,
             sessionMinutes: entry!.totalSessionDurationSeconds ~/ 60,
             globalMax: globalMax,
           )
@@ -141,8 +141,8 @@ class CalendarDayCell extends StatelessWidget {
 
   Widget _activityLabel(Color textColor) {
     final parts = <String>[];
-    if (entry!.totalRunDistanceMeters > 0) {
-      parts.add(Format.distanceCompact(entry!.totalRunDistanceMeters, unitSystem));
+    if (entry!.totalCardioDistanceMeters > 0) {
+      parts.add(Format.distanceCompact(entry!.totalCardioDistanceMeters, unitSystem));
     }
     if (entry!.totalSessionDurationSeconds > 0) {
       parts.add('${entry!.totalSessionDurationSeconds ~/ 60}m');
@@ -159,11 +159,11 @@ class CalendarDayCell extends StatelessWidget {
   }
 
   Widget _zoneLabel(Color textColor) {
-    if (!entry!.runHasHrData || entry!.runGteZone2Minutes <= 0) {
+    if (!entry!.cardioHasHrData || entry!.cardioZoneTime.gteZone2Minutes <= 0) {
       return const SizedBox.shrink();
     }
     return Text(
-      '${entry!.runGteZone2Minutes}z',
+      '${entry!.cardioZoneTime.gteZone2Minutes}z',
       textAlign: TextAlign.right,
       style: TextStyle(fontSize: 8, color: textColor.withValues(alpha: 0.75)),
     );

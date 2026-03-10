@@ -2,12 +2,12 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_item.dart';
-import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/activity_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
-import 'package:workouts/screens/run_detail_screen.dart';
+import 'package:workouts/screens/cardio_detail_screen.dart';
 import 'package:workouts/screens/session_detail_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -42,8 +42,6 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
 
   @override
   Widget build(BuildContext context) {
-    ref.watch(activityMetricsBackfillProvider);
-
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
     final unitSystem = ref.watch(unitSystemProvider);
 
@@ -112,7 +110,6 @@ class DayDetailSheet extends ConsumerWidget {
       ),
     );
   }
-
 }
 
 class DayDetailItemList extends StatelessWidget {
@@ -132,13 +129,14 @@ class DayDetailItemList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: items.map((item) {
         return switch (item) {
-          ActivityRun(:final run) => CupertinoButton(
+          ActivityCardio(:final workout) => CupertinoButton(
               padding: EdgeInsets.zero,
               onPressed: () {
                 Navigator.of(context).pop();
-                context.push((_) => RunDetailScreen(run: run));
+                context.push((_) => CardioDetailScreen(workout: workout));
               },
-              child: DayDetailRunRow(run: run, unitSystem: unitSystem),
+              child: DayDetailCardioRow(
+                  workout: workout, unitSystem: unitSystem),
             ),
           ActivitySession(:final session) => CupertinoButton(
               padding: EdgeInsets.zero,
@@ -154,14 +152,14 @@ class DayDetailItemList extends StatelessWidget {
   }
 }
 
-class DayDetailRunRow extends StatelessWidget {
-  const DayDetailRunRow({
+class DayDetailCardioRow extends StatelessWidget {
+  const DayDetailCardioRow({
     super.key,
-    required this.run,
+    required this.workout,
     required this.unitSystem,
   });
 
-  final FitnessRun run;
+  final CardioWorkout workout;
   final UnitSystem unitSystem;
 
   @override
@@ -173,21 +171,28 @@ class DayDetailRunRow extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(CupertinoIcons.location_solid, size: 20),
+              const Icon(CupertinoIcons.flame, size: 20),
               const SizedBox(width: AppSpacing.sm),
               Text(
-                Format.distance(run.distanceMeters, unitSystem),
+                _label(),
                 style: AppTypography.body,
               ),
             ],
           ),
           Text(
-            Format.durationShort(run.durationSeconds),
+            Format.durationShort(workout.durationSeconds),
             style: AppTypography.caption,
           ),
         ],
       ),
     );
+  }
+
+  String _label() {
+    if (workout.activityType.hasDistance && workout.distanceMeters > 0) {
+      return '${workout.activityType.displayName} · ${Format.distance(workout.distanceMeters, unitSystem)}';
+    }
+    return workout.activityType.displayName;
   }
 }
 

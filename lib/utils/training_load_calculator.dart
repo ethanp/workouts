@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:workouts/models/hr_zone_time.dart';
+
 /// A heart rate reading at a point in time, without persistence metadata.
 class TimestampedHeartRate {
   const TimestampedHeartRate({required this.timestamp, required this.bpm});
@@ -8,44 +10,13 @@ class TimestampedHeartRate {
   final int bpm;
 }
 
-class ZoneTimeResult {
-  const ZoneTimeResult({
-    this.zone1Seconds = 0,
-    this.zone2Seconds = 0,
-    this.zone3Seconds = 0,
-    this.zone4Seconds = 0,
-    this.zone5Seconds = 0,
-  });
-
-  final int zone1Seconds;
-  final int zone2Seconds;
-  final int zone3Seconds;
-  final int zone4Seconds;
-  final int zone5Seconds;
-
-  int get gteZone2Seconds =>
-      zone2Seconds + zone3Seconds + zone4Seconds + zone5Seconds;
-
-  int get totalSeconds =>
-      zone1Seconds + zone2Seconds + zone3Seconds + zone4Seconds + zone5Seconds;
-
-  int operator [](int zoneIndex) => switch (zoneIndex) {
-        0 => zone1Seconds,
-        1 => zone2Seconds,
-        2 => zone3Seconds,
-        3 => zone4Seconds,
-        4 => zone5Seconds,
-        _ => 0,
-      };
-}
-
 class TrainingLoadResult {
   const TrainingLoadResult({
-    this.zoneTime = const ZoneTimeResult(),
+    this.zoneTime = HrZoneTime.zero,
     this.trimp = 0,
   });
 
-  final ZoneTimeResult zoneTime;
+  final HrZoneTime zoneTime;
   final double trimp;
 }
 
@@ -107,12 +78,12 @@ class TrainingLoadCalculator {
     }
 
     return TrainingLoadResult(
-      zoneTime: ZoneTimeResult(
-        zone1Seconds: zoneTotals[0],
-        zone2Seconds: zoneTotals[1],
-        zone3Seconds: zoneTotals[2],
-        zone4Seconds: zoneTotals[3],
-        zone5Seconds: zoneTotals[4],
+      zoneTime: HrZoneTime(
+        zone1: zoneTotals[0],
+        zone2: zoneTotals[1],
+        zone3: zoneTotals[2],
+        zone4: zoneTotals[3],
+        zone5: zoneTotals[4],
       ),
       trimp: trimpTotal,
     );

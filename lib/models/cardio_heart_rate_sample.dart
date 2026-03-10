@@ -1,7 +1,7 @@
-class RunHeartRateSample {
-  const RunHeartRateSample({
+class CardioHeartRateSample {
+  const CardioHeartRateSample({
     required this.id,
-    required this.runId,
+    required this.workoutId,
     required this.timestamp,
     required this.bpm,
     this.createdAt,
@@ -9,7 +9,7 @@ class RunHeartRateSample {
   });
 
   final String id;
-  final String runId;
+  final String workoutId;
   final DateTime timestamp;
   final int bpm;
   final DateTime? createdAt;

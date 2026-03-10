@@ -7,7 +7,7 @@ import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/run_metrics_card.dart';
+import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/session/add_note_sheet.dart';
 import 'package:workouts/widgets/session/block_view.dart';
 import 'package:workouts/widgets/session/session_indicators.dart';
@@ -130,7 +130,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
                   const SizedBox(height: AppSpacing.sm),
                   _swipeInstructions(session),
                   const SizedBox(height: AppSpacing.md),
-                  RunMetricsCard(samples: heartRateSamples),
+                  CardioMetricsCard(samples: heartRateSamples),
                   const SizedBox(height: AppSpacing.md),
                   _actionBar(session, watchStatus),
                 ],

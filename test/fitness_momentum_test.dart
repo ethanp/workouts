@@ -1,99 +1,74 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/utils/momentum_scorer.dart';
 
 const _scorer = MomentumScorer();
 final _today = DateTime(2026, 3, 8);
 
-ActivityCalendarDay _fullRunDay(DateTime date) => ActivityCalendarDay(
+ActivityCalendarDay _fullCardioDay(DateTime date) => ActivityCalendarDay(
   date: date,
-  totalRunDistanceMeters: 5000,
-  totalRunDurationSeconds: 1800,
-  runZone1Minutes: 5,
-  runZone2Minutes: 20,
-  runZone3Minutes: 5,
-  runZone4Minutes: 0,
-  runZone5Minutes: 0,
-  runTrimp: 50.0,
-  runHasHrData: true,
-  runCount: 1,
+  totalCardioDistanceMeters: 5000,
+  totalCardioDurationSeconds: 1800,
+  cardioZoneTime: const HrZoneTime(
+    zone1: 300,
+    zone2: 1200,
+    zone3: 300,
+  ),
+  cardioTrimp: 50.0,
+  cardioHasHrData: true,
+  cardioCount: 1,
   totalSessionDurationSeconds: 0,
-  sessionZone1Minutes: 0,
-  sessionZone2Minutes: 0,
-  sessionZone3Minutes: 0,
-  sessionZone4Minutes: 0,
-  sessionZone5Minutes: 0,
+  sessionZoneTime: HrZoneTime.zero,
   sessionTrimp: 0,
   sessionCount: 0,
 );
 
-ActivityCalendarDay _lightRunDay(DateTime date) => ActivityCalendarDay(
+ActivityCalendarDay _lightCardioDay(DateTime date) => ActivityCalendarDay(
   date: date,
-  totalRunDistanceMeters: 1000,
-  totalRunDurationSeconds: 600,
-  runZone1Minutes: 3,
-  runZone2Minutes: 5,
-  runZone3Minutes: 0,
-  runZone4Minutes: 0,
-  runZone5Minutes: 0,
-  runTrimp: 10.0,
-  runHasHrData: true,
-  runCount: 1,
+  totalCardioDistanceMeters: 1000,
+  totalCardioDurationSeconds: 600,
+  cardioZoneTime: const HrZoneTime(
+    zone1: 180,
+    zone2: 300,
+  ),
+  cardioTrimp: 10.0,
+  cardioHasHrData: true,
+  cardioCount: 1,
   totalSessionDurationSeconds: 0,
-  sessionZone1Minutes: 0,
-  sessionZone2Minutes: 0,
-  sessionZone3Minutes: 0,
-  sessionZone4Minutes: 0,
-  sessionZone5Minutes: 0,
+  sessionZoneTime: HrZoneTime.zero,
   sessionTrimp: 0,
   sessionCount: 0,
 );
 
 ActivityCalendarDay _sessionDay(DateTime date) => ActivityCalendarDay(
   date: date,
-  totalRunDistanceMeters: 0,
-  totalRunDurationSeconds: 0,
-  runZone1Minutes: 0,
-  runZone2Minutes: 0,
-  runZone3Minutes: 0,
-  runZone4Minutes: 0,
-  runZone5Minutes: 0,
-  runTrimp: 0,
-  runHasHrData: false,
-  runCount: 0,
+  totalCardioDistanceMeters: 0,
+  totalCardioDurationSeconds: 0,
+  cardioZoneTime: HrZoneTime.zero,
+  cardioTrimp: 0,
+  cardioHasHrData: false,
+  cardioCount: 0,
   totalSessionDurationSeconds: 2700,
-  sessionZone1Minutes: 0,
-  sessionZone2Minutes: 0,
-  sessionZone3Minutes: 0,
-  sessionZone4Minutes: 0,
-  sessionZone5Minutes: 0,
+  sessionZoneTime: HrZoneTime.zero,
   sessionTrimp: 0,
   sessionCount: 1,
 );
 
 ActivityCalendarDay _inactiveDay(DateTime date) => ActivityCalendarDay(
   date: date,
-  totalRunDistanceMeters: 0,
-  totalRunDurationSeconds: 0,
-  runZone1Minutes: 0,
-  runZone2Minutes: 0,
-  runZone3Minutes: 0,
-  runZone4Minutes: 0,
-  runZone5Minutes: 0,
-  runTrimp: 0,
-  runHasHrData: false,
-  runCount: 0,
+  totalCardioDistanceMeters: 0,
+  totalCardioDurationSeconds: 0,
+  cardioZoneTime: HrZoneTime.zero,
+  cardioTrimp: 0,
+  cardioHasHrData: false,
+  cardioCount: 0,
   totalSessionDurationSeconds: 0,
-  sessionZone1Minutes: 0,
-  sessionZone2Minutes: 0,
-  sessionZone3Minutes: 0,
-  sessionZone4Minutes: 0,
-  sessionZone5Minutes: 0,
+  sessionZoneTime: HrZoneTime.zero,
   sessionTrimp: 0,
   sessionCount: 0,
 );
 
-/// Builds a 60-day history ending at [_today] using [dayBuilder] for each date.
 List<ActivityCalendarDay> _history(
   ActivityCalendarDay Function(DateTime) dayBuilder,
 ) {
@@ -104,15 +79,16 @@ double _latestScore(List<MomentumDayScore> scores) => scores.last.score;
 
 void main() {
   group('intensity via compute', () {
-    test('all full-run days yields near 100%', () {
-      final scores = _scorer.compute(_history(_fullRunDay), today: _today);
+    test('all full-cardio days yields near 100%', () {
+      final scores = _scorer.compute(_history(_fullCardioDay), today: _today);
       expect(_latestScore(scores), greaterThan(95.0));
     });
 
-    test('light runs yield lower momentum than full runs', () {
-      final fullScores = _scorer.compute(_history(_fullRunDay), today: _today);
+    test('light cardio yields lower momentum than full cardio', () {
+      final fullScores =
+          _scorer.compute(_history(_fullCardioDay), today: _today);
       final lightScores = _scorer.compute(
-        _history(_lightRunDay),
+        _history(_lightCardioDay),
         today: _today,
       );
       expect(_latestScore(fullScores), greaterThan(_latestScore(lightScores)));
@@ -128,22 +104,14 @@ void main() {
     test('short sessions score lower than full sessions', () {
       ActivityCalendarDay shortSession(DateTime date) => ActivityCalendarDay(
         date: date,
-        totalRunDistanceMeters: 0,
-        totalRunDurationSeconds: 0,
-        runZone1Minutes: 0,
-        runZone2Minutes: 0,
-        runZone3Minutes: 0,
-        runZone4Minutes: 0,
-        runZone5Minutes: 0,
-        runTrimp: 0,
-        runHasHrData: false,
-        runCount: 0,
+        totalCardioDistanceMeters: 0,
+        totalCardioDurationSeconds: 0,
+        cardioZoneTime: HrZoneTime.zero,
+        cardioTrimp: 0,
+        cardioHasHrData: false,
+        cardioCount: 0,
         totalSessionDurationSeconds: 900,
-        sessionZone1Minutes: 0,
-        sessionZone2Minutes: 0,
-        sessionZone3Minutes: 0,
-        sessionZone4Minutes: 0,
-        sessionZone5Minutes: 0,
+        sessionZoneTime: HrZoneTime.zero,
         sessionTrimp: 0,
         sessionCount: 1,
       );
@@ -157,32 +125,26 @@ void main() {
       expect(_latestScore(shortScores), greaterThan(0));
     });
 
-    test('short run duration lowers score even with good distance', () {
-      ActivityCalendarDay shortFastRun(DateTime date) => ActivityCalendarDay(
+    test('short cardio duration lowers score even with good distance', () {
+      ActivityCalendarDay shortFastCardio(DateTime date) =>
+          ActivityCalendarDay(
         date: date,
-        totalRunDistanceMeters: 5000,
-        totalRunDurationSeconds: 600,
-        runZone1Minutes: 0,
-        runZone2Minutes: 0,
-        runZone3Minutes: 0,
-        runZone4Minutes: 0,
-        runZone5Minutes: 0,
-        runTrimp: 0,
-        runHasHrData: false,
-        runCount: 1,
+        totalCardioDistanceMeters: 5000,
+        totalCardioDurationSeconds: 600,
+        cardioZoneTime: HrZoneTime.zero,
+        cardioTrimp: 0,
+        cardioHasHrData: false,
+        cardioCount: 1,
         totalSessionDurationSeconds: 0,
-        sessionZone1Minutes: 0,
-        sessionZone2Minutes: 0,
-        sessionZone3Minutes: 0,
-        sessionZone4Minutes: 0,
-        sessionZone5Minutes: 0,
+        sessionZoneTime: HrZoneTime.zero,
         sessionTrimp: 0,
         sessionCount: 0,
       );
 
-      final fullScores = _scorer.compute(_history(_fullRunDay), today: _today);
+      final fullScores =
+          _scorer.compute(_history(_fullCardioDay), today: _today);
       final shortScores = _scorer.compute(
-        _history(shortFastRun),
+        _history(shortFastCardio),
         today: _today,
       );
       expect(_latestScore(fullScores), greaterThan(_latestScore(shortScores)));
@@ -191,22 +153,19 @@ void main() {
     test('exceeding all targets still caps near 100%', () {
       ActivityCalendarDay bigDay(DateTime date) => ActivityCalendarDay(
         date: date,
-        totalRunDistanceMeters: 15000,
-        totalRunDurationSeconds: 5400,
-        runZone1Minutes: 10,
-        runZone2Minutes: 30,
-        runZone3Minutes: 15,
-        runZone4Minutes: 5,
-        runZone5Minutes: 0,
-        runTrimp: 120.0,
-        runHasHrData: true,
-        runCount: 1,
+        totalCardioDistanceMeters: 15000,
+        totalCardioDurationSeconds: 5400,
+        cardioZoneTime: const HrZoneTime(
+          zone1: 600,
+          zone2: 1800,
+          zone3: 900,
+          zone4: 300,
+        ),
+        cardioTrimp: 120.0,
+        cardioHasHrData: true,
+        cardioCount: 1,
         totalSessionDurationSeconds: 0,
-        sessionZone1Minutes: 0,
-        sessionZone2Minutes: 0,
-        sessionZone3Minutes: 0,
-        sessionZone4Minutes: 0,
-        sessionZone5Minutes: 0,
+        sessionZoneTime: HrZoneTime.zero,
         sessionTrimp: 0,
         sessionCount: 0,
       );
@@ -227,18 +186,18 @@ void main() {
     });
 
     test('fewer than 7 days of history returns empty', () {
-      final days = [_fullRunDay(DateTime(2026, 3, 5))];
+      final days = [_fullCardioDay(DateTime(2026, 3, 5))];
       expect(_scorer.compute(days, today: _today), isEmpty);
     });
 
     test('last score date equals today', () {
-      final scores = _scorer.compute(_history(_fullRunDay), today: _today);
+      final scores = _scorer.compute(_history(_fullCardioDay), today: _today);
       expect(scores.last.date, _today);
     });
 
     test('score dates are midnight-normalized', () {
       final scores = _scorer.compute(
-        _history(_fullRunDay),
+        _history(_fullCardioDay),
         today: DateTime(2026, 3, 8, 14, 30),
       );
       for (final score in scores) {
@@ -252,7 +211,7 @@ void main() {
       final days = <ActivityCalendarDay>[];
       for (var i = 0; i < 45; i++) {
         final date = DateTime(2026, 2, 1 + i);
-        days.add(i.isEven ? _fullRunDay(date) : _inactiveDay(date));
+        days.add(i.isEven ? _fullCardioDay(date) : _inactiveDay(date));
       }
 
       final scores = _scorer.compute(days, today: DateTime(2026, 3, 15));
@@ -265,7 +224,7 @@ void main() {
       final days = <ActivityCalendarDay>[];
       for (var i = 0; i < 45; i++) {
         final date = DateTime(2026, 9, 25 + i);
-        days.add(i.isEven ? _fullRunDay(date) : _inactiveDay(date));
+        days.add(i.isEven ? _fullCardioDay(date) : _inactiveDay(date));
       }
 
       final scores = _scorer.compute(days, today: DateTime(2026, 11, 8));
@@ -276,7 +235,8 @@ void main() {
 
     test('session-only days contribute based on duration', () {
       final days = [
-        ...List.generate(50, (i) => _fullRunDay(DateTime(2026, 1, 15 + i))),
+        ...List.generate(
+            50, (i) => _fullCardioDay(DateTime(2026, 1, 15 + i))),
         _sessionDay(DateTime(2026, 3, 7)),
       ];
       final scores = _scorer.compute(days, today: _today);
@@ -289,11 +249,11 @@ void main() {
     test('recent activity weighs more than old activity', () {
       final recentOnly = [
         ...List.generate(50, (i) => _inactiveDay(DateTime(2026, 1, 15 + i))),
-        ...List.generate(7, (i) => _fullRunDay(DateTime(2026, 3, 2 + i))),
+        ...List.generate(7, (i) => _fullCardioDay(DateTime(2026, 3, 2 + i))),
       ];
       final oldOnly = [
         ...List.generate(50, (i) => _inactiveDay(DateTime(2026, 1, 15 + i))),
-        ...List.generate(7, (i) => _fullRunDay(DateTime(2026, 2, 9 + i))),
+        ...List.generate(7, (i) => _fullCardioDay(DateTime(2026, 2, 9 + i))),
       ];
 
       final recentScores = _scorer.compute(recentOnly, today: _today);
@@ -304,7 +264,7 @@ void main() {
     test('smoothing spreads activity intensity across neighbors', () {
       final days = [
         ...List.generate(50, (i) => _inactiveDay(DateTime(2026, 1, 15 + i))),
-        _fullRunDay(DateTime(2026, 3, 1)),
+        _fullCardioDay(DateTime(2026, 3, 1)),
       ];
       final scores = _scorer.compute(days, today: _today);
 

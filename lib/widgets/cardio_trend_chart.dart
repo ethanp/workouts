@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/run_trend_painter.dart';
+import 'package:workouts/widgets/cardio_trend_painter.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
 export 'package:workouts/widgets/trend_series.dart';
 
-class RunTrendChart extends StatefulWidget {
-  const RunTrendChart({
+class CardioTrendChart extends StatefulWidget {
+  const CardioTrendChart({
     super.key,
     required this.title,
     required this.series,
@@ -20,10 +20,10 @@ class RunTrendChart extends StatefulWidget {
   final DateTime? displayEnd;
 
   @override
-  State<RunTrendChart> createState() => _RunTrendChartState();
+  State<CardioTrendChart> createState() => _CardioTrendChartState();
 }
 
-class _RunTrendChartState extends State<RunTrendChart> {
+class _CardioTrendChartState extends State<CardioTrendChart> {
   final Set<String> _hiddenSeries = {};
   Offset? _hoverPosition;
 
@@ -199,7 +199,7 @@ class _RunTrendChartState extends State<RunTrendChart> {
       return const SizedBox(
         height: 180,
         child: Center(
-          child: Text('Need 2+ runs for trends', style: AppTypography.caption),
+          child: Text('Need 2+ workouts for trends', style: AppTypography.caption),
         ),
       );
     }
@@ -219,7 +219,7 @@ class _RunTrendChartState extends State<RunTrendChart> {
               onTapCancel: () => setState(() => _hoverPosition = null),
               child: CustomPaint(
                 size: Size(constraints.maxWidth, constraints.maxHeight),
-                painter: RunTrendPainter(
+                painter: CardioTrendPainter(
                   visibleSeries: visibleSeries,
                   displayStart: widget.displayStart,
                   displayEnd: widget.displayEnd,

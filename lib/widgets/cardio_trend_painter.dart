@@ -4,8 +4,8 @@ import 'package:workouts/widgets/chart_date_axis.dart';
 import 'package:workouts/widgets/chart_tooltip.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-class RunTrendPainter extends CustomPainter {
-  RunTrendPainter({
+class CardioTrendPainter extends CustomPainter {
+  CardioTrendPainter({
     required this.visibleSeries,
     this.displayStart,
     this.displayEnd,
@@ -144,7 +144,7 @@ class RunTrendPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant RunTrendPainter oldDelegate) =>
+  bool shouldRepaint(covariant CardioTrendPainter oldDelegate) =>
       visibleSeries != oldDelegate.visibleSeries ||
       displayStart != oldDelegate.displayStart ||
       displayEnd != oldDelegate.displayEnd ||

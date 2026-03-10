@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:workouts/services/repositories/runs_repository_powersync.dart';
+import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
@@ -60,27 +60,27 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
     );
     final progressNotifier =
         ref.read(metricsRecomputeProgressProvider.notifier);
-    RunsRepositoryPowerSync runsRepo;
+    CardioRepositoryPowerSync cardioRepo;
     SessionRepositoryPowerSync sessionRepo;
     try {
-      runsRepo = ref.read(runsRepositoryPowerSyncProvider);
+      cardioRepo = ref.read(cardioRepositoryPowerSyncProvider);
       sessionRepo = ref.read(sessionRepositoryPowerSyncProvider);
     } catch (_) {
       return; // DB not yet initialized
     }
-    int runsDone = 0, runsTotal = 0;
+    int cardioDone = 0, cardioTotal = 0;
     int sessionsDone = 0, sessionsTotal = 0;
     void reportCombinedProgress() {
-      final int done = runsDone + sessionsDone;
-      final int total = runsTotal + sessionsTotal;
+      final int done = cardioDone + sessionsDone;
+      final int total = cardioTotal + sessionsTotal;
       if (ref.mounted && total > 0) progressNotifier.update(done, total);
     }
     Future.wait([
-      runsRepo.recomputeZones(
+      cardioRepo.recomputeZones(
         trainingLoad: trainingLoad,
         onProgress: (done, total) {
-          runsDone = done;
-          runsTotal = total;
+          cardioDone = done;
+          cardioTotal = total;
           reportCombinedProgress();
         },
       ),

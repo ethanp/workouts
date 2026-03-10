@@ -1,18 +1,18 @@
-import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/session.dart';
 
-/// Unified list item for runs and sessions, ordered by started_at.
+/// Unified list item for cardio workouts and sessions, ordered by started_at.
 sealed class ActivityItem {
   DateTime get startedAt;
 }
 
-final class ActivityRun extends ActivityItem {
-  ActivityRun(this.run);
+final class ActivityCardio extends ActivityItem {
+  ActivityCardio(this.workout);
 
-  final FitnessRun run;
+  final CardioWorkout workout;
 
   @override
-  DateTime get startedAt => run.startedAt;
+  DateTime get startedAt => workout.startedAt;
 }
 
 final class ActivitySession extends ActivityItem {

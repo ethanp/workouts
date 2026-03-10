@@ -55,10 +55,10 @@ class HealthKitBridge {
         });
   }
 
-  Future<int> countRunningWorkouts() async {
+  Future<int> countCardioWorkouts() async {
     try {
       final count = await _methodChannel.invokeMethod<int>(
-        'countRunningWorkouts',
+        'countCardioWorkouts',
       );
       return count ?? 0;
     } on MissingPluginException {
@@ -68,7 +68,7 @@ class HealthKitBridge {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchRecentRunningWorkouts({
+  Future<List<Map<String, dynamic>>> fetchRecentCardioWorkouts({
     int maxWorkouts = 20,
     bool includeRoute = false,
     int maxRoutePoints = 1500,
@@ -76,7 +76,7 @@ class HealthKitBridge {
   }) async {
     try {
       final payload = await _methodChannel.invokeMethod<List<Object?>>(
-        'fetchRecentRunningWorkouts',
+        'fetchRecentCardioWorkouts',
         {
           'maxWorkouts': maxWorkouts,
           'includeRoute': includeRoute,

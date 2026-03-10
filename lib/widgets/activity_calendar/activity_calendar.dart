@@ -99,16 +99,17 @@ class ActivityCalendar extends StatelessWidget {
   }
 
   WeekMax _computeGlobalMax() {
-    double maxRunMeters = 0;
+    double maxCardioMeters = 0;
     int maxSessionMinutes = 0;
     for (final entry in activityData.entries) {
       if (!entry.value.hasActivity) continue;
-      maxRunMeters = math.max(maxRunMeters, entry.value.totalRunDistanceMeters);
+      maxCardioMeters =
+          math.max(maxCardioMeters, entry.value.totalCardioDistanceMeters);
       final sessionMinutes = entry.value.totalSessionDurationSeconds ~/ 60;
       maxSessionMinutes = math.max(maxSessionMinutes, sessionMinutes);
     }
     return WeekMax(
-      maxRunMeters: maxRunMeters,
+      maxCardioMeters: maxCardioMeters,
       maxSessionMinutes: maxSessionMinutes,
     );
   }

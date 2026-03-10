@@ -3,20 +3,20 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/models/run_route_point.dart';
+import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class RunMetricsCard extends ConsumerWidget {
-  const RunMetricsCard({
+class CardioMetricsCard extends ConsumerWidget {
+  const CardioMetricsCard({
     super.key,
     required this.samples,
     this.routePoints = const [],
   });
 
   final List<HeartRateSample> samples;
-  final List<RunRoutePoint> routePoints;
+  final List<CardioRoutePoint> routePoints;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -224,7 +224,6 @@ class _DualMetricPainter extends CustomPainter {
         return size.height - normalized * size.height * 0.9 - size.height * 0.05;
       }
 
-      // Horizontal grid lines every 10 bpm, drawn before the data line.
       final gridPaint = Paint()
         ..color = AppColors.borderDepth1.withValues(alpha: 0.6)
         ..strokeWidth = 0.5
@@ -293,7 +292,7 @@ class SpeedSample {
   final double speedKmh;
 }
 
-List<SpeedSample> _computeSpeedSamples(List<RunRoutePoint> points) {
+List<SpeedSample> _computeSpeedSamples(List<CardioRoutePoint> points) {
   final timedPoints = points
       .where((p) => p.recordedAt != null)
       .toList()

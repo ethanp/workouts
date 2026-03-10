@@ -1,8 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/health_permission_status.dart';
+import 'package:workouts/providers/activity_provider.dart';
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/providers/runs_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
@@ -518,7 +519,7 @@ class PermissionStatusTile extends StatelessWidget {
         HealthPermissionStatus.authorized => 'Authorized',
         HealthPermissionStatus.limited => 'Limited',
         HealthPermissionStatus.denied => 'Denied',
-        HealthPermissionStatus.unavailable => 'Unavailable on simulator',
+        HealthPermissionStatus.unavailable => 'Unavailable on this platform',
         HealthPermissionStatus.unknown => 'Unknown',
       },
       loading: () => 'Checking…',
@@ -555,17 +556,17 @@ class PermissionStatusTile extends StatelessWidget {
   }
 }
 
-class HealthRunImportTile extends ConsumerWidget {
-  const HealthRunImportTile({super.key});
+class HealthCardioImportTile extends ConsumerWidget {
+  const HealthCardioImportTile({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final runImportAsync = ref.watch(runImportControllerProvider);
-    final runImportProgress =
-        runImportAsync.value ?? const RunImportProgress.idle();
-    final isImportingRuns = runImportProgress.inProgress;
-    final importErrorMessage = runImportAsync.hasError
-        ? '${runImportAsync.error}'
+    final importAsync = ref.watch(cardioImportControllerProvider);
+    final importProgress =
+        importAsync.value ?? const CardioImportProgress.idle();
+    final isImporting = importProgress.inProgress;
+    final importErrorMessage = importAsync.hasError
+        ? '${importAsync.error}'
         : null;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -577,27 +578,27 @@ class HealthRunImportTile extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Run Import', style: AppTypography.subtitle),
+          Text('Cardio Import', style: AppTypography.subtitle),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Import recent Apple Health runs into your local run database.',
+            'Import recent Apple Health cardio workouts into your local database.',
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
           const SizedBox(height: AppSpacing.sm),
           SizedBox(
             width: double.infinity,
             child: CupertinoButton.filled(
-              onPressed: isImportingRuns
+              onPressed: isImporting
                   ? null
                   : () => ref
-                        .read(runImportControllerProvider.notifier)
-                        .importRecentRuns(),
-              child: isImportingRuns
+                        .read(cardioImportControllerProvider.notifier)
+                        .importRecentWorkouts(),
+              child: isImporting
                   ? const CupertinoActivityIndicator(
                       color: CupertinoColors.white,
                     )
                   : const Text(
-                      'Import Runs To Local DB',
+                      'Import Workouts',
                       style: TextStyle(
                         color: CupertinoColors.white,
                         fontWeight: FontWeight.w600,
@@ -605,10 +606,10 @@ class HealthRunImportTile extends ConsumerWidget {
                     ),
             ),
           ),
-          if (isImportingRuns) ...[
+          if (isImporting) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Importing runs ${runImportProgress.processedRuns}/${runImportProgress.totalRuns}',
+              'Importing ${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
               style: AppTypography.caption.copyWith(
                 color: AppColors.textColor3,
               ),
@@ -621,7 +622,7 @@ class HealthRunImportTile extends ConsumerWidget {
                 color: AppColors.backgroundDepth3,
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
-                  widthFactor: runImportProgress.progressFraction.clamp(
+                  widthFactor: importProgress.progressFraction.clamp(
                     0.0,
                     1.0,
                   ),
@@ -629,10 +630,10 @@ class HealthRunImportTile extends ConsumerWidget {
                 ),
               ),
             ),
-          ] else if (runImportProgress.status.isNotEmpty) ...[
+          ] else if (importProgress.status.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              runImportProgress.status,
+              importProgress.status,
               style: AppTypography.caption.copyWith(color: AppColors.success),
             ),
           ],
@@ -641,6 +642,68 @@ class HealthRunImportTile extends ConsumerWidget {
             Text(
               importErrorMessage,
               style: AppTypography.caption.copyWith(color: AppColors.error),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class MetricsBackfillTile extends ConsumerWidget {
+  const MetricsBackfillTile({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final status = ref.watch(metricsBackfillControllerProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Metrics Backfill', style: AppTypography.subtitle),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Compute missing HR zones, best effort paces, and session metrics for all workouts.',
+            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          SizedBox(
+            width: double.infinity,
+            child: CupertinoButton.filled(
+              onPressed: status.inProgress
+                  ? null
+                  : () => ref
+                      .read(metricsBackfillControllerProvider.notifier)
+                      .runBackfill(),
+              child: status.inProgress
+                  ? const CupertinoActivityIndicator(
+                      color: CupertinoColors.white,
+                    )
+                  : const Text(
+                      'Run Backfill',
+                      style: TextStyle(
+                        color: CupertinoColors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+            ),
+          ),
+          if (status.label.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              status.label,
+              style: AppTypography.caption.copyWith(
+                color: status.inProgress
+                    ? AppColors.textColor3
+                    : AppColors.success,
+              ),
             ),
           ],
         ],

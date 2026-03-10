@@ -74,9 +74,9 @@ import UIKit
       healthKitBridge.requestAuthorization { status in
         DispatchQueue.main.async { result(status) }
       }
-    case "fetchRecentRunningWorkouts":
-      let request = FetchRunningWorkoutsRequest(arguments: call.arguments as? [String: Any])
-      healthKitBridge.fetchRecentRunningWorkouts(
+    case "fetchRecentCardioWorkouts":
+      let request = FetchCardioWorkoutsRequest(arguments: call.arguments as? [String: Any])
+      healthKitBridge.fetchRecentCardioWorkouts(
         maxWorkouts: request.maxWorkouts,
         includeRoute: request.includeRoute,
         maxRoutePoints: request.maxRoutePoints,
@@ -84,14 +84,14 @@ import UIKit
       ) { payload, error in
         DispatchQueue.main.async {
           if let error {
-            result(FlutterError(code: "fetch_runs_failed", message: error.localizedDescription, details: nil))
+            result(FlutterError(code: "fetch_workouts_failed", message: error.localizedDescription, details: nil))
             return
           }
           result(payload)
         }
       }
-    case "countRunningWorkouts":
-      healthKitBridge.countRunningWorkouts { count, error in
+    case "countCardioWorkouts":
+      healthKitBridge.countCardioWorkouts { count, error in
         DispatchQueue.main.async {
           if let error {
             result(FlutterError(code: "count_failed", message: error.localizedDescription, details: nil))
@@ -139,7 +139,7 @@ import UIKit
   }
 }
 
-private struct FetchRunningWorkoutsRequest {
+private struct FetchCardioWorkoutsRequest {
   let maxWorkouts: Int
   let includeRoute: Bool
   let maxRoutePoints: Int

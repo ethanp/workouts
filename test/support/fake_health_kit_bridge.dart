@@ -25,7 +25,7 @@ class FakeHealthKitBridge extends HealthKitBridge {
   Stream<HeartRateSample> heartRateStream() => _controller.stream;
 
   @override
-  Future<int> countRunningWorkouts() async => 0;
+  Future<int> countCardioWorkouts() async => 0;
 
   void emit(HeartRateSample sample) => _controller.add(sample);
 

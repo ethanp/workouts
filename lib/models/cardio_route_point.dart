@@ -1,7 +1,7 @@
-class RunRoutePoint {
-  const RunRoutePoint({
+class CardioRoutePoint {
+  const CardioRoutePoint({
     required this.id,
-    required this.runId,
+    required this.workoutId,
     required this.pointIndex,
     required this.latitude,
     required this.longitude,
@@ -12,7 +12,7 @@ class RunRoutePoint {
   });
 
   final String id;
-  final String runId;
+  final String workoutId;
   final int pointIndex;
   final double latitude;
   final double longitude;

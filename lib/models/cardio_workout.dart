@@ -1,7 +1,10 @@
-class FitnessRun {
-  const FitnessRun({
+import 'package:workouts/models/cardio_type.dart';
+
+class CardioWorkout {
+  const CardioWorkout({
     required this.id,
     required this.externalWorkoutId,
+    required this.activityType,
     required this.startedAt,
     required this.endedAt,
     required this.durationSeconds,
@@ -9,7 +12,6 @@ class FitnessRun {
     this.energyKcal,
     this.averageHeartRateBpm,
     this.maxHeartRateBpm,
-    required this.isIndoor,
     required this.routeAvailable,
     required this.sourceName,
     this.sourceBundleId,
@@ -20,6 +22,7 @@ class FitnessRun {
 
   final String id;
   final String externalWorkoutId;
+  final CardioType activityType;
   final DateTime startedAt;
   final DateTime endedAt;
   final int durationSeconds;
@@ -27,7 +30,6 @@ class FitnessRun {
   final double? energyKcal;
   final double? averageHeartRateBpm;
   final double? maxHeartRateBpm;
-  final bool isIndoor;
   final bool routeAvailable;
   final String sourceName;
   final String? sourceBundleId;

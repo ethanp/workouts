@@ -4,14 +4,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/models/fitness_run.dart';
+import 'package:workouts/models/cardio_best_effort.dart';
+import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/providers/activity_provider.dart';
-import 'package:workouts/providers/runs_provider.dart';
+import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/widgets/cardio_trend_chart.dart';
 import 'package:workouts/widgets/fitness_momentum_chart.dart';
-import 'package:workouts/widgets/run_trend_chart.dart';
 import 'package:workouts/widgets/weekly_bar_chart.dart';
 import 'package:workouts/widgets/weekly_stacked_zone_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
@@ -22,7 +24,8 @@ class HistoryChartsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
-    final runsAsync = ref.watch(runsStreamProvider);
+    final cardioWorkoutsAsync = ref.watch(cardioWorkoutsProvider);
+    final bestEffortsAsync = ref.watch(cardioBestEffortsProvider);
     final unitSystem = ref.watch(unitSystemProvider);
     final fullRange = ref.watch(chartDateRangeProvider);
     final visibleRange = ref.watch(chartZoomProvider) ?? fullRange;
@@ -30,7 +33,11 @@ class HistoryChartsTab extends ConsumerWidget {
     return calendarAsync.when(
       data: (days) {
         final chartList = _chartList(
-          days, runsAsync.value ?? [], unitSystem, visibleRange,
+          days,
+          cardioWorkoutsAsync.value ?? [],
+          bestEffortsAsync.value ?? [],
+          unitSystem,
+          visibleRange,
         );
         if (fullRange == null) return chartList;
 
@@ -38,10 +45,7 @@ class HistoryChartsTab extends ConsumerWidget {
         return ZoomableChartArea(
           fullRange: fullRange,
           child: Stack(
-            children: [
-              chartList,
-              if (isZoomed) _zoomResetPill(ref),
-            ],
+            children: [chartList, if (isZoomed) _zoomResetPill(ref)],
           ),
         );
       },
@@ -57,7 +61,8 @@ class HistoryChartsTab extends ConsumerWidget {
 
   Widget _chartList(
     List<ActivityCalendarDay> days,
-    List<FitnessRun> runs,
+    List<CardioWorkout> workouts,
+    List<CardioBestEffort> bestEfforts,
     UnitSystem unitSystem,
     DateTimeRange? visibleRange,
   ) {
@@ -86,7 +91,7 @@ class HistoryChartsTab extends ConsumerWidget {
           title: 'Weekly Distance',
           weeks: _weekDataList(
             visibleWeeks,
-            valueFor: (week) => week.totalRunMeters / metersPerUnit,
+            valueFor: (week) => week.totalCardioMeters / metersPerUnit,
           ),
           barColor: AppColors.accentPrimary,
           formatValue: (value) => '${value.toStringAsFixed(1)}$distanceUnit',
@@ -102,13 +107,11 @@ class HistoryChartsTab extends ConsumerWidget {
           formatValue: (value) => '${value.round()}d',
         ),
         const SizedBox(height: AppSpacing.lg),
-        WeeklyStackedZoneChart(
-          weeks: _weekZoneDataList(visibleWeeks),
-        ),
+        WeeklyStackedZoneChart(weeks: _weekZoneDataList(visibleWeeks)),
         const SizedBox(height: AppSpacing.lg),
-        RunTrendChart(
-          title: 'Run Trends',
-          series: _runTrendSeries(runs, unitSystem),
+        CardioTrendChart(
+          title: 'Cardio Trends',
+          series: _cardioTrendSeries(workouts, bestEfforts, unitSystem),
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
         ),
@@ -161,9 +164,11 @@ class HistoryChartsTab extends ConsumerWidget {
   ) {
     final rangeEnd = range.end.add(const Duration(days: 7));
     return aggregates
-        .where((week) =>
-            !week.weekStart.isBefore(range.start) &&
-            week.weekStart.isBefore(rangeEnd))
+        .where(
+          (week) =>
+              !week.weekStart.isBefore(range.start) &&
+              week.weekStart.isBefore(rangeEnd),
+        )
         .toList();
   }
 
@@ -190,11 +195,7 @@ class HistoryChartsTab extends ConsumerWidget {
           (aggregate) => WeekZoneData(
             label: aggregate.label,
             weekStart: aggregate.weekStart,
-            zone1Minutes: aggregate.zone1Minutes,
-            zone2Minutes: aggregate.zone2Minutes,
-            zone3Minutes: aggregate.zone3Minutes,
-            zone4Minutes: aggregate.zone4Minutes,
-            zone5Minutes: aggregate.zone5Minutes,
+            zoneTime: aggregate.zoneTime,
             isCurrent: aggregate.isCurrent,
             includeInAverage: !aggregate.beforeData,
           ),
@@ -202,27 +203,26 @@ class HistoryChartsTab extends ConsumerWidget {
         .toList();
   }
 
-  List<TrendSeries> _runTrendSeries(
-    List<FitnessRun> runs,
+  List<TrendSeries> _cardioTrendSeries(
+    List<CardioWorkout> workouts,
+    List<CardioBestEffort> bestEfforts,
     UnitSystem unitSystem,
   ) {
-    final sortedRuns = _chronologicalRuns(runs);
+    final chronologicalWorkouts = _chronologicalWorkouts(workouts);
     final metersPerUnit = _metersPerUnit(unitSystem);
     final distanceUnit = _distanceUnitLabel(unitSystem);
     return [
-      _paceSeries(sortedRuns, metersPerUnit),
-      _distanceSeries(sortedRuns, metersPerUnit, distanceUnit),
-      _avgHrSeries(sortedRuns),
-      _maxHrSeries(sortedRuns),
-      _caloriesSeries(sortedRuns),
-      _durationSeries(sortedRuns),
+      ..._bestEffortSeries(bestEfforts, metersPerUnit),
+      _distanceSeries(chronologicalWorkouts, metersPerUnit, distanceUnit),
+      _avgHrSeries(chronologicalWorkouts),
+      _maxHrSeries(chronologicalWorkouts),
+      _caloriesSeries(chronologicalWorkouts),
+      _durationSeries(chronologicalWorkouts),
     ];
   }
 
-  List<FitnessRun> _chronologicalRuns(List<FitnessRun> runs) {
-    return runs
-        .where((run) => run.durationSeconds > 0)
-        .toList()
+  List<CardioWorkout> _chronologicalWorkouts(List<CardioWorkout> workouts) {
+    return workouts.where((workout) => workout.durationSeconds > 0).toList()
       ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
   }
 
@@ -232,94 +232,111 @@ class HistoryChartsTab extends ConsumerWidget {
   String _distanceUnitLabel(UnitSystem unitSystem) =>
       unitSystem == UnitSystem.imperial ? 'mi' : 'km';
 
-  TrendSeries _paceSeries(List<FitnessRun> runs, double metersPerUnit) {
-    final paceRuns = runs.where((r) => r.distanceMeters >= metersPerMile);
-    return TrendSeries(
-      label: 'Pace',
-      color: AppColors.accentPrimary,
-      invertY: true,
-      points: paceRuns
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.durationSeconds / (r.distanceMeters / metersPerUnit),
-              ))
-          .toList(),
-      formatValue: (v) => Format.paceValue(v),
-    );
+  static const _bucketColors = <DistanceBucket, Color>{
+    DistanceBucket.fourHundredMeters: Color(0xFFFF9F0A),
+    DistanceBucket.halfMile: Color(0xFFFF6482),
+    DistanceBucket.oneMile: AppColors.accentPrimary,
+    DistanceBucket.fiveK: Color(0xFF30D158),
+    DistanceBucket.fiveMiles: Color(0xFF64D2FF),
+  };
+
+  List<TrendSeries> _bestEffortSeries(
+    List<CardioBestEffort> bestEfforts,
+    double metersPerUnit,
+  ) {
+    final byBucket = <DistanceBucket, List<CardioBestEffort>>{};
+    for (final effort in bestEfforts) {
+      (byBucket[effort.bucket] ??= []).add(effort);
+    }
+
+    return [
+      for (final bucket in DistanceBucket.values)
+        if (byBucket[bucket] != null && byBucket[bucket]!.length >= 2)
+          TrendSeries(
+            label: bucket.label,
+            color: _bucketColors[bucket] ?? AppColors.accentPrimary,
+            invertY: true,
+            points: byBucket[bucket]!
+                .where((e) => e.workoutStartedAt != null)
+                .map((e) => TrendPoint(
+                      date: e.workoutStartedAt!,
+                      value: e.paceSecondsPerUnit(metersPerUnit),
+                    ))
+                .toList(),
+            formatValue: (v) => Format.paceValue(v),
+          ),
+    ];
   }
 
   TrendSeries _distanceSeries(
-    List<FitnessRun> runs,
+    List<CardioWorkout> workouts,
     double metersPerUnit,
     String unitLabel,
   ) {
     return TrendSeries(
       label: 'Distance',
       color: const Color(0xFF30D158),
-      points: runs
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.distanceMeters / metersPerUnit,
-              ))
+      points: workouts
+          .map(
+            (w) => TrendPoint(
+              date: w.startedAt,
+              value: w.distanceMeters / metersPerUnit,
+            ),
+          )
           .toList(),
       formatValue: (v) => '${v.toStringAsFixed(1)}$unitLabel',
     );
   }
 
-  TrendSeries _avgHrSeries(List<FitnessRun> runs) {
+  TrendSeries _avgHrSeries(List<CardioWorkout> workouts) {
     return TrendSeries(
       label: 'Avg HR',
       color: const Color(0xFFFF453A),
-      points: runs
-          .where((r) => r.averageHeartRateBpm != null)
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.averageHeartRateBpm!,
-              ))
+      points: workouts
+          .where((w) => w.averageHeartRateBpm != null)
+          .map(
+            (w) => TrendPoint(date: w.startedAt, value: w.averageHeartRateBpm!),
+          )
           .toList(),
       formatValue: (v) => '${v.round()} bpm',
     );
   }
 
-  TrendSeries _maxHrSeries(List<FitnessRun> runs) {
+  TrendSeries _maxHrSeries(List<CardioWorkout> workouts) {
     return TrendSeries(
       label: 'Max HR',
       color: const Color(0xFFFF6961),
-      points: runs
-          .where((r) => r.maxHeartRateBpm != null)
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.maxHeartRateBpm!,
-              ))
+      points: workouts
+          .where((w) => w.maxHeartRateBpm != null)
+          .map((w) => TrendPoint(date: w.startedAt, value: w.maxHeartRateBpm!))
           .toList(),
       formatValue: (v) => '${v.round()} bpm',
     );
   }
 
-  TrendSeries _caloriesSeries(List<FitnessRun> runs) {
+  TrendSeries _caloriesSeries(List<CardioWorkout> workouts) {
     return TrendSeries(
       label: 'Calories',
       color: const Color(0xFFFFD60A),
-      points: runs
-          .where((r) => r.energyKcal != null)
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.energyKcal!,
-              ))
+      points: workouts
+          .where((w) => w.energyKcal != null)
+          .map((w) => TrendPoint(date: w.startedAt, value: w.energyKcal!))
           .toList(),
       formatValue: (v) => '${v.round()} kcal',
     );
   }
 
-  TrendSeries _durationSeries(List<FitnessRun> runs) {
+  TrendSeries _durationSeries(List<CardioWorkout> workouts) {
     return TrendSeries(
       label: 'Duration',
       color: const Color(0xFF64D2FF),
-      points: runs
-          .map((r) => TrendPoint(
-                date: r.startedAt,
-                value: r.durationSeconds.toDouble(),
-              ))
+      points: workouts
+          .map(
+            (w) => TrendPoint(
+              date: w.startedAt,
+              value: w.durationSeconds.toDouble(),
+            ),
+          )
           .toList(),
       formatValue: (v) => Format.durationShort(v.round()),
     );
@@ -352,16 +369,12 @@ class HistoryChartsTab extends ConsumerWidget {
       );
     }
 
-    for (final ActivityCalendarDay day in days) {
+    for (final day in days) {
       if (!day.hasActivity) continue;
       final monday = _mondayOf(day.date);
       final aggregate = byMonday[monday]!;
-      aggregate.totalRunMeters += day.totalRunDistanceMeters;
-      aggregate.zone1Minutes += day.totalZone1Minutes;
-      aggregate.zone2Minutes += day.totalZone2Minutes;
-      aggregate.zone3Minutes += day.totalZone3Minutes;
-      aggregate.zone4Minutes += day.totalZone4Minutes;
-      aggregate.zone5Minutes += day.totalZone5Minutes;
+      aggregate.totalCardioMeters += day.totalCardioDistanceMeters;
+      aggregate.zoneTime = aggregate.zoneTime + day.totalZoneTime;
       aggregate.activeDays++;
     }
 
@@ -391,16 +404,9 @@ class WeekAggregate {
   final DateTime weekStart;
   final bool isCurrent;
   final bool beforeData;
-  double totalRunMeters = 0;
-  int zone1Minutes = 0;
-  int zone2Minutes = 0;
-  int zone3Minutes = 0;
-  int zone4Minutes = 0;
-  int zone5Minutes = 0;
+  double totalCardioMeters = 0;
+  HrZoneTime zoneTime = HrZoneTime.zero;
   int activeDays = 0;
-
-  int get gteZone2Minutes =>
-      zone2Minutes + zone3Minutes + zone4Minutes + zone5Minutes;
 }
 
 class _FourWeekSummary extends StatelessWidget {
@@ -418,16 +424,16 @@ class _FourWeekSummary extends StatelessWidget {
     );
 
     var totalMeters = 0.0;
-    var totalRunSeconds = 0;
+    var totalCardioSeconds = 0;
     var totalSessionMinutes = 0;
     var totalGteZone2 = 0;
     var activityDayCount = 0;
 
     for (final day in recentDays) {
-      totalMeters += day.totalRunDistanceMeters;
-      totalRunSeconds += day.totalRunDurationSeconds;
+      totalMeters += day.totalCardioDistanceMeters;
+      totalCardioSeconds += day.totalCardioDurationSeconds;
       totalSessionMinutes += day.totalSessionDurationSeconds ~/ 60;
-      totalGteZone2 += day.totalGteZone2Minutes;
+      totalGteZone2 += day.totalZoneTime.gteZone2Minutes;
       activityDayCount++;
     }
 
@@ -436,8 +442,8 @@ class _FourWeekSummary extends StatelessWidget {
         : 1000.0;
     final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
     final distance = totalMeters / metersPerUnit;
-    final runHours = totalRunSeconds ~/ 3600;
-    final runMinutes = (totalRunSeconds % 3600) ~/ 60;
+    final cardioHours = totalCardioSeconds ~/ 3600;
+    final cardioMinutes = (totalCardioSeconds % 3600) ~/ 60;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -458,8 +464,10 @@ class _FourWeekSummary extends StatelessWidget {
                 '${distance.toStringAsFixed(1)}$distanceUnit',
               ),
               _statCell(
-                'run time',
-                runHours > 0 ? '${runHours}h ${runMinutes}m' : '${runMinutes}m',
+                'cardio time',
+                cardioHours > 0
+                    ? '${cardioHours}h ${cardioMinutes}m'
+                    : '${cardioMinutes}m',
               ),
               _statCell('active days', '$activityDayCount'),
               _statCell('>= zone 2', '${totalGteZone2}m'),
