@@ -9,6 +9,8 @@ enum SessionNoteSource { user, llmSuggested }
 
 @freezed
 abstract class SessionNote with _$SessionNote {
+  const SessionNote._();
+
   const factory SessionNote({
     required String id,
     required String sessionId,
@@ -22,6 +24,36 @@ abstract class SessionNote with _$SessionNote {
 
   factory SessionNote.fromJson(Map<String, dynamic> json) =>
       _$SessionNoteFromJson(json);
+
+  factory SessionNote.fromRow(Map<String, dynamic> noteRow) {
+    return SessionNote(
+      id: noteRow['id'] as String,
+      sessionId: noteRow['session_id'] as String,
+      exerciseId: noteRow['exercise_id'] as String?,
+      blockId: noteRow['block_id'] as String?,
+      content: noteRow['content'] as String,
+      noteType: SessionNoteType.values.firstWhere(
+        (sessionNoteType) => sessionNoteType.name == noteRow['note_type'],
+        orElse: () => SessionNoteType.observation,
+      ),
+      source: SessionNoteSource.values.firstWhere(
+        (sessionNoteSource) => sessionNoteSource.name == noteRow['source'],
+        orElse: () => SessionNoteSource.user,
+      ),
+      timestamp: DateTime.parse(noteRow['timestamp'] as String),
+    );
+  }
+
+  Map<String, Object?> toRow() => {
+    'id': id,
+    'session_id': sessionId,
+    'exercise_id': exerciseId,
+    'block_id': blockId,
+    'content': content,
+    'note_type': noteType.name,
+    'source': source.name,
+    'timestamp': timestamp.toIso8601String(),
+  };
 }
 
 extension SessionNoteTypeX on SessionNoteType {

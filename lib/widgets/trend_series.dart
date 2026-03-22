@@ -45,9 +45,9 @@ class SeriesValueScale {
   SeriesValueScale(List<TrendPoint> points, {required this.invertY}) {
     var lo = double.infinity;
     var hi = -double.infinity;
-    for (final p in points) {
-      lo = math.min(lo, p.value);
-      hi = math.max(hi, p.value);
+    for (final trendPoint in points) {
+      lo = math.min(lo, trendPoint.value);
+      hi = math.max(hi, trendPoint.value);
     }
     final padding = (hi - lo) * 0.15;
     min = lo - padding;
@@ -67,27 +67,27 @@ class SeriesValueScale {
 }
 
 TrendLine computeTrendLine(List<TrendPoint> points, DateTime origin) {
-  final n = points.length;
+  final pointCount = points.length;
   var sumX = 0.0;
   var sumY = 0.0;
   var sumXY = 0.0;
   var sumX2 = 0.0;
 
-  for (final p in points) {
-    final x = p.date.difference(origin).inSeconds.toDouble();
-    final y = p.value;
-    sumX += x;
-    sumY += y;
-    sumXY += x * y;
-    sumX2 += x * x;
+  for (final trendPoint in points) {
+    final elapsedSeconds = trendPoint.date.difference(origin).inSeconds.toDouble();
+    final pointValue = trendPoint.value;
+    sumX += elapsedSeconds;
+    sumY += pointValue;
+    sumXY += elapsedSeconds * pointValue;
+    sumX2 += elapsedSeconds * elapsedSeconds;
   }
 
-  final denominator = n * sumX2 - sumX * sumX;
+  final denominator = pointCount * sumX2 - sumX * sumX;
   if (denominator.abs() < 1e-10) {
-    return TrendLine(slope: 0, intercept: sumY / n);
+    return TrendLine(slope: 0, intercept: sumY / pointCount);
   }
 
-  final slope = (n * sumXY - sumX * sumY) / denominator;
-  final intercept = (sumY - slope * sumX) / n;
+  final slope = (pointCount * sumXY - sumX * sumY) / denominator;
+  final intercept = (sumY - slope * sumX) / pointCount;
   return TrendLine(slope: slope, intercept: intercept);
 }

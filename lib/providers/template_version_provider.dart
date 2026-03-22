@@ -13,14 +13,14 @@ class TemplateVersionController extends _$TemplateVersionController {
 
     if (templates.isEmpty) {
       return TemplateVersionStatus(
-        current: currentVersion,
+        currentTemplateVersion: currentVersion,
         installed: null,
         needsUpdate: true,
       );
     }
 
     return TemplateVersionStatus(
-      current: currentVersion,
+      currentTemplateVersion: currentVersion,
       installed: currentVersion,
       needsUpdate: false,
     );
@@ -36,12 +36,12 @@ class TemplateVersionController extends _$TemplateVersionController {
 
 class TemplateVersionStatus {
   const TemplateVersionStatus({
-    required this.current,
+    required this.currentTemplateVersion,
     required this.installed,
     required this.needsUpdate,
   });
 
-  final int current;
+  final int currentTemplateVersion;
   final int? installed;
   final bool needsUpdate;
 }

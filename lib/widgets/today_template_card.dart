@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -156,7 +157,7 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
   Widget _blockList() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: template.blocks.map(_blockPreview).toList(),
+      children: template.blocks.mapL(_blockPreview),
     );
   }
 

@@ -93,9 +93,9 @@ class ChartDateLayout {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      final x = (xForDate(date) - textPainter.width / 2)
+      final labelX = (xForDate(date) - textPainter.width / 2)
           .clamp(left - 4, right - textPainter.width + 4);
-      textPainter.paint(canvas, Offset(x, bottom + 6));
+      textPainter.paint(canvas, Offset(labelX, bottom + 6));
     }
   }
 
@@ -121,8 +121,8 @@ class ChartDateLayout {
 
     for (var year = minDate.year + 1; year <= maxDate.year; year++) {
       final DateTime jan1 = DateTime(year);
-      final double x = xForDate(jan1);
-      canvas.drawLine(Offset(x, top), Offset(x, bottom), linePaint);
+      final double boundaryX = xForDate(jan1);
+      canvas.drawLine(Offset(boundaryX, top), Offset(boundaryX, bottom), linePaint);
 
       final textPainter = TextPainter(
         text: TextSpan(
@@ -135,7 +135,7 @@ class ChartDateLayout {
         ),
         textDirection: TextDirection.ltr,
       )..layout();
-      textPainter.paint(canvas, Offset(x + 4, top + 2));
+      textPainter.paint(canvas, Offset(boundaryX + 4, top + 2));
     }
   }
 }

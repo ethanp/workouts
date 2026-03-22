@@ -115,12 +115,10 @@ class HealthKitBridge {
   }
 
   HealthPermissionStatus _mapStatus(String? status) {
-    return switch (status) {
-      'authorized' => HealthPermissionStatus.authorized,
-      'limited' => HealthPermissionStatus.limited,
-      'denied' => HealthPermissionStatus.denied,
-      'unavailable' => HealthPermissionStatus.unavailable,
-      _ => HealthPermissionStatus.unknown,
-    };
+    if (status == null) return HealthPermissionStatus.unknown;
+    return HealthPermissionStatus.values.firstWhere(
+      (permissionStatus) => permissionStatus.name == status,
+      orElse: () => HealthPermissionStatus.unknown,
+    );
   }
 }

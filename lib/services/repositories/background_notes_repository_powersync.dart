@@ -1,8 +1,10 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_extensions.dart';
 
 part 'background_notes_repository_powersync.g.dart';
 
@@ -14,16 +16,16 @@ class BackgroundNotesRepositoryPowerSync {
   final PowerSyncDatabase _powerSync;
 
   Future<List<BackgroundNote>> fetchNotes() async {
-    final rows = await _powerSync.getAll(
+    final noteRows = await _powerSync.getAll(
       'SELECT * FROM background_notes ORDER BY created_at DESC',
     );
-    return rows.map(_noteFromRow).toList();
+    return noteRows.mapL(BackgroundNote.fromRow);
   }
 
   Stream<List<BackgroundNote>> watchNotes() {
     return _powerSync
         .watch('SELECT * FROM background_notes ORDER BY created_at DESC')
-        .map((rows) => rows.map(_noteFromRow).toList());
+        .map((noteRows) => noteRows.mapL(BackgroundNote.fromRow));
   }
 
   Stream<List<BackgroundNote>> watchActiveNotes() {
@@ -31,7 +33,7 @@ class BackgroundNotesRepositoryPowerSync {
         .watch(
           'SELECT * FROM background_notes WHERE is_active = 1 ORDER BY created_at DESC',
         )
-        .map((rows) => rows.map(_noteFromRow).toList());
+        .map((noteRows) => noteRows.mapL(BackgroundNote.fromRow));
   }
 
   Stream<List<BackgroundNote>> watchNotesForGoal(String goalId) {
@@ -40,30 +42,18 @@ class BackgroundNotesRepositoryPowerSync {
           'SELECT * FROM background_notes WHERE goal_id = ? ORDER BY created_at DESC',
           parameters: [goalId],
         )
-        .map((rows) => rows.map(_noteFromRow).toList());
+        .map((noteRows) => noteRows.mapL(BackgroundNote.fromRow));
   }
 
   Future<void> saveNote(BackgroundNote note) async {
     final now = DateTime.now().toIso8601String();
-    final id = note.id.isEmpty ? _uuid.v4() : note.id;
+    final resolvedNote = note.id.isEmpty ? note.copyWith(id: _uuid.v4()) : note;
 
-    await _powerSync.execute(
-      '''
-      INSERT OR REPLACE INTO background_notes (
-        id, goal_id, category, content, is_active, source, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
-      [
-        id,
-        note.goalId,
-        _categoryToDb(note.category),
-        note.content,
-        note.isActive ? 1 : 0,
-        note.source.name,
-        note.createdAt?.toIso8601String() ?? now,
-        now,
-      ],
-    );
+    await _powerSync.upsert('background_notes', {
+      ...resolvedNote.toRow(),
+      'created_at': note.createdAt?.toIso8601String() ?? now,
+      'updated_at': now,
+    });
   }
 
   Future<void> archiveNote(String noteId) async {
@@ -85,59 +75,14 @@ class BackgroundNotesRepositoryPowerSync {
   Future<void> deleteNote(String noteId) async {
     await _powerSync.execute('DELETE FROM background_notes WHERE id = ?', [noteId]);
   }
-
-  BackgroundNote _noteFromRow(Map<String, dynamic> row) {
-    return BackgroundNote(
-      id: row['id'] as String,
-      goalId: row['goal_id'] as String?,
-      category: _categoryFromDb(row['category'] as String),
-      content: row['content'] as String,
-      isActive: (row['is_active'] as int?) == 1,
-      source: NoteSource.values.firstWhere(
-        (s) => s.name == row['source'],
-        orElse: () => NoteSource.user,
-      ),
-      createdAt: row['created_at'] != null
-          ? DateTime.tryParse(row['created_at'] as String)
-          : null,
-      updatedAt: row['updated_at'] != null
-          ? DateTime.tryParse(row['updated_at'] as String)
-          : null,
-    );
-  }
-
-  String _categoryToDb(NoteCategory category) {
-    return switch (category) {
-      NoteCategory.injuryHistory => 'injury_history',
-      NoteCategory.preference => 'preference',
-      NoteCategory.equipment => 'equipment',
-      NoteCategory.constraint => 'constraint',
-      NoteCategory.avoid => 'avoid',
-      NoteCategory.medical => 'medical',
-      NoteCategory.philosophy => 'philosophy',
-    };
-  }
-
-  NoteCategory _categoryFromDb(String dbValue) {
-    return switch (dbValue) {
-      'injury_history' => NoteCategory.injuryHistory,
-      'preference' => NoteCategory.preference,
-      'equipment' => NoteCategory.equipment,
-      'constraint' => NoteCategory.constraint,
-      'avoid' => NoteCategory.avoid,
-      'medical' => NoteCategory.medical,
-      'philosophy' => NoteCategory.philosophy,
-      _ => NoteCategory.preference,
-    };
-  }
 }
 
 @riverpod
 BackgroundNotesRepositoryPowerSync backgroundNotesRepositoryPowerSync(Ref ref) {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.value;
-  if (db == null) {
+  final powerSyncDatabaseAsync = ref.watch(powerSyncDatabaseProvider);
+  final powerSyncDatabase = powerSyncDatabaseAsync.value;
+  if (powerSyncDatabase == null) {
     throw StateError('PowerSync database not initialized');
   }
-  return BackgroundNotesRepositoryPowerSync(db);
+  return BackgroundNotesRepositoryPowerSync(powerSyncDatabase);
 }

@@ -9,6 +9,7 @@ Stream<List<HeartRateSample>> heartRateSamplesStream(
   Ref ref,
   String sessionId,
 ) {
-  final repo = ref.watch(heartRateSamplesRepositoryPowerSyncProvider);
-  return repo.watchSamplesForSession(sessionId);
+  final heartRateSamplesRepository =
+      ref.watch(heartRateSamplesRepositoryPowerSyncProvider);
+  return heartRateSamplesRepository.watchSamplesForSession(sessionId);
 }

@@ -131,8 +131,8 @@ class _WeekSummary extends StatelessWidget {
     var gteZone2Minutes = 0;
     var hasHrData = false;
 
-    for (var i = 0; i < DateTime.daysPerWeek; i++) {
-      final date = monday.add(Duration(days: i));
+    for (var dayOffset = 0; dayOffset < DateTime.daysPerWeek; dayOffset++) {
+      final date = monday.add(Duration(days: dayOffset));
       final entry = activityData[date];
       if (entry != null && entry.hasActivity) {
         activeDays++;

@@ -33,6 +33,16 @@ class HrZoneTime {
   final int zone4;
   final int zone5;
 
+  List<int> get asList => [zone1, zone2, zone3, zone4, zone5];
+
+  Map<String, Object?> toRow() => {
+    'zone1_seconds': zone1,
+    'zone2_seconds': zone2,
+    'zone3_seconds': zone3,
+    'zone4_seconds': zone4,
+    'zone5_seconds': zone5,
+  };
+
   int get gteZone2 => zone2 + zone3 + zone4 + zone5;
   int get total => zone1 + zone2 + zone3 + zone4 + zone5;
 

@@ -228,7 +228,7 @@ class CardioWorkoutListTile extends ConsumerWidget {
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: () =>
-          context.push((_) => CardioDetailScreen(workout: workout)),
+          context.push(CardioDetailScreen(workout: workout)),
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -434,7 +434,7 @@ class SessionListTile extends ConsumerWidget {
     if (session.completedAt == null) {
       await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {
-      context.push((_) => SessionDetailScreen(session: session));
+      context.push(SessionDetailScreen(session: session));
     }
   }
 }

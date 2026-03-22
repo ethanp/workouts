@@ -65,13 +65,13 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
             );
         _log.info('Generated ${response.options.length} workout options');
         return response;
-      } on http.ClientException catch (e) {
+      } on http.ClientException catch (clientException) {
         // Request was cancelled
-        _log.info('LLM request cancelled: $e');
+        _log.info('LLM request cancelled: $clientException');
         rethrow;
-      } catch (e, stack) {
-        _log.severe('Workout generation notifier failed: $e');
-        _log.severe(stack);
+      } catch (error, stackTrace) {
+        _log.severe('Workout generation notifier failed: $error');
+        _log.severe(stackTrace);
         rethrow;
       } finally {
         _activeClient = null;

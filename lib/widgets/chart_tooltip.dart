@@ -111,12 +111,12 @@ class ChartTooltip {
   }
 
   void _drawText(RRect rect, List<TextPainter> painters) {
-    for (var i = 0; i < painters.length; i++) {
-      painters[i].paint(
+    for (var lineIndex = 0; lineIndex < painters.length; lineIndex++) {
+      painters[lineIndex].paint(
         canvas,
         Offset(
           rect.left + _paddingH,
-          rect.top + _paddingV + i * _lineHeight,
+          rect.top + _paddingV + lineIndex * _lineHeight,
         ),
       );
     }

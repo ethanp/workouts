@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'background_note.freezed.dart';
@@ -17,6 +18,8 @@ enum NoteSource { user, llmSuggested, imported }
 
 @freezed
 abstract class BackgroundNote with _$BackgroundNote {
+  const BackgroundNote._();
+
   const factory BackgroundNote({
     required String id,
     required String content,
@@ -30,18 +33,43 @@ abstract class BackgroundNote with _$BackgroundNote {
 
   factory BackgroundNote.fromJson(Map<String, dynamic> json) =>
       _$BackgroundNoteFromJson(json);
+
+  factory BackgroundNote.fromRow(Map<String, dynamic> row) {
+    return BackgroundNote(
+      id: row['id'] as String,
+      goalId: row['goal_id'] as String?,
+      category: NoteCategoryX.fromDbKey(row['category'] as String),
+      content: row['content'] as String,
+      isActive: (row['is_active'] as int? ?? 0) == 1,
+      source: NoteSource.values.firstWhere(
+        (noteSource) => noteSource.name == row['source'],
+        orElse: () => NoteSource.user,
+      ),
+      createdAt: _asDateTime(row['created_at']),
+      updatedAt: _asDateTime(row['updated_at']),
+    );
+  }
+
+  Map<String, Object?> toRow() => {
+    'id': id,
+    'goal_id': goalId,
+    'category': category.dbKey,
+    'content': content,
+    'is_active': isActive ? 1 : 0,
+    'source': source.name,
+  };
 }
 
 extension NoteCategoryX on NoteCategory {
-  String get displayName => switch (this) {
-    NoteCategory.injuryHistory => 'Injury History',
-    NoteCategory.preference => 'Preference',
-    NoteCategory.equipment => 'Equipment',
-    NoteCategory.constraint => 'Constraint',
-    NoteCategory.avoid => 'Avoid',
-    NoteCategory.medical => 'Medical',
-    NoteCategory.philosophy => 'Philosophy',
-  };
+  String get dbKey => name.snakeCase;
+
+  static NoteCategory fromDbKey(String dbValue) =>
+      NoteCategory.values.firstWhere(
+        (noteCategory) => noteCategory.dbKey == dbValue,
+        orElse: () => NoteCategory.preference,
+      );
+
+  String get displayName => nameAsCapitalizedWords;
 
   String get icon => switch (this) {
     NoteCategory.injuryHistory => '🩹',
@@ -52,4 +80,9 @@ extension NoteCategoryX on NoteCategory {
     NoteCategory.medical => '🏥',
     NoteCategory.philosophy => '📚',
   };
+}
+
+DateTime? _asDateTime(Object? rawValue) {
+  final String? maybeDateTime = rawValue as String?;
+  return maybeDateTime == null ? null : DateTime.tryParse(maybeDateTime);
 }

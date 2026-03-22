@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 
 const metersPerMile = 1609.344;
@@ -80,9 +81,9 @@ class Format {
     final minutes = (durationSeconds % 3600) ~/ 60;
     final seconds = durationSeconds % 60;
     if (hours > 0) {
-      return '${hours}h ${_pad(minutes)}m ${_pad(seconds)}s';
+      return '${hours}h ${minutes.pad(2)}m ${seconds.pad(2)}s';
     }
-    return '${minutes}m ${_pad(seconds)}s';
+    return '${minutes}m ${seconds.pad(2)}s';
   }
 
   /// "1h 02m" or "5m 30s".
@@ -90,8 +91,8 @@ class Format {
     final hours = durationSeconds ~/ 3600;
     final minutes = (durationSeconds % 3600) ~/ 60;
     final seconds = durationSeconds % 60;
-    if (hours > 0) return '${hours}h ${_pad(minutes)}m';
-    return '${minutes}m ${_pad(seconds)}s';
+    if (hours > 0) return '${hours}h ${minutes.pad(2)}m';
+    return '${minutes}m ${seconds.pad(2)}s';
   }
 
   /// "2m 30s" or "45s" — for rest intervals.
@@ -109,15 +110,15 @@ class Format {
     final minutes = safe.inMinutes.remainder(60);
     final seconds = safe.inSeconds.remainder(60);
     if (hours > 0) {
-      return '${_pad(hours)}:${_pad(minutes)}:${_pad(seconds)}';
+      return '${hours.pad(2)}:${minutes.pad(2)}:${seconds.pad(2)}';
     }
-    return '${_pad(minutes)}:${_pad(seconds)}';
+    return '${minutes.pad(2)}:${seconds.pad(2)}';
   }
 
   /// "2026-03-04".
   static String dateIso(DateTime dateTime) {
-    final d = dateTime.toLocal();
-    return '${d.year}-${_pad(d.month)}-${_pad(d.day)}';
+    final localDateTime = dateTime.toLocal();
+    return '${localDateTime.year}-${localDateTime.month.pad(2)}-${localDateTime.day.pad(2)}';
   }
 
   /// "March 4, 2026".
@@ -132,15 +133,14 @@ class Format {
   /// "Today", "Yesterday", or "03/04/2026".
   static String dateRelative(DateTime dateTime) {
     final local = dateTime.toLocal();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dateOnly = DateTime(local.year, local.month, local.day);
+    final today = DateTime.now().startOfDay;
+    final dateOnly = local.startOfDay;
 
-    if (dateOnly == today) return 'Today';
-    if (dateOnly == today.subtract(const Duration(days: 1))) {
+    if (dateOnly.sameDayAs(today)) return 'Today';
+    if (dateOnly.sameDayAs(today.subtract(const Duration(days: 1)))) {
       return 'Yesterday';
     }
-    return '${_pad(local.month)}/${_pad(local.day)}/${local.year}';
+    return '${local.month.pad(2)}/${local.day.pad(2)}/${local.year}';
   }
 
   /// "3/4/2026 at 2:30 PM".
@@ -151,7 +151,7 @@ class Format {
         : (local.hour == 0 ? 12 : local.hour);
     final period = local.hour >= 12 ? 'PM' : 'AM';
     return '${local.month}/${local.day}/${local.year} '
-        'at $hour:${_pad(local.minute)} $period';
+        'at $hour:${local.minute.pad(2)} $period';
   }
 
   /// "2:30 PM".
@@ -161,15 +161,13 @@ class Format {
         ? local.hour - 12
         : (local.hour == 0 ? 12 : local.hour);
     final period = local.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:${_pad(local.minute)} $period';
+    return '$hour:${local.minute.pad(2)} $period';
   }
 
   /// "8:30" — bare m:ss.
   static String minSec(int totalSeconds) {
     final minutes = totalSeconds ~/ 60;
     final seconds = totalSeconds % 60;
-    return '$minutes:${_pad(seconds)}';
+    return '$minutes:${seconds.pad(2)}';
   }
-
-  static String _pad(int n) => n.toString().padLeft(2, '0');
 }

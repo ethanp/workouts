@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
@@ -48,19 +49,20 @@ class ContextBuilder {
   Future<WorkoutContext> build() async {
     // Fetch active goals, sorted by priority
     final goals = await goalsRepo.fetchGoals();
-    final activeGoals = goals
-        .where((g) => g.status == GoalStatus.active)
-        .toList();
+    final activeGoals = goals.whereL((goal) => goal.status == GoalStatus.active);
 
     // Fetch active background notes
     final allNotes = await notesRepo.fetchNotes();
-    final activeNotes = allNotes.where((n) => n.isActive).toList();
+    final activeNotes = allNotes.whereL((note) => note.isActive);
 
     // Fetch recent sessions (last 7 days, completed only)
     final sessions = await sessionRepo.fetchSessions();
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
     final recentSessions = sessions
-        .where((s) => s.completedAt != null && s.completedAt!.isAfter(cutoff))
+        .where(
+          (session) =>
+              session.completedAt != null && session.completedAt!.isAfter(cutoff),
+        )
         .take(10) // Limit to last 10 sessions for token budget
         .toList();
 

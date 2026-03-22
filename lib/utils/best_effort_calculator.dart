@@ -24,18 +24,25 @@ class BestEffortCalculator {
   }
 
   List<CardioRoutePoint> _timedPointsSortedByTime(List<CardioRoutePoint> points) {
-    final timed = points.where((p) => p.recordedAt != null).toList()
-      ..sort((a, b) => a.recordedAt!.compareTo(b.recordedAt!));
-    return timed;
+    final timedPoints = points
+        .where((routePoint) => routePoint.recordedAt != null)
+        .toList()
+      ..sort(
+        (firstPoint, secondPoint) =>
+            firstPoint.recordedAt!.compareTo(secondPoint.recordedAt!),
+      );
+    return timedPoints;
   }
 
   List<double> _buildCumulativeDistances(List<CardioRoutePoint> points) {
     final cumulative = List<double>.filled(points.length, 0.0);
-    for (var i = 1; i < points.length; i++) {
-      cumulative[i] = cumulative[i - 1] +
+    for (var pointIndex = 1; pointIndex < points.length; pointIndex++) {
+      cumulative[pointIndex] = cumulative[pointIndex - 1] +
           _haversineMeters(
-            points[i - 1].latitude, points[i - 1].longitude,
-            points[i].latitude, points[i].longitude,
+            points[pointIndex - 1].latitude,
+            points[pointIndex - 1].longitude,
+            points[pointIndex].latitude,
+            points[pointIndex].longitude,
           );
     }
     return cumulative;
@@ -81,11 +88,12 @@ class BestEffortCalculator {
     final phi2 = lat2 * math.pi / 180;
     final dPhi = (lat2 - lat1) * math.pi / 180;
     final dLambda = (lon2 - lon1) * math.pi / 180;
-    final a = math.sin(dPhi / 2) * math.sin(dPhi / 2) +
+    final haversine =
+        math.sin(dPhi / 2) * math.sin(dPhi / 2) +
         math.cos(phi1) *
             math.cos(phi2) *
             math.sin(dLambda / 2) *
             math.sin(dLambda / 2);
-    return earthRadius * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return earthRadius * 2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
   }
 }

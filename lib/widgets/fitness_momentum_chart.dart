@@ -54,15 +54,15 @@ class FitnessMomentumChart extends StatelessWidget {
       return Text('Fitness Momentum', style: AppTypography.subtitle);
     }
 
-    final current = scores.last.score;
+    final currentMomentumScore = scores.last.score;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text('Fitness Momentum', style: AppTypography.subtitle),
         Text(
-          '${current.round()}%',
+          '${currentMomentumScore.round()}%',
           style: AppTypography.subtitle.copyWith(
-            color: _scoreColor(current),
+            color: _scoreColor(currentMomentumScore),
           ),
         ),
       ],
@@ -141,34 +141,34 @@ class _MomentumLayout extends ChartDateLayout {
 
     final step = yMax > 60 ? 25.0 : (yMax > 30 ? 10.0 : 5.0);
 
-    for (var val = step; val < yMax; val += step) {
-      final y = yForScore(val);
-      canvas.drawLine(Offset(left, y), Offset(right, y), gridPaint);
+    for (var scoreTickValue = step; scoreTickValue < yMax; scoreTickValue += step) {
+      final gridLineY = yForScore(scoreTickValue);
+      canvas.drawLine(Offset(left, gridLineY), Offset(right, gridLineY), gridPaint);
 
       final textPainter = TextPainter(
         text: TextSpan(
-          text: '${val.round()}%',
+          text: '${scoreTickValue.round()}%',
           style: TextStyle(color: AppColors.textColor4, fontSize: 10),
         ),
         textDirection: TextDirection.ltr,
       )..layout();
       textPainter.paint(
         canvas,
-        Offset(left - textPainter.width - 4, y - textPainter.height / 2),
+        Offset(left - textPainter.width - 4, gridLineY - textPainter.height / 2),
       );
     }
   }
 
   void _drawFill(Canvas canvas) {
     final fillPath = Path();
-    for (var i = 0; i < scores.length; i++) {
-      final x = xForDate(scores[i].date);
-      final y = yForScore(scores[i].score);
-      if (i == 0) {
-        fillPath.moveTo(x, bottom);
-        fillPath.lineTo(x, y);
+    for (var scoreIndex = 0; scoreIndex < scores.length; scoreIndex++) {
+      final pointX = xForDate(scores[scoreIndex].date);
+      final pointY = yForScore(scores[scoreIndex].score);
+      if (scoreIndex == 0) {
+        fillPath.moveTo(pointX, bottom);
+        fillPath.lineTo(pointX, pointY);
       } else {
-        fillPath.lineTo(x, y);
+        fillPath.lineTo(pointX, pointY);
       }
     }
     fillPath.lineTo(xForDate(scores.last.date), bottom);
@@ -188,13 +188,13 @@ class _MomentumLayout extends ChartDateLayout {
 
   void _drawLine(Canvas canvas) {
     final path = Path();
-    for (var i = 0; i < scores.length; i++) {
-      final x = xForDate(scores[i].date);
-      final y = yForScore(scores[i].score);
-      if (i == 0) {
-        path.moveTo(x, y);
+    for (var scoreIndex = 0; scoreIndex < scores.length; scoreIndex++) {
+      final pointX = xForDate(scores[scoreIndex].date);
+      final pointY = yForScore(scores[scoreIndex].score);
+      if (scoreIndex == 0) {
+        path.moveTo(pointX, pointY);
       } else {
-        path.lineTo(x, y);
+        path.lineTo(pointX, pointY);
       }
     }
 

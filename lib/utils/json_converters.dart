@@ -15,7 +15,8 @@ class NullableDurationSecondsConverter extends JsonConverter<Duration?, int?> {
   const NullableDurationSecondsConverter();
 
   @override
-  Duration? fromJson(int? json) => json.map((s) => Duration(seconds: s));
+  Duration? fromJson(int? json) =>
+      json.map((durationSeconds) => Duration(seconds: durationSeconds));
 
   @override
   int? toJson(Duration? object) => object?.inSeconds;

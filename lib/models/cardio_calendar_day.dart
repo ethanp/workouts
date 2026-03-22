@@ -13,6 +13,24 @@ class CardioCalendarDay {
     required this.workoutCount,
   });
 
+  factory CardioCalendarDay.fromRow(Map<String, dynamic> dayRow) {
+    final String dayString = dayRow['day'] as String;
+    final List<String> dateParts = dayString.split('-');
+    return CardioCalendarDay(
+      date: DateTime(
+        int.parse(dateParts[0]),
+        int.parse(dateParts[1]),
+        int.parse(dateParts[2]),
+      ),
+      totalDistanceMeters: _asDouble(dayRow['total_distance_meters']) ?? 0,
+      totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
+      zoneTime: HrZoneTime.fromRow(dayRow),
+      trimp: _asDouble(dayRow['total_trimp']) ?? 0,
+      hasHrData: (dayRow['has_hr_data'] as int? ?? 0) == 1,
+      workoutCount: (dayRow['workout_count'] as int?) ?? 0,
+    );
+  }
+
   final DateTime date;
   final double totalDistanceMeters;
   final int totalDurationSeconds;
@@ -28,4 +46,10 @@ class CardioCalendarDay {
   final int workoutCount;
 
   bool get hasActivity => workoutCount > 0;
+}
+
+double? _asDouble(Object? rawValue) {
+  if (rawValue == null) return null;
+  if (rawValue is num) return rawValue.toDouble();
+  return double.tryParse('$rawValue');
 }

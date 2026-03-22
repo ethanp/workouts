@@ -1,8 +1,10 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_extensions.dart';
 
 part 'goals_repository_powersync.g.dart';
 
@@ -14,10 +16,10 @@ class GoalsRepositoryPowerSync {
   final PowerSyncDatabase _powerSync;
 
   Future<List<FitnessGoal>> fetchGoals() async {
-    final rows = await _powerSync.getAll(
+    final goalRows = await _powerSync.getAll(
       'SELECT * FROM fitness_goals ORDER BY priority ASC, created_at DESC',
     );
-    return rows.map(_goalFromRow).toList();
+    return goalRows.mapL(FitnessGoal.fromRow);
   }
 
   Stream<List<FitnessGoal>> watchGoals() {
@@ -25,7 +27,7 @@ class GoalsRepositoryPowerSync {
         .watch(
           'SELECT * FROM fitness_goals ORDER BY priority ASC, created_at DESC',
         )
-        .map((rows) => rows.map(_goalFromRow).toList());
+        .map((goalRows) => goalRows.mapL(FitnessGoal.fromRow));
   }
 
   Stream<List<FitnessGoal>> watchActiveGoals() {
@@ -33,32 +35,18 @@ class GoalsRepositoryPowerSync {
         .watch(
           "SELECT * FROM fitness_goals WHERE status = 'active' ORDER BY priority ASC, created_at DESC",
         )
-        .map((rows) => rows.map(_goalFromRow).toList());
+        .map((goalRows) => goalRows.mapL(FitnessGoal.fromRow));
   }
 
   Future<void> saveGoal(FitnessGoal goal) async {
     final now = DateTime.now().toIso8601String();
-    final id = goal.id.isEmpty ? _uuid.v4() : goal.id;
+    final resolvedGoal = goal.id.isEmpty ? goal.copyWith(id: _uuid.v4()) : goal;
 
-    await _powerSync.execute(
-      '''
-      INSERT OR REPLACE INTO fitness_goals (
-        id, title, description, category, priority, 
-        target_date, status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      ''',
-      [
-        id,
-        goal.title,
-        goal.description,
-        goal.category.name,
-        goal.priority,
-        goal.targetDate?.toIso8601String(),
-        goal.status.name,
-        goal.createdAt?.toIso8601String() ?? now,
-        now,
-      ],
-    );
+    await _powerSync.upsert('fitness_goals', {
+      ...resolvedGoal.toRow(),
+      'created_at': goal.createdAt?.toIso8601String() ?? now,
+      'updated_at': now,
+    });
   }
 
   Future<void> updateGoalStatus(String goalId, GoalStatus status) async {
@@ -80,40 +68,14 @@ class GoalsRepositoryPowerSync {
   Future<void> deleteGoal(String goalId) async {
     await _powerSync.execute('DELETE FROM fitness_goals WHERE id = ?', [goalId]);
   }
-
-  FitnessGoal _goalFromRow(Map<String, dynamic> row) {
-    return FitnessGoal(
-      id: row['id'] as String,
-      title: row['title'] as String,
-      description: (row['description'] as String?) ?? '',
-      category: GoalCategory.values.firstWhere(
-        (c) => c.name == row['category'],
-        orElse: () => GoalCategory.strength,
-      ),
-      priority: (row['priority'] as int?) ?? 1,
-      targetDate: row['target_date'] != null
-          ? DateTime.tryParse(row['target_date'] as String)
-          : null,
-      status: GoalStatus.values.firstWhere(
-        (s) => s.name == row['status'],
-        orElse: () => GoalStatus.active,
-      ),
-      createdAt: row['created_at'] != null
-          ? DateTime.tryParse(row['created_at'] as String)
-          : null,
-      updatedAt: row['updated_at'] != null
-          ? DateTime.tryParse(row['updated_at'] as String)
-          : null,
-    );
-  }
 }
 
 @riverpod
 GoalsRepositoryPowerSync goalsRepositoryPowerSync(Ref ref) {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.value;
-  if (db == null) {
+  final powerSyncDatabaseAsync = ref.watch(powerSyncDatabaseProvider);
+  final powerSyncDatabase = powerSyncDatabaseAsync.value;
+  if (powerSyncDatabase == null) {
     throw StateError('PowerSync database not initialized');
   }
-  return GoalsRepositoryPowerSync(db);
+  return GoalsRepositoryPowerSync(powerSyncDatabase);
 }

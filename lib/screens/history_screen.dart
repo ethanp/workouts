@@ -70,7 +70,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final cancelAll = sessionHistory.maybeWhen(
       data: (sessions) {
         final inProgressCount =
-            sessions.where((s) => s.completedAt == null).length;
+            sessions.where((session) => session.completedAt == null).length;
         if (inProgressCount == 0) return null;
         return CupertinoButton(
           padding: EdgeInsets.zero,

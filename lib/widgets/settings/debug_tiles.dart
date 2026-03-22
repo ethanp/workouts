@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,20 +59,22 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
     try {
       final snapshot = await _fetchSnapshot();
       if (mounted) setState(() => _snapshot = AsyncValue.data(snapshot));
-    } catch (e, st) {
-      if (mounted) setState(() => _snapshot = AsyncValue.error(e, st));
+    } catch (error, stackTrace) {
+      if (mounted) {
+        setState(() => _snapshot = AsyncValue.error(error, stackTrace));
+      }
     }
   }
 
   Future<CardioImportSnapshot> _fetchSnapshot() async {
-    final db = await ref.read(powerSyncDatabaseProvider.future);
+    final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
     final bridge = ref.read(healthKitBridgeProvider);
 
     final totalRows =
-        await db.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+        await powerSyncDatabase.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
     final localWorkouts = totalRows.first['cnt'] as int? ?? 0;
 
-    final importedRows = await db.execute(
+    final importedRows = await powerSyncDatabase.execute(
       'SELECT COUNT(*) AS cnt FROM cardio_workouts WHERE external_workout_id IS NOT NULL',
     );
     final importedWorkouts = importedRows.first['cnt'] as int? ?? 0;
@@ -155,8 +158,9 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
       );
     }
 
-    final snap = _snapshot!.value!;
-    final manualWorkouts = snap.localWorkouts - snap.importedWorkouts;
+    final importSnapshot = _snapshot!.value!;
+    final manualWorkouts =
+        importSnapshot.localWorkouts - importSnapshot.importedWorkouts;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -165,18 +169,21 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
           style: AppTypography.caption.copyWith(color: AppColors.textColor3),
         ),
         const SizedBox(height: AppSpacing.md),
-        DebugRow('Local workouts (total)', '${snap.localWorkouts}'),
-        DebugRow('  Imported from Health', '${snap.importedWorkouts}'),
+        DebugRow('Local workouts (total)', '${importSnapshot.localWorkouts}'),
+        DebugRow(
+          '  Imported from Health',
+          '${importSnapshot.importedWorkouts}',
+        ),
         if (manualWorkouts > 0) DebugRow('  Other', '$manualWorkouts'),
         DebugRow(
           'HealthKit cardio workouts',
-          snap.healthKitWorkouts >= 0
-              ? '${snap.healthKitWorkouts}'
+          importSnapshot.healthKitWorkouts >= 0
+              ? '${importSnapshot.healthKitWorkouts}'
               : 'Unavailable',
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'As of ${formatDebugTime(snap.fetchedAt)}',
+          'As of ${formatDebugTime(importSnapshot.fetchedAt)}',
           style: AppTypography.caption.copyWith(color: AppColors.textColor4),
         ),
         const SizedBox(height: AppSpacing.md),
@@ -219,9 +226,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
   Future<void> _refreshCrud() async {
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
+      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
 
-      final crudRows = await db.execute(
+      final crudRows = await powerSyncDatabase.execute(
         "SELECT json_extract(data, '\$.type') AS tbl, COUNT(*) AS cnt "
         'FROM ps_crud GROUP BY tbl',
       );
@@ -231,7 +238,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       };
 
       final workoutRows =
-          await db.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+          await powerSyncDatabase.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
       final localWorkouts = workoutRows.first['cnt'] as int? ?? 0;
 
       int serverWorkouts = -1;
@@ -268,8 +275,8 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _forceReconnect() async {
     setState(() => _reconnecting = true);
     try {
-      final db = await ref.read(powerSyncDatabaseProvider.future);
-      await reconnectPowerSync(db);
+      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      await reconnectPowerSync(powerSyncDatabase);
     } finally {
       if (mounted) setState(() => _reconnecting = false);
     }
@@ -392,7 +399,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   }
 
   Widget _crudQueueSection() {
-    final totalQueued = _crudQueue.values.fold(0, (sum, count) => sum + count);
+    final totalQueued = _crudQueue.values.sum.round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -422,7 +429,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       children: [
         DebugRow('Local workouts', '$_localWorkouts'),
         DebugRow(
-          'Server workouts',
+          'Postgres workouts (direct)',
           _serverWorkouts >= 0 ? '$_serverWorkouts' : 'Unavailable',
         ),
       ],
@@ -495,9 +502,9 @@ class DebugRow extends StatelessWidget {
   }
 }
 
-String formatDebugTime(DateTime dt) {
-  final h = dt.hour.toString().padLeft(2, '0');
-  final m = dt.minute.toString().padLeft(2, '0');
-  final s = dt.second.toString().padLeft(2, '0');
-  return '$h:$m:$s';
+String formatDebugTime(DateTime dateTime) {
+  final hour = dateTime.hour.toString().padLeft(2, '0');
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final second = dateTime.second.toString().padLeft(2, '0');
+  return '$hour:$minute:$second';
 }

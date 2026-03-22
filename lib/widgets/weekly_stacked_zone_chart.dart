@@ -61,19 +61,19 @@ class _WeeklyStackedZoneChartState extends State<WeeklyStackedZoneChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        for (var z = 0; z < 5; z++) ...[
-          if (z > 0) const SizedBox(width: AppSpacing.md),
+        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
+          if (zoneIndex > 0) const SizedBox(width: AppSpacing.md),
           Container(
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: _zoneColors[z],
+              color: _zoneColors[zoneIndex],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(width: 3),
           Text(
-            labels[z],
+            labels[zoneIndex],
             style: TextStyle(fontSize: 10, color: AppColors.textColor3),
           ),
         ],
@@ -83,9 +83,9 @@ class _WeeklyStackedZoneChartState extends State<WeeklyStackedZoneChart> {
 
   List<int> _yearBoundaryIndices() {
     final indices = <int>[];
-    for (var i = 1; i < weeks.length; i++) {
-      if (weeks[i].weekStart.year != weeks[i - 1].weekStart.year) {
-        indices.add(i);
+    for (var weekIndex = 1; weekIndex < weeks.length; weekIndex++) {
+      if (weeks[weekIndex].weekStart.year != weeks[weekIndex - 1].weekStart.year) {
+        indices.add(weekIndex);
       }
     }
     return indices;
@@ -152,17 +152,19 @@ class _WeeklyStackedZoneChartState extends State<WeeklyStackedZoneChart> {
       );
     }
 
-    final maxTotal =
-        weeks.fold(0, (m, w) => math.max(m, w.zoneTime.total));
+    final maxTotal = weeks.fold(
+      0,
+      (maxSoFar, weekData) => math.max(maxSoFar, weekData.zoneTime.total),
+    );
     final effectiveMax = maxTotal > 0 ? maxTotal : 1;
     final barSpacing = _barSpacing();
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var i = 0; i < weeks.length; i++) ...[
-          if (i > 0) SizedBox(width: barSpacing),
-          Expanded(child: _stackedBar(i, effectiveMax)),
+        for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) ...[
+          if (weekIndex > 0) SizedBox(width: barSpacing),
+          Expanded(child: _stackedBar(weekIndex, effectiveMax)),
         ],
       ],
     );
@@ -196,8 +198,8 @@ class _WeeklyStackedZoneChartState extends State<WeeklyStackedZoneChart> {
                     width: double.infinity,
                     child: Column(
                       children: [
-                        for (var z = 4; z >= 0; z--)
-                          _zoneSegment(week, z, isActive),
+                        for (var zoneIndex = 4; zoneIndex >= 0; zoneIndex--)
+                          _zoneSegment(week, zoneIndex, isActive),
                       ],
                     ),
                   ),
@@ -267,22 +269,22 @@ class _WeeklyStackedZoneChartState extends State<WeeklyStackedZoneChart> {
           return Stack(
             clipBehavior: Clip.none,
             children: [
-              for (var i = 0; i < count; i++)
-                if (i % labelStride == 0 || weeks[i].isCurrent)
+              for (var weekIndex = 0; weekIndex < count; weekIndex++)
+                if (weekIndex % labelStride == 0 || weeks[weekIndex].isCurrent)
                   Positioned(
-                    left: i * (barWidth + barSpacing) + barWidth / 2 - 20,
+                    left: weekIndex * (barWidth + barSpacing) + barWidth / 2 - 20,
                     top: 0,
                     child: SizedBox(
                       width: 40,
                       child: Text(
-                        weeks[i].label,
+                        weeks[weekIndex].label,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 9,
-                          color: weeks[i].isCurrent
+                          color: weeks[weekIndex].isCurrent
                               ? AppColors.accentPrimary
                               : AppColors.textColor4,
-                          fontWeight: weeks[i].isCurrent
+                          fontWeight: weeks[weekIndex].isCurrent
                               ? FontWeight.w600
                               : FontWeight.normal,
                         ),

@@ -1,11 +1,11 @@
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -347,7 +347,7 @@ class SessionRepositoryPowerSync {
         triggerOnTables: const {'sessions', 'session_computed_metrics'},
       )
       .map(
-        (dayRows) => dayRows.map(_calendarDayFromRow).toList(),
+        (dayRows) => dayRows.mapL(SessionCalendarDay.fromRow),
       );
 
   Future<List<Session>> getSessionsForDate(DateTime localDate) async {
@@ -596,22 +596,6 @@ class SessionRepositoryPowerSync {
         'UPDATE sessions SET updated_at = ? WHERE id = ?',
         [now, sessionId],
       );
-
-  SessionCalendarDay _calendarDayFromRow(Map<String, dynamic> dayRow) {
-    final String dayString = dayRow['day'] as String;
-    final List<String> parts = dayString.split('-');
-    return SessionCalendarDay(
-      date: DateTime(
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-        int.parse(parts[2]),
-      ),
-      totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
-      zoneTime: HrZoneTime.fromRow(dayRow),
-      trimp: (dayRow['total_trimp'] as num?)?.toDouble() ?? 0,
-      sessionCount: (dayRow['session_count'] as int?) ?? 0,
-    );
-  }
 }
 
 @riverpod

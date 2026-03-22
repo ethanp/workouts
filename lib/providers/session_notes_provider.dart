@@ -9,8 +9,9 @@ const _uuid = Uuid();
 
 @riverpod
 Stream<List<SessionNote>> sessionNotesStream(Ref ref, String sessionId) {
-  final repo = ref.watch(sessionNotesRepositoryPowerSyncProvider);
-  return repo.watchNotesForSession(sessionId);
+  final sessionNotesRepository =
+      ref.watch(sessionNotesRepositoryPowerSyncProvider);
+  return sessionNotesRepository.watchNotesForSession(sessionId);
 }
 
 @riverpod
@@ -25,7 +26,8 @@ class SessionNotesController extends _$SessionNotesController {
     String? exerciseId,
     String? blockId,
   }) async {
-    final repo = ref.read(sessionNotesRepositoryPowerSyncProvider);
+    final sessionNotesRepository =
+        ref.read(sessionNotesRepositoryPowerSyncProvider);
     final note = SessionNote(
       id: _uuid.v4(),
       sessionId: sessionId,
@@ -36,16 +38,18 @@ class SessionNotesController extends _$SessionNotesController {
       source: SessionNoteSource.user,
       timestamp: DateTime.now(),
     );
-    await repo.saveNote(note);
+    await sessionNotesRepository.saveNote(note);
   }
 
   Future<void> updateNote(SessionNote note, String newContent) async {
-    final repo = ref.read(sessionNotesRepositoryPowerSyncProvider);
-    await repo.saveNote(note.copyWith(content: newContent));
+    final sessionNotesRepository =
+        ref.read(sessionNotesRepositoryPowerSyncProvider);
+    await sessionNotesRepository.saveNote(note.copyWith(content: newContent));
   }
 
   Future<void> deleteNote(String id) async {
-    final repo = ref.read(sessionNotesRepositoryPowerSyncProvider);
-    await repo.deleteNote(id);
+    final sessionNotesRepository =
+        ref.read(sessionNotesRepositoryPowerSyncProvider);
+    await sessionNotesRepository.deleteNote(id);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
+import 'package:workouts/services/powersync/powersync_extensions.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 final _log = Logger('CardioMetricsStore');
@@ -102,38 +103,14 @@ class CardioMetricsStore {
     final computedAt = DateTime.now().toUtc().toIso8601String();
     final hasHr = metrics.hasHrSamples ? 1 : 0;
 
-    final existing = await _powerSync.getOptional(
-      'SELECT id FROM cardio_computed_metrics WHERE id = ?',
-      [workoutId],
-    );
-    if (existing != null) {
-      await _powerSync.execute(
-        'UPDATE cardio_computed_metrics'
-        ' SET zone1_seconds = ?, zone2_seconds = ?, zone3_seconds = ?,'
-        '     zone4_seconds = ?, zone5_seconds = ?,'
-        '     trimp = ?, has_hr_samples = ?, resting_hr = ?, computed_at = ?'
-        ' WHERE id = ?',
-        [
-          zone.zone1, zone.zone2, zone.zone3,
-          zone.zone4, zone.zone5,
-          metrics.result.trimp, hasHr, restingHr, computedAt, workoutId,
-        ],
-      );
-    } else {
-      await _powerSync.execute(
-        'INSERT INTO cardio_computed_metrics'
-        '  (id, zone1_seconds, zone2_seconds, zone3_seconds,'
-        '   zone4_seconds, zone5_seconds,'
-        '   trimp, has_hr_samples, resting_hr, computed_at)'
-        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          workoutId,
-          zone.zone1, zone.zone2, zone.zone3,
-          zone.zone4, zone.zone5,
-          metrics.result.trimp, hasHr, restingHr, computedAt,
-        ],
-      );
-    }
+    await _powerSync.upsertLocalOnly('cardio_computed_metrics', {
+      'id': workoutId,
+      ...zone.toRow(),
+      'trimp': metrics.result.trimp,
+      'has_hr_samples': hasHr,
+      'resting_hr': restingHr,
+      'computed_at': computedAt,
+    });
   }
 
   Future<void> _recomputeZones(
@@ -153,38 +130,12 @@ class CardioMetricsStore {
     }
 
     final computedAt = DateTime.now().toUtc().toIso8601String();
-    final existing = await _powerSync.getOptional(
-      'SELECT id FROM cardio_computed_metrics WHERE id = ?',
-      [workoutId],
-    );
-    if (existing != null) {
-      await _powerSync.execute(
-        'UPDATE cardio_computed_metrics'
-        ' SET zone1_seconds = ?, zone2_seconds = ?, zone3_seconds = ?,'
-        '     zone4_seconds = ?, zone5_seconds = ?,'
-        '     has_hr_samples = ?, computed_at = ?'
-        ' WHERE id = ?',
-        [
-          zone.zone1, zone.zone2, zone.zone3,
-          zone.zone4, zone.zone5,
-          hasHr, computedAt, workoutId,
-        ],
-      );
-    } else {
-      await _powerSync.execute(
-        'INSERT INTO cardio_computed_metrics'
-        '  (id, zone1_seconds, zone2_seconds, zone3_seconds,'
-        '   zone4_seconds, zone5_seconds,'
-        '   has_hr_samples, computed_at)'
-        ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [
-          workoutId,
-          zone.zone1, zone.zone2, zone.zone3,
-          zone.zone4, zone.zone5,
-          hasHr, computedAt,
-        ],
-      );
-    }
+    await _powerSync.upsertLocalOnly('cardio_computed_metrics', {
+      'id': workoutId,
+      ...zone.toRow(),
+      'has_hr_samples': hasHr,
+      'computed_at': computedAt,
+    });
   }
 }
 

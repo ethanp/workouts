@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -9,6 +10,7 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/powersync/powersync_extensions.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 import 'package:workouts/services/repositories/llm_template_converter.dart'
     as llm;
@@ -27,10 +29,10 @@ class TemplateRepositoryPowerSync {
   static const int currentTemplateVersion = 5;
 
   Future<List<String>> fetchExerciseNames() async {
-    final rows = await _powerSync.getAll(
+    final exerciseNameRows = await _powerSync.getAll(
       'SELECT DISTINCT name FROM exercises ORDER BY name',
     );
-    return rows.map((row) => row['name'] as String).toList();
+    return exerciseNameRows.mapL((exerciseNameRow) => exerciseNameRow['name'] as String);
   }
 
   Future<List<WorkoutTemplate>> fetchTemplates() async {
@@ -54,20 +56,14 @@ class TemplateRepositoryPowerSync {
   Future<void> saveTemplate(WorkoutTemplate template) async {
     final now = DateTime.now().toIso8601String();
 
-    await _powerSync.execute(
-      '''
-      INSERT OR REPLACE INTO workout_templates (id, name, goal, notes, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ''',
-      [
-        template.id,
-        template.name,
-        template.goal,
-        template.notes ?? '',
-        template.createdAt?.toIso8601String() ?? now,
-        now,
-      ],
-    );
+    await _powerSync.upsert('workout_templates', {
+      'id': template.id,
+      'name': template.name,
+      'goal': template.goal,
+      'notes': template.notes ?? '',
+      'created_at': template.createdAt?.toIso8601String() ?? now,
+      'updated_at': now,
+    });
 
     await _powerSync.execute(
       'DELETE FROM workout_blocks WHERE template_id = ?',
@@ -149,8 +145,7 @@ class TemplateRepositoryPowerSync {
       [blockId],
     );
     return exerciseRows
-        .map((row) => mappers.workoutExerciseFromJoinRow(row))
-        .toList();
+        .mapL((exerciseJoinRow) => mappers.workoutExerciseFromJoinRow(exerciseJoinRow));
   }
 
   Future<void> _insertBlock(
@@ -197,21 +192,15 @@ class TemplateRepositoryPowerSync {
       );
       final exerciseId = existingRow?['id'] as String? ?? exercise.id;
 
-      await _powerSync.execute(
-        '''
-        INSERT OR REPLACE INTO exercises (id, name, modality, equipment, cues, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''',
-        [
-          exerciseId,
-          exercise.name,
-          exercise.modality.name,
-          exercise.equipment ?? '',
-          jsonEncode(exercise.cues),
-          now,
-          now,
-        ],
-      );
+      await _powerSync.upsert('exercises', {
+        'id': exerciseId,
+        'name': exercise.name,
+        'modality': exercise.modality.name,
+        'equipment': exercise.equipment ?? '',
+        'cues': jsonEncode(exercise.cues),
+        'created_at': now,
+        'updated_at': now,
+      });
 
       await _powerSync.execute(
         '''
@@ -256,10 +245,10 @@ class TemplateRepositoryPowerSync {
 
 @riverpod
 TemplateRepositoryPowerSync templateRepositoryPowerSync(Ref ref) {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.value;
-  if (db == null) {
+  final powerSyncDatabaseAsync = ref.watch(powerSyncDatabaseProvider);
+  final powerSyncDatabase = powerSyncDatabaseAsync.value;
+  if (powerSyncDatabase == null) {
     throw StateError('PowerSync database not initialized');
   }
-  return TemplateRepositoryPowerSync(db);
+  return TemplateRepositoryPowerSync(powerSyncDatabase);
 }

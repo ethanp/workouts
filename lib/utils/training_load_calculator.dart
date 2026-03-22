@@ -61,11 +61,11 @@ class TrainingLoadCalculator {
     final zoneTotals = List.filled(5, 0);
     var trimpTotal = 0.0;
 
-    for (var i = 0; i < samples.length - 1; i++) {
-      final bpm = samples[i].bpm;
-      final gapSeconds = samples[i + 1]
+    for (var sampleIndex = 0; sampleIndex < samples.length - 1; sampleIndex++) {
+      final bpm = samples[sampleIndex].bpm;
+      final gapSeconds = samples[sampleIndex + 1]
           .timestamp
-          .difference(samples[i].timestamp)
+          .difference(samples[sampleIndex].timestamp)
           .inSeconds
           .clamp(0, maxGapSeconds);
 
@@ -91,8 +91,8 @@ class TrainingLoadCalculator {
 
   /// Maps a BPM to a zone index (0-4), or -1 if below zone 1.
   int _zoneForBpm(int bpm) {
-    for (var z = 4; z >= 0; z--) {
-      if (bpm >= zoneBoundaries[z]) return z;
+    for (var zoneIndex = 4; zoneIndex >= 0; zoneIndex--) {
+      if (bpm >= zoneBoundaries[zoneIndex]) return zoneIndex;
     }
     return -1;
   }

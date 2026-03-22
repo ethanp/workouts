@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
@@ -19,67 +20,74 @@ import 'package:workouts/utils/training_load_calculator.dart';
 part 'activity_provider.g.dart';
 
 Stream<T> _pendingStream<T>(Ref ref) {
-  final ctrl = StreamController<T>();
-  ref.onDispose(ctrl.close);
-  return ctrl.stream;
+  final streamController = StreamController<T>();
+  ref.onDispose(streamController.close);
+  return streamController.stream;
 }
 
 @riverpod
 Stream<List<ActivityItem>> activityList(Ref ref) {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) return _pendingStream(ref);
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return _pendingStream(ref);
 
-  final cardioRepo = CardioRepositoryPowerSync(db);
-  final sessionRepo = SessionRepositoryPowerSync(
-    db,
+  final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
+  final sessionRepository = SessionRepositoryPowerSync(
+    powerSyncDatabase,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
   List<CardioWorkout>? lastCardioWorkouts;
   List<Session>? lastSessions;
-  final ctrl = StreamController<List<ActivityItem>>();
-  ref.onDispose(ctrl.close);
+  final streamController = StreamController<List<ActivityItem>>();
+  ref.onDispose(streamController.close);
 
   void emit() {
     if (lastCardioWorkouts != null && lastSessions != null) {
-      final items = <ActivityItem>[
-        ...lastCardioWorkouts!.map((w) => ActivityCardio(w)),
+      final activityItems = <ActivityItem>[
+        ...lastCardioWorkouts!.map((cardioWorkout) => ActivityCardio(cardioWorkout)),
         ...lastSessions!
-            .where((s) => s.completedAt != null)
-            .map((s) => ActivitySession(s)),
+            .where((session) => session.completedAt != null)
+            .map((session) => ActivitySession(session)),
       ];
-      items.sort((a, b) => b.startedAt.compareTo(a.startedAt));
-      ctrl.add(items);
+      activityItems.sort(
+        (newerActivity, olderActivity) =>
+            olderActivity.startedAt.compareTo(newerActivity.startedAt),
+      );
+      streamController.add(activityItems);
     }
   }
 
-  cardioRepo.watchCardioWorkouts().listen((w) {
-    lastCardioWorkouts = w;
+  final sub1 = cardioRepository.watchCardioWorkouts().listen((cardioWorkouts) {
+    lastCardioWorkouts = cardioWorkouts;
     emit();
   });
-  sessionRepo.watchSessions().listen((s) {
-    lastSessions = s;
+  final sub2 = sessionRepository.watchSessions().listen((sessions) {
+    lastSessions = sessions;
     emit();
+  });
+  ref.onDispose(() {
+    sub1.cancel();
+    sub2.cancel();
   });
 
-  return ctrl.stream;
+  return streamController.stream;
 }
 
 @riverpod
 Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) return _pendingStream(ref);
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return _pendingStream(ref);
 
-  final cardioRepo = CardioRepositoryPowerSync(db);
-  final sessionRepo = SessionRepositoryPowerSync(
-    db,
+  final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
+  final sessionRepository = SessionRepositoryPowerSync(
+    powerSyncDatabase,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
   List<CardioCalendarDay>? lastCardioDays;
   List<SessionCalendarDay>? lastSessionDays;
-  final ctrl = StreamController<List<ActivityCalendarDay>>();
-  ref.onDispose(ctrl.close);
+  final streamController = StreamController<List<ActivityCalendarDay>>();
+  ref.onDispose(streamController.close);
 
   ActivityCalendarDay activityDayFromCardio(CardioCalendarDay cardioDay) =>
       ActivityCalendarDay(
@@ -97,16 +105,16 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
       );
 
   ActivityCalendarDay mergeSessionInto(
-    ActivityCalendarDay existing,
+    ActivityCalendarDay existingActivityDay,
     SessionCalendarDay sessionDay,
   ) => ActivityCalendarDay(
-    date: existing.date,
-    totalCardioDistanceMeters: existing.totalCardioDistanceMeters,
-    totalCardioDurationSeconds: existing.totalCardioDurationSeconds,
-    cardioZoneTime: existing.cardioZoneTime,
-    cardioTrimp: existing.cardioTrimp,
-    cardioHasHrData: existing.cardioHasHrData,
-    cardioCount: existing.cardioCount,
+    date: existingActivityDay.date,
+    totalCardioDistanceMeters: existingActivityDay.totalCardioDistanceMeters,
+    totalCardioDurationSeconds: existingActivityDay.totalCardioDurationSeconds,
+    cardioZoneTime: existingActivityDay.cardioZoneTime,
+    cardioTrimp: existingActivityDay.cardioTrimp,
+    cardioHasHrData: existingActivityDay.cardioHasHrData,
+    cardioCount: existingActivityDay.cardioCount,
     totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
     sessionZoneTime: sessionDay.zoneTime,
     sessionTrimp: sessionDay.trimp,
@@ -137,26 +145,32 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
       for (final sessionDay in lastSessionDays!) {
         byDate.update(
           sessionDay.date,
-          (existing) => mergeSessionInto(existing, sessionDay),
+          (existingActivityDay) =>
+              mergeSessionInto(existingActivityDay, sessionDay),
           ifAbsent: () => activityDayFromSession(sessionDay),
         );
       }
-      final days = byDate.values.toList()
-        ..sort((dayA, dayB) => dayA.date.compareTo(dayB.date));
-      ctrl.add(days);
+      final days = byDate.values.toList().sortedOn(
+        (activityDay) => activityDay.date,
+      );
+      streamController.add(days);
     }
   }
 
-  cardioRepo.watchCalendarDays().listen((c) {
-    lastCardioDays = c;
+  final sub1 = cardioRepository.watchCalendarDays().listen((cardioCalendarDays) {
+    lastCardioDays = cardioCalendarDays;
     emit();
   });
-  sessionRepo.watchSessionCalendarDays().listen((s) {
-    lastSessionDays = s;
+  final sub2 = sessionRepository.watchSessionCalendarDays().listen((sessionCalendarDays) {
+    lastSessionDays = sessionCalendarDays;
     emit();
+  });
+  ref.onDispose(() {
+    sub1.cancel();
+    sub2.cancel();
   });
 
-  return ctrl.stream;
+  return streamController.stream;
 }
 
 @riverpod
@@ -173,50 +187,59 @@ DateTimeRange? chartDateRange(Ref ref) {
 
   final now = DateTime.now();
   return DateTimeRange(
-    start: DateTime(earliest.year, earliest.month, earliest.day),
-    end: DateTime(now.year, now.month, now.day),
+    start: earliest.startOfDay,
+    end: now.startOfDay,
   );
 }
 
 @riverpod
 Future<List<ActivityItem>> activityForDate(Ref ref, DateTime date) async {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) return [];
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return [];
 
-  final cardioRepo = CardioRepositoryPowerSync(db);
-  final sessionRepo = SessionRepositoryPowerSync(
-    db,
+  final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
+  final sessionRepository = SessionRepositoryPowerSync(
+    powerSyncDatabase,
     ref.watch(templateRepositoryPowerSyncProvider),
   );
 
-  final cardioWorkouts = await cardioRepo.getWorkoutsForDate(date);
-  final sessions = await sessionRepo.getSessionsForDate(date);
-  final items = <ActivityItem>[
-    ...cardioWorkouts.map((w) => ActivityCardio(w)),
-    ...sessions.map((s) => ActivitySession(s)),
+  final cardioWorkouts = await cardioRepository.getWorkoutsForDate(date);
+  final sessions = await sessionRepository.getSessionsForDate(date);
+  final activityItems = <ActivityItem>[
+    ...cardioWorkouts.map((cardioWorkout) => ActivityCardio(cardioWorkout)),
+    ...sessions.map((session) => ActivitySession(session)),
   ];
-  items.sort((a, b) => a.startedAt.compareTo(b.startedAt));
-  return items;
+  activityItems.sort(
+    (olderActivity, newerActivity) =>
+        olderActivity.startedAt.compareTo(newerActivity.startedAt),
+  );
+  return activityItems;
 }
 
 @riverpod
 class MetricsBackfillController extends _$MetricsBackfillController {
+  bool _disposed = false;
+
   @override
-  MetricsBackfillStatus build() => const MetricsBackfillStatus.idle();
+  MetricsBackfillStatus build() {
+    _disposed = false;
+    ref.onDispose(() => _disposed = true);
+    return const MetricsBackfillStatus.idle();
+  }
 
   Future<void> runBackfill() async {
     if (state.inProgress) return;
-    final db = ref.read(powerSyncDatabaseProvider).value;
-    if (db == null) return;
+    final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
+    if (powerSyncDatabase == null) return;
 
     state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling zone metrics...');
-    final maxHR = ref.read(maxHeartRateProvider);
-    final restingHR = ref.read(restingHeartRateProvider);
+    final maxHeartRate = ref.read(maxHeartRateProvider);
+    final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHR,
-      restingHeartRate: restingHR,
+      maxHeartRate: maxHeartRate,
+      restingHeartRate: restingHeartRate,
     );
-    final cardioRepository = CardioRepositoryPowerSync(db);
+    final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
     await cardioRepository.backfillMissingMetrics(trainingLoad: trainingLoad);
 
     state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling best efforts...');
@@ -224,12 +247,12 @@ class MetricsBackfillController extends _$MetricsBackfillController {
 
     state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling session metrics...');
     final templateRepo = ref.read(templateRepositoryPowerSyncProvider);
-    await SessionRepositoryPowerSync(db, templateRepo)
+    await SessionRepositoryPowerSync(powerSyncDatabase, templateRepo)
         .backfillMissingMetrics(trainingLoad: trainingLoad);
 
     state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
     Future.delayed(const Duration(seconds: 3), () {
-      if (ref.exists(metricsBackfillControllerProvider)) {
+      if (!_disposed) {
         state = const MetricsBackfillStatus.idle();
       }
     });

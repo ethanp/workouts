@@ -9,20 +9,23 @@ const _uuid = Uuid();
 
 @riverpod
 Stream<List<BackgroundNote>> backgroundNotesStream(Ref ref) {
-  final repo = ref.watch(backgroundNotesRepositoryPowerSyncProvider);
-  return repo.watchNotes();
+  final backgroundNotesRepository =
+      ref.watch(backgroundNotesRepositoryPowerSyncProvider);
+  return backgroundNotesRepository.watchNotes();
 }
 
 @riverpod
 Stream<List<BackgroundNote>> activeBackgroundNotesStream(Ref ref) {
-  final repo = ref.watch(backgroundNotesRepositoryPowerSyncProvider);
-  return repo.watchActiveNotes();
+  final backgroundNotesRepository =
+      ref.watch(backgroundNotesRepositoryPowerSyncProvider);
+  return backgroundNotesRepository.watchActiveNotes();
 }
 
 @riverpod
 Stream<List<BackgroundNote>> notesForGoalStream(Ref ref, String goalId) {
-  final repo = ref.watch(backgroundNotesRepositoryPowerSyncProvider);
-  return repo.watchNotesForGoal(goalId);
+  final backgroundNotesRepository =
+      ref.watch(backgroundNotesRepositoryPowerSyncProvider);
+  return backgroundNotesRepository.watchNotesForGoal(goalId);
 }
 
 @riverpod
@@ -42,7 +45,8 @@ class BackgroundNotesController extends _$BackgroundNotesController {
     required NoteCategory category,
     String? goalId,
   }) async {
-    final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
+    final backgroundNotesRepository =
+        ref.read(backgroundNotesRepositoryPowerSyncProvider);
     final note = BackgroundNote(
       id: _uuid.v4(),
       content: content,
@@ -52,31 +56,37 @@ class BackgroundNotesController extends _$BackgroundNotesController {
       source: NoteSource.user,
       createdAt: DateTime.now(),
     );
-    await repo.saveNote(note);
+    await backgroundNotesRepository.saveNote(note);
     _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> updateNote(BackgroundNote note) async {
-    final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
-    await repo.saveNote(note.copyWith(updatedAt: DateTime.now()));
+    final backgroundNotesRepository =
+        ref.read(backgroundNotesRepositoryPowerSyncProvider);
+    await backgroundNotesRepository.saveNote(
+      note.copyWith(updatedAt: DateTime.now()),
+    );
     _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> archiveNote(String noteId) async {
-    final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
-    await repo.archiveNote(noteId);
+    final backgroundNotesRepository =
+        ref.read(backgroundNotesRepositoryPowerSyncProvider);
+    await backgroundNotesRepository.archiveNote(noteId);
     _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> activateNote(String noteId) async {
-    final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
-    await repo.activateNote(noteId);
+    final backgroundNotesRepository =
+        ref.read(backgroundNotesRepositoryPowerSyncProvider);
+    await backgroundNotesRepository.activateNote(noteId);
     _invalidateNotesStreamsIfMounted();
   }
 
   Future<void> deleteNote(String noteId) async {
-    final repo = ref.read(backgroundNotesRepositoryPowerSyncProvider);
-    await repo.deleteNote(noteId);
+    final backgroundNotesRepository =
+        ref.read(backgroundNotesRepositoryPowerSyncProvider);
+    await backgroundNotesRepository.deleteNote(noteId);
     _invalidateNotesStreamsIfMounted();
   }
 }

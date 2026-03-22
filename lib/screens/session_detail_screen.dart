@@ -153,10 +153,10 @@ class SessionDetailScreen extends ConsumerWidget {
 
   List<Widget> _buildBlocksList() {
     final widgets = <Widget>[];
-    for (var i = 0; i < session.blocks.length; i++) {
-      final block = session.blocks[i];
-      widgets.add(_BlockCard(block: block, index: i));
-      if (i < session.blocks.length - 1) {
+    for (var blockIndex = 0; blockIndex < session.blocks.length; blockIndex++) {
+      final block = session.blocks[blockIndex];
+      widgets.add(_BlockCard(block: block, index: blockIndex));
+      if (blockIndex < session.blocks.length - 1) {
         widgets.add(const SizedBox(height: AppSpacing.md));
       }
     }
@@ -471,10 +471,12 @@ class _SessionHeartRateCard extends StatelessWidget {
       return '${averageHeartRate!} BPM';
     }
     if (samples.isEmpty) return '--';
-    final avg =
-        (samples.map((s) => s.bpm).reduce((a, b) => a + b) / samples.length)
+    final averageBpm = (samples
+                .map((heartRateSample) => heartRateSample.bpm)
+                .reduce((firstBpm, secondBpm) => firstBpm + secondBpm) /
+            samples.length)
             .round();
-    return '$avg BPM';
+    return '$averageBpm BPM';
   }
 
   String _maxText() {
@@ -482,8 +484,10 @@ class _SessionHeartRateCard extends StatelessWidget {
       return '${maxHeartRate!} BPM';
     }
     if (samples.isEmpty) return '--';
-    final max = samples.map((s) => s.bpm).reduce((a, b) => a > b ? a : b);
-    return '$max BPM';
+    final maxBpm = samples
+        .map((heartRateSample) => heartRateSample.bpm)
+        .reduce((firstBpm, secondBpm) => firstBpm > secondBpm ? firstBpm : secondBpm);
+    return '$maxBpm BPM';
   }
 }
 

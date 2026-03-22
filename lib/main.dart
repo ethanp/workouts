@@ -60,13 +60,13 @@ void _setupLogging() {
     if (emoji == null) {
       throw StateError('Unhandled log level: ${record.level.name}');
     }
-    final t = record.time;
-    final ts =
-        '${t.year % 100}${_pad2(t.month)}${_pad2(t.day)}'
-        '-${_pad2(t.hour)}:${_pad2(t.minute)}:${_pad2(t.second)}'
-        ':${(t.millisecond ~/ 100)}';
+    final logTime = record.time;
+    final timestampLabel =
+        '${logTime.year % 100}${_pad2(logTime.month)}${_pad2(logTime.day)}'
+        '-${_pad2(logTime.hour)}:${_pad2(logTime.minute)}:${_pad2(logTime.second)}'
+        ':${(logTime.millisecond ~/ 100)}';
     developer.log(
-      '$emoji $ts [${record.loggerName}] ${record.message}',
+      '$emoji $timestampLabel [${record.loggerName}] ${record.message}',
       name: record.loggerName,
       error: record.error,
       stackTrace: record.level >= Level.WARNING ? record.stackTrace : null,

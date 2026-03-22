@@ -26,7 +26,9 @@ class DismissibleExerciseCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasLogs = block.logs.any((l) => l.exerciseId == exercise.id);
+    final hasLogs = block.logs.any(
+      (sessionSetLog) => sessionSetLog.exerciseId == exercise.id,
+    );
 
     return Dismissible(
       key: ValueKey('dismiss-${exercise.id}'),

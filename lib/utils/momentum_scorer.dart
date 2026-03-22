@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 
 class MomentumDayScore {
@@ -124,7 +125,7 @@ class MomentumScorer {
     for (final day in days) {
       final intensity = _dayIntensity(day);
       if (intensity > 0) {
-        map[DateTime(day.date.year, day.date.month, day.date.day)] = intensity;
+        map[day.date.startOfDay] = intensity;
       }
     }
     return map;
@@ -186,21 +187,23 @@ class MomentumScorer {
     final kernel = _gaussianKernel(kernelRadius);
     final smoothed = <MomentumDayScore>[];
 
-    for (var i = 0; i < rawScores.length; i++) {
+    for (var scoreIndex = 0; scoreIndex < rawScores.length; scoreIndex++) {
       var weightedSum = 0.0;
       var kernelSum = 0.0;
 
-      for (var k = -kernelRadius; k <= kernelRadius; k++) {
-        final j = i + k;
-        if (j < 0 || j >= rawScores.length) continue;
-        final w = kernel[k + kernelRadius];
-        weightedSum += w * rawScores[j].score;
-        kernelSum += w;
+      for (var kernelOffset = -kernelRadius;
+          kernelOffset <= kernelRadius;
+          kernelOffset++) {
+        final sampleIndex = scoreIndex + kernelOffset;
+        if (sampleIndex < 0 || sampleIndex >= rawScores.length) continue;
+        final kernelWeight = kernel[kernelOffset + kernelRadius];
+        weightedSum += kernelWeight * rawScores[sampleIndex].score;
+        kernelSum += kernelWeight;
       }
 
       smoothed.add(MomentumDayScore(
-        date: rawScores[i].date,
-        score: kernelSum > 0 ? weightedSum / kernelSum : rawScores[i].score,
+        date: rawScores[scoreIndex].date,
+        score: kernelSum > 0 ? weightedSum / kernelSum : rawScores[scoreIndex].score,
       ));
     }
 
@@ -216,13 +219,13 @@ class MomentumScorer {
   List<double> _gaussianKernel(int radius) {
     final kernel = <double>[];
     var sum = 0.0;
-    for (var i = -radius; i <= radius; i++) {
+    for (var kernelOffset = -radius; kernelOffset <= radius; kernelOffset++) {
       final value =
-          math.exp(-(i * i) / (2 * smoothingSigma * smoothingSigma));
+          math.exp(-(kernelOffset * kernelOffset) / (2 * smoothingSigma * smoothingSigma));
       kernel.add(value);
       sum += value;
     }
-    return kernel.map((val) => val / sum).toList();
+    return kernel.mapL((kernelValue) => kernelValue / sum);
   }
 
   static DateTime _addDays(DateTime date, int offset) =>
@@ -238,11 +241,11 @@ class _DateRange {
   static const _windowDays = 30;
 
   static _DateRange? from(List<ActivityCalendarDay> days, DateTime? today) {
-    final sortedDates = days.map((day) => day.date).toList()
+    final sortedDates = days.mapL((activityDay) => activityDay.date)
       ..sort((dayA, dayB) => dayA.compareTo(dayB));
     final earliest = sortedDates.first;
     final now = today ?? DateTime.now();
-    final todayDate = DateTime(now.year, now.month, now.day);
+    final todayDate = now.startOfDay;
 
     if (todayDate.difference(earliest).inDays < 7) return null;
 

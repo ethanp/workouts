@@ -184,13 +184,13 @@ class _ContentList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activeGoals = goals
-        .where((g) => g.status == GoalStatus.active)
+        .where((goal) => goal.status == GoalStatus.active)
         .toList();
     final archivedGoals = goals
-        .where((g) => g.status != GoalStatus.active)
+        .where((goal) => goal.status != GoalStatus.active)
         .toList();
-    final activeNotes = notes.where((n) => n.isActive).toList();
-    final archivedNotes = notes.where((n) => !n.isActive).toList();
+    final activeNotes = notes.where((note) => note.isActive).toList();
+    final archivedNotes = notes.where((note) => !note.isActive).toList();
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -481,7 +481,10 @@ class _CategoryBadge extends StatelessWidget {
 
   String _formatCategory(GoalCategory category) {
     return category.name
-        .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+        .replaceAllMapped(
+          RegExp(r'([a-z])([A-Z])'),
+          (match) => '${match[1]} ${match[2]}',
+        )
         .toLowerCase();
   }
 }
@@ -795,7 +798,7 @@ class _NoteTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final linkedGoal = note.goalId != null
-        ? goals.where((g) => g.id == note.goalId).firstOrNull
+        ? goals.where((goal) => goal.id == note.goalId).firstOrNull
         : null;
 
     return Padding(
@@ -1195,7 +1198,7 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       ...widget.availableGoals
-                          .where((g) => g.status == GoalStatus.active)
+                          .where((goal) => goal.status == GoalStatus.active)
                           .map((goal) {
                             final isSelected = _selectedGoalId == goal.id;
                             return Padding(

@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -57,18 +58,20 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
   ExerciseModality? _selectedModality;
 
   List<WorkoutExercise> get filteredExercises {
-    final available = widget.exercises
-        .where((e) => !widget.excludeIds.contains(e.id))
-        .toList();
+    final available = widget.exercises.whereL(
+      (workoutExercise) => !widget.excludeIds.contains(workoutExercise.id),
+    );
 
     // Filter by modality only
     if (_selectedModality == null) return available;
-    return available.where((e) => e.modality == _selectedModality).toList();
+    return available.whereL(
+      (workoutExercise) => workoutExercise.modality == _selectedModality,
+    );
   }
 
   Set<ExerciseModality> get availableModalities => widget.exercises
-      .where((e) => !widget.excludeIds.contains(e.id))
-      .map((e) => e.modality)
+      .where((workoutExercise) => !widget.excludeIds.contains(workoutExercise.id))
+      .map((workoutExercise) => workoutExercise.modality)
       .toSet();
 
   Map<ExerciseModality, List<WorkoutExercise>> get groupedExercises {
@@ -92,8 +95,9 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
   }
 
   Widget filterChips() {
-    final modalities = availableModalities.toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final modalities = availableModalities.toList().sortedOn(
+      (exerciseModality) => exerciseModality.name,
+    );
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -104,7 +108,10 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
       child: Row(
         children: [
           filterChip(null, 'All'),
-          ...modalities.map((m) => filterChip(m, m.name.toUpperCase())),
+          ...modalities.map(
+            (exerciseModality) =>
+                filterChip(exerciseModality, exerciseModality.name.toUpperCase()),
+          ),
         ],
       ),
     );
@@ -151,8 +158,9 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
       );
     }
 
-    final modalities = groups.keys.toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
+    final modalities = groups.keys.toList().sortedOn(
+      (exerciseModality) => exerciseModality.name,
+    );
 
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: AppSpacing.xxl),

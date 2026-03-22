@@ -21,12 +21,19 @@ Future<Map<String, WorkoutTemplate>> templatesMap(Ref ref) async {
 Future<List<WorkoutExercise>> allExercises(Ref ref) async {
   final templates = await ref.watch(workoutTemplatesProvider.future);
   return templates
-      .expand((t) => t.blocks)
-      .expand((b) => b.exercises)
+      .expand((workoutTemplate) => workoutTemplate.blocks)
+      .expand((workoutBlock) => workoutBlock.exercises)
       // Remove duplicates by name, instead of naively deduplicating by object
       // identity, since exercises across templates have different UUIDs.
-      .fold<Map<String, WorkoutExercise>>({}, (m, e) => m..[e.name] = e)
+      .fold<Map<String, WorkoutExercise>>(
+        {},
+        (exerciseByName, workoutExercise) =>
+            exerciseByName..[workoutExercise.name] = workoutExercise,
+      )
       .values
       .toList()
-    ..sort((a, b) => a.name.compareTo(b.name));
+    ..sort(
+      (firstExercise, secondExercise) =>
+          firstExercise.name.compareTo(secondExercise.name),
+    );
 }

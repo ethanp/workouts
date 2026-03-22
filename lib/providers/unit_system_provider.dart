@@ -23,9 +23,9 @@ class UnitSystemNotifier extends _$UnitSystemNotifier {
   @override
   UnitSystem build() {
     final prefs = ref.watch(sharedPreferencesProvider);
-    final stored = prefs.getString(_kUnitSystemKey);
+    final storedUnitSystemName = prefs.getString(_kUnitSystemKey);
     return UnitSystem.values.firstWhere(
-      (u) => u.name == stored,
+      (unitSystem) => unitSystem.name == storedUnitSystemName,
       orElse: () => UnitSystem.imperial,
     );
   }
@@ -45,18 +45,18 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
     return prefs.getInt(_kMaxHRKey) ?? 190;
   }
 
-  Future<void> setMaxHeartRate(int hr) async {
+  Future<void> setMaxHeartRate(int heartRateBpm) async {
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setInt(_kMaxHRKey, hr);
-    state = hr;
-    _recomputeInBackground(hr);
+    await prefs.setInt(_kMaxHRKey, heartRateBpm);
+    state = heartRateBpm;
+    _recomputeInBackground(heartRateBpm);
   }
 
-  void _recomputeInBackground(int maxHR) {
-    final restingHR = ref.read(restingHeartRateProvider);
+  void _recomputeInBackground(int maxHeartRate) {
+    final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHR,
-      restingHeartRate: restingHR,
+      maxHeartRate: maxHeartRate,
+      restingHeartRate: restingHeartRate,
     );
     final progressNotifier =
         ref.read(metricsRecomputeProgressProvider.notifier);
@@ -110,10 +110,10 @@ class RestingHeartRateNotifier extends _$RestingHeartRateNotifier {
     return prefs.getInt(_kRestingHRKey) ?? 60;
   }
 
-  Future<void> setRestingHeartRate(int hr) async {
+  Future<void> setRestingHeartRate(int restingHeartRateBpm) async {
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setInt(_kRestingHRKey, hr);
-    state = hr;
+    await prefs.setInt(_kRestingHRKey, restingHeartRateBpm);
+    state = restingHeartRateBpm;
   }
 }
 

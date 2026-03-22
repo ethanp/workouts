@@ -54,41 +54,47 @@ Future<PowerSyncDatabase> initPowerSync() async {
 
   try {
     _log.info('Creating PowerSyncDatabase instance...');
-    final db = PowerSyncDatabase(schema: schema, path: dbPath, logger: logger);
+    final powerSyncDatabase = PowerSyncDatabase(
+      schema: schema,
+      path: dbPath,
+      logger: logger,
+    );
 
     _log.info('Initializing database...');
-    await db.initialize();
+    await powerSyncDatabase.initialize();
     _log.info('Database initialized successfully');
 
-    await _purgeOrphanedCardioChildCrudEntries(db);
+    await _purgeOrphanedCardioChildCrudEntries(powerSyncDatabase);
 
     _log.info('Connecting to PowerSync service...');
-    await reconnectPowerSync(db);
+    await reconnectPowerSync(powerSyncDatabase);
     _log.info('PowerSync connection established');
 
-    return db;
-  } catch (e, stack) {
-    _log.severe('PowerSync initialization failed at $dbPath', e, stack);
+    return powerSyncDatabase;
+  } catch (error, stackTrace) {
+    _log.severe('PowerSync initialization failed at $dbPath', error, stackTrace);
     rethrow;
   }
 }
 
-Future<void> reconnectPowerSync(PowerSyncDatabase db) async {
-  await db.connect(
+Future<void> reconnectPowerSync(PowerSyncDatabase powerSyncDatabase) async {
+  await powerSyncDatabase.connect(
     connector: WorkoutsBackendConnector(_powersyncUrl, _postgrestUrl),
   );
 }
 
 Future<String> getDatabasePath() async {
-  final dir = await getApplicationDocumentsDirectory();
-  return p.join(dir.path, 'powersync.db');
+  final documentsDirectory = await getApplicationDocumentsDirectory();
+  return p.join(documentsDirectory.path, 'powersync.db');
 }
 
 /// Bulk-removes CRUD queue entries for cardio child tables whose workout_id
 /// no longer exists in the local cardio_workouts table.
-Future<void> _purgeOrphanedCardioChildCrudEntries(PowerSyncDatabase db) async {
+Future<void> _purgeOrphanedCardioChildCrudEntries(
+  PowerSyncDatabase powerSyncDatabase,
+) async {
   try {
-    final countRows = await db.execute('''
+    final countRows = await powerSyncDatabase.execute('''
       SELECT COUNT(*) AS cnt FROM ps_crud
       WHERE json_extract(data, '\$.type') IN ('cardio_route_points', 'cardio_heart_rate_samples')
         AND (
@@ -98,7 +104,7 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(PowerSyncDatabase db) async {
     ''');
     final orphanCount = countRows.first['cnt'] as int? ?? 0;
     if (orphanCount > 0) {
-      await db.execute('''
+      await powerSyncDatabase.execute('''
         DELETE FROM ps_crud
         WHERE json_extract(data, '\$.type') IN ('cardio_route_points', 'cardio_heart_rate_samples')
           AND (
@@ -108,7 +114,7 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(PowerSyncDatabase db) async {
       ''');
       _log.info('Purged $orphanCount orphaned cardio child CRUD entries.');
     }
-  } catch (e) {
-    _log.warning('Could not purge orphaned cardio CRUD entries: $e');
+  } catch (error) {
+    _log.warning('Could not purge orphaned cardio CRUD entries: $error');
   }
 }

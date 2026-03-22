@@ -9,14 +9,14 @@ const _uuid = Uuid();
 
 @riverpod
 Stream<List<FitnessGoal>> goalsStream(Ref ref) {
-  final repo = ref.watch(goalsRepositoryPowerSyncProvider);
-  return repo.watchGoals();
+  final goalsRepository = ref.watch(goalsRepositoryPowerSyncProvider);
+  return goalsRepository.watchGoals();
 }
 
 @riverpod
 Stream<List<FitnessGoal>> activeGoalsStream(Ref ref) {
-  final repo = ref.watch(goalsRepositoryPowerSyncProvider);
-  return repo.watchActiveGoals();
+  final goalsRepository = ref.watch(goalsRepositoryPowerSyncProvider);
+  return goalsRepository.watchActiveGoals();
 }
 
 @riverpod
@@ -37,7 +37,7 @@ class GoalsController extends _$GoalsController {
     int priority = 1,
     DateTime? targetDate,
   }) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
+    final goalsRepository = ref.read(goalsRepositoryPowerSyncProvider);
     final goal = FitnessGoal(
       id: _uuid.v4(),
       title: title,
@@ -48,31 +48,31 @@ class GoalsController extends _$GoalsController {
       status: GoalStatus.active,
       createdAt: DateTime.now(),
     );
-    await repo.saveGoal(goal);
+    await goalsRepository.saveGoal(goal);
     _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> updateGoal(FitnessGoal goal) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.saveGoal(goal);
+    final goalsRepository = ref.read(goalsRepositoryPowerSyncProvider);
+    await goalsRepository.saveGoal(goal);
     _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> setGoalStatus(String goalId, GoalStatus status) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.updateGoalStatus(goalId, status);
+    final goalsRepository = ref.read(goalsRepositoryPowerSyncProvider);
+    await goalsRepository.updateGoalStatus(goalId, status);
     _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> deleteGoal(String goalId) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.deleteGoal(goalId);
+    final goalsRepository = ref.read(goalsRepositoryPowerSyncProvider);
+    await goalsRepository.deleteGoal(goalId);
     _invalidateGoalsStreamIfMounted();
   }
 
   Future<void> reorderGoal(String goalId, int newPriority) async {
-    final repo = ref.read(goalsRepositoryPowerSyncProvider);
-    await repo.updateGoalPriority(goalId, newPriority);
+    final goalsRepository = ref.read(goalsRepositoryPowerSyncProvider);
+    await goalsRepository.updateGoalPriority(goalId, newPriority);
     _invalidateGoalsStreamIfMounted();
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
@@ -13,6 +14,8 @@ import 'package:workouts/services/repositories/cardio_repository_powersync.dart'
 import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'cardio_provider.g.dart';
+
+final _log = Logger('CardioImportController');
 
 class CardioImportProgress {
   const CardioImportProgress({
@@ -49,49 +52,64 @@ Stream<T> _watchRepo<T>(
   Ref ref,
   Stream<T> Function(CardioRepositoryPowerSync) watchFn,
 ) {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) {
-    final ctrl = StreamController<T>();
-    ref.onDispose(ctrl.close);
-    return ctrl.stream;
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) {
+    final streamController = StreamController<T>();
+    ref.onDispose(streamController.close);
+    return streamController.stream;
   }
-  return watchFn(CardioRepositoryPowerSync(db));
+  return watchFn(CardioRepositoryPowerSync(powerSyncDatabase));
 }
 
 @riverpod
 Stream<List<CardioWorkout>> cardioWorkouts(Ref ref) =>
-    _watchRepo(ref, (repo) => repo.watchCardioWorkouts());
+    _watchRepo(
+      ref,
+      (cardioRepository) => cardioRepository.watchCardioWorkouts(),
+    );
 
 @riverpod
 Stream<List<CardioCalendarDay>> cardioCalendarDays(Ref ref) =>
-    _watchRepo(ref, (repo) => repo.watchCalendarDays());
+    _watchRepo(
+      ref,
+      (cardioRepository) => cardioRepository.watchCalendarDays(),
+    );
 
 @riverpod
 Stream<List<CardioRoutePoint>> cardioRoutePoints(
         Ref ref, String workoutId) =>
-    _watchRepo(ref, (repo) => repo.watchRoutePoints(workoutId));
+    _watchRepo(
+      ref,
+      (cardioRepository) => cardioRepository.watchRoutePoints(workoutId),
+    );
 
 @riverpod
 Stream<List<CardioHeartRateSample>> cardioHeartRateSamples(
         Ref ref, String workoutId) =>
-    _watchRepo(ref, (repo) => repo.watchHeartRateSamples(workoutId));
+    _watchRepo(
+      ref,
+      (cardioRepository) => cardioRepository.watchHeartRateSamples(workoutId),
+    );
 
 @riverpod
 Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
-    _watchRepo(ref, (repo) => repo.watchBestEfforts());
+    _watchRepo(
+      ref,
+      (cardioRepository) => cardioRepository.watchBestEfforts(),
+    );
 
 /// Backfills metrics for workouts missing computed zone data.
 @riverpod
 Future<void> cardioMetricsBackfill(Ref ref) async {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) return;
-  final maxHR = ref.watch(maxHeartRateProvider);
-  final restingHR = ref.watch(restingHeartRateProvider);
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return;
+  final maxHeartRate = ref.watch(maxHeartRateProvider);
+  final restingHeartRate = ref.watch(restingHeartRateProvider);
   final trainingLoad = TrainingLoadCalculator(
-    maxHeartRate: maxHR,
-    restingHeartRate: restingHR,
+    maxHeartRate: maxHeartRate,
+    restingHeartRate: restingHeartRate,
   );
-  await CardioRepositoryPowerSync(db)
+  await CardioRepositoryPowerSync(powerSyncDatabase)
       .backfillMissingMetrics(trainingLoad: trainingLoad);
 }
 
@@ -102,15 +120,24 @@ class CardioImportController extends _$CardioImportController {
     return const CardioImportProgress.idle();
   }
 
+  @override
+  set state(AsyncValue<CardioImportProgress> newState) {
+    newState.whenOrNull(
+      error: (error, stackTrace) =>
+          _log.severe('CardioImportController error', error, stackTrace),
+    );
+    super.state = newState;
+  }
+
   Future<void> importRecentWorkouts({
     int maxWorkouts = 30,
     int maxRoutePoints = 1500,
   }) async {
-    final db = ref.read(powerSyncDatabaseProvider).value;
-    if (db == null) return;
+    final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
+    if (powerSyncDatabase == null) return;
     try {
       final healthKitBridge = ref.read(healthKitBridgeProvider);
-      final cardioRepository = CardioRepositoryPowerSync(db);
+      final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
       if (ref.mounted) {
         state = AsyncValue.data(
           CardioImportProgress(
@@ -140,11 +167,11 @@ class CardioImportController extends _$CardioImportController {
         );
       }
 
-      final maxHR = ref.read(maxHeartRateProvider);
-      final restingHR = ref.read(restingHeartRateProvider);
+      final maxHeartRate = ref.read(maxHeartRateProvider);
+      final restingHeartRate = ref.read(restingHeartRateProvider);
       final trainingLoad = TrainingLoadCalculator(
-        maxHeartRate: maxHR,
-        restingHeartRate: restingHR,
+        maxHeartRate: maxHeartRate,
+        restingHeartRate: restingHeartRate,
       );
       final newCount = await cardioRepository.upsertImportedWorkouts(
         importedWorkouts,

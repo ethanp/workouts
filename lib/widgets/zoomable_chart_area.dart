@@ -18,10 +18,10 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
   /// [focalRatio] (0 = left edge, 1 = right edge), clamped to
   /// [_minVisibleDays] and the full data range.
   void zoom(DateTimeRange fullRange, double scaleFactor, double focalRatio) {
-    final current = state ?? fullRange;
-    final currentDuration = current.duration;
+    final visibleRange = state ?? fullRange;
+    final visibleDuration = visibleRange.duration;
     final newDuration = Duration(
-      milliseconds: (currentDuration.inMilliseconds / scaleFactor).round(),
+      milliseconds: (visibleDuration.inMilliseconds / scaleFactor).round(),
     );
 
     final fullDuration = fullRange.duration;
@@ -37,9 +37,9 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
       return;
     }
 
-    final focalTime = current.start.add(
+    final focalTime = visibleRange.start.add(
       Duration(
-        milliseconds: (currentDuration.inMilliseconds * focalRatio).round(),
+        milliseconds: (visibleDuration.inMilliseconds * focalRatio).round(),
       ),
     );
 
@@ -69,17 +69,17 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
   /// Shifts the visible window by [delta], clamped so it stays
   /// within [fullRange].
   void pan(DateTimeRange fullRange, Duration delta) {
-    final current = state ?? fullRange;
-    var newStart = current.start.add(delta);
-    var newEnd = current.end.add(delta);
+    final visibleRange = state ?? fullRange;
+    var newStart = visibleRange.start.add(delta);
+    var newEnd = visibleRange.end.add(delta);
 
     if (newStart.isBefore(fullRange.start)) {
       newStart = fullRange.start;
-      newEnd = newStart.add(current.duration);
+      newEnd = newStart.add(visibleRange.duration);
     }
     if (newEnd.isAfter(fullRange.end)) {
       newEnd = fullRange.end;
-      newStart = newEnd.subtract(current.duration);
+      newStart = newEnd.subtract(visibleRange.duration);
     }
 
     state = DateTimeRange(start: newStart, end: newEnd);
@@ -151,11 +151,11 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     } else {
       final dx = details.localFocalPoint.dx - _lastFocalPoint.dx;
       if (dx.abs() > 0.5) {
-        final current = ref.read(chartZoomProvider) ?? fullRange;
-        final visibleMs = current.duration.inMilliseconds;
+        final visibleRange = ref.read(chartZoomProvider) ?? fullRange;
+        final visibleMilliseconds = visibleRange.duration.inMilliseconds;
         final panRatio = -dx / constraints.maxWidth;
-        final panMs = (visibleMs * panRatio).round();
-        zoomNotifier.pan(fullRange, Duration(milliseconds: panMs));
+        final panMilliseconds = (visibleMilliseconds * panRatio).round();
+        zoomNotifier.pan(fullRange, Duration(milliseconds: panMilliseconds));
       }
     }
     _lastFocalPoint = details.localFocalPoint;

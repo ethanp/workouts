@@ -14,18 +14,18 @@ final _log = Logger('Sync');
 @riverpod
 Stream<SyncStatus> powerSyncStatus(Ref ref) async* {
   // Wait for database to be ready
-  final db = await ref.watch(powerSyncDatabaseProvider.future);
+  final powerSyncDatabase = await ref.watch(powerSyncDatabaseProvider.future);
 
   SyncStatus? lastStatus;
 
   // Emit current status immediately
-  final initial = db.currentStatus;
-  _logSyncStatus(initial, lastStatus);
-  lastStatus = initial;
-  yield initial;
+  final initialStatus = powerSyncDatabase.currentStatus;
+  _logSyncStatus(initialStatus, lastStatus);
+  lastStatus = initialStatus;
+  yield initialStatus;
 
   // Then emit status changes
-  await for (final status in db.statusStream) {
+  await for (final status in powerSyncDatabase.statusStream) {
     _logSyncStatus(status, lastStatus);
     lastStatus = status;
     yield status;
@@ -178,7 +178,7 @@ String syncStatusDescription(Ref ref) {
       return 'Connecting...';
     },
     loading: () => 'Connecting...',
-    error: (e, _) => 'Error: $e',
+    error: (error, _) => 'Error: $error',
   );
 }
 

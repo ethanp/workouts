@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
@@ -7,11 +8,11 @@ part 'heart_rate_samples_repository_powersync.g.dart';
 
 @riverpod
 HeartRateSamplesRepository heartRateSamplesRepositoryPowerSync(Ref ref) {
-  final db = ref.watch(powerSyncDatabaseProvider).value;
-  if (db == null) {
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) {
     throw StateError('PowerSync database not initialized');
   }
-  return HeartRateSamplesRepository(db);
+  return HeartRateSamplesRepository(powerSyncDatabase);
 }
 
 class HeartRateSamplesRepository {
@@ -29,11 +30,11 @@ class HeartRateSamplesRepository {
           ''',
           parameters: [sessionId],
         )
-        .map((rows) => rows.map(_mapRowToSample).toList());
+        .map((sampleRows) => sampleRows.mapL(HeartRateSample.fromRow));
   }
 
   Future<List<HeartRateSample>> fetchSamplesForSession(String sessionId) async {
-    final rows = await _powerSync.getAll(
+    final sampleRows = await _powerSync.getAll(
       '''
       SELECT * FROM heart_rate_samples
       WHERE session_id = ?
@@ -41,7 +42,7 @@ class HeartRateSamplesRepository {
       ''',
       [sessionId],
     );
-    return rows.map(_mapRowToSample).toList();
+    return sampleRows.mapL(HeartRateSample.fromRow);
   }
 
   Future<void> addSample(HeartRateSample sample) async {
@@ -64,14 +65,4 @@ class HeartRateSamplesRepository {
     );
   }
 
-  HeartRateSample _mapRowToSample(Map<String, dynamic> row) {
-    return HeartRateSample(
-      id: row['id'] as String,
-      sessionId: row['session_id'] as String,
-      timestamp: DateTime.parse(row['timestamp'] as String),
-      bpm: row['bpm'] as int,
-      energyKcal: (row['energy_kcal'] as num?)?.toDouble(),
-      source: row['source'] as String,
-    );
-  }
 }

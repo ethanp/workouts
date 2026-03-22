@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_trend_painter.dart';
@@ -29,12 +30,12 @@ class _CardioTrendChartState extends State<CardioTrendChart> {
 
   List<TrendSeries> _visibleSeries() {
     return widget.series
-        .where((s) => !_hiddenSeries.contains(s.label))
+        .where((trendSeries) => !_hiddenSeries.contains(trendSeries.label))
         .toList();
   }
 
   bool _hasEnoughData() {
-    return widget.series.any((s) => s.points.length >= 2);
+    return widget.series.any((trendSeries) => trendSeries.points.length >= 2);
   }
 
   @override
@@ -78,7 +79,7 @@ class _CardioTrendChartState extends State<CardioTrendChart> {
         1: IntrinsicColumnWidth(),
         2: IntrinsicColumnWidth(),
       },
-      children: widget.series.map(_legendRow).toList(),
+      children: widget.series.mapL(_legendRow),
     );
   }
 

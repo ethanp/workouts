@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'training_influence.freezed.dart';
@@ -17,6 +19,21 @@ abstract class TrainingInfluence with _$TrainingInfluence {
 
   factory TrainingInfluence.fromJson(Map<String, dynamic> json) =>
       _$TrainingInfluenceFromJson(json);
+
+  factory TrainingInfluence.fromRow(Map<String, dynamic> influenceRow) {
+    final String principlesJson = influenceRow['principles'] as String? ?? '[]';
+    final List<String> parsedPrinciples =
+        (jsonDecode(principlesJson) as List).cast<String>();
+    return TrainingInfluence(
+      id: influenceRow['id'] as String,
+      name: influenceRow['name'] as String,
+      description: (influenceRow['description'] as String?) ?? '',
+      principles: parsedPrinciples,
+      isActive: (influenceRow['is_active'] as int? ?? 0) == 1,
+      createdAt: _asDateTime(influenceRow['created_at']),
+      updatedAt: _asDateTime(influenceRow['updated_at']),
+    );
+  }
 }
 
 /// Pre-loaded training influences to seed the database.
@@ -82,3 +99,8 @@ const seedInfluences = [
     ],
   ),
 ];
+
+DateTime? _asDateTime(Object? rawValue) {
+  final String? maybeDateTime = rawValue as String?;
+  return maybeDateTime == null ? null : DateTime.tryParse(maybeDateTime);
+}

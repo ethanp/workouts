@@ -11,7 +11,11 @@ import 'package:workouts/screens/influences_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class UnitSystemTile extends StatelessWidget {
-  const UnitSystemTile({super.key, required this.unitSystem, required this.ref});
+  const UnitSystemTile({
+    super.key,
+    required this.unitSystem,
+    required this.ref,
+  });
 
   final UnitSystem unitSystem;
   final WidgetRef ref;
@@ -93,10 +97,10 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
 
   @override
   Widget build(BuildContext context) {
-    final maxHR = ref.watch(maxHeartRateProvider);
+    final maxHeartRate = ref.watch(maxHeartRateProvider);
     final recomputeProgress = ref.watch(metricsRecomputeProgressProvider);
-    final displayHR = _dragValue?.round() ?? maxHR;
-    final zone2Lower = (displayHR * 0.60).floor();
+    final displayedHeartRate = _dragValue?.round() ?? maxHeartRate;
+    final zone2Lower = (displayedHeartRate * 0.60).floor();
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -130,7 +134,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
                   children: [
                     Text('Max Heart Rate', style: AppTypography.subtitle),
                     Text(
-                      '$displayHR bpm  ·  >= Zone 2: $zone2Lower+ bpm',
+                      '$displayedHeartRate bpm  ·  >= Zone 2: $zone2Lower+ bpm',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textColor3,
                       ),
@@ -142,7 +146,7 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
           ),
           const SizedBox(height: AppSpacing.sm),
           CupertinoSlider(
-            value: _dragValue ?? maxHR.toDouble(),
+            value: _dragValue ?? maxHeartRate.toDouble(),
             min: 140,
             max: 220,
             divisions: 80,
@@ -197,8 +201,8 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
 
   @override
   Widget build(BuildContext context) {
-    final restingHR = ref.watch(restingHeartRateProvider);
-    final displayHR = _dragValue?.round() ?? restingHR;
+    final restingHeartRate = ref.watch(restingHeartRateProvider);
+    final displayedHeartRate = _dragValue?.round() ?? restingHeartRate;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -232,7 +236,7 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
                   children: [
                     Text('Resting Heart Rate', style: AppTypography.subtitle),
                     Text(
-                      '$displayHR bpm',
+                      '$displayedHeartRate bpm',
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textColor3,
                       ),
@@ -245,14 +249,17 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
                 onPressed: _syncing ? null : _syncFromHealthKit,
                 child: _syncing
                     ? const CupertinoActivityIndicator()
-                    : const Icon(CupertinoIcons.arrow_2_circlepath,
-                        size: 20, color: AppColors.accentPrimary),
+                    : const Icon(
+                        CupertinoIcons.arrow_2_circlepath,
+                        size: 20,
+                        color: AppColors.accentPrimary,
+                      ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
           CupertinoSlider(
-            value: _dragValue ?? restingHR.toDouble(),
+            value: _dragValue ?? restingHeartRate.toDouble(),
             min: 30,
             max: 100,
             divisions: 70,
@@ -271,10 +278,7 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
 }
 
 class TrainingInfluencesTile extends StatelessWidget {
-  const TrainingInfluencesTile({
-    super.key,
-    required this.influencesAsync,
-  });
+  const TrainingInfluencesTile({super.key, required this.influencesAsync});
 
   final AsyncValue<List<dynamic>> influencesAsync;
 
@@ -416,8 +420,8 @@ class TemplateVersionTile extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               status.installed == null
-                  ? 'Not initialized (version ${status.current})'
-                  : 'Version ${status.installed} installed (current: ${status.current})',
+                  ? 'Not initialized (version ${status.currentTemplateVersion})'
+                  : 'Version ${status.installed} installed (current: ${status.currentTemplateVersion})',
               style: AppTypography.body.copyWith(
                 color: status.needsUpdate
                     ? AppColors.warning
@@ -542,18 +546,24 @@ class PermissionStatusTile extends StatelessWidget {
             statusLabel,
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () => ref
-                .read(healthKitPermissionProvider.notifier)
-                .requestAuthorization(),
-            child: const Text('Manage in Health app'),
-          ),
+          if (_permissionNeedsFirstRequest) ...[
+            const SizedBox(height: AppSpacing.sm),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => ref
+                  .read(healthKitPermissionProvider.notifier)
+                  .requestAuthorization(),
+              child: const Text('Allow Health Access'),
+            ),
+          ],
         ],
       ),
     );
   }
+
+  bool get _permissionNeedsFirstRequest =>
+      permissionAsync.value == null ||
+      permissionAsync.value == HealthPermissionStatus.unknown;
 }
 
 class HealthCardioImportTile extends ConsumerWidget {
@@ -622,10 +632,7 @@ class HealthCardioImportTile extends ConsumerWidget {
                 color: AppColors.backgroundDepth3,
                 child: FractionallySizedBox(
                   alignment: Alignment.centerLeft,
-                  widthFactor: importProgress.progressFraction.clamp(
-                    0.0,
-                    1.0,
-                  ),
+                  widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
                   child: Container(color: AppColors.accentPrimary),
                 ),
               ),
@@ -680,8 +687,8 @@ class MetricsBackfillTile extends ConsumerWidget {
               onPressed: status.inProgress
                   ? null
                   : () => ref
-                      .read(metricsBackfillControllerProvider.notifier)
-                      .runBackfill(),
+                        .read(metricsBackfillControllerProvider.notifier)
+                        .runBackfill(),
               child: status.inProgress
                   ? const CupertinoActivityIndicator(
                       color: CupertinoColors.white,

@@ -20,7 +20,7 @@ int parseTargetSetsFromPrescription(String prescription) {
 ExerciseModality _parseModality(String? value) {
   final modalityStr = value ?? '';
   return ExerciseModality.values.firstWhere(
-    (e) => e.name == modalityStr,
+    (exerciseModality) => exerciseModality.name == modalityStr,
     orElse: () => ExerciseModality.reps,
   );
 }
@@ -92,7 +92,7 @@ WorkoutBlock workoutBlockFromRow(
   return WorkoutBlock(
     id: blockRow['id'] as String,
     type: WorkoutBlockType.values.firstWhere(
-      (e) => e.name == (blockRow['type'] as String),
+      (workoutBlockType) => workoutBlockType.name == (blockRow['type'] as String),
       orElse: () => WorkoutBlockType.strength,
     ),
     title: blockRow['title'] as String,
@@ -149,7 +149,7 @@ SessionBlock sessionBlockFromRow(
     id: blockRow['id'] as String,
     sessionId: blockRow['session_id'] as String,
     type: WorkoutBlockType.values.firstWhere(
-      (e) => e.name == (blockRow['type'] as String),
+      (workoutBlockType) => workoutBlockType.name == (blockRow['type'] as String),
       orElse: () => WorkoutBlockType.strength,
     ),
     blockIndex: blockRow['block_index'] as int,

@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/models/workout_block.dart';
@@ -7,7 +8,7 @@ import 'package:workouts/models/workout_template.dart';
 const _uuid = Uuid();
 
 WorkoutTemplate templateFromLlmOption(LlmWorkoutOption option) {
-  final blocks = option.blocks.map(_blockFromLlmBlock).toList();
+  final blocks = option.blocks.mapL(_blockFromLlmBlock);
 
   return WorkoutTemplate(
     id: _uuid.v4(),
@@ -19,13 +20,13 @@ WorkoutTemplate templateFromLlmOption(LlmWorkoutOption option) {
 }
 
 WorkoutBlock _blockFromLlmBlock(LlmWorkoutBlock blockOption) {
-  final exercises = blockOption.exercises.map(_exerciseFromLlmExercise).toList();
+  final exercises = blockOption.exercises.mapL(_exerciseFromLlmExercise);
 
   return WorkoutBlock(
     id: _uuid.v4(),
     title: blockOption.title,
     type: WorkoutBlockType.values.firstWhere(
-      (t) => t.name == blockOption.type,
+      (workoutBlockType) => workoutBlockType.name == blockOption.type,
       orElse: () => WorkoutBlockType.strength,
     ),
     targetDuration: Duration(minutes: blockOption.estimatedMinutes),

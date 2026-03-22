@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:http/http.dart' as http;
 import 'package:powersync/powersync.dart';
 import 'package:workouts/services/powersync/postgrest_uploader.dart';
@@ -32,14 +33,12 @@ class TieredBatchUploader {
     final client = http.Client();
     try {
       for (final tier in _UploadGraph.tiers) {
-        final tierOps =
-            batch.crud.where((op) => tier.contains(op.table)).toList();
+        final tierOps = batch.crud.whereL((op) => tier.contains(op.table));
         await _uploadChunked(tierOps, client, tally);
       }
 
       final unknownOps = batch.crud
-          .where((op) => !_UploadGraph.allTables.contains(op.table))
-          .toList();
+          .whereL((op) => !_UploadGraph.allTables.contains(op.table));
       await _uploadChunked(unknownOps, client, tally);
     } finally {
       client.close();
@@ -53,9 +52,13 @@ class TieredBatchUploader {
     http.Client client,
     void Function(bool) tally,
   ) async {
-    for (var i = 0; i < ops.length; i += _chunkConcurrency) {
-      final chunk =
-          ops.sublist(i, math.min(i + _chunkConcurrency, ops.length));
+    for (var chunkStartIndex = 0;
+        chunkStartIndex < ops.length;
+        chunkStartIndex += _chunkConcurrency) {
+      final chunk = ops.sublist(
+        chunkStartIndex,
+        math.min(chunkStartIndex + _chunkConcurrency, ops.length),
+      );
       final results = await Future.wait(
         chunk.map((op) => _uploader.upload(op, client)),
       );
@@ -103,8 +106,10 @@ class _UploadGraph {
 
     while (remaining.isNotEmpty) {
       final tier = remaining.entries
-          .where((e) => e.value.every(placed.contains))
-          .map((e) => e.key)
+          .where(
+            (tableEntry) => tableEntry.value.every(placed.contains),
+          )
+          .map((tableEntry) => tableEntry.key)
           .toSet();
       if (tier.isEmpty) {
         throw StateError('Circular FK dependency in: ${remaining.keys}');

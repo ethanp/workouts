@@ -33,8 +33,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   Future<void> _sendWatchCommand(Future<void> Function() command) async {
     try {
       await command();
-    } on PlatformException catch (e) {
-      errorBus.add('Watch: ${e.message}');
+    } on PlatformException catch (platformException) {
+      errorBus.add('Watch: ${platformException.message}');
     }
   }
 
@@ -73,11 +73,11 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     Duration? duration,
     int? unitRemaining,
   }) async {
-    final current = state.value;
-    if (current == null) {
+    final activeSession = state.value;
+    if (activeSession == null) {
       throw StateError('No active session');
     }
-    final log = SessionSetLog(
+    final sessionSetLog = SessionSetLog(
       id: _uuid.v4(),
       sessionBlockId: block.id,
       exerciseId: exercise.id,
@@ -88,8 +88,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       unitRemaining: unitRemaining,
     );
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    await repository.logSet(session: current, setLog: log);
-    final updatedSession = await repository.fetchSessionById(current.id);
+    await repository.logSet(session: activeSession, setLog: sessionSetLog);
+    final updatedSession = await repository.fetchSessionById(activeSession.id);
     state = AsyncValue.data(updatedSession);
   }
 
@@ -97,34 +97,34 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     required SessionBlock block,
     required WorkoutExercise exercise,
   }) async {
-    final current = state.value;
-    if (current == null) {
+    final activeSession = state.value;
+    if (activeSession == null) {
       throw StateError('No active session');
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     await repository.unlogSet(
-      session: current,
+      session: activeSession,
       block: block,
       exercise: exercise,
     );
-    final updatedSession = await repository.fetchSessionById(current.id);
+    final updatedSession = await repository.fetchSessionById(activeSession.id);
     state = AsyncValue.data(updatedSession);
   }
 
   Future<void> complete({String? notes, String? feeling}) async {
-    final current = state.value;
-    if (current == null) {
+    final activeSession = state.value;
+    if (activeSession == null) {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    final maxHR = ref.read(maxHeartRateProvider);
-    final restingHR = ref.read(restingHeartRateProvider);
+    final maxHeartRate = ref.read(maxHeartRateProvider);
+    final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHR,
-      restingHeartRate: restingHR,
+      maxHeartRate: maxHeartRate,
+      restingHeartRate: restingHeartRate,
     );
     await repository.completeSession(
-      current,
+      activeSession,
       notes: notes,
       feeling: feeling,
       trainingLoad: trainingLoad,
@@ -138,34 +138,38 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   }
 
   Future<void> pause() async {
-    final current = state.value;
-    if (current == null || current.isPaused || current.completedAt != null) {
+    final activeSession = state.value;
+    if (activeSession == null ||
+        activeSession.isPaused ||
+        activeSession.completedAt != null) {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    await repository.pauseSession(current);
-    final updatedSession = await repository.fetchSessionById(current.id);
+    await repository.pauseSession(activeSession);
+    final updatedSession = await repository.fetchSessionById(activeSession.id);
     state = AsyncValue.data(updatedSession);
     _sendWatchCommand(_watchBridge.pauseWatchWorkout);
   }
 
   Future<void> resume() async {
-    final current = state.value;
-    if (current == null || !current.isPaused || current.completedAt != null) {
+    final activeSession = state.value;
+    if (activeSession == null ||
+        !activeSession.isPaused ||
+        activeSession.completedAt != null) {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    await repository.resumeSession(current);
-    final updatedSession = await repository.fetchSessionById(current.id);
+    await repository.resumeSession(activeSession);
+    final updatedSession = await repository.fetchSessionById(activeSession.id);
     state = AsyncValue.data(updatedSession);
     _sendWatchCommand(_watchBridge.resumeWatchWorkout);
   }
 
   Future<void> discard() async {
-    final current = state.value;
-    if (current != null) {
+    final activeSession = state.value;
+    if (activeSession != null) {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
-      await repository.discardSession(current.id);
+      await repository.discardSession(activeSession.id);
     }
     if (ref.mounted) {
       state = const AsyncValue.data(null);
@@ -176,29 +180,29 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   }
 
   Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {
-    final current = state.value;
-    if (current == null) return;
+    final activeSession = state.value;
+    if (activeSession == null) return;
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     state = AsyncValue.data(
-      await repository.addExercise(current, block.id, exercise),
+      await repository.addExercise(activeSession, block.id, exercise),
     );
   }
 
   Future<void> removeExercise(SessionBlock block, String exerciseId) async {
-    final current = state.value;
-    if (current == null) return;
+    final activeSession = state.value;
+    if (activeSession == null) return;
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     state = AsyncValue.data(
-      await repository.removeExercise(current, block.id, exerciseId),
+      await repository.removeExercise(activeSession, block.id, exerciseId),
     );
   }
 
   Future<void> refreshFromDatabase() async {
-    final current = state.value;
-    if (current == null) return;
+    final activeSession = state.value;
+    if (activeSession == null) return;
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    final refreshed = await repository.fetchSessionById(current.id);
-    state = AsyncValue.data(refreshed);
+    final refreshedSession = await repository.fetchSessionById(activeSession.id);
+    state = AsyncValue.data(refreshedSession);
   }
 }
 

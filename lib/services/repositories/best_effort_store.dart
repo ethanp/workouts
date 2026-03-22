@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +8,11 @@ import 'package:workouts/utils/best_effort_calculator.dart';
 final _log = Logger('BestEffortStore');
 const _uuid = Uuid();
 
+/// Computes and stores best-effort times for a single workout across fixed
+/// distance buckets in `cardio_best_efforts`.
+///
+/// Entries are keyed by `workout_id` + `distance_meters`; workout modality
+/// (for example, run vs bike) is derived from the parent workout record.
 class BestEffortStore {
   BestEffortStore(this._powerSync);
 
@@ -38,19 +44,19 @@ class BestEffortStore {
     ''');
     if (pendingRows.isEmpty) return;
     _log.info('Backfilling best efforts for ${pendingRows.length} workouts.');
-    for (var i = 0; i < pendingRows.length; i++) {
-      await computeAndStore(pendingRows[i]['id'] as String);
-      onProgress?.call(i + 1, pendingRows.length);
+    for (var workoutIndex = 0; workoutIndex < pendingRows.length; workoutIndex++) {
+      await computeAndStore(pendingRows[workoutIndex]['id'] as String);
+      onProgress?.call(workoutIndex + 1, pendingRows.length);
     }
     _log.info('Best effort backfill complete.');
   }
 
   Future<List<CardioRoutePoint>> _loadRoutePoints(String workoutId) async {
-    final rows = await _powerSync.execute(
+    final routePointRows = await _powerSync.execute(
       'SELECT * FROM cardio_route_points WHERE workout_id = ? ORDER BY point_index ASC',
       [workoutId],
     );
-    return rows.map(_routePointFromRow).toList();
+    return routePointRows.mapL(CardioRoutePoint.fromRow);
   }
 
   Future<void> _upsert(
@@ -58,45 +64,19 @@ class BestEffortStore {
     double distanceMeters,
     double elapsedSeconds,
   ) async {
-    final existing = await _powerSync.getOptional(
-      'SELECT id FROM cardio_best_efforts WHERE workout_id = ? AND distance_meters = ?',
-      [workoutId, distanceMeters],
-    );
     final now = DateTime.now().toUtc().toIso8601String();
-    if (existing != null) {
-      await _powerSync.execute(
-        'UPDATE cardio_best_efforts SET elapsed_seconds = ?, updated_at = ? WHERE id = ?',
-        [elapsedSeconds, now, existing['id']],
+    await _powerSync.writeTransaction((transaction) async {
+      await transaction.execute(
+        'DELETE FROM cardio_best_efforts'
+        ' WHERE workout_id = ? AND distance_meters = ?',
+        [workoutId, distanceMeters],
       );
-    } else {
-      await _powerSync.execute(
-        'INSERT INTO cardio_best_efforts (id, workout_id, distance_meters, elapsed_seconds, created_at, updated_at)'
+      await transaction.execute(
+        'INSERT INTO cardio_best_efforts'
+        ' (id, workout_id, distance_meters, elapsed_seconds, created_at, updated_at)'
         ' VALUES (?, ?, ?, ?, ?, ?)',
         [_uuid.v4(), workoutId, distanceMeters, elapsedSeconds, now, now],
       );
-    }
+    });
   }
-
-  CardioRoutePoint _routePointFromRow(Map<String, dynamic> row) {
-    return CardioRoutePoint(
-      id: row['id'] as String,
-      workoutId: row['workout_id'] as String,
-      pointIndex: (row['point_index'] as int?) ?? 0,
-      latitude: _asDouble(row['lat']) ?? 0,
-      longitude: _asDouble(row['lng']) ?? 0,
-      altitudeMeters: _asDouble(row['altitude_meters']),
-      recordedAt: _asDateTime(row['timestamp']),
-    );
-  }
-}
-
-double? _asDouble(Object? value) {
-  if (value == null) return null;
-  if (value is num) return value.toDouble();
-  return double.tryParse('$value');
-}
-
-DateTime? _asDateTime(Object? value) {
-  final string = value as String?;
-  return string == null ? null : DateTime.tryParse(string);
 }

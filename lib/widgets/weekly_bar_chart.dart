@@ -61,9 +61,13 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
       return Text(widget.title, style: AppTypography.subtitle);
     }
 
-    final averageable = weeks.where((w) => w.includeInAverage).toList();
-    final total = averageable.fold(0.0, (sum, w) => sum + w.value);
-    final avg = averageable.isEmpty ? 0.0 : total / averageable.length;
+    final averageableWeeks =
+        weeks.where((weekData) => weekData.includeInAverage).toList();
+    final total = averageableWeeks.fold(
+      0.0,
+      (sum, weekData) => sum + weekData.value,
+    );
+    final avg = averageableWeeks.isEmpty ? 0.0 : total / averageableWeeks.length;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -79,9 +83,9 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
 
   List<int> _yearBoundaryIndices() {
     final indices = <int>[];
-    for (var i = 1; i < weeks.length; i++) {
-      if (weeks[i].weekStart.year != weeks[i - 1].weekStart.year) {
-        indices.add(i);
+    for (var weekIndex = 1; weekIndex < weeks.length; weekIndex++) {
+      if (weeks[weekIndex].weekStart.year != weeks[weekIndex - 1].weekStart.year) {
+        indices.add(weekIndex);
       }
     }
     return indices;
@@ -148,7 +152,10 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
       );
     }
 
-    final maxValue = weeks.fold(0.0, (m, w) => math.max(m, w.value));
+    final maxValue = weeks.fold(
+      0.0,
+      (maxSoFar, weekData) => math.max(maxSoFar, weekData.value),
+    );
     final effectiveMax = maxValue > 0 ? maxValue : 1.0;
     final color = widget.barColor ?? AppColors.accentPrimary;
     final barSpacing = _barSpacing();
@@ -156,10 +163,10 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var i = 0; i < weeks.length; i++) ...[
-          if (i > 0) SizedBox(width: barSpacing),
+        for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) ...[
+          if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(
-            child: _interactiveBar(i, effectiveMax, color),
+            child: _interactiveBar(weekIndex, effectiveMax, color),
           ),
         ],
       ],
@@ -247,22 +254,22 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
           return Stack(
             clipBehavior: Clip.none,
             children: [
-              for (var i = 0; i < count; i++)
-                if (i % labelStride == 0 || weeks[i].isCurrent)
+              for (var weekIndex = 0; weekIndex < count; weekIndex++)
+                if (weekIndex % labelStride == 0 || weeks[weekIndex].isCurrent)
                   Positioned(
-                    left: i * (barWidth + barSpacing) + barWidth / 2 - 20,
+                    left: weekIndex * (barWidth + barSpacing) + barWidth / 2 - 20,
                     top: 0,
                     child: SizedBox(
                       width: 40,
                       child: Text(
-                        weeks[i].label,
+                        weeks[weekIndex].label,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 9,
-                          color: weeks[i].isCurrent
+                          color: weeks[weekIndex].isCurrent
                               ? AppColors.accentPrimary
                               : AppColors.textColor4,
-                          fontWeight: weeks[i].isCurrent
+                          fontWeight: weeks[weekIndex].isCurrent
                               ? FontWeight.w600
                               : FontWeight.normal,
                         ),

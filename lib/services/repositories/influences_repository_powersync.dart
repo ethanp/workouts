@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/training_influence.dart';
@@ -14,10 +15,10 @@ class InfluencesRepositoryPowerSync {
 
   Future<List<TrainingInfluence>> fetchInfluences() async {
     await _ensureSeeded();
-    final rows = await _powerSync.getAll(
+    final influenceRows = await _powerSync.getAll(
       'SELECT * FROM training_influences ORDER BY name ASC',
     );
-    return rows.map(_influenceFromRow).toList();
+    return influenceRows.mapL(TrainingInfluence.fromRow);
   }
 
   Stream<List<TrainingInfluence>> watchInfluences() {
@@ -25,7 +26,7 @@ class InfluencesRepositoryPowerSync {
     return _ensureSeeded().asStream().asyncExpand((_) {
       return _powerSync
           .watch('SELECT * FROM training_influences ORDER BY name ASC')
-          .map((rows) => rows.map(_influenceFromRow).toList());
+          .map((influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow));
     });
   }
 
@@ -42,16 +43,16 @@ class InfluencesRepositoryPowerSync {
           .watch(
             'SELECT * FROM training_influences WHERE is_active = 1 ORDER BY name ASC',
           )
-          .map((rows) => rows.map(_influenceFromRow).toList());
+          .map((influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow));
     });
   }
 
   Future<List<TrainingInfluence>> fetchActiveInfluences() async {
     await _ensureSeeded();
-    final rows = await _powerSync.getAll(
+    final influenceRows = await _powerSync.getAll(
       'SELECT * FROM training_influences WHERE is_active = 1 ORDER BY name ASC',
     );
-    return rows.map(_influenceFromRow).toList();
+    return influenceRows.mapL(TrainingInfluence.fromRow);
   }
 
   Future<void> toggleInfluence(String id, bool isActive) async {
@@ -88,32 +89,14 @@ class InfluencesRepositoryPowerSync {
     }
   }
 
-  TrainingInfluence _influenceFromRow(Map<String, dynamic> row) {
-    final principlesJson = row['principles'] as String? ?? '[]';
-    final principles = (jsonDecode(principlesJson) as List).cast<String>();
-
-    return TrainingInfluence(
-      id: row['id'] as String,
-      name: row['name'] as String,
-      description: (row['description'] as String?) ?? '',
-      principles: principles,
-      isActive: (row['is_active'] as int?) == 1,
-      createdAt: row['created_at'] != null
-          ? DateTime.tryParse(row['created_at'] as String)
-          : null,
-      updatedAt: row['updated_at'] != null
-          ? DateTime.tryParse(row['updated_at'] as String)
-          : null,
-    );
-  }
 }
 
 @riverpod
 InfluencesRepositoryPowerSync influencesRepositoryPowerSync(Ref ref) {
-  final dbAsync = ref.watch(powerSyncDatabaseProvider);
-  final db = dbAsync.value;
-  if (db == null) {
+  final powerSyncDatabaseAsync = ref.watch(powerSyncDatabaseProvider);
+  final powerSyncDatabase = powerSyncDatabaseAsync.value;
+  if (powerSyncDatabase == null) {
     throw StateError('PowerSync database not initialized');
   }
-  return InfluencesRepositoryPowerSync(db);
+  return InfluencesRepositoryPowerSync(powerSyncDatabase);
 }

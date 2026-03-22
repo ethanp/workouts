@@ -55,12 +55,16 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
 
       final normalized = sample.copyWith(sessionId: sessionId);
       final updated = [...state, normalized]
-        ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        ..sort(
+          (earlierSample, laterSample) =>
+              earlierSample.timestamp.compareTo(laterSample.timestamp),
+        );
       state = updated;
 
       try {
-        final repo = ref.read(heartRateSamplesRepositoryPowerSyncProvider);
-        await repo.addSample(normalized);
+        final heartRateRepository =
+            ref.read(heartRateSamplesRepositoryPowerSyncProvider);
+        await heartRateRepository.addSample(normalized);
       } catch (_) {
         // Ignore persistence errors; UI still renders live data.
       }
@@ -71,8 +75,8 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
     if (sessionId.isNotEmpty && sessionId != 'unknown') {
       return sessionId;
     }
-    final active = ref.read(activeSessionProvider).value;
-    return active?.id;
+    final activeSession = ref.read(activeSessionProvider).value;
+    return activeSession?.id;
   }
 }
 

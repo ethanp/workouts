@@ -6,20 +6,20 @@ import 'package:workouts/services/watch_connectivity_bridge.dart';
 const _watchBridge = WatchConnectivityBridge();
 
 final watchConnectionStatusProvider = StreamProvider<bool>((ref) {
-  final controller = StreamController<bool>();
-  controller.add(false);
+  final connectionStatusController = StreamController<bool>();
+  connectionStatusController.add(false);
 
   final subscription = _watchBridge.connectionStream().listen(
-    controller.add,
-    onError: (_) => controller.add(false),
+    connectionStatusController.add,
+    onError: (_) => connectionStatusController.add(false),
   );
 
   ref.onDispose(() async {
     await subscription.cancel();
-    await controller.close();
+    await connectionStatusController.close();
   });
 
-  return controller.stream;
+  return connectionStatusController.stream;
 });
 
 final watchCommandStreamProvider = StreamProvider<String>((ref) {

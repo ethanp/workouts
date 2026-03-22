@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -109,6 +110,11 @@ class HistoryChartsTab extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         WeeklyStackedZoneChart(weeks: _weekZoneDataList(visibleWeeks)),
         const SizedBox(height: AppSpacing.lg),
+        Text(
+          'Best-effort pace lines currently include outdoor runs only.',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         CardioTrendChart(
           title: 'Cardio Trends',
           series: _cardioTrendSeries(workouts, bestEfforts, unitSystem),
@@ -222,8 +228,9 @@ class HistoryChartsTab extends ConsumerWidget {
   }
 
   List<CardioWorkout> _chronologicalWorkouts(List<CardioWorkout> workouts) {
-    return workouts.where((workout) => workout.durationSeconds > 0).toList()
-      ..sort((a, b) => a.startedAt.compareTo(b.startedAt));
+    return workouts
+        .whereL((workout) => workout.durationSeconds > 0)
+        .sortedOn((workout) => workout.startedAt);
   }
 
   double _metersPerUnit(UnitSystem unitSystem) =>
@@ -257,13 +264,13 @@ class HistoryChartsTab extends ConsumerWidget {
             color: _bucketColors[bucket] ?? AppColors.accentPrimary,
             invertY: true,
             points: byBucket[bucket]!
-                .where((e) => e.workoutStartedAt != null)
-                .map((e) => TrendPoint(
-                      date: e.workoutStartedAt!,
-                      value: e.paceSecondsPerUnit(metersPerUnit),
+                .where((bestEffort) => bestEffort.workoutStartedAt != null)
+                .map((bestEffort) => TrendPoint(
+                      date: bestEffort.workoutStartedAt!,
+                      value: bestEffort.paceSecondsPerUnit(metersPerUnit),
                     ))
                 .toList(),
-            formatValue: (v) => Format.paceValue(v),
+            formatValue: (paceValue) => Format.paceValue(paceValue),
           ),
     ];
   }
@@ -278,13 +285,13 @@ class HistoryChartsTab extends ConsumerWidget {
       color: const Color(0xFF30D158),
       points: workouts
           .map(
-            (w) => TrendPoint(
-              date: w.startedAt,
-              value: w.distanceMeters / metersPerUnit,
+            (workout) => TrendPoint(
+              date: workout.startedAt,
+              value: workout.distanceMeters / metersPerUnit,
             ),
           )
           .toList(),
-      formatValue: (v) => '${v.toStringAsFixed(1)}$unitLabel',
+      formatValue: (distanceValue) => '${distanceValue.toStringAsFixed(1)}$unitLabel',
     );
   }
 
@@ -293,12 +300,15 @@ class HistoryChartsTab extends ConsumerWidget {
       label: 'Avg HR',
       color: const Color(0xFFFF453A),
       points: workouts
-          .where((w) => w.averageHeartRateBpm != null)
+          .where((workout) => workout.averageHeartRateBpm != null)
           .map(
-            (w) => TrendPoint(date: w.startedAt, value: w.averageHeartRateBpm!),
+            (workout) => TrendPoint(
+              date: workout.startedAt,
+              value: workout.averageHeartRateBpm!,
+            ),
           )
           .toList(),
-      formatValue: (v) => '${v.round()} bpm',
+      formatValue: (heartRateValue) => '${heartRateValue.round()} bpm',
     );
   }
 
@@ -307,10 +317,13 @@ class HistoryChartsTab extends ConsumerWidget {
       label: 'Max HR',
       color: const Color(0xFFFF6961),
       points: workouts
-          .where((w) => w.maxHeartRateBpm != null)
-          .map((w) => TrendPoint(date: w.startedAt, value: w.maxHeartRateBpm!))
+          .where((workout) => workout.maxHeartRateBpm != null)
+          .map(
+            (workout) =>
+                TrendPoint(date: workout.startedAt, value: workout.maxHeartRateBpm!),
+          )
           .toList(),
-      formatValue: (v) => '${v.round()} bpm',
+      formatValue: (heartRateValue) => '${heartRateValue.round()} bpm',
     );
   }
 
@@ -319,10 +332,13 @@ class HistoryChartsTab extends ConsumerWidget {
       label: 'Calories',
       color: const Color(0xFFFFD60A),
       points: workouts
-          .where((w) => w.energyKcal != null)
-          .map((w) => TrendPoint(date: w.startedAt, value: w.energyKcal!))
+          .where((workout) => workout.energyKcal != null)
+          .map(
+            (workout) =>
+                TrendPoint(date: workout.startedAt, value: workout.energyKcal!),
+          )
           .toList(),
-      formatValue: (v) => '${v.round()} kcal',
+      formatValue: (caloriesValue) => '${caloriesValue.round()} kcal',
     );
   }
 
@@ -332,13 +348,13 @@ class HistoryChartsTab extends ConsumerWidget {
       color: const Color(0xFF64D2FF),
       points: workouts
           .map(
-            (w) => TrendPoint(
-              date: w.startedAt,
-              value: w.durationSeconds.toDouble(),
+            (workout) => TrendPoint(
+              date: workout.startedAt,
+              value: workout.durationSeconds.toDouble(),
             ),
           )
           .toList(),
-      formatValue: (v) => Format.durationShort(v.round()),
+      formatValue: (durationValue) => Format.durationShort(durationValue.round()),
     );
   }
 

@@ -37,14 +37,20 @@ class CardioTrendPainter extends CustomPainter {
 
   ChartDateLayout _buildLayout(Size size) {
     final allDates = visibleSeries
-        .expand((s) => s.points)
-        .map((p) => p.date);
+        .expand((trendSeries) => trendSeries.points)
+        .map((trendPoint) => trendPoint.date);
     final fallbackStart = allDates.isEmpty
         ? DateTime.now()
-        : allDates.reduce((a, b) => a.isBefore(b) ? a : b);
+        : allDates.reduce(
+            (earlierDate, laterDate) =>
+                earlierDate.isBefore(laterDate) ? earlierDate : laterDate,
+          );
     final fallbackEnd = allDates.isEmpty
         ? DateTime.now()
-        : allDates.reduce((a, b) => a.isAfter(b) ? a : b);
+        : allDates.reduce(
+            (earlierDate, laterDate) =>
+                earlierDate.isAfter(laterDate) ? earlierDate : laterDate,
+          );
 
     return ChartDateLayout(
       size: size,
@@ -70,12 +76,12 @@ class CardioTrendPainter extends CustomPainter {
       ..strokeWidth = 0.5;
 
     const lineCount = 4;
-    for (var i = 0; i <= lineCount; i++) {
-      final fraction = i / lineCount;
-      final y = layout.top + fraction * layout.height;
+    for (var lineIndex = 0; lineIndex <= lineCount; lineIndex++) {
+      final fraction = lineIndex / lineCount;
+      final lineY = layout.top + fraction * layout.height;
       canvas.drawLine(
-        Offset(layout.left, y),
-        Offset(layout.right, y),
+        Offset(layout.left, lineY),
+        Offset(layout.right, lineY),
         gridPaint,
       );
     }
@@ -107,11 +113,11 @@ class CardioTrendPainter extends CustomPainter {
       ..strokeWidth = 1.5;
 
     for (final point in series.points) {
-      final x = layout.xForDate(point.date);
+      final pointX = layout.xForDate(point.date);
       final normalized = range.normalize(point.value);
-      final y = layout.bottom - normalized * layout.height;
-      canvas.drawCircle(Offset(x, y), 3, dotPaint);
-      canvas.drawCircle(Offset(x, y), 5, borderPaint);
+      final pointY = layout.bottom - normalized * layout.height;
+      canvas.drawCircle(Offset(pointX, pointY), 3, dotPaint);
+      canvas.drawCircle(Offset(pointX, pointY), 5, borderPaint);
     }
   }
 

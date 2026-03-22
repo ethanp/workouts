@@ -149,7 +149,7 @@ class _BlockViewState extends ConsumerState<BlockView> {
 
   void _scrollToNext(String currentExerciseId) {
     final currentIndex = widget.block.exercises.indexWhere(
-      (e) => e.id == currentExerciseId,
+      (workoutExercise) => workoutExercise.id == currentExerciseId,
     );
     if (currentIndex >= 0 &&
         currentIndex < widget.block.exercises.length - 1) {
@@ -158,9 +158,11 @@ class _BlockViewState extends ConsumerState<BlockView> {
   }
 
   Future<void> _showExercisePicker(BuildContext context) async {
-    final existingIds = widget.block.exercises.map((e) => e.id).toSet();
+    final existingExerciseIds = widget.block.exercises
+        .map((workoutExercise) => workoutExercise.id)
+        .toSet();
     final exercise = await context.push<WorkoutExercise>(
-      (_) => ExercisePickerScreen(excludeIds: existingIds),
+      ExercisePickerScreen(excludeIds: existingExerciseIds),
     );
     if (mounted && exercise != null) {
       ref

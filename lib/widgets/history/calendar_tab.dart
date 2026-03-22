@@ -133,7 +133,7 @@ class DayDetailItemList extends StatelessWidget {
               padding: EdgeInsets.zero,
               onPressed: () {
                 Navigator.of(context).pop();
-                context.push((_) => CardioDetailScreen(workout: workout));
+                context.push(CardioDetailScreen(workout: workout));
               },
               child: DayDetailCardioRow(
                   workout: workout, unitSystem: unitSystem),
@@ -142,7 +142,7 @@ class DayDetailItemList extends StatelessWidget {
               padding: EdgeInsets.zero,
               onPressed: () {
                 Navigator.of(context).pop();
-                context.push((_) => SessionDetailScreen(session: session));
+                context.push(SessionDetailScreen(session: session));
               },
               child: DayDetailSessionRow(session: session),
             ),
