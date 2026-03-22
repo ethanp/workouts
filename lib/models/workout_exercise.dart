@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/utils/json_converters.dart';
 
 part 'workout_exercise.freezed.dart';
@@ -19,6 +20,7 @@ abstract class WorkoutExercise with _$WorkoutExercise {
     @NullableDurationSecondsConverter() Duration? setupDuration,
     @NullableDurationSecondsConverter() Duration? workDuration,
     @NullableDurationSecondsConverter() Duration? restDuration,
+    @Default([]) List<ExerciseBenefit> benefits,
   }) = _WorkoutExercise;
 
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) =>

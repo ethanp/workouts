@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -56,6 +57,9 @@ WorkoutExercise _exerciseFromJoinRow({
     targetSets: parseTargetSetsFromPrescription(prescription),
     equipment: row[_prefixed(exercisePrefix, 'equipment')] as String?,
     cues: _parseCues(row[_prefixed(exercisePrefix, 'cues')] as String?),
+    benefits: ExerciseBenefit.listFromJsonString(
+      row[_prefixed(exercisePrefix, 'benefits')] as String?,
+    ),
     setupDuration: _durationFromSeconds(
       row[_prefixed(linkPrefix, 'setup_duration_seconds')],
     ),

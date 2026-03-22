@@ -91,3 +91,15 @@ abstract class Session with _$Session {
   factory Session.fromJson(Map<String, dynamic> json) =>
       _$SessionFromJson(json);
 }
+
+/// Derives which fitness goals a session covers based on the benefits
+/// annotated on its exercises. Used by the Training Balance Strip.
+extension SessionComposition on Session {
+  Set<String> get coveredGoalIds => blocks
+      .expand((block) => block.exercises)
+      .expand((exercise) => exercise.benefits)
+      .expand((benefit) => benefit.goalIds)
+      .toSet();
+
+  bool coversGoal(String goalId) => coveredGoalIds.contains(goalId);
+}

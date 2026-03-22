@@ -11,6 +11,7 @@ import 'package:workouts/providers/cardio_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/widgets/cardio/workout_polarization_card.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
@@ -24,6 +25,8 @@ class CardioDetailScreen extends ConsumerWidget {
     final routePointsAsync = ref.watch(cardioRoutePointsProvider(workout.id));
     final heartRateSamplesAsync = ref.watch(cardioHeartRateSamplesProvider(workout.id));
     final unitSystem = ref.watch(unitSystemProvider);
+    final maxHeartRate = ref.watch(maxHeartRateProvider);
+    final restingHeartRate = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(middle: Text('Workout Detail')),
@@ -43,9 +46,21 @@ class CardioDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             heartRateSamplesAsync.when(
-              data: (cardioHeartRateSamples) => _heartRateCard(
-                cardioHeartRateSamples,
-                routePointsAsync.asData?.value ?? [],
+              data: (cardioHeartRateSamples) => Column(
+                children: [
+                  _heartRateCard(
+                    cardioHeartRateSamples,
+                    routePointsAsync.asData?.value ?? [],
+                  ),
+                  if (cardioHeartRateSamples.isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    WorkoutPolarizationCard(
+                      samples: cardioHeartRateSamples,
+                      maxHeartRate: maxHeartRate,
+                      restingHeartRate: restingHeartRate,
+                    ),
+                  ],
+                ],
               ),
               loading: () => const Center(child: CupertinoActivityIndicator()),
               error: (error, _) => Text(

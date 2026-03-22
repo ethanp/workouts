@@ -2,13 +2,16 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
+import 'package:workouts/models/polarization_week.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/heart_rate_samples_provider.dart';
 import 'package:workouts/providers/session_notes_provider.dart';
 import 'package:workouts/providers/templates_provider.dart';
+import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
@@ -24,6 +27,8 @@ class SessionDetailScreen extends ConsumerWidget {
     final heartRateSamplesAsync = ref.watch(
       heartRateSamplesStreamProvider(session.id),
     );
+    final maxHrSetting = ref.watch(maxHeartRateProvider);
+    final restingHrSetting = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
@@ -46,6 +51,8 @@ class SessionDetailScreen extends ConsumerWidget {
               samples: heartRateSamplesAsync.value ?? const [],
               averageHeartRate: session.averageHeartRate,
               maxHeartRate: session.maxHeartRate,
+              maxHrSetting: maxHrSetting,
+              restingHrSetting: restingHrSetting,
             ),
             if ((heartRateSamplesAsync.value ?? const []).isNotEmpty)
               const SizedBox(height: AppSpacing.lg),
@@ -422,11 +429,15 @@ class _SessionHeartRateCard extends StatelessWidget {
     required this.samples,
     required this.averageHeartRate,
     required this.maxHeartRate,
+    required this.maxHrSetting,
+    required this.restingHrSetting,
   });
 
   final List<HeartRateSample> samples;
   final int? averageHeartRate;
   final int? maxHeartRate;
+  final int maxHrSetting;
+  final int restingHrSetting;
 
   @override
   Widget build(BuildContext context) {
@@ -461,6 +472,14 @@ class _SessionHeartRateCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           MetricsMiniChart(samples: samples),
+          if (samples.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ZoneDistributionSection(
+              samples: samples,
+              maxHrSetting: maxHrSetting,
+              restingHrSetting: restingHrSetting,
+            ),
+          ],
         ],
       ),
     );
@@ -488,6 +507,192 @@ class _SessionHeartRateCard extends StatelessWidget {
         .map((heartRateSample) => heartRateSample.bpm)
         .reduce((firstBpm, secondBpm) => firstBpm > secondBpm ? firstBpm : secondBpm);
     return '$maxBpm BPM';
+  }
+}
+
+class _ZoneDistributionSection extends StatefulWidget {
+  const _ZoneDistributionSection({
+    required this.samples,
+    required this.maxHrSetting,
+    required this.restingHrSetting,
+  });
+
+  final List<HeartRateSample> samples;
+  final int maxHrSetting;
+  final int restingHrSetting;
+
+  @override
+  State<_ZoneDistributionSection> createState() =>
+      _ZoneDistributionSectionState();
+}
+
+class _ZoneDistributionSectionState
+    extends State<_ZoneDistributionSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          behavior: HitTestBehavior.opaque,
+          child: Row(
+            children: [
+              Text(
+                'Zone Distribution',
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor3,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Icon(
+                _expanded
+                    ? CupertinoIcons.chevron_up
+                    : CupertinoIcons.chevron_down,
+                size: 11,
+                color: AppColors.textColor4,
+              ),
+            ],
+          ),
+        ),
+        if (_expanded) ...[
+          const SizedBox(height: AppSpacing.sm),
+          _ZoneBreakdown(
+            samples: widget.samples,
+            maxHrSetting: widget.maxHrSetting,
+            restingHrSetting: widget.restingHrSetting,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ZoneBreakdown extends StatelessWidget {
+  const _ZoneBreakdown({
+    required this.samples,
+    required this.maxHrSetting,
+    required this.restingHrSetting,
+  });
+
+  final List<HeartRateSample> samples;
+  final int maxHrSetting;
+  final int restingHrSetting;
+
+  static const _aerobicColor = Color(0xFF3FB37F);
+  static const _grayZoneColor = Color(0xFFF0B347);
+  static const _vo2maxColor = Color(0xFFE15A64);
+
+  @override
+  Widget build(BuildContext context) {
+    final polarization = _compute();
+    if (!polarization.hasData) {
+      return Text(
+        'Not enough HR data to compute zones.',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Shown as Aerobic Base · Gray Zone · VO₂max — metabolic context only.',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textColor4,
+            fontSize: 11,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                if (polarization.aerobicBaseSeconds > 0)
+                  Flexible(
+                    flex: polarization.aerobicBaseSeconds,
+                    child: Container(color: _aerobicColor),
+                  ),
+                if (polarization.grayZoneSeconds > 0)
+                  Flexible(
+                    flex: polarization.grayZoneSeconds,
+                    child: Container(color: _grayZoneColor),
+                  ),
+                if (polarization.vo2maxSeconds > 0)
+                  Flexible(
+                    flex: polarization.vo2maxSeconds,
+                    child: Container(color: _vo2maxColor),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            _pill(
+              '${polarization.aerobicBaseMinutes}m Base',
+              _aerobicColor,
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            _pill('${polarization.grayZoneMinutes}m Gray', _grayZoneColor),
+            const SizedBox(width: AppSpacing.xs),
+            _pill(
+              '${polarization.vo2maxMinutes}m VO₂max',
+              _vo2maxColor,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _pill(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 2,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontSize: 11,
+        ),
+      ),
+    );
+  }
+
+  PolarizationWeek _compute() {
+    final calculator = TrainingLoadCalculator(
+      maxHeartRate: maxHrSetting,
+      restingHeartRate: restingHrSetting,
+    );
+
+    final timestamped = samples
+        .map(
+          (sample) => TimestampedHeartRate(
+            timestamp: sample.timestamp,
+            bpm: sample.bpm,
+          ),
+        )
+        .toList()
+      ..sort(
+        (firstSample, secondSample) =>
+            firstSample.timestamp.compareTo(secondSample.timestamp),
+      );
+
+    final result = calculator.compute(timestamped);
+    return PolarizationWeek.fromHrZoneTime(result.zoneTime);
   }
 }
 

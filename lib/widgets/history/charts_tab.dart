@@ -15,8 +15,10 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/cardio_trend_chart.dart';
 import 'package:workouts/widgets/fitness_momentum_chart.dart';
+import 'package:workouts/widgets/history/polarization_chart.dart';
+import 'package:workouts/widgets/history/training_balance_strip.dart';
+import 'package:workouts/widgets/history/weekly_z2_dose_chart.dart';
 import 'package:workouts/widgets/weekly_bar_chart.dart';
-import 'package:workouts/widgets/weekly_stacked_zone_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
 
 class HistoryChartsTab extends ConsumerWidget {
@@ -72,7 +74,6 @@ class HistoryChartsTab extends ConsumerWidget {
     final metersPerUnit = unitSystem == UnitSystem.imperial
         ? metersPerMile
         : 1000.0;
-
     final visibleWeeks = visibleRange != null
         ? _filterWeeksToRange(weeklyAggregates, visibleRange)
         : weeklyAggregates;
@@ -80,7 +81,11 @@ class HistoryChartsTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        _FourWeekSummary(days: days, unitSystem: unitSystem),
+        WeeklyZ2DoseChart(weeks: _weekZoneDataList(visibleWeeks)),
+        const SizedBox(height: AppSpacing.lg),
+        PolarizationChart(weeks: _weekZoneDataList(visibleWeeks)),
+        const SizedBox(height: AppSpacing.lg),
+        const TrainingBalanceStrip(),
         const SizedBox(height: AppSpacing.lg),
         FitnessMomentumChart(
           days: days,
@@ -107,8 +112,6 @@ class HistoryChartsTab extends ConsumerWidget {
           barColor: const Color(0xFF64D2FF),
           formatValue: (value) => '${value.round()}d',
         ),
-        const SizedBox(height: AppSpacing.lg),
-        WeeklyStackedZoneChart(weeks: _weekZoneDataList(visibleWeeks)),
         const SizedBox(height: AppSpacing.lg),
         Text(
           'Best-effort pace lines currently include outdoor runs only.',
@@ -388,7 +391,8 @@ class HistoryChartsTab extends ConsumerWidget {
     for (final day in days) {
       if (!day.hasActivity) continue;
       final monday = _mondayOf(day.date);
-      final aggregate = byMonday[monday]!;
+      final aggregate = byMonday[monday];
+      if (aggregate == null) continue;
       aggregate.totalCardioMeters += day.totalCardioDistanceMeters;
       aggregate.zoneTime = aggregate.zoneTime + day.totalZoneTime;
       aggregate.activeDays++;
@@ -423,119 +427,4 @@ class WeekAggregate {
   double totalCardioMeters = 0;
   HrZoneTime zoneTime = HrZoneTime.zero;
   int activeDays = 0;
-}
-
-class _FourWeekSummary extends StatelessWidget {
-  const _FourWeekSummary({required this.days, required this.unitSystem});
-
-  final List<ActivityCalendarDay> days;
-  final UnitSystem unitSystem;
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final fourWeeksAgo = now.subtract(const Duration(days: 28));
-    final recentDays = days.where(
-      (day) => day.date.isAfter(fourWeeksAgo) && day.hasActivity,
-    );
-
-    var totalMeters = 0.0;
-    var totalCardioSeconds = 0;
-    var totalSessionMinutes = 0;
-    var totalGteZone2 = 0;
-    var activityDayCount = 0;
-
-    for (final day in recentDays) {
-      totalMeters += day.totalCardioDistanceMeters;
-      totalCardioSeconds += day.totalCardioDurationSeconds;
-      totalSessionMinutes += day.totalSessionDurationSeconds ~/ 60;
-      totalGteZone2 += day.totalZoneTime.gteZone2Minutes;
-      activityDayCount++;
-    }
-
-    final metersPerUnit = unitSystem == UnitSystem.imperial
-        ? metersPerMile
-        : 1000.0;
-    final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
-    final distance = totalMeters / metersPerUnit;
-    final cardioHours = totalCardioSeconds ~/ 3600;
-    final cardioMinutes = (totalCardioSeconds % 3600) ~/ 60;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Last 4 Weeks', style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.sm),
-          _statRow(
-            distance: distance,
-            distanceUnit: distanceUnit,
-            cardioHours: cardioHours,
-            cardioMinutes: cardioMinutes,
-            activityDayCount: activityDayCount,
-            totalGteZone2: totalGteZone2,
-          ),
-          if (totalSessionMinutes > 0) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${totalSessionMinutes}m session time',
-              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _statRow({
-    required double distance,
-    required String distanceUnit,
-    required int cardioHours,
-    required int cardioMinutes,
-    required int activityDayCount,
-    required int totalGteZone2,
-  }) =>
-      Row(
-        children: [
-          _statCell(
-            'distance',
-            '${distance.toStringAsFixed(1)}$distanceUnit',
-          ),
-          _statCell(
-            'cardio time',
-            cardioHours > 0
-                ? '${cardioHours}h ${cardioMinutes}m'
-                : '${cardioMinutes}m',
-          ),
-          _statCell('active days', '$activityDayCount'),
-          _statCell('>= zone 2', '${totalGteZone2}m'),
-        ],
-      );
-
-  Widget _statCell(String label, String value) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: AppTypography.subtitle.copyWith(color: AppColors.textColor1),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

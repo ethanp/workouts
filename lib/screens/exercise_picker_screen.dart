@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
 class ExercisePickerScreen extends ConsumerWidget {
   const ExercisePickerScreen({required this.excludeIds});
@@ -202,49 +203,109 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
   }
 
   Widget exerciseRow(WorkoutExercise exercise) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => Navigator.of(context).pop(exercise),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
-        ),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.borderDepth1)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: CupertinoButton(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.md,
+              ),
+              onPressed: () => Navigator.of(context).pop(exercise),
+              child: Row(
                 children: [
-                  Text(
-                    exercise.name,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor1,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          exercise.name,
+                          style: AppTypography.body.copyWith(
+                            color: AppColors.textColor1,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Row(
+                          children: [
+                            prescriptionBadge(exercise.prescription),
+                            if (exercise.equipment != null) ...[
+                              const SizedBox(width: AppSpacing.sm),
+                              equipmentBadge(exercise.equipment!),
+                            ],
+                            if (exercise.benefits.isNotEmpty) ...[
+                              const SizedBox(width: AppSpacing.sm),
+                              _benefitsBadge(exercise.benefits.length),
+                            ],
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      prescriptionBadge(exercise.prescription),
-                      if (exercise.equipment != null) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        equipmentBadge(exercise.equipment!),
-                      ],
-                    ],
+                  const Icon(
+                    CupertinoIcons.add_circled,
+                    color: AppColors.accentPrimary,
+                    size: 24,
                   ),
                 ],
               ),
             ),
-            const Icon(
-              CupertinoIcons.add_circled,
-              color: AppColors.accentPrimary,
-              size: 24,
+          ),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
-          ],
-        ),
+            onPressed: () => _openBenefitsSheet(exercise),
+            child: const Icon(
+              CupertinoIcons.sparkles,
+              size: 18,
+              color: AppColors.textColor4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _benefitsBadge(int count) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accentSecondary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            CupertinoIcons.sparkles,
+            size: 10,
+            color: AppColors.accentSecondary,
+          ),
+          const SizedBox(width: 2),
+          Text(
+            '$count',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.accentSecondary,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openBenefitsSheet(WorkoutExercise exercise) {
+    Navigator.of(context).push(
+      CupertinoPageRoute<void>(
+        builder: (_) => ExerciseBenefitsSheet(exercise: exercise),
       ),
     );
   }

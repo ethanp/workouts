@@ -5,6 +5,7 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -198,6 +199,7 @@ class TemplateRepositoryPowerSync {
         'modality': exercise.modality.name,
         'equipment': exercise.equipment ?? '',
         'cues': jsonEncode(exercise.cues),
+        'benefits': ExerciseBenefit.listToJsonString(exercise.benefits),
         'created_at': now,
         'updated_at': now,
       });
@@ -232,6 +234,22 @@ class TemplateRepositoryPowerSync {
       DELETE FROM session_block_exercises
       WHERE exercise_id NOT IN (SELECT id FROM exercises)
     ''');
+  }
+
+  /// Updates only the benefits column for an exercise by ID.
+  /// Preserves all other exercise fields (name, modality, cues, etc.).
+  Future<void> updateExerciseBenefits(
+    String exerciseId,
+    List<ExerciseBenefit> benefits,
+  ) async {
+    await _powerSync.execute(
+      'UPDATE exercises SET benefits = ?, updated_at = ? WHERE id = ?',
+      [
+        ExerciseBenefit.listToJsonString(benefits),
+        DateTime.now().toIso8601String(),
+        exerciseId,
+      ],
+    );
   }
 
   Future<List<WorkoutTemplate>> _reseedTemplates() async {

@@ -4,6 +4,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:workouts/models/exercise_benefit.dart';
+import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/services/context_builder.dart';
 
@@ -118,8 +120,91 @@ class LlmService {
     }
   }
 
-  String _buildSystemPrompt() {
-    return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
+  /// Generates a list of physiological benefits for an exercise, with optional
+  /// links to the user's fitness goals by ID.
+  ///
+  /// Returns an empty list if the model returns no valid benefits.
+  Future<List<ExerciseBenefit>> generateExerciseBenefits({
+    required String exerciseName,
+    String? exerciseNotes,
+    required List<FitnessGoal> activeGoals,
+  }) async {
+    _log.info('Generating benefits for "$exerciseName"...');
+
+    final goalsJson = activeGoals
+        .map(
+          (goal) => {
+            'id': goal.id,
+            'title': goal.title,
+            'category': goal.category.name,
+            if (goal.description.isNotEmpty)
+              'description': goal.description,
+          },
+        )
+        .toList();
+
+    final systemPrompt = '''You are an expert exercise physiologist.
+Given an exercise name (and optional notes), enumerate its distinct physiological benefits.
+For each benefit, identify which of the provided user goals it directly and meaningfully serves.
+Be conservative: only link a benefit to a goal when the connection is direct and specific, not broad or speculative.
+A benefit that serves no goal should still be listed — it is informational.
+
+Respond with valid JSON only, no markdown. Structure:
+{
+  "benefits": [
+    { "name": "string (concise benefit label)", "goalIds": ["goal_id", ...] }
+  ]
+}''';
+
+    final userPrompt = StringBuffer()
+      ..writeln('Exercise: $exerciseName')
+      ..writeln(exerciseNotes != null ? 'Notes: $exerciseNotes' : '')
+      ..writeln()
+      ..writeln('User goals:')
+      ..writeln(jsonEncode(goalsJson));
+
+    final response = await feedToLlm(
+      [
+        {'role': 'system', 'content': systemPrompt},
+        {'role': 'user', 'content': userPrompt.toString()},
+      ],
+      client,
+    );
+
+    if (response.statusCode != 200) {
+      throw LlmException(
+        'Benefit generation failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    return _parseBenefitsResponse(response.body);
+  }
+
+  List<ExerciseBenefit> _parseBenefitsResponse(String body) {
+    try {
+      final json = jsonDecode(body) as Map<String, dynamic>;
+      final choices = json['choices'] as List<dynamic>;
+      if (choices.isEmpty) return const [];
+
+      final message = choices[0]['message'] as Map<String, dynamic>;
+      final content = message['content'] as String;
+
+      final parsed = jsonDecode(content) as Map<String, dynamic>;
+      final benefitsJson = parsed['benefits'] as List<dynamic>? ?? [];
+
+      return benefitsJson
+          .map(
+            (item) =>
+                ExerciseBenefit.fromJson(item as Map<String, dynamic>),
+          )
+          .toList();
+    } catch (error) {
+      _log.severe('Failed to parse benefits response: $error');
+      return const [];
+    }
+  }
+
+  String _buildSystemPrompt() {    return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
 
 For each option provide:
 1. A descriptive title

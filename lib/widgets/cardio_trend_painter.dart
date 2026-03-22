@@ -96,8 +96,18 @@ class CardioTrendPainter extends CustomPainter {
       series.points,
       invertY: series.invertY,
     );
+
+    final clipRect = Rect.fromLTRB(
+      layout.left,
+      layout.top,
+      layout.right,
+      layout.bottom,
+    );
+    canvas.save();
+    canvas.clipRect(clipRect);
     _drawSeriesDots(canvas, layout, series, range);
     _drawSeriesTrendLine(canvas, layout, series, range);
+    canvas.restore();
   }
 
   void _drawSeriesDots(
@@ -107,17 +117,12 @@ class CardioTrendPainter extends CustomPainter {
     SeriesValueScale range,
   ) {
     final dotPaint = Paint()..color = series.color;
-    final borderPaint = Paint()
-      ..color = series.color.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
 
     for (final point in series.points) {
       final pointX = layout.xForDate(point.date);
       final normalized = range.normalize(point.value);
       final pointY = layout.bottom - normalized * layout.height;
       canvas.drawCircle(Offset(pointX, pointY), 3, dotPaint);
-      canvas.drawCircle(Offset(pointX, pointY), 5, borderPaint);
     }
   }
 
@@ -127,7 +132,17 @@ class CardioTrendPainter extends CustomPainter {
     TrendSeries series,
     SeriesValueScale range,
   ) {
-    final trend = computeTrendLine(series.points, layout.minDate);
+    final visiblePoints = series.points
+        .where(
+          (point) =>
+              !point.date.isBefore(layout.minDate) &&
+              !point.date.isAfter(layout.maxDate),
+        )
+        .toList();
+
+    if (visiblePoints.length < 2) return;
+
+    final trend = computeTrendLine(visiblePoints, layout.minDate);
     final dateRangeSeconds =
         layout.maxDate.difference(layout.minDate).inSeconds.toDouble();
 
