@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
@@ -34,8 +35,7 @@ class CardioDetailScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             routePointsAsync.when(
               data: (routePoints) => _RouteCard(routePoints: routePoints),
-              loading: () =>
-                  const Center(child: CupertinoActivityIndicator()),
+              loading: () => const Center(child: CupertinoActivityIndicator()),
               error: (error, _) => Text(
                 'Unable to load route: $error',
                 style: AppTypography.body.copyWith(color: AppColors.error),
@@ -43,25 +43,11 @@ class CardioDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             heartRateSamplesAsync.when(
-              data: (cardioHeartRateSamples) {
-                final chartSamples = cardioHeartRateSamples
-                    .map(
-                      (cardioHeartRateSample) => HeartRateSample(
-                        id: cardioHeartRateSample.id,
-                        sessionId: cardioHeartRateSample.workoutId,
-                        timestamp: cardioHeartRateSample.timestamp,
-                        bpm: cardioHeartRateSample.bpm,
-                        source: 'cardio_import',
-                      ),
-                    )
-                    .toList();
-                return CardioMetricsCard(
-                  samples: chartSamples,
-                  routePoints: routePointsAsync.asData?.value ?? [],
-                );
-              },
-              loading: () =>
-                  const Center(child: CupertinoActivityIndicator()),
+              data: (cardioHeartRateSamples) => _heartRateCard(
+                cardioHeartRateSamples,
+                routePointsAsync.asData?.value ?? [],
+              ),
+              loading: () => const Center(child: CupertinoActivityIndicator()),
               error: (error, _) => Text(
                 'Unable to load heart rate: $error',
                 style: AppTypography.body.copyWith(color: AppColors.error),
@@ -71,6 +57,24 @@ class CardioDetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _heartRateCard(
+    List<CardioHeartRateSample> cardioHeartRateSamples,
+    List<CardioRoutePoint> routePoints,
+  ) {
+    final chartSamples = cardioHeartRateSamples
+        .map(
+          (cardioHeartRateSample) => HeartRateSample(
+            id: cardioHeartRateSample.id,
+            sessionId: cardioHeartRateSample.workoutId,
+            timestamp: cardioHeartRateSample.timestamp,
+            bpm: cardioHeartRateSample.bpm,
+            source: 'cardio_import',
+          ),
+        )
+        .toList();
+    return CardioMetricsCard(samples: chartSamples, routePoints: routePoints);
   }
 }
 
@@ -126,63 +130,67 @@ class _RouteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (routePoints.length < 2) {
-      return Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
-        ),
-        child: Text(
-          'Route unavailable for this workout.',
-          style: AppTypography.body.copyWith(color: AppColors.textColor3),
-        ),
-      );
+      return _noRouteCard();
     }
 
     final routeLatLngPoints = routePoints
         .map((routePoint) => LatLng(routePoint.latitude, routePoint.longitude))
         .toList();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: SizedBox(
-          height: 240,
-          child: FlutterMap(
-            options: MapOptions(
-              initialCameraFit: CameraFit.coordinates(
-                coordinates: routeLatLngPoints,
-                padding: const EdgeInsets.all(24),
+    return _routeMapCard(routeLatLngPoints);
+  }
+
+  Widget _noRouteCard() => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(color: AppColors.borderDepth1),
+    ),
+    child: Text(
+      'Route unavailable for this workout.',
+      style: AppTypography.body.copyWith(color: AppColors.textColor3),
+    ),
+  );
+
+  Widget _routeMapCard(List<LatLng> routeLatLngPoints) => Container(
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(color: AppColors.borderDepth1),
+    ),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: SizedBox(
+        height: 240,
+        child: FlutterMap(
+          options: MapOptions(
+            initialCameraFit: CameraFit.coordinates(
+              coordinates: routeLatLngPoints,
+              padding: const EdgeInsets.all(24),
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  '${dotenv.env['TILE_PROXY_URL'] ?? 'https://tile.openstreetmap.org'}/tiles/{z}/{x}/{y}.png',
+              tileProvider: LoggingCacheTileProvider(
+                dotenv.env['TILE_PROXY_URL'] ??
+                    'https://tile.openstreetmap.org',
               ),
             ),
-            children: [
-              TileLayer(
-                urlTemplate:
-                    '${dotenv.env['TILE_PROXY_URL'] ?? 'https://tile.openstreetmap.org'}/tiles/{z}/{x}/{y}.png',
-                tileProvider: LoggingCacheTileProvider(
-                  dotenv.env['TILE_PROXY_URL'] ??
-                      'https://tile.openstreetmap.org',
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: routeLatLngPoints,
+                  strokeWidth: 4,
+                  color: AppColors.accentPrimary,
                 ),
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: routeLatLngPoints,
-                    strokeWidth: 4,
-                    color: AppColors.accentPrimary,
-                  ),
-                ],
-              ),
-            ],
-          ),
+              ],
+            ),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

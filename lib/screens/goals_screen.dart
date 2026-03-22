@@ -128,19 +128,7 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Icon(
-                CupertinoIcons.sparkles,
-                size: 40,
-                color: AppColors.accentPrimary,
-              ),
-            ),
+            _sparklesIcon(),
             const SizedBox(height: AppSpacing.xl),
             Text('Build Your Context', style: AppTypography.title),
             const SizedBox(height: AppSpacing.sm),
@@ -150,29 +138,40 @@ class _EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xxl),
-            CupertinoButton.filled(
-              onPressed: onAddGoal,
-              child: const Text(
-                'Add Your First Goal',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
+            _addGoalButton(),
             const SizedBox(height: AppSpacing.md),
-            CupertinoButton(
-              onPressed: onAddNote,
-              child: Text(
-                'Or add a background note',
-                style: TextStyle(color: AppColors.accentPrimary),
-              ),
-            ),
+            _addNoteButton(),
           ],
         ),
       ),
     );
   }
+
+  Widget _sparklesIcon() => Container(
+    width: 80,
+    height: 80,
+    decoration: BoxDecoration(
+      color: AppColors.accentPrimary.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(20),
+    ),
+    child: Icon(CupertinoIcons.sparkles, size: 40, color: AppColors.accentPrimary),
+  );
+
+  Widget _addGoalButton() => CupertinoButton.filled(
+    onPressed: onAddGoal,
+    child: const Text(
+      'Add Your First Goal',
+      style: TextStyle(color: CupertinoColors.white, fontWeight: FontWeight.w600),
+    ),
+  );
+
+  Widget _addNoteButton() => CupertinoButton(
+    onPressed: onAddNote,
+    child: Text(
+      'Or add a background note',
+      style: TextStyle(color: AppColors.accentPrimary),
+    ),
+  );
 }
 
 class _ContentList extends ConsumerWidget {
@@ -259,102 +258,91 @@ class _GoalTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isActive = goal.status == GoalStatus.active;
-
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
         onTap: () => _showGoalActions(context, ref),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: isActive
-                  ? AppColors.borderDepth1
-                  : AppColors.borderDepth1.withValues(alpha: 0.5),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: _categoryColor(goal.category).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Center(
-                  child: Text(
-                    '${goal.priority}',
-                    style: TextStyle(
-                      color: _categoryColor(goal.category),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      goal.title,
-                      style: AppTypography.subtitle.copyWith(
-                        color: isActive
-                            ? AppColors.textColor1
-                            : AppColors.textColor3,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        _CategoryBadge(category: goal.category),
-                        if (goal.status == GoalStatus.achieved) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          Icon(
-                            CupertinoIcons.checkmark_seal_fill,
-                            size: 14,
-                            color: AppColors.success,
-                          ),
-                        ],
-                        if (goal.status == GoalStatus.paused) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          Icon(
-                            CupertinoIcons.pause_circle,
-                            size: 14,
-                            color: AppColors.textColor4,
-                          ),
-                        ],
-                      ],
-                    ),
-                    if (goal.description.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        goal.description,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textColor4,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                CupertinoIcons.chevron_right,
-                size: 16,
-                color: AppColors.textColor4,
-              ),
-            ],
-          ),
-        ),
+        child: _tileCard(isActive),
       ),
     );
   }
+
+  Widget _tileCard(bool isActive) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(
+        color: isActive
+            ? AppColors.borderDepth1
+            : AppColors.borderDepth1.withValues(alpha: 0.5),
+      ),
+    ),
+    child: Row(
+      children: [
+        _priorityBadge(),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(child: _goalDetails(isActive)),
+        Icon(CupertinoIcons.chevron_right, size: 16, color: AppColors.textColor4),
+      ],
+    ),
+  );
+
+  Widget _priorityBadge() => Container(
+    width: 32,
+    height: 32,
+    decoration: BoxDecoration(
+      color: _categoryColor(goal.category).withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: Center(
+      child: Text(
+        '${goal.priority}',
+        style: TextStyle(
+          color: _categoryColor(goal.category),
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+        ),
+      ),
+    ),
+  );
+
+  Widget _goalDetails(bool isActive) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        goal.title,
+        style: AppTypography.subtitle.copyWith(
+          color: isActive ? AppColors.textColor1 : AppColors.textColor3,
+        ),
+      ),
+      const SizedBox(height: 2),
+      _statusRow(),
+      if (goal.description.isNotEmpty) ...[
+        const SizedBox(height: 4),
+        Text(
+          goal.description,
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    ],
+  );
+
+  Widget _statusRow() => Row(
+    children: [
+      _CategoryBadge(category: goal.category),
+      if (goal.status == GoalStatus.achieved) ...[
+        const SizedBox(width: AppSpacing.sm),
+        Icon(CupertinoIcons.checkmark_seal_fill, size: 14, color: AppColors.success),
+      ],
+      if (goal.status == GoalStatus.paused) ...[
+        const SizedBox(width: AppSpacing.sm),
+        Icon(CupertinoIcons.pause_circle, size: 14, color: AppColors.textColor4),
+      ],
+    ],
+  );
 
   void _showGoalActions(BuildContext context, WidgetRef ref) {
     final isActive = goal.status == GoalStatus.active;
@@ -805,102 +793,96 @@ class _NoteTile extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
         onTap: () => _showNoteActions(context, ref),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: note.isActive
-                  ? AppColors.borderDepth1
-                  : AppColors.borderDepth1.withValues(alpha: 0.5),
-            ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: _categoryColor(note.category).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: Center(
-                  child: Text(
-                    note.category.icon,
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      note.content,
-                      style: AppTypography.body.copyWith(
-                        color: note.isActive
-                            ? AppColors.textColor1
-                            : AppColors.textColor3,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _categoryColor(
-                              note.category,
-                            ).withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            note.category.displayName,
-                            style: AppTypography.caption.copyWith(
-                              fontSize: 11,
-                              color: _categoryColor(note.category),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                        if (linkedGoal != null) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          Icon(
-                            CupertinoIcons.link,
-                            size: 12,
-                            color: AppColors.textColor4,
-                          ),
-                          const SizedBox(width: 2),
-                          Flexible(
-                            child: Text(
-                              linkedGoal.title,
-                              style: AppTypography.caption.copyWith(
-                                fontSize: 11,
-                                color: AppColors.textColor4,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        child: _tileCard(linkedGoal),
       ),
     );
   }
+
+  Widget _tileCard(FitnessGoal? linkedGoal) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(
+        color: note.isActive
+            ? AppColors.borderDepth1
+            : AppColors.borderDepth1.withValues(alpha: 0.5),
+      ),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _categoryIcon(),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(child: _noteContent(linkedGoal)),
+      ],
+    ),
+  );
+
+  Widget _categoryIcon() => Container(
+    width: 36,
+    height: 36,
+    decoration: BoxDecoration(
+      color: _categoryColor(note.category).withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: Center(
+      child: Text(note.category.icon, style: const TextStyle(fontSize: 18)),
+    ),
+  );
+
+  Widget _noteContent(FitnessGoal? linkedGoal) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        note.content,
+        style: AppTypography.body.copyWith(
+          color: note.isActive ? AppColors.textColor1 : AppColors.textColor3,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      _metadataRow(linkedGoal),
+    ],
+  );
+
+  Widget _metadataRow(FitnessGoal? linkedGoal) => Row(
+    children: [
+      _categoryBadge(),
+      if (linkedGoal != null) ...[
+        const SizedBox(width: AppSpacing.sm),
+        Icon(CupertinoIcons.link, size: 12, color: AppColors.textColor4),
+        const SizedBox(width: 2),
+        Flexible(
+          child: Text(
+            linkedGoal.title,
+            style: AppTypography.caption.copyWith(
+              fontSize: 11,
+              color: AppColors.textColor4,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    ],
+  );
+
+  Widget _categoryBadge() => Container(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+    decoration: BoxDecoration(
+      color: _categoryColor(note.category).withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+      note.category.displayName,
+      style: AppTypography.caption.copyWith(
+        fontSize: 11,
+        color: _categoryColor(note.category),
+        fontWeight: FontWeight.w500,
+      ),
+    ),
+  );
 
   void _showNoteActions(BuildContext context, WidgetRef ref) {
     showCupertinoModalPopup<void>(
@@ -1049,244 +1031,217 @@ class _NoteFormSheetState extends State<_NoteFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.borderDepth3,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
+              _dragHandle(),
               const SizedBox(height: AppSpacing.lg),
-              Text(
-                isEditing ? 'Edit Note' : 'New Background Note',
-                style: AppTypography.title,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Add context about your body, preferences, or constraints.',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor4,
-                ),
-                textAlign: TextAlign.center,
-              ),
+              _sheetHeader(isEditing),
               const SizedBox(height: AppSpacing.xl),
-              _FormField(
-                label: 'Note',
-                child: CupertinoTextField(
-                  controller: _contentController,
-                  placeholder:
-                      'e.g., Lower back sensitivity - avoid heavy axial loading',
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  maxLines: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundDepth3,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor1,
-                  ),
-                  placeholderStyle: AppTypography.body.copyWith(
-                    color: AppColors.textColor4,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
+              _noteTextField(),
               const SizedBox(height: AppSpacing.lg),
-              _FormField(
-                label: 'Category',
-                child: Wrap(
-                  spacing: AppSpacing.sm,
-                  runSpacing: AppSpacing.sm,
-                  children: NoteCategory.values.map((cat) {
-                    final isSelected = cat == _selectedCategory;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedCategory = cat),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.accentPrimary
-                              : AppColors.backgroundDepth3,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.accentPrimary
-                                : AppColors.borderDepth2,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              cat.icon,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              cat.displayName,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isSelected
-                                    ? CupertinoColors.white
-                                    : AppColors.textColor2,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
+              _categoryField(),
               if (widget.availableGoals.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.lg),
-                _FormField(
-                  label: 'Link to Goal (optional)',
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () => setState(() => _selectedGoalId = null),
-                        child: Container(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          decoration: BoxDecoration(
-                            color: _selectedGoalId == null
-                                ? AppColors.accentPrimary.withValues(
-                                    alpha: 0.15,
-                                  )
-                                : AppColors.backgroundDepth3,
-                            borderRadius: BorderRadius.circular(AppRadius.sm),
-                            border: Border.all(
-                              color: _selectedGoalId == null
-                                  ? AppColors.accentPrimary
-                                  : AppColors.borderDepth2,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                CupertinoIcons.globe,
-                                size: 16,
-                                color: _selectedGoalId == null
-                                    ? AppColors.accentPrimary
-                                    : AppColors.textColor3,
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              Text(
-                                'General (applies to all goals)',
-                                style: TextStyle(
-                                  color: _selectedGoalId == null
-                                      ? AppColors.accentPrimary
-                                      : AppColors.textColor2,
-                                  fontWeight: _selectedGoalId == null
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      ...widget.availableGoals
-                          .where((goal) => goal.status == GoalStatus.active)
-                          .map((goal) {
-                            final isSelected = _selectedGoalId == goal.id;
-                            return Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.sm,
-                              ),
-                              child: GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedGoalId = goal.id),
-                                child: Container(
-                                  padding: const EdgeInsets.all(AppSpacing.md),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? AppColors.accentPrimary.withValues(
-                                            alpha: 0.15,
-                                          )
-                                        : AppColors.backgroundDepth3,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.sm,
-                                    ),
-                                    border: Border.all(
-                                      color: isSelected
-                                          ? AppColors.accentPrimary
-                                          : AppColors.borderDepth2,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        CupertinoIcons.flag_fill,
-                                        size: 16,
-                                        color: isSelected
-                                            ? AppColors.accentPrimary
-                                            : AppColors.textColor3,
-                                      ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      Expanded(
-                                        child: Text(
-                                          goal.title,
-                                          style: TextStyle(
-                                            color: isSelected
-                                                ? AppColors.accentPrimary
-                                                : AppColors.textColor2,
-                                            fontWeight: isSelected
-                                                ? FontWeight.w600
-                                                : FontWeight.w400,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }),
-                    ],
-                  ),
-                ),
+                _goalLinkField(),
               ],
               const SizedBox(height: AppSpacing.xl),
-              CupertinoButton.filled(
-                onPressed: _contentController.text.trim().isEmpty
-                    ? null
-                    : () => widget.onSave(
-                        _contentController.text.trim(),
-                        _selectedCategory,
-                        _selectedGoalId,
-                      ),
-                child: Text(
-                  isEditing ? 'Save Changes' : 'Add Note',
-                  style: const TextStyle(
-                    color: CupertinoColors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              _saveButton(isEditing),
               const SizedBox(height: AppSpacing.md),
-              CupertinoButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text(
-                  'Cancel',
-                  style: TextStyle(color: AppColors.textColor3),
-                ),
-              ),
+              _cancelButton(context),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _dragHandle() => Center(
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.borderDepth3,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
+
+  Widget _sheetHeader(bool isEditing) => Column(
+    children: [
+      Text(
+        isEditing ? 'Edit Note' : 'New Background Note',
+        style: AppTypography.title,
+        textAlign: TextAlign.center,
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        'Add context about your body, preferences, or constraints.',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        textAlign: TextAlign.center,
+      ),
+    ],
+  );
+
+  Widget _noteTextField() => _FormField(
+    label: 'Note',
+    child: CupertinoTextField(
+      controller: _contentController,
+      placeholder: 'e.g., Lower back sensitivity - avoid heavy axial loading',
+      padding: const EdgeInsets.all(AppSpacing.md),
+      maxLines: 4,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth3,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      style: AppTypography.body.copyWith(color: AppColors.textColor1),
+      placeholderStyle: AppTypography.body.copyWith(color: AppColors.textColor4),
+      onChanged: (_) => setState(() {}),
+    ),
+  );
+
+  Widget _categoryField() => _FormField(
+    label: 'Category',
+    child: Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: NoteCategory.values
+          .map((cat) => _categoryChip(cat))
+          .toList(),
+    ),
+  );
+
+  Widget _categoryChip(NoteCategory cat) {
+    final isSelected = cat == _selectedCategory;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedCategory = cat),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accentPrimary : AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          border: Border.all(
+            color: isSelected ? AppColors.accentPrimary : AppColors.borderDepth2,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(cat.icon, style: const TextStyle(fontSize: 14)),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              cat.displayName,
+              style: TextStyle(
+                fontSize: 13,
+                color: isSelected ? CupertinoColors.white : AppColors.textColor2,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _goalLinkField() => _FormField(
+    label: 'Link to Goal (optional)',
+    child: Column(
+      children: [
+        _generalGoalOption(),
+        const SizedBox(height: AppSpacing.sm),
+        ...widget.availableGoals
+            .where((goal) => goal.status == GoalStatus.active)
+            .map((goal) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: _specificGoalOption(goal),
+                )),
+      ],
+    ),
+  );
+
+  Widget _generalGoalOption() {
+    final isSelected = _selectedGoalId == null;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedGoalId = null),
+      child: _goalOptionContainer(
+        isSelected: isSelected,
+        icon: CupertinoIcons.globe,
+        label: 'General (applies to all goals)',
+      ),
+    );
+  }
+
+  Widget _specificGoalOption(FitnessGoal goal) {
+    final isSelected = _selectedGoalId == goal.id;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedGoalId = goal.id),
+      child: _goalOptionContainer(
+        isSelected: isSelected,
+        icon: CupertinoIcons.flag_fill,
+        label: goal.title,
+        expandLabel: true,
+      ),
+    );
+  }
+
+  Widget _goalOptionContainer({
+    required bool isSelected,
+    required IconData icon,
+    required String label,
+    bool expandLabel = false,
+  }) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: isSelected
+          ? AppColors.accentPrimary.withValues(alpha: 0.15)
+          : AppColors.backgroundDepth3,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      border: Border.all(
+        color: isSelected ? AppColors.accentPrimary : AppColors.borderDepth2,
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: isSelected ? AppColors.accentPrimary : AppColors.textColor3,
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        expandLabel
+            ? Expanded(child: _goalOptionLabel(isSelected, label))
+            : _goalOptionLabel(isSelected, label),
+      ],
+    ),
+  );
+
+  Widget _goalOptionLabel(bool isSelected, String label) => Text(
+    label,
+    style: TextStyle(
+      color: isSelected ? AppColors.accentPrimary : AppColors.textColor2,
+      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+    ),
+  );
+
+  Widget _saveButton(bool isEditing) => CupertinoButton.filled(
+    onPressed: _contentController.text.trim().isEmpty
+        ? null
+        : () => widget.onSave(
+              _contentController.text.trim(),
+              _selectedCategory,
+              _selectedGoalId,
+            ),
+    child: Text(
+      isEditing ? 'Save Changes' : 'Add Note',
+      style: const TextStyle(
+        color: CupertinoColors.white,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+
+  Widget _cancelButton(BuildContext context) => CupertinoButton(
+    onPressed: () => Navigator.of(context).pop(),
+    child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+  );
 }

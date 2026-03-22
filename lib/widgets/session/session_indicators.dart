@@ -14,12 +14,7 @@ class SessionTimerDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final safeDuration = duration.isNegative ? Duration.zero : duration;
-    final hours = safeDuration.inHours;
-    final minutes = safeDuration.inMinutes.remainder(60);
-    final seconds = safeDuration.inSeconds.remainder(60);
-    final timeLabel = hours > 0
-        ? '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}'
-        : '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    final timeLabel = _formatTimeLabel(safeDuration);
     final statusLabel = isPaused ? 'Paused' : 'Elapsed';
     final statusColor = isPaused ? AppColors.warning : AppColors.textColor2;
     final timeStyle = AppTypography.displayLarge(context).copyWith(
@@ -34,42 +29,61 @@ class SessionTimerDisplay extends StatelessWidget {
       fontWeight: FontWeight.w500,
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.backgroundDepth5, AppColors.backgroundDepth3],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth2),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.accentPrimary.withValues(alpha: 0.22),
-            blurRadius: 20,
-            offset: const Offset(0, 14),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xl,
-        vertical: AppSpacing.md,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(timeLabel, style: timeStyle),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(statusLabel, style: statusStyle),
-        ],
-      ),
-    );
+    return _glowCard(timeLabel, statusLabel, timeStyle, statusStyle);
   }
+
+  String _formatTimeLabel(Duration safeDuration) {
+    final hours = safeDuration.inHours;
+    final minutes = safeDuration.inMinutes.remainder(60);
+    final seconds = safeDuration.inSeconds.remainder(60);
+    final mm = minutes.toString().padLeft(2, '0');
+    final ss = seconds.toString().padLeft(2, '0');
+    return hours > 0
+        ? '${hours.toString().padLeft(2, '0')}:$mm:$ss'
+        : '$mm:$ss';
+  }
+
+  Widget _glowCard(
+    String timeLabel,
+    String statusLabel,
+    TextStyle timeStyle,
+    TextStyle statusStyle,
+  ) =>
+      Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.backgroundDepth5, AppColors.backgroundDepth3],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.borderDepth2),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.accentPrimary.withValues(alpha: 0.22),
+              blurRadius: 20,
+              offset: const Offset(0, 14),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xl,
+          vertical: AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(timeLabel, style: timeStyle),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(statusLabel, style: statusStyle),
+          ],
+        ),
+      );
 }
 
 class BlockProgressIndicator extends StatelessWidget {

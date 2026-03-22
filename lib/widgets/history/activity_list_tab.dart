@@ -224,63 +224,67 @@ class CardioWorkoutListTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unitSystem = ref.watch(unitSystemProvider);
-
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () =>
-          context.push(CardioDetailScreen(workout: workout)),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${workout.activityType.displayName}  ·  ${Format.dateIso(workout.startedAt)}',
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textColor3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _summaryText(unitSystem),
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor1,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (workout.activityType.hasRoute && workout.routeAvailable)
-              Padding(
-                padding: const EdgeInsets.only(left: AppSpacing.sm),
-                child: Icon(
-                  CupertinoIcons.map,
-                  color: AppColors.accentPrimary,
-                  size: 16,
-                ),
-              ),
-            const SizedBox(width: AppSpacing.xs),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              color: AppColors.textColor4,
-              size: 14,
-            ),
-          ],
-        ),
-      ),
+      onPressed: () => context.push(CardioDetailScreen(workout: workout)),
+      child: _tileCard(unitSystem),
     );
   }
+
+  Widget _tileCard(UnitSystem unitSystem) => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(color: AppColors.borderDepth1),
+    ),
+    child: Row(
+      children: [
+        Expanded(child: _workoutInfo(unitSystem)),
+        ..._trailingIcons(),
+      ],
+    ),
+  );
+
+  Widget _workoutInfo(UnitSystem unitSystem) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _activityHeader(),
+      const SizedBox(height: 2),
+      _summaryLine(unitSystem),
+    ],
+  );
+
+  Widget _activityHeader() => Text(
+    '${workout.activityType.displayName}  ·  ${Format.dateIso(workout.startedAt)}',
+    style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+  );
+
+  Widget _summaryLine(UnitSystem unitSystem) => Text(
+    _summaryText(unitSystem),
+    style: AppTypography.body.copyWith(color: AppColors.textColor1),
+  );
+
+  List<Widget> _trailingIcons() => [
+    if (workout.activityType.hasRoute && workout.routeAvailable)
+      Padding(
+        padding: const EdgeInsets.only(left: AppSpacing.sm),
+        child: Icon(
+          CupertinoIcons.map,
+          color: AppColors.accentPrimary,
+          size: 16,
+        ),
+      ),
+    const SizedBox(width: AppSpacing.xs),
+    const Icon(
+      CupertinoIcons.chevron_right,
+      color: AppColors.textColor4,
+      size: 14,
+    ),
+  ];
 
   String _summaryText(UnitSystem unitSystem) {
     final duration = Format.duration(workout.durationSeconds);

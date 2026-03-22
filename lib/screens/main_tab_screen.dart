@@ -31,55 +31,59 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
       });
     }
 
-    // If session UI is visible and there's an active session, show the session screen
     if (sessionUIVisible && activeSession.value != null) {
       return SessionResumeScreen(sessionId: activeSession.value!.id);
     }
 
     return CupertinoTabScaffold(
-      tabBar: CupertinoTabBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.house_alt),
-            label: 'Today',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.flag),
-            label: 'Goals',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.clock),
-            label: 'History',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.gear),
-            label: 'Settings',
-          ),
-        ],
-        currentIndex: index,
-        onTap: (value) => setState(() => index = value),
+      tabBar: _tabBar(),
+      tabBuilder: (_, selectedIndex) => CupertinoTabView(
+        builder: (_) => _tabContent(selectedIndex, activeSession, sessionUIVisible),
       ),
-      tabBuilder: (_, selectedIndex) {
-        return CupertinoTabView(
-          builder: (_) {
-            final screen = switch (selectedIndex) {
-              0 => const TodayScreen(),
-              1 => const GoalsScreen(),
-              2 => const HistoryScreen(),
-              _ => const SettingsScreen(),
-            };
+    );
+  }
 
-            // Wrap screen with active session banner if there's an active session
-            return activeSession.when(
-              data: (session) => session != null && !sessionUIVisible
-                  ? _ActiveSessionWrapper(child: screen)
-                  : screen,
-              loading: () => screen,
-              error: (_, _) => screen,
-            );
-          },
-        );
-      },
+  CupertinoTabBar _tabBar() => CupertinoTabBar(
+    items: const [
+      BottomNavigationBarItem(
+        icon: Icon(CupertinoIcons.house_alt),
+        label: 'Today',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(CupertinoIcons.flag),
+        label: 'Goals',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(CupertinoIcons.clock),
+        label: 'History',
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(CupertinoIcons.gear),
+        label: 'Settings',
+      ),
+    ],
+    currentIndex: index,
+    onTap: (value) => setState(() => index = value),
+  );
+
+  Widget _tabContent(
+    int selectedIndex,
+    AsyncValue<Session?> activeSession,
+    bool sessionUIVisible,
+  ) {
+    final screen = switch (selectedIndex) {
+      0 => const TodayScreen(),
+      1 => const GoalsScreen(),
+      2 => const HistoryScreen(),
+      _ => const SettingsScreen(),
+    };
+
+    return activeSession.when(
+      data: (session) => session != null && !sessionUIVisible
+          ? _ActiveSessionWrapper(child: screen)
+          : screen,
+      loading: () => screen,
+      error: (_, _) => screen,
     );
   }
 }

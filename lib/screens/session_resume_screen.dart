@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
@@ -85,7 +86,21 @@ class _SessionViewState extends ConsumerState<_SessionView> {
     final session = active ?? widget.session;
 
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
+      navigationBar: _navigationBar(context),
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _sessionMetricsPanel(session, heartRateSamples, watchStatus),
+            _blockPager(session),
+          ],
+        ),
+      ),
+    );
+  }
+
+  CupertinoNavigationBar _navigationBar(BuildContext context) =>
+      CupertinoNavigationBar(
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           onPressed: () =>
@@ -98,59 +113,56 @@ class _SessionViewState extends ConsumerState<_SessionView> {
           onPressed: () => _completeSession(context),
           child: const Text('Finish'),
         ),
-      ),
-      child: SafeArea(
+      );
+
+  Widget _sessionMetricsPanel(
+    Session session,
+    List<HeartRateSample> heartRateSamples,
+    bool watchStatus,
+  ) =>
+      Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: SessionTimerDisplay(
-                            duration: _elapsedDuration(session),
-                            isPaused: session.isPaused,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      BlockProgressIndicator(
-                        currentIndex: _currentBlockIndex,
-                        totalBlocks: session.blocks.length,
-                      ),
-                    ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SessionTimerDisplay(
+                      duration: _elapsedDuration(session),
+                      isPaused: session.isPaused,
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _swipeInstructions(session),
-                  const SizedBox(height: AppSpacing.md),
-                  CardioMetricsCard(samples: heartRateSamples),
-                  const SizedBox(height: AppSpacing.md),
-                  _actionBar(session, watchStatus),
-                ],
-              ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                BlockProgressIndicator(
+                  currentIndex: _currentBlockIndex,
+                  totalBlocks: session.blocks.length,
+                ),
+              ],
             ),
-            Expanded(
-              child: PageView.builder(
-                controller: pageController,
-                itemCount: session.blocks.length,
-                onPageChanged: (index) =>
-                    setState(() => _currentBlockIndex = index),
-                itemBuilder: (context, index) =>
-                    BlockView(block: session.blocks[index]),
-              ),
-            ),
+            const SizedBox(height: AppSpacing.sm),
+            _swipeInstructions(session),
+            const SizedBox(height: AppSpacing.md),
+            CardioMetricsCard(samples: heartRateSamples),
+            const SizedBox(height: AppSpacing.md),
+            _actionBar(session, watchStatus),
           ],
         ),
-      ),
-    );
-  }
+      );
+
+  Widget _blockPager(Session session) => Expanded(
+    child: PageView.builder(
+      controller: pageController,
+      itemCount: session.blocks.length,
+      onPageChanged: (index) => setState(() => _currentBlockIndex = index),
+      itemBuilder: (context, index) =>
+          BlockView(block: session.blocks[index]),
+    ),
+  );
 
   Widget _swipeInstructions(Session session) {
     return Row(

@@ -31,58 +31,60 @@ class UnitSystemTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.backgroundDepth3,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: const Icon(
-              CupertinoIcons.arrow_2_squarepath,
-              color: AppColors.textColor2,
-              size: 22,
-            ),
-          ),
+          _iconBox(),
           const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Units', style: AppTypography.subtitle),
-                Text(
-                  unitSystem == UnitSystem.imperial
-                      ? 'Imperial (mi, mph)'
-                      : 'Metric (km, km/h)',
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textColor3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          CupertinoSlidingSegmentedControl<UnitSystem>(
-            groupValue: unitSystem,
-            children: const {
-              UnitSystem.imperial: Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Text('mi'),
-              ),
-              UnitSystem.metric: Padding(
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                child: Text('km'),
-              ),
-            },
-            onValueChanged: (value) {
-              if (value != null) {
-                ref.read(unitSystemProvider.notifier).setUnitSystem(value);
-              }
-            },
-          ),
+          Expanded(child: _labelColumn()),
+          _unitSegmentedControl(),
         ],
       ),
     );
   }
+
+  Widget _iconBox() => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth3,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: const Icon(
+      CupertinoIcons.arrow_2_squarepath,
+      color: AppColors.textColor2,
+      size: 22,
+    ),
+  );
+
+  Widget _labelColumn() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Units', style: AppTypography.subtitle),
+      Text(
+        unitSystem == UnitSystem.imperial
+            ? 'Imperial (mi, mph)'
+            : 'Metric (km, km/h)',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      ),
+    ],
+  );
+
+  Widget _unitSegmentedControl() => CupertinoSlidingSegmentedControl<UnitSystem>(
+    groupValue: unitSystem,
+    children: const {
+      UnitSystem.imperial: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Text('mi'),
+      ),
+      UnitSystem.metric: Padding(
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Text('km'),
+      ),
+    },
+    onValueChanged: (value) {
+      if (value != null) {
+        ref.read(unitSystemProvider.notifier).setUnitSystem(value);
+      }
+    },
+  );
 }
 
 class MaxHeartRateTile extends ConsumerStatefulWidget {
@@ -112,66 +114,60 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundDepth3,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Icon(
-                  CupertinoIcons.heart_fill,
-                  color: AppColors.error,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Max Heart Rate', style: AppTypography.subtitle),
-                    Text(
-                      '$displayedHeartRate bpm  ·  >= Zone 2: $zone2Lower+ bpm',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textColor3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          _header(displayedHeartRate, zone2Lower),
           const SizedBox(height: AppSpacing.sm),
-          CupertinoSlider(
-            value: _dragValue ?? maxHeartRate.toDouble(),
-            min: 140,
-            max: 220,
-            divisions: 80,
-            onChanged: (value) => setState(() => _dragValue = value),
-            onChangeEnd: (value) {
-              setState(() => _dragValue = null);
-              ref
-                  .read(maxHeartRateProvider.notifier)
-                  .setMaxHeartRate(value.round());
-            },
-          ),
+          _heartRateSlider(maxHeartRate),
           if (recomputeProgress != null)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
               child: Text(
                 'Recomputing zones: ${recomputeProgress.$1}/${recomputeProgress.$2}',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor4,
-                ),
+                style: AppTypography.caption.copyWith(color: AppColors.textColor4),
               ),
             ),
         ],
       ),
     );
   }
+
+  Widget _header(int displayedHeartRate, int zone2Lower) => Row(
+    children: [
+      Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: const Icon(CupertinoIcons.heart_fill, color: AppColors.error, size: 22),
+      ),
+      const SizedBox(width: AppSpacing.md),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Max Heart Rate', style: AppTypography.subtitle),
+            Text(
+              '$displayedHeartRate bpm  ·  >= Zone 2: $zone2Lower+ bpm',
+              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+
+  Widget _heartRateSlider(int maxHeartRate) => CupertinoSlider(
+    value: _dragValue ?? maxHeartRate.toDouble(),
+    min: 140,
+    max: 220,
+    divisions: 80,
+    onChanged: (value) => setState(() => _dragValue = value),
+    onChangeEnd: (value) {
+      setState(() => _dragValue = null);
+      ref.read(maxHeartRateProvider.notifier).setMaxHeartRate(value.round());
+    },
+  );
 }
 
 class RestingHeartRateTile extends ConsumerStatefulWidget {
@@ -214,67 +210,67 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundDepth3,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                ),
-                child: const Icon(
-                  CupertinoIcons.heart,
-                  color: Color(0xFF64D2FF),
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Resting Heart Rate', style: AppTypography.subtitle),
-                    Text(
-                      '$displayedHeartRate bpm',
-                      style: AppTypography.caption.copyWith(
-                        color: AppColors.textColor3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _syncing ? null : _syncFromHealthKit,
-                child: _syncing
-                    ? const CupertinoActivityIndicator()
-                    : const Icon(
-                        CupertinoIcons.arrow_2_circlepath,
-                        size: 20,
-                        color: AppColors.accentPrimary,
-                      ),
-              ),
-            ],
-          ),
+          _header(displayedHeartRate),
           const SizedBox(height: AppSpacing.sm),
-          CupertinoSlider(
-            value: _dragValue ?? restingHeartRate.toDouble(),
-            min: 30,
-            max: 100,
-            divisions: 70,
-            onChanged: (value) => setState(() => _dragValue = value),
-            onChangeEnd: (value) {
-              setState(() => _dragValue = null);
-              ref
-                  .read(restingHeartRateProvider.notifier)
-                  .setRestingHeartRate(value.round());
-            },
-          ),
+          _restingHeartRateSlider(restingHeartRate),
         ],
       ),
     );
   }
+
+  Widget _header(int displayedHeartRate) => Row(
+    children: [
+      Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth3,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: const Icon(
+          CupertinoIcons.heart,
+          color: Color(0xFF64D2FF),
+          size: 22,
+        ),
+      ),
+      const SizedBox(width: AppSpacing.md),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Resting Heart Rate', style: AppTypography.subtitle),
+            Text(
+              '$displayedHeartRate bpm',
+              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            ),
+          ],
+        ),
+      ),
+      CupertinoButton(
+        padding: EdgeInsets.zero,
+        onPressed: _syncing ? null : _syncFromHealthKit,
+        child: _syncing
+            ? const CupertinoActivityIndicator()
+            : const Icon(
+                CupertinoIcons.arrow_2_circlepath,
+                size: 20,
+                color: AppColors.accentPrimary,
+              ),
+      ),
+    ],
+  );
+
+  Widget _restingHeartRateSlider(int restingHeartRate) => CupertinoSlider(
+    value: _dragValue ?? restingHeartRate.toDouble(),
+    min: 30,
+    max: 100,
+    divisions: 70,
+    onChanged: (value) => setState(() => _dragValue = value),
+    onChangeEnd: (value) {
+      setState(() => _dragValue = null);
+      ref.read(restingHeartRateProvider.notifier).setRestingHeartRate(value.round());
+    },
+  );
 }
 
 class TrainingInfluencesTile extends StatelessWidget {
@@ -302,35 +298,9 @@ class TrainingInfluencesTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.backgroundDepth3,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(
-                CupertinoIcons.person_2,
-                color: AppColors.textColor2,
-                size: 22,
-              ),
-            ),
+            _iconBox(),
             const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Training Influences', style: AppTypography.subtitle),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    subtitle,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor3,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            Expanded(child: _labelColumn(subtitle)),
             const Icon(
               CupertinoIcons.chevron_right,
               color: AppColors.textColor3,
@@ -341,6 +311,28 @@ class TrainingInfluencesTile extends StatelessWidget {
       ),
     );
   }
+
+  Widget _iconBox() => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth3,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: const Icon(CupertinoIcons.person_2, color: AppColors.textColor2, size: 22),
+  );
+
+  Widget _labelColumn(String subtitle) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Training Influences', style: AppTypography.subtitle),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        subtitle,
+        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      ),
+    ],
+  );
 }
 
 class SyncStatusTile extends StatelessWidget {
@@ -413,70 +405,72 @@ class TemplateVersionTile extends StatelessWidget {
         border: Border.all(color: AppColors.borderDepth1),
       ),
       child: versionAsync.when(
-        data: (status) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Workout Templates', style: AppTypography.subtitle),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              status.installed == null
-                  ? 'Not initialized (version ${status.currentTemplateVersion})'
-                  : 'Version ${status.installed} installed (current: ${status.currentTemplateVersion})',
-              style: AppTypography.body.copyWith(
-                color: status.needsUpdate
-                    ? AppColors.warning
-                    : AppColors.textColor3,
-              ),
-            ),
-            if (status.needsUpdate) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Templates need to be updated to access new features and fixes.',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor4,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              CupertinoButton.filled(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg,
-                  vertical: AppSpacing.sm,
-                ),
-                onPressed: () => _confirmReseed(context),
-                child: const Text(
-                  'Update Templates',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        loading: () => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Workout Templates', style: AppTypography.subtitle),
-            const SizedBox(height: AppSpacing.xs),
-            const CupertinoActivityIndicator(),
-          ],
-        ),
-        error: (error, _) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Workout Templates', style: AppTypography.subtitle),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Error: $error',
-              style: AppTypography.body.copyWith(color: AppColors.error),
-            ),
-          ],
-        ),
+        data: (status) => _dataContent(context, status),
+        loading: _loadingContent,
+        error: (error, _) => _errorContent(error),
       ),
     );
   }
+
+  Widget _dataContent(BuildContext context, TemplateVersionStatus status) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Workout Templates', style: AppTypography.subtitle),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        status.installed == null
+            ? 'Not initialized (version ${status.currentTemplateVersion})'
+            : 'Version ${status.installed} installed (current: ${status.currentTemplateVersion})',
+        style: AppTypography.body.copyWith(
+          color: status.needsUpdate ? AppColors.warning : AppColors.textColor3,
+        ),
+      ),
+      if (status.needsUpdate) ...[
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Templates need to be updated to access new features and fixes.',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        CupertinoButton.filled(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          onPressed: () => _confirmReseed(context),
+          child: const Text(
+            'Update Templates',
+            style: TextStyle(
+              color: CupertinoColors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    ],
+  );
+
+  Widget _loadingContent() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Workout Templates', style: AppTypography.subtitle),
+      const SizedBox(height: AppSpacing.xs),
+      const CupertinoActivityIndicator(),
+    ],
+  );
+
+  Widget _errorContent(Object error) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Workout Templates', style: AppTypography.subtitle),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        'Error: $error',
+        style: AppTypography.body.copyWith(color: AppColors.error),
+      ),
+    ],
+  );
 
   void _confirmReseed(BuildContext context) {
     showCupertinoModalPopup<void>(
@@ -578,6 +572,7 @@ class HealthCardioImportTile extends ConsumerWidget {
     final importErrorMessage = importAsync.hasError
         ? '${importAsync.error}'
         : null;
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -595,48 +590,10 @@ class HealthCardioImportTile extends ConsumerWidget {
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
           const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            child: CupertinoButton.filled(
-              onPressed: isImporting
-                  ? null
-                  : () => ref
-                        .read(cardioImportControllerProvider.notifier)
-                        .importRecentWorkouts(),
-              child: isImporting
-                  ? const CupertinoActivityIndicator(
-                      color: CupertinoColors.white,
-                    )
-                  : const Text(
-                      'Import Workouts',
-                      style: TextStyle(
-                        color: CupertinoColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
+          _importButton(isImporting, ref),
           if (isImporting) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Importing ${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              child: Container(
-                height: 6,
-                color: AppColors.backgroundDepth3,
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
-                  child: Container(color: AppColors.accentPrimary),
-                ),
-              ),
-            ),
+            _importProgressSection(importProgress),
           ] else if (importProgress.status.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -655,6 +612,49 @@ class HealthCardioImportTile extends ConsumerWidget {
       ),
     );
   }
+
+  Widget _importButton(bool isImporting, WidgetRef ref) => SizedBox(
+    width: double.infinity,
+    child: CupertinoButton.filled(
+      onPressed: isImporting
+          ? null
+          : () => ref
+                .read(cardioImportControllerProvider.notifier)
+                .importRecentWorkouts(),
+      child: isImporting
+          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+          : const Text(
+              'Import Workouts',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+    ),
+  );
+
+  Widget _importProgressSection(CardioImportProgress importProgress) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        'Importing ${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Container(
+          height: 6,
+          color: AppColors.backgroundDepth3,
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
+            child: Container(color: AppColors.accentPrimary),
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class MetricsBackfillTile extends ConsumerWidget {
@@ -681,40 +681,40 @@ class MetricsBackfillTile extends ConsumerWidget {
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
           const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            width: double.infinity,
-            child: CupertinoButton.filled(
-              onPressed: status.inProgress
-                  ? null
-                  : () => ref
-                        .read(metricsBackfillControllerProvider.notifier)
-                        .runBackfill(),
-              child: status.inProgress
-                  ? const CupertinoActivityIndicator(
-                      color: CupertinoColors.white,
-                    )
-                  : const Text(
-                      'Run Backfill',
-                      style: TextStyle(
-                        color: CupertinoColors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
+          _backfillButton(status, ref),
           if (status.label.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              status.label,
-              style: AppTypography.caption.copyWith(
-                color: status.inProgress
-                    ? AppColors.textColor3
-                    : AppColors.success,
-              ),
-            ),
+            _statusLabel(status),
           ],
         ],
       ),
     );
   }
+
+  Widget _backfillButton(MetricsBackfillStatus status, WidgetRef ref) => SizedBox(
+    width: double.infinity,
+    child: CupertinoButton.filled(
+      onPressed: status.inProgress
+          ? null
+          : () => ref
+                .read(metricsBackfillControllerProvider.notifier)
+                .runBackfill(),
+      child: status.inProgress
+          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+          : const Text(
+              'Run Backfill',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+    ),
+  );
+
+  Widget _statusLabel(MetricsBackfillStatus status) => Text(
+    status.label,
+    style: AppTypography.caption.copyWith(
+      color: status.inProgress ? AppColors.textColor3 : AppColors.success,
+    ),
+  );
 }

@@ -184,45 +184,50 @@ class ImportProgressBanner extends StatelessWidget {
         children: [
           Text(
             'Import from Apple Health',
-            style:
-                AppTypography.subtitle.copyWith(color: AppColors.textColor1),
+            style: AppTypography.subtitle.copyWith(color: AppColors.textColor1),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            importProgress.status.isNotEmpty
-                ? importProgress.status
-                : 'Fetches recent cardio workouts with route and heart rate. '
-                    'Only new workouts are added.',
-            style:
-                AppTypography.caption.copyWith(color: AppColors.textColor3),
-          ),
-          if (importProgress.inProgress &&
-              importProgress.totalWorkouts > 0) ...[
+          _statusText(),
+          if (importProgress.inProgress && importProgress.totalWorkouts > 0) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(
-              '${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor2,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-              child: Container(
-                height: 6,
-                color: AppColors.backgroundDepth3,
-                child: FractionallySizedBox(
-                  alignment: Alignment.centerLeft,
-                  widthFactor:
-                      importProgress.progressFraction.clamp(0.0, 1.0),
-                  child: Container(color: AppColors.accentPrimary),
-                ),
-              ),
-            ),
+            _progressBar(),
           ],
         ],
       ),
     );
   }
+
+  Widget _statusText() => Text(
+    importProgress.status.isNotEmpty
+        ? importProgress.status
+        : 'Fetches recent cardio workouts with route and heart rate. '
+            'Only new workouts are added.',
+    style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+  );
+
+  Widget _progressBar() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        '${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
+        style: AppTypography.caption.copyWith(
+          color: AppColors.textColor2,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Container(
+          height: 6,
+          color: AppColors.backgroundDepth3,
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
+            child: Container(color: AppColors.accentPrimary),
+          ),
+        ),
+      ),
+    ],
+  );
 }

@@ -473,35 +473,50 @@ class _FourWeekSummary extends StatelessWidget {
         children: [
           Text('Last 4 Weeks', style: AppTypography.subtitle),
           const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              _statCell(
-                'distance',
-                '${distance.toStringAsFixed(1)}$distanceUnit',
-              ),
-              _statCell(
-                'cardio time',
-                cardioHours > 0
-                    ? '${cardioHours}h ${cardioMinutes}m'
-                    : '${cardioMinutes}m',
-              ),
-              _statCell('active days', '$activityDayCount'),
-              _statCell('>= zone 2', '${totalGteZone2}m'),
-            ],
+          _statRow(
+            distance: distance,
+            distanceUnit: distanceUnit,
+            cardioHours: cardioHours,
+            cardioMinutes: cardioMinutes,
+            activityDayCount: activityDayCount,
+            totalGteZone2: totalGteZone2,
           ),
           if (totalSessionMinutes > 0) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
               '${totalSessionMinutes}m session time',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-              ),
+              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
             ),
           ],
         ],
       ),
     );
   }
+
+  Widget _statRow({
+    required double distance,
+    required String distanceUnit,
+    required int cardioHours,
+    required int cardioMinutes,
+    required int activityDayCount,
+    required int totalGteZone2,
+  }) =>
+      Row(
+        children: [
+          _statCell(
+            'distance',
+            '${distance.toStringAsFixed(1)}$distanceUnit',
+          ),
+          _statCell(
+            'cardio time',
+            cardioHours > 0
+                ? '${cardioHours}h ${cardioMinutes}m'
+                : '${cardioMinutes}m',
+          ),
+          _statCell('active days', '$activityDayCount'),
+          _statCell('>= zone 2', '${totalGteZone2}m'),
+        ],
+      );
 
   Widget _statCell(String label, String value) {
     return Expanded(
