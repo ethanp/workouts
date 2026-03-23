@@ -2,8 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/active_session_provider.dart';
-import 'package:workouts/screens/goals_screen.dart';
 import 'package:workouts/screens/history_screen.dart';
+import 'package:workouts/screens/library_screen.dart';
 import 'package:workouts/screens/session_resume_screen.dart';
 import 'package:workouts/screens/settings_screen.dart';
 import 'package:workouts/screens/today_screen.dart';
@@ -50,8 +50,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
         label: 'Today',
       ),
       BottomNavigationBarItem(
-        icon: Icon(CupertinoIcons.flag),
-        label: 'Goals',
+        icon: Icon(CupertinoIcons.book),
+        label: 'Library',
       ),
       BottomNavigationBarItem(
         icon: Icon(CupertinoIcons.clock),
@@ -73,7 +73,7 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
   ) {
     final screen = switch (selectedIndex) {
       0 => const TodayScreen(),
-      1 => const GoalsScreen(),
+      1 => const LibraryScreen(),
       2 => const HistoryScreen(),
       _ => const SettingsScreen(),
     };
