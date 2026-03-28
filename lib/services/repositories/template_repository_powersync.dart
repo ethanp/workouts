@@ -134,6 +134,7 @@ class TemplateRepositoryPowerSync {
         e.modality as e_modality,
         e.equipment as e_equipment,
         e.cues as e_cues,
+        e.benefits as e_benefits,
         wbe.prescription as wbe_prescription,
         wbe.setup_duration_seconds as wbe_setup_duration_seconds,
         wbe.work_duration_seconds as wbe_work_duration_seconds,

@@ -1,10 +1,11 @@
-import 'package:logging/logging.dart';
+
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/services/powersync/powersync_extensions.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
-final _log = Logger('SessionMetricsStore');
+const _log = ELogger('SessionMetricsStore');
 
 /// Manages the `session_computed_metrics` local-only table: computing, storing,
 /// backfilling, and recomputing zone times and TRIMP for individual sessions.
@@ -31,7 +32,7 @@ class SessionMetricsStore {
       "SELECT id FROM sessions WHERE completed_at IS NOT NULL"
       " ORDER BY started_at DESC",
     );
-    _log.info(
+    _log.log(
       'Recomputing session zones for ${sessionRows.length} sessions.',
     );
     for (var sessionIndex = 0;
@@ -43,7 +44,7 @@ class SessionMetricsStore {
       );
       onProgress?.call(sessionIndex + 1, sessionRows.length);
     }
-    _log.info('Session zone recompute complete.');
+    _log.log('Session zone recompute complete.');
   }
 
   Future<void> backfillMissing({
@@ -57,7 +58,7 @@ class SessionMetricsStore {
         AND (m.id IS NULL OR m.zone1_seconds IS NULL)
     ''');
     if (pendingRows.isEmpty) return;
-    _log.info(
+    _log.log(
       'Backfilling session metrics for ${pendingRows.length} sessions.',
     );
     for (final pendingRow in pendingRows) {
@@ -66,7 +67,7 @@ class SessionMetricsStore {
         trainingLoad: trainingLoad,
       );
     }
-    _log.info('Session metrics backfill complete.');
+    _log.log('Session metrics backfill complete.');
   }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String sessionId) async {

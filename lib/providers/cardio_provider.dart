@@ -1,6 +1,7 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
-import 'package:logging/logging.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
@@ -15,7 +16,7 @@ import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'cardio_provider.g.dart';
 
-final _log = Logger('CardioImportController');
+const _log = ELogger('CardioImportController');
 
 class CardioImportProgress {
   const CardioImportProgress({
@@ -122,7 +123,7 @@ class CardioImportController extends _$CardioImportController {
   set state(AsyncValue<CardioImportProgress> newState) {
     newState.whenOrNull(
       error: (error, stackTrace) =>
-          _log.severe('CardioImportController error', error, stackTrace),
+          _log.error('CardioImportController error', error, stackTrace),
     );
     super.state = newState;
   }

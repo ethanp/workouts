@@ -1,10 +1,11 @@
-import 'package:logging/logging.dart';
+
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/services/powersync/powersync_extensions.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
-final _log = Logger('CardioMetricsStore');
+const _log = ELogger('CardioMetricsStore');
 
 /// Manages the `cardio_computed_metrics` local-only table: computing, storing,
 /// backfilling, and recomputing zone times and TRIMP for individual workouts.
@@ -30,7 +31,7 @@ class CardioMetricsStore {
     final List<Map<String, dynamic>> workoutRows = await _powerSync.execute(
       'SELECT id FROM cardio_workouts ORDER BY started_at DESC',
     );
-    _log.info('Recomputing zones for ${workoutRows.length} workouts.');
+    _log.log('Recomputing zones for ${workoutRows.length} workouts.');
     for (var index = 0; index < workoutRows.length; index++) {
       await _recomputeZones(
         workoutRows[index]['id'] as String,
@@ -38,7 +39,7 @@ class CardioMetricsStore {
       );
       onProgress?.call(index + 1, workoutRows.length);
     }
-    _log.info('Zone recompute complete.');
+    _log.log('Zone recompute complete.');
   }
 
   Future<void> backfillMissing({
@@ -51,14 +52,14 @@ class CardioMetricsStore {
       WHERE m.id IS NULL OR m.zone1_seconds IS NULL
     ''');
     if (pendingRows.isEmpty) return;
-    _log.info('Backfilling metrics for ${pendingRows.length} workouts.');
+    _log.log('Backfilling metrics for ${pendingRows.length} workouts.');
     for (final pendingRow in pendingRows) {
       await computeAndStore(
         pendingRow['id'] as String,
         trainingLoad: trainingLoad,
       );
     }
-    _log.info('Backfill complete.');
+    _log.log('Backfill complete.');
   }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String workoutId) async {

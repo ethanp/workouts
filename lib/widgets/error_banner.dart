@@ -1,13 +1,14 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
-import 'package:logging/logging.dart';
+
 import 'package:url_launcher/url_launcher.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 
-final _log = Logger('ErrorBanner');
+const _log = ELogger('ErrorBanner');
 
 class ErrorBanner extends StatefulWidget {
   const ErrorBanner({super.key, required this.child});
@@ -26,7 +27,7 @@ class _ErrorBannerState extends State<ErrorBanner> {
   void initState() {
     super.initState();
     _subscription = errorBus.stream.listen((error) {
-      _log.severe(error);
+      _log.error(error);
       setState(() => _currentError = error);
     });
   }

@@ -1,6 +1,6 @@
-import 'dart:developer' as developer;
 import 'dart:io';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logging/logging.dart';
@@ -10,69 +10,75 @@ import 'package:powersync/powersync.dart';
 import 'powersync_connector.dart';
 import 'powersync_schema.dart';
 
-final _log = Logger('PowerSyncInit');
+const _log = ELogger('PowerSyncInit');
 
 String get _powersyncUrl => dotenv.env['POWERSYNC_URL'] ?? '';
 String get _postgrestUrl => dotenv.env['POSTGREST_URL'] ?? '';
 String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
 Future<PowerSyncDatabase> initPowerSync() async {
-  _log.info('Starting PowerSync initialization...');
-  _log.info('PowerSync URL: $_powersyncUrl');
-  _log.info('PostgREST URL: $_postgrestUrl');
-  _log.info('JWT Secret configured: ${_jwtSecret.isNotEmpty}');
+  _log.log('Starting PowerSync initialization...');
+  _log.log('PowerSync URL: $_powersyncUrl');
+  _log.log('PostgREST URL: $_postgrestUrl');
+  _log.log('JWT Secret configured: ${_jwtSecret.isNotEmpty}');
 
   if (_powersyncUrl.isEmpty || _postgrestUrl.isEmpty || _jwtSecret.isEmpty) {
-    final error =
+    final errorMessage =
         'Missing required .env configuration. '
         'POWERSYNC_URL=${_powersyncUrl.isEmpty ? "MISSING" : "OK"}, '
         'POSTGREST_URL=${_postgrestUrl.isEmpty ? "MISSING" : "OK"}, '
         'POWERSYNC_JWT_SECRET=${_jwtSecret.isEmpty ? "MISSING" : "OK"}';
-    _log.severe(error);
-    throw StateError(error);
+    _log.error(errorMessage);
+    throw StateError(errorMessage);
   }
 
   final dbPath = await getDatabasePath();
-  _log.info('Database path: $dbPath');
+  _log.log('Database path: $dbPath');
 
   final dbDir = Directory(p.dirname(dbPath));
   if (!dbDir.existsSync()) {
-    _log.info('Creating database directory: ${dbDir.path}');
+    _log.log('Creating database directory: ${dbDir.path}');
     dbDir.createSync(recursive: true);
   }
 
-  final logger = Logger.detached('PowerSync');
-  logger.level = kDebugMode ? Level.INFO : Level.WARNING;
-  logger.onRecord.listen((record) {
-    developer.log(
-      '[${record.level.name}] ${record.loggerName}: ${record.message}',
-      name: record.loggerName,
-      error: record.error,
-      stackTrace: record.stackTrace,
-    );
+  // Detached logger for PowerSync's internal messages — must remain a
+  // logging.Logger since it's passed to PowerSyncDatabase.
+  final powerSyncInternalLog = ELogger('PowerSync');
+  final powerSyncLogger = Logger.detached('PowerSync');
+  powerSyncLogger.level = kDebugMode ? Level.INFO : Level.WARNING;
+  powerSyncLogger.onRecord.listen((record) {
+    if (record.level >= Level.SEVERE) {
+      powerSyncInternalLog.error(record.message, record.error, record.stackTrace);
+    } else if (record.level >= Level.WARNING) {
+      powerSyncInternalLog.warn(record.message);
+    } else {
+      powerSyncInternalLog.log(record.message);
+    }
   });
 
   try {
-    _log.info('Creating PowerSyncDatabase instance...');
+    _log.log('Creating PowerSyncDatabase instance...');
     final powerSyncDatabase = PowerSyncDatabase(
       schema: schema,
       path: dbPath,
-      logger: logger,
+      logger: powerSyncLogger,
     );
 
-    _log.info('Initializing database...');
+    _log.log('Initializing database...');
     await powerSyncDatabase.initialize();
-    _log.info('Database initialized successfully');
+    _log.log('Database initialized successfully');
 
     await _purgeOrphanedCardioChildCrudEntries(powerSyncDatabase);
 
-    _log.info('Connecting to PowerSync service...');
+    _log.log('Connecting to PowerSync service...');
     await reconnectPowerSync(powerSyncDatabase);
-    _log.info('PowerSync connection established');
+    _log.log('PowerSync connection established');
+
+    if (kDebugMode) _subscribeDownloadTableLogs(powerSyncDatabase);
 
     return powerSyncDatabase;
   } catch (error, stackTrace) {
-    _log.severe('PowerSync initialization failed at $dbPath', error, stackTrace);
+    _log.error('PowerSync initialization failed at $dbPath', error, stackTrace);
     rethrow;
   }
 }
@@ -81,6 +87,39 @@ Future<void> reconnectPowerSync(PowerSyncDatabase powerSyncDatabase) async {
   await powerSyncDatabase.connect(
     connector: WorkoutsBackendConnector(_powersyncUrl, _postgrestUrl),
   );
+}
+
+/// Subscribes to download cycles and logs which tables were written.
+///
+/// Each time PowerSync finishes a download phase, emits a single line like:
+///   ⬇️ Download wrote: exercises, workout_templates
+///
+/// This makes it easy to spot when workout_templates (or any other table) is
+/// being re-synced from the server — which is the signal that a server-side
+/// record is overwriting a local delete.
+void _subscribeDownloadTableLogs(PowerSyncDatabase powerSyncDatabase) {
+  final tablesInCurrentDownload = <String>{};
+  var wasDownloading = false;
+
+  powerSyncDatabase.updates.listen((notification) {
+    if (wasDownloading) tablesInCurrentDownload.addAll(notification.tables);
+  });
+
+  powerSyncDatabase.statusStream.listen((status) {
+    if (status.downloading && !wasDownloading) {
+      tablesInCurrentDownload.clear();
+      wasDownloading = true;
+    } else if (!status.downloading && wasDownloading) {
+      wasDownloading = false;
+      if (tablesInCurrentDownload.isNotEmpty) {
+        final sorted = tablesInCurrentDownload.toList()..sort();
+        _log.log('⬇️ Download wrote: ${sorted.join(', ')}');
+      } else {
+        _log.log('⬇️ Download complete (no table writes observed)');
+      }
+      tablesInCurrentDownload.clear();
+    }
+  });
 }
 
 Future<String> getDatabasePath() async {
@@ -112,9 +151,9 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
             OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
           )
       ''');
-      _log.info('Purged $orphanCount orphaned cardio child CRUD entries.');
+      _log.log('Purged $orphanCount orphaned cardio child CRUD entries.');
     }
   } catch (error) {
-    _log.warning('Could not purge orphaned cardio CRUD entries: $error');
+    _log.warn('Could not purge orphaned cardio CRUD entries: $error');
   }
 }

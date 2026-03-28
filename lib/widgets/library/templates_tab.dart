@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/screens/template_detail_screen.dart';
+import 'package:workouts/services/repositories/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class TemplatesTab extends ConsumerWidget {
@@ -50,13 +51,13 @@ class _TemplateList extends StatelessWidget {
   }
 }
 
-class _TemplateCard extends StatelessWidget {
+class _TemplateCard extends ConsumerWidget {
   const _TemplateCard({required this.template});
 
   final WorkoutTemplate template;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final blockCount = template.blocks.length;
     final exerciseCount =
         template.blocks.expand((block) => block.exercises).length;
@@ -67,25 +68,72 @@ class _TemplateCard extends StatelessWidget {
           builder: (_) => TemplateDetailScreen(template: template),
         ),
       ),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
-        ),
-        child: Row(
-          children: [
-            _templateIcon(),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: _cardContent(blockCount, exerciseCount)),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              size: 14,
-              color: AppColors.textColor4,
+      child: Dismissible(
+        key: ValueKey(template.id),
+        direction: DismissDirection.endToStart,
+        confirmDismiss: (_) => _confirmDelete(context),
+        onDismissed: (_) => ref
+            .read(templateRepositoryPowerSyncProvider)
+            .deleteTemplate(template.id),
+        background: _deleteBackground(),
+        child: _card(blockCount, exerciseCount),
+      ),
+    );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            title: const Text('Delete Routine?'),
+            content: Text(
+              '"${template.name}" will be permanently deleted.',
             ),
-          ],
-        ),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Widget _deleteBackground() => Container(
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white, size: 22),
+  );
+
+  Widget _card(int blockCount, int exerciseCount) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+      child: Row(
+        children: [
+          _templateIcon(),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(child: _cardContent(blockCount, exerciseCount)),
+          const Icon(
+            CupertinoIcons.chevron_right,
+            size: 14,
+            color: AppColors.textColor4,
+          ),
+        ],
       ),
     );
   }

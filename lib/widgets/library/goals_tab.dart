@@ -260,38 +260,78 @@ class _GoalCard extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
         onTap: () => _showActions(context, ref),
-        child: Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(
-              color: isArchived
-                  ? AppColors.borderDepth1.withValues(alpha: 0.5)
-                  : AppColors.borderDepth1,
+        child: Dismissible(
+          key: ValueKey(goal.id),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) => _confirmDelete(context),
+          onDismissed: (_) =>
+              ref.read(goalsControllerProvider.notifier).deleteGoal(goal.id),
+          background: _deleteBackground(),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDepth2,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: isArchived
+                    ? AppColors.borderDepth1.withValues(alpha: 0.5)
+                    : AppColors.borderDepth1,
+              ),
             ),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PriorityBadge(
-                priority: goal.priority,
-                color: categoryColor,
-                isArchived: isArchived,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(child: _cardContent(categoryColor)),
-              const Icon(
-                CupertinoIcons.chevron_right,
-                size: 14,
-                color: AppColors.textColor4,
-              ),
-            ],
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _PriorityBadge(
+                  priority: goal.priority,
+                  color: categoryColor,
+                  isArchived: isArchived,
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(child: _cardContent(categoryColor)),
+                const Icon(
+                  CupertinoIcons.chevron_right,
+                  size: 14,
+                  color: AppColors.textColor4,
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            title: const Text('Delete Goal?'),
+            content: Text('"${goal.title}" will be permanently deleted.'),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Widget _deleteBackground() => Container(
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white, size: 22),
+  );
 
   Widget _cardContent(Color categoryColor) {
     return Column(
@@ -577,34 +617,75 @@ class _NoteRow extends ConsumerWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: GestureDetector(
         onTap: () => _showActions(context, ref),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(
-              color: isArchived
-                  ? AppColors.borderDepth1.withValues(alpha: 0.4)
-                  : AppColors.borderDepth1,
+        child: Dismissible(
+          key: ValueKey(note.id),
+          direction: DismissDirection.endToStart,
+          confirmDismiss: (_) => _confirmDelete(context),
+          onDismissed: (_) => ref
+              .read(backgroundNotesControllerProvider.notifier)
+              .deleteNote(note.id),
+          background: _deleteBackground(),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
-          ),
-          child: Row(
-            children: [
-              Text(
-                note.category.icon,
-                style: const TextStyle(fontSize: 18),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDepth2,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: Border.all(
+                color: isArchived
+                    ? AppColors.borderDepth1.withValues(alpha: 0.4)
+                    : AppColors.borderDepth1,
               ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(child: _noteContent(linkedGoal, categoryColor)),
-            ],
+            ),
+            child: Row(
+              children: [
+                Text(
+                  note.category.icon,
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(child: _noteContent(linkedGoal, categoryColor)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showCupertinoDialog<bool>(
+          context: context,
+          builder: (dialogContext) => CupertinoAlertDialog(
+            title: const Text('Delete Note?'),
+            content: const Text('This background note will be permanently deleted.'),
+            actions: [
+              CupertinoDialogAction(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Cancel'),
+              ),
+              CupertinoDialogAction(
+                isDestructiveAction: true,
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Widget _deleteBackground() => Container(
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white, size: 22),
+  );
 
   Widget _noteContent(FitnessGoal? linkedGoal, Color categoryColor) {
     return Column(

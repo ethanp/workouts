@@ -1,31 +1,35 @@
 import 'package:powersync/powersync.dart';
 
 extension PowerSyncUpsert on PowerSyncDatabase {
-  /// Inserts a row or updates it on conflict using DELETE + INSERT in a
-  /// write transaction.
+  /// Inserts a row or updates it in place if a row with the same [idColumn] already exists.
   ///
-  /// PowerSync exposes all tables (synced and local-only) as SQLite views with
-  /// INSTEAD OF triggers. SQLite does not support `INSERT ON CONFLICT DO UPDATE`
-  /// on views, so this falls back to DELETE + INSERT which the triggers handle.
-  ///
-  /// [values] maps column names to values for the full INSERT.
-  /// [idColumn] is the primary key column used to identify the existing row.
+  /// Uses INSERT for new rows and UPDATE for existing rows so that PowerSync's
+  /// sync layer records the correct operation type. DELETE + INSERT would
+  /// generate separate oplog entries that allow an incoming server sync to
+  /// overwrite the local change before it is uploaded.
   Future<void> upsert(
     String table,
     Map<String, Object?> values, {
     String idColumn = 'id',
-  }) {
-    return writeTransaction((transaction) async {
-      await transaction.execute(
-        'DELETE FROM $table WHERE $idColumn = ?',
-        [values[idColumn]],
+  }) async {
+    final existingRow = await getOptional(
+      'SELECT $idColumn FROM $table WHERE $idColumn = ?',
+      [values[idColumn]],
+    );
+    if (existingRow != null) {
+      final updateColumns = values.keys.where((col) => col != idColumn).toList();
+      final setClause = updateColumns.map((col) => '$col = ?').join(', ');
+      await execute(
+        'UPDATE $table SET $setClause WHERE $idColumn = ?',
+        [...updateColumns.map((col) => values[col]), values[idColumn]],
       );
+    } else {
       final columns = values.keys.toList();
       final placeholders = columns.map((_) => '?').join(', ');
-      await transaction.execute(
+      await execute(
         'INSERT INTO $table (${columns.join(', ')}) VALUES ($placeholders)',
         values.values.toList(),
       );
-    });
+    }
   }
 }

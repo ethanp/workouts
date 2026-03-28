@@ -1,8 +1,9 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/fitness_goal.dart';
@@ -11,7 +12,7 @@ import 'package:workouts/services/context_builder.dart';
 
 part 'llm_service.g.dart';
 
-final _log = Logger('LlmService');
+const _log = ELogger('LlmService');
 
 class RateLimitedException implements Exception {
   final Duration retryAfter;
@@ -53,7 +54,7 @@ class LlmService {
     http.Client? client,
   }) async {
     final httpClient = client ?? this.client;
-    _log.info('Generating workout options...');
+    _log.log('Generating workout options...');
     _log.fine(
       'Context: ${context.goals.length} goals, '
       '${context.backgroundNotes.length} notes, '
@@ -70,7 +71,7 @@ class LlmService {
     final http.Response response = await feedToLlm(inputPromptInfo, httpClient);
 
     if (response.statusCode != 200) {
-      _log.severe(
+      _log.error(
         'LLM Proxy error: ${response.statusCode}\n'
         'Headers: ${response.headers}\n'
         'Body: ${response.body}',
@@ -92,7 +93,7 @@ class LlmService {
     http.Client httpClient,
   ) async {
     final url = '$proxyUrl/v1/chat/completions';
-    _log.info('Calling LLM proxy at $url');
+    _log.log('Calling LLM proxy at $url');
 
     try {
       final response = await httpClient
@@ -112,10 +113,10 @@ class LlmService {
             }),
           )
           .timeout(const Duration(seconds: 30));
-      _log.info('LLM proxy responded: ${response.statusCode}');
+      _log.log('LLM proxy responded: ${response.statusCode}');
       return response;
     } catch (e) {
-      _log.severe('LLM proxy request failed: $e');
+      _log.error('LLM proxy request failed: $e');
       rethrow;
     }
   }
@@ -129,7 +130,7 @@ class LlmService {
     String? exerciseNotes,
     required List<FitnessGoal> activeGoals,
   }) async {
-    _log.info('Generating benefits for "$exerciseName"...');
+    _log.log('Generating benefits for "$exerciseName"...');
 
     final goalsJson = activeGoals
         .map(
@@ -199,7 +200,7 @@ Respond with valid JSON only, no markdown. Structure:
           )
           .toList();
     } catch (error) {
-      _log.severe('Failed to parse benefits response: $error');
+      _log.error('Failed to parse benefits response: $error');
       return const [];
     }
   }
@@ -369,19 +370,18 @@ Respond in JSON format with this exact structure:
     try {
       parsed = jsonDecode(content) as Map<String, dynamic>;
     } catch (e) {
-      _log.severe('Failed to decode JSON from LLM content: $e');
-      _log.severe('Content: $content');
+      _log.error('Failed to decode JSON from LLM content: $e');
+      _log.error('Content: $content');
       rethrow;
     }
 
-    _log.info('Parsed ${(parsed['options'] as List).length} workout options');
+    _log.log('Parsed ${(parsed['options'] as List).length} workout options');
 
     try {
       return LlmWorkoutResponse.fromJson(parsed);
     } catch (e, stack) {
-      _log.severe('Error mapping JSON to LlmWorkoutResponse: $e');
-      _log.severe('Parsed JSON: $parsed');
-      _log.severe(stack);
+      _log.error('Error mapping JSON to LlmWorkoutResponse: $e', null, stack);
+      _log.error('Parsed JSON: $parsed');
       rethrow;
     }
   }

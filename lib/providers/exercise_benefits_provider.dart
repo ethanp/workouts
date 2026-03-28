@@ -20,7 +20,9 @@ class ExerciseBenefitsController extends _$ExerciseBenefitsController {
       await ref
           .read(templateRepositoryPowerSyncProvider)
           .updateExerciseBenefits(exercise.id, benefits);
-      ref.invalidate(allExercisesProvider);
+      // workoutTemplatesProvider watches workout_templates, not exercises.
+      // Invalidating it forces re-hydration so exercises.benefits is re-read.
+      ref.invalidate(workoutTemplatesProvider);
     });
   }
 }

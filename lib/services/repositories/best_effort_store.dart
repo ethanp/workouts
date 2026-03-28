@@ -1,11 +1,11 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:logging/logging.dart';
+
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/utils/best_effort_calculator.dart';
 
-final _log = Logger('BestEffortStore');
+const _log = ELogger('BestEffortStore');
 const _uuid = Uuid();
 
 /// Computes and stores best-effort times for a single workout across fixed
@@ -43,12 +43,12 @@ class BestEffortStore {
         )
     ''');
     if (pendingRows.isEmpty) return;
-    _log.info('Backfilling best efforts for ${pendingRows.length} workouts.');
+    _log.log('Backfilling best efforts for ${pendingRows.length} workouts.');
     for (var workoutIndex = 0; workoutIndex < pendingRows.length; workoutIndex++) {
       await computeAndStore(pendingRows[workoutIndex]['id'] as String);
       onProgress?.call(workoutIndex + 1, pendingRows.length);
     }
-    _log.info('Best effort backfill complete.');
+    _log.log('Best effort backfill complete.');
   }
 
   Future<List<CardioRoutePoint>> _loadRoutePoints(String workoutId) async {

@@ -1,32 +1,23 @@
-import 'dart:developer' as developer;
-
-import 'package:flutter/foundation.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 
-Future<void> main() async {
-  // Set up logging first
-  _setupLogging();
+const _log = ELogger('Main');
 
-  final log = Logger('Main');
-  log.info('App starting...');
+Future<void> main() async {
+  _log.log('App starting...');
 
   WidgetsFlutterBinding.ensureInitialized();
-  log.info('Flutter binding initialized');
 
   try {
     await dotenv.load();
-    log.info('.env loaded successfully');
-    log.fine('POWERSYNC_URL: ${dotenv.env['POWERSYNC_URL']}');
-    log.fine('POSTGREST_URL: ${dotenv.env['POSTGREST_URL']}');
-  } catch (e, stack) {
-    log.severe('Failed to load .env file', e, stack);
-    // Continue anyway - will fail later with clearer error
+    _log.log('.env loaded');
+  } catch (error, stackTrace) {
+    _log.error('Failed to load .env file', error, stackTrace);
   }
 
   final prefs = await SharedPreferences.getInstance();
@@ -37,39 +28,4 @@ Future<void> main() async {
       child: const WorkoutsApp(),
     ),
   );
-}
-
-String _pad2(int n) => n.toString().padLeft(2, '0');
-
-void _setupLogging() {
-  Logger.root.level = kDebugMode ? Level.ALL : Level.WARNING;
-  Logger.root.onRecord.listen((LogRecord record) {
-    final emojiByLevel = <Level, String>{
-      Level.ALL: '⚪',
-      Level.FINEST: '🔵',
-      Level.FINER: '🔵',
-      Level.FINE: '🔵',
-      Level.CONFIG: '🔵',
-      Level.INFO: '🟢',
-      Level.WARNING: '🟡',
-      Level.SEVERE: '🔴',
-      Level.SHOUT: '🟣',
-      Level.OFF: '⚫',
-    };
-    final emoji = emojiByLevel[record.level];
-    if (emoji == null) {
-      throw StateError('Unhandled log level: ${record.level.name}');
-    }
-    final logTime = record.time;
-    final timestampLabel =
-        '${logTime.year % 100}${_pad2(logTime.month)}${_pad2(logTime.day)}'
-        '-${_pad2(logTime.hour)}:${_pad2(logTime.minute)}:${_pad2(logTime.second)}'
-        ':${(logTime.millisecond ~/ 100)}';
-    developer.log(
-      '$emoji $timestampLabel [${record.loggerName}] ${record.message}',
-      name: record.loggerName,
-      error: record.error,
-      stackTrace: record.level >= Level.WARNING ? record.stackTrace : null,
-    );
-  });
 }

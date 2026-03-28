@@ -1,4 +1,5 @@
-import 'package:logging/logging.dart';
+
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_import_payload.dart';
@@ -6,7 +7,7 @@ import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
-final _log = Logger('CardioImporter');
+const _log = ELogger('CardioImporter');
 const _uuid = Uuid();
 final _workoutIdNamespace = Namespace.url.value;
 
@@ -23,7 +24,7 @@ class CardioImporter {
     void Function(int done, int total)? onProgress,
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    _log.info('Starting import of ${payloads.length} cardio workouts.');
+    _log.log('Starting import of ${payloads.length} cardio workouts.');
     var inserted = 0;
     for (var payloadIndex = 0;
         payloadIndex < payloads.length;
@@ -35,13 +36,13 @@ class CardioImporter {
             await _upsert(workout, trainingLoad: trainingLoad);
         if (wasNew) inserted++;
       } else {
-        _log.warning(
+        _log.warn(
           'Skipping unparseable workout payload at index $payloadIndex.',
         );
       }
       onProgress?.call(payloadIndex + 1, payloads.length);
     }
-    _log.info(
+    _log.log(
       'Import complete: $inserted new, ${payloads.length - inserted} already stored.',
     );
     return inserted;

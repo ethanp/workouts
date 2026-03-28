@@ -1,7 +1,7 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
-import 'package:ethan_utils/ethan_utils.dart';
-import 'package:logging/logging.dart';
+
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
@@ -19,7 +19,7 @@ import 'package:workouts/utils/training_load_calculator.dart';
 part 'session_repository_powersync.g.dart';
 
 const _uuid = Uuid();
-final _log = Logger('SessionRepository');
+const _log = ELogger('SessionRepository');
 
 class SessionRepositoryPowerSync {
   SessionRepositoryPowerSync(this._powerSync, this._templateRepository);
@@ -262,6 +262,7 @@ class SessionRepositoryPowerSync {
           e.modality as e_modality,
           e.equipment as e_equipment,
           e.cues as e_cues,
+          e.benefits as e_benefits,
           sbe.prescription as sbe_prescription,
           sbe.setup_duration_seconds as sbe_setup_duration_seconds,
           sbe.work_duration_seconds as sbe_work_duration_seconds,
@@ -424,7 +425,7 @@ class SessionRepositoryPowerSync {
       'DELETE FROM sessions WHERE id = ?',
       [sessionId],
     );
-    _log.info('Deleted session $sessionId (queued for upload).');
+    _log.log('Deleted session $sessionId (queued for upload).');
   }
 
   Future<void> discardAllInProgressSessions() async {

@@ -1,11 +1,11 @@
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/services/powersync/postgrest_uploader.dart';
 import 'package:workouts/services/powersync/tiered_batch_uploader.dart';
 
-final _log = Logger('PowerSyncConnector');
+const _log = ELogger('PowerSyncConnector');
 
 String _jwtSecret() => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
@@ -57,7 +57,7 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
     }
 
     final queueDepth = await _queueDepth(database);
-    _log.info(
+    _log.log(
       'Processing upload batch: ${batch.crud.length} ops, '
       '$queueDepth total remaining in queue.',
     );
@@ -65,7 +65,7 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
     final (uploaded, discarded) = await _batchUploader.upload(batch);
     await batch.complete();
 
-    _log.info(
+    _log.log(
       'Batch complete: $uploaded uploaded, $discarded discarded. '
       '${queueDepth - batch.crud.length} ops still queued.',
     );
@@ -73,9 +73,9 @@ class WorkoutsBackendConnector extends PowerSyncBackendConnector {
 
   void _logEmptyBatch(int queueDepth) {
     if (queueDepth == 0) {
-      _log.info('Upload: no batch, queue empty.');
+      _log.log('Upload: no batch, queue empty.');
     } else {
-      _log.info(
+      _log.log(
         'Upload: no batch available, but $queueDepth ops still in queue.',
       );
     }

@@ -5,7 +5,6 @@ import 'package:workouts/models/workout_template.dart';
 List<WorkoutTemplate> buildSeedTemplates() {
   return [
     _kettlebellClubSession(),
-    _ptRoutine(),
     _mobilityStrengthFoundation(),
   ];
 }
@@ -200,109 +199,6 @@ WorkoutTemplate _kettlebellClubSession() {
     goal: 'Strength, mobility, scapular integration',
     blocks: [warmup, animalFlow, posteriorChain, hipExtension, mobility, cooldown],
     notes: '60-minute session blending load and flow.',
-  );
-}
-
-WorkoutTemplate _ptRoutine() {
-  final mobilityCircuit = WorkoutBlock(
-    id: 'seed-pt-block-mobility-circuit-001',
-    title: 'Powerset Mobility Circuit',
-    type: WorkoutBlockType.mobility,
-    targetDuration: const Duration(minutes: 20),
-    description: 'Tissue prep for cervical decompression.',
-    rounds: 2,
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-pt-ex-neck-smash-000000001',
-        name: 'Side Lower Neck Smash',
-        modality: ExerciseModality.timed,
-        prescription: '30s setup, 2m on',
-        cues: ['Slow pressure along scalene line'],
-        setupDuration: const Duration(seconds: 30),
-        workDuration: const Duration(minutes: 2),
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-doorway-pec-stretch01',
-        name: 'Doorway Pec Stretch',
-        modality: ExerciseModality.timed,
-        prescription: '30s setup, 2m on',
-        cues: ['Elbow at shoulder height, breathe lateral ribs'],
-        setupDuration: const Duration(seconds: 30),
-        workDuration: const Duration(minutes: 2),
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-rhomboids-smash-0001',
-        name: 'Rhomboids Smash',
-        modality: ExerciseModality.timed,
-        prescription: '30s setup, 2m on',
-        cues: ['Lean into ball, glide along medial scapula'],
-        setupDuration: const Duration(seconds: 30),
-        workDuration: const Duration(minutes: 2),
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-upper-chest-smash-01',
-        name: 'Upper Side Chest Smash',
-        modality: ExerciseModality.timed,
-        prescription: '30s setup, 2m on',
-        cues: ['Support head, open ribs as you roll'],
-        setupDuration: const Duration(seconds: 30),
-        workDuration: const Duration(minutes: 2),
-      ),
-    ],
-  );
-
-  final strengthCircuit = WorkoutBlock(
-    id: 'seed-pt-block-strength-circuit-01',
-    title: 'Powerset Strength Circuit',
-    type: WorkoutBlockType.strength,
-    targetDuration: const Duration(minutes: 10),
-    description: 'Scapular control and rotator cuff endurance.',
-    rounds: 2,
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-pt-ex-band-fonzy-000000001',
-        name: 'Band Fonzy',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        cues: ['Thumbs back, scapula glides down'],
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-scapular-punches-001',
-        name: 'Scapular Punches',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        cues: ['Reach long, protract smoothly'],
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-low-band-row-000001',
-        name: 'Low Band Row',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        cues: ['Elbows sweep low, ribs stacked'],
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-internal-rot-ecc-001',
-        name: 'Internal Rotator Eccentrics',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        cues: ['Control return, elbow pinned'],
-      ),
-      WorkoutExercise(
-        id: 'seed-pt-ex-external-rot-ecc-001',
-        name: 'External Rotator Eccentrics',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        cues: ['Slow lowering, forearm parallel'],
-      ),
-    ],
-  );
-
-  return WorkoutTemplate(
-    id: 'seed-template-c7-pt-routine-00001',
-    name: 'C7 Radiculopathy PT Routine',
-    goal: 'Rehabilitation, mobility, scapular stability',
-    blocks: [mobilityCircuit, strengthCircuit],
-    notes: 'Two-round tissue prep + scapular stability progression.',
   );
 }
 

@@ -1,5 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:logging/logging.dart';
+
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
@@ -17,7 +17,7 @@ import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'cardio_repository_powersync.g.dart';
 
-final _log = Logger('CardioRepository');
+const _log = ELogger('CardioRepository');
 
 class CardioRepositoryPowerSync {
   CardioRepositoryPowerSync(this._powerSync);
@@ -134,7 +134,7 @@ class CardioRepositoryPowerSync {
         workoutId,
       ]);
     });
-    _log.info('Deleted workout $workoutId (queued for upload).');
+    _log.log('Deleted workout $workoutId (queued for upload).');
   }
 
   Future<int> upsertImportedWorkouts(

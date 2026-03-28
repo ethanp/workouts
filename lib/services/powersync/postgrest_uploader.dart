@@ -1,11 +1,11 @@
 import 'dart:convert';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/utils/error_bus.dart';
 
-final _log = Logger('PostgRestUploader');
+const _log = ELogger('PostgRestUploader');
 
 class PostgRestUploader {
   PostgRestUploader(this._baseUrl);
@@ -56,7 +56,7 @@ class PostgRestUploader {
       }
       return false;
     } catch (e) {
-      _log.severe('Upload error for ${op.table} ${op.id}: $e');
+      _log.error('Upload error for ${op.table} ${op.id}: $e');
       errorBus.add('Upload ${op.table} ${op.op.name}: $e');
       rethrow;
     }
@@ -82,6 +82,7 @@ class PostgRestUploader {
         ? '$_baseUrl/$table?on_conflict=$conflictColumns'
         : '$_baseUrl/$table';
 
+    _log.log('⬆️ PUT $table ${_shortId(op.id)}');
     final response = await client.post(
       Uri.parse(url),
       headers: {
@@ -95,6 +96,7 @@ class PostgRestUploader {
       return _handleConflict(op, data, response.body, client);
     }
     _requireOk(response, 'PUT');
+    _log.log('✓ PUT $table ${_shortId(op.id)}');
     return false;
   }
 
@@ -144,7 +146,7 @@ class PostgRestUploader {
     // FK violation: child references a parent row gone from server.
     // Discard — modifying the local DB would generate new CRUD entries.
     if (responseBody.contains('"23503"') && _childTables.contains(table)) {
-      _log.warning('Discarding orphaned $table row ${op.id}');
+      _log.warn('Discarding orphaned $table row ${op.id}');
       return true;
     }
 
@@ -157,7 +159,7 @@ class PostgRestUploader {
   ) async {
     final name = data?['name'] as String?;
     if (name == null) return false;
-    _log.info('Exercise "$name" exists with different ID, patching by name');
+    _log.log('Exercise "$name" exists with different ID, patching by name');
     final response = await client.patch(
       Uri.parse('$_baseUrl/exercises?name=eq.${Uri.encodeComponent(name)}'),
       headers: {'Content-Type': 'application/json'},
@@ -168,20 +170,27 @@ class PostgRestUploader {
   }
 
   Future<void> _patch(CrudEntry op, http.Client client) async {
+    _log.log('⬆️ PATCH ${op.table} ${_shortId(op.id)}');
     final response = await client.patch(
       Uri.parse('$_baseUrl/${op.table}?id=eq.${op.id}'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(op.opData),
     );
     _requireOk(response, 'PATCH');
+    _log.log('✓ PATCH ${op.table} ${_shortId(op.id)}');
   }
 
   Future<void> _delete(CrudEntry op, http.Client client) async {
+    _log.log('⬆️ DELETE ${op.table} ${_shortId(op.id)}');
     final response = await client.delete(
       Uri.parse('$_baseUrl/${op.table}?id=eq.${op.id}'),
     );
     _requireOk(response, 'DELETE');
+    _log.log('✓ DELETE ${op.table} ${_shortId(op.id)}');
   }
+
+  static String _shortId(String id) =>
+      id.length > 8 ? '${id.substring(0, 8)}…' : id;
 
   void _requireOk(http.Response response, String verb) {
     if (response.statusCode >= 400) {

@@ -1,6 +1,4 @@
-import 'dart:developer' as developer;
-
-import 'package:logging/logging.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
@@ -9,22 +7,19 @@ export 'package:powersync/powersync.dart' show SyncStatus;
 
 part 'sync_provider.g.dart';
 
-final _log = Logger('Sync');
+const _log = ELogger('Sync');
 
 @riverpod
 Stream<SyncStatus> powerSyncStatus(Ref ref) async* {
-  // Wait for database to be ready
   final powerSyncDatabase = await ref.watch(powerSyncDatabaseProvider.future);
 
   SyncStatus? lastStatus;
 
-  // Emit current status immediately
   final initialStatus = powerSyncDatabase.currentStatus;
   _logSyncStatus(initialStatus, lastStatus);
   lastStatus = initialStatus;
   yield initialStatus;
 
-  // Then emit status changes
   await for (final status in powerSyncDatabase.statusStream) {
     _logSyncStatus(status, lastStatus);
     lastStatus = status;
@@ -41,11 +36,8 @@ void _logSyncStatus(SyncStatus status, SyncStatus? previous) {
   ];
 
   if (changes.isNotEmpty) {
-    _log.info(changes.join(' | '));
+    _log.log(changes.join(' | '));
   }
-
-  _logDownloadProgress(status, previous);
-  _logLastSyncTime(status, previous);
 }
 
 List<String> _connectionChanges(SyncStatus status, SyncStatus? previous) {
@@ -96,41 +88,12 @@ List<String> _initialSyncChanges(SyncStatus status, SyncStatus? previous) {
   return [];
 }
 
-void _logDownloadProgress(SyncStatus status, SyncStatus? previous) {
-  if (!status.downloading || status.downloadProgress == null) return;
-
-  final progress = status.downloadProgress!;
-  final prevProgress = previous?.downloadProgress;
-
-  final hasNewProgress =
-      prevProgress == null ||
-      progress.downloadedOperations != prevProgress.downloadedOperations;
-  final isSignificant =
-      progress.downloadedOperations % 10 == 0 ||
-      progress.downloadedOperations == progress.totalOperations;
-
-  if (hasNewProgress && isSignificant) {
-    developer.log(
-      'Download progress: ${progress.downloadedOperations}/${progress.totalOperations} '
-      '(${(progress.downloadedFraction * 100).toStringAsFixed(0)}%)',
-      name: 'Sync',
-    );
-  }
-}
-
-void _logLastSyncTime(SyncStatus status, SyncStatus? previous) {
-  if (status.lastSyncedAt != previous?.lastSyncedAt &&
-      status.lastSyncedAt != null) {
-    _log.fine('Last synced: ${status.lastSyncedAt}');
-  }
-}
-
 @riverpod
 bool isOffline(Ref ref) {
   final statusAsync = ref.watch(powerSyncStatusProvider);
   return statusAsync.maybeWhen(
     data: (status) => !status.connected,
-    orElse: () => true, // Default to offline while loading
+    orElse: () => true,
   );
 }
 

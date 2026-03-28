@@ -1,7 +1,8 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart';
+
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/providers/active_session_provider.dart';
@@ -11,7 +12,7 @@ import 'package:workouts/services/repositories/template_repository_powersync.dar
 
 part 'workout_generation_provider.g.dart';
 
-final _log = Logger('WorkoutGeneration');
+const _log = ELogger('WorkoutGeneration');
 
 @riverpod
 class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
@@ -26,7 +27,7 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
 
   void cancel() {
     if (_activeClient != null) {
-      _log.info('Cancelling LLM request...');
+      _log.log('Cancelling LLM request...');
       _activeClient!.close();
       _activeClient = null;
     }
@@ -34,7 +35,7 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   }
 
   Future<void> select(LlmWorkoutOption option) async {
-    _log.info('Selecting workout option: ${option.title}');
+    _log.log('Selecting workout option: ${option.title}');
     final template = await ref
         .read(templateRepositoryPowerSyncProvider)
         .createFromLlmOption(option);
@@ -51,9 +52,9 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
     state = await AsyncValue.guard(() async {
       try {
         if (feedback == null) {
-          _log.info('Starting workout generation...');
+          _log.log('Starting workout generation...');
         } else {
-          _log.info('Refining with feedback: $feedback');
+          _log.log('Refining with feedback: $feedback');
         }
         final context = await ref.read(contextBuilderProvider).build();
         final response = await ref
@@ -63,15 +64,14 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
               userFeedback: feedback,
               client: _activeClient,
             );
-        _log.info('Generated ${response.options.length} workout options');
+        _log.log('Generated ${response.options.length} workout options');
         return response;
       } on http.ClientException catch (clientException) {
         // Request was cancelled
-        _log.info('LLM request cancelled: $clientException');
+        _log.log('LLM request cancelled: $clientException');
         rethrow;
       } catch (error, stackTrace) {
-        _log.severe('Workout generation notifier failed: $error');
-        _log.severe(stackTrace);
+        _log.error('Workout generation notifier failed: $error', null, stackTrace);
         rethrow;
       } finally {
         _activeClient = null;

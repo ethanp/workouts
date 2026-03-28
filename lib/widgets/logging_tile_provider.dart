@@ -1,12 +1,13 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
-import 'package:logging/logging.dart';
 
-final _log = Logger('TileProxy');
+
+const _log = ELogger('TileProxy');
 
 /// A [TileProvider] that fetches tiles via HTTP and logs the
 /// [X-Tile-Cache] response header (HIT / MISS) set by the tile proxy.
@@ -16,11 +17,11 @@ final _log = Logger('TileProxy');
 class LoggingCacheTileProvider extends TileProvider {
   LoggingCacheTileProvider(this._tileProxyUrl) {
     if (_tileProxyUrl.contains('openstreetmap.org')) {
-      _log.warning(
+      _log.warn(
         'TILE_PROXY_URL unset — fetching tiles directly from OSM (no cache).',
       );
     } else {
-      _log.info('Map tiles routed through cache proxy: $_tileProxyUrl');
+      _log.log('Map tiles routed through cache proxy: $_tileProxyUrl');
     }
   }
 
