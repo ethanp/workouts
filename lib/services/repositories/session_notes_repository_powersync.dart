@@ -42,15 +42,11 @@ class SessionNotesRepository {
 
   Future<void> saveNote(SessionNote note) async {
     final now = DateTime.now().toIso8601String();
-    await _powerSync.upsert(
-      'session_notes',
-      {
-        ...note.toRow(),
-        'created_at': now,
-        'updated_at': now,
-      },
-      updateColumns: ['content', 'note_type', 'updated_at'],
-    );
+    await _powerSync.upsert('session_notes', {
+      ...note.toRow(),
+      'created_at': now,
+      'updated_at': now,
+    });
   }
 
   /// Delete a note.

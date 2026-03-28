@@ -448,6 +448,16 @@ class TemplateVersionTile extends StatelessWidget {
           ),
         ),
       ],
+      const SizedBox(height: AppSpacing.sm),
+      CupertinoButton(
+        padding: EdgeInsets.zero,
+        minSize: 0,
+        onPressed: () => _confirmReseed(context),
+        child: Text(
+          'Reset to default templates',
+          style: AppTypography.caption.copyWith(color: AppColors.accentPrimary),
+        ),
+      ),
     ],
   );
 

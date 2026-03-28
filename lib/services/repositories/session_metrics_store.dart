@@ -111,7 +111,7 @@ class SessionMetricsStore {
     final computedAt = DateTime.now().toUtc().toIso8601String();
     final hasHr = metrics.hasHrSamples ? 1 : 0;
 
-    await _powerSync.upsertLocalOnly('session_computed_metrics', {
+    await _powerSync.upsert('session_computed_metrics', {
       'id': sessionId,
       ...zone.toRow(),
       'trimp': metrics.result.trimp,
@@ -139,7 +139,7 @@ class SessionMetricsStore {
     }
 
     final computedAt = DateTime.now().toUtc().toIso8601String();
-    await _powerSync.upsertLocalOnly('session_computed_metrics', {
+    await _powerSync.upsert('session_computed_metrics', {
       'id': sessionId,
       ...zone.toRow(),
       'has_hr_samples': hasHr,

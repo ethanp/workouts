@@ -103,7 +103,7 @@ class CardioMetricsStore {
     final computedAt = DateTime.now().toUtc().toIso8601String();
     final hasHr = metrics.hasHrSamples ? 1 : 0;
 
-    await _powerSync.upsertLocalOnly('cardio_computed_metrics', {
+    await _powerSync.upsert('cardio_computed_metrics', {
       'id': workoutId,
       ...zone.toRow(),
       'trimp': metrics.result.trimp,
@@ -130,7 +130,7 @@ class CardioMetricsStore {
     }
 
     final computedAt = DateTime.now().toUtc().toIso8601String();
-    await _powerSync.upsertLocalOnly('cardio_computed_metrics', {
+    await _powerSync.upsert('cardio_computed_metrics', {
       'id': workoutId,
       ...zone.toRow(),
       'has_hr_samples': hasHr,

@@ -226,6 +226,15 @@ class TemplateRepositoryPowerSync {
   }
 
   Future<void> _cleanOrphanedBlockExercises() async {
+    // Skip cleanup if exercises haven't synced yet. An empty exercises table
+    // means PowerSync is still initializing — deleting junction rows now would
+    // permanently orphan them once exercises arrive.
+    final exerciseCountRow = await _powerSync.getOptional(
+      'SELECT COUNT(*) as count FROM exercises',
+    );
+    final exerciseCount = exerciseCountRow?['count'] as int? ?? 0;
+    if (exerciseCount == 0) return;
+
     await _powerSync.execute('''
       DELETE FROM workout_block_exercises
       WHERE exercise_id NOT IN (SELECT id FROM exercises)
