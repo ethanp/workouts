@@ -9,6 +9,7 @@ import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/screens/influences_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 class UnitSystemTile extends StatelessWidget {
   const UnitSystemTile({
@@ -87,23 +88,21 @@ class UnitSystemTile extends StatelessWidget {
   );
 }
 
-class MaxHeartRateTile extends ConsumerStatefulWidget {
-  const MaxHeartRateTile({super.key});
+class HrZonesTile extends StatelessWidget {
+  const HrZonesTile({super.key});
 
-  @override
-  ConsumerState<MaxHeartRateTile> createState() => _MaxHeartRateTileState();
-}
-
-class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
-  double? _dragValue;
+  static const _zoneLabels = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
+  static const _zoneNames = ['Recovery', 'Aerobic', 'Tempo', 'Threshold', 'Max'];
+  static const _zoneColors = [
+    Color(0xFF5BA4CF),
+    Color(0xFF3FB37F),
+    Color(0xFFF0C849),
+    Color(0xFFF08C3B),
+    Color(0xFFE15A64),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final maxHeartRate = ref.watch(maxHeartRateProvider);
-    final recomputeProgress = ref.watch(metricsRecomputeProgressProvider);
-    final displayedHeartRate = _dragValue?.round() ?? maxHeartRate;
-    final zone2Lower = (displayedHeartRate * 0.60).floor();
-
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -114,23 +113,15 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _header(displayedHeartRate, zone2Lower),
-          const SizedBox(height: AppSpacing.sm),
-          _heartRateSlider(maxHeartRate),
-          if (recomputeProgress != null)
-            Padding(
-              padding: const EdgeInsets.only(top: AppSpacing.xs),
-              child: Text(
-                'Recomputing zones: ${recomputeProgress.$1}/${recomputeProgress.$2}',
-                style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-              ),
-            ),
+          _header(),
+          const SizedBox(height: AppSpacing.md),
+          _zoneTable(),
         ],
       ),
     );
   }
 
-  Widget _header(int displayedHeartRate, int zone2Lower) => Row(
+  Widget _header() => Row(
     children: [
       Container(
         width: 40,
@@ -142,31 +133,53 @@ class _MaxHeartRateTileState extends ConsumerState<MaxHeartRateTile> {
         child: const Icon(CupertinoIcons.heart_fill, color: AppColors.error, size: 22),
       ),
       const SizedBox(width: AppSpacing.md),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Max Heart Rate', style: AppTypography.subtitle),
-            Text(
-              '$displayedHeartRate bpm  ·  >= Zone 2: $zone2Lower+ bpm',
-              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-            ),
-          ],
-        ),
-      ),
+      Text('Heart Rate Zones', style: AppTypography.subtitle),
     ],
   );
 
-  Widget _heartRateSlider(int maxHeartRate) => CupertinoSlider(
-    value: _dragValue ?? maxHeartRate.toDouble(),
-    min: 140,
-    max: 220,
-    divisions: 80,
-    onChanged: (value) => setState(() => _dragValue = value),
-    onChangeEnd: (value) {
-      setState(() => _dragValue = null);
-      ref.read(maxHeartRateProvider.notifier).setMaxHeartRate(value.round());
-    },
+  Widget _zoneTable() => Column(
+    children: List.generate(5, (zoneIndex) {
+      final lower = TrainingLoadCalculator.zoneBoundaries[zoneIndex];
+      final upper = TrainingLoadCalculator.zoneUpperBounds[zoneIndex];
+      return _zoneRow(zoneIndex, lower, upper);
+    }),
+  );
+
+  Widget _zoneRow(int zoneIndex, int lower, int upper) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3),
+    child: Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: _zoneColors[zoneIndex],
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        SizedBox(
+          width: 20,
+          child: Text(
+            _zoneLabels[zoneIndex],
+            style: AppTypography.caption.copyWith(
+              color: _zoneColors[zoneIndex],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Text(
+          _zoneNames[zoneIndex],
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+        const Spacer(),
+        Text(
+          '$lower – $upper bpm',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        ),
+      ],
+    ),
   );
 }
 
@@ -451,7 +464,7 @@ class TemplateVersionTile extends StatelessWidget {
       const SizedBox(height: AppSpacing.sm),
       CupertinoButton(
         padding: EdgeInsets.zero,
-        minSize: 0,
+        minimumSize: const Size(0, 0),
         onPressed: () => _confirmReseed(context),
         child: Text(
           'Reset to default templates',

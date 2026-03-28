@@ -233,10 +233,8 @@ class MetricsBackfillController extends _$MetricsBackfillController {
     if (powerSyncDatabase == null) return;
 
     state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling zone metrics...');
-    final maxHeartRate = ref.read(maxHeartRateProvider);
     final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHeartRate,
       restingHeartRate: restingHeartRate,
     );
     final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);

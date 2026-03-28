@@ -27,7 +27,6 @@ class SessionDetailScreen extends ConsumerWidget {
     final heartRateSamplesAsync = ref.watch(
       heartRateSamplesStreamProvider(session.id),
     );
-    final maxHrSetting = ref.watch(maxHeartRateProvider);
     final restingHrSetting = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
@@ -51,7 +50,6 @@ class SessionDetailScreen extends ConsumerWidget {
               samples: heartRateSamplesAsync.value ?? const [],
               averageHeartRate: session.averageHeartRate,
               maxHeartRate: session.maxHeartRate,
-              maxHrSetting: maxHrSetting,
               restingHrSetting: restingHrSetting,
             ),
             if ((heartRateSamplesAsync.value ?? const []).isNotEmpty)
@@ -429,14 +427,12 @@ class _SessionHeartRateCard extends StatelessWidget {
     required this.samples,
     required this.averageHeartRate,
     required this.maxHeartRate,
-    required this.maxHrSetting,
     required this.restingHrSetting,
   });
 
   final List<HeartRateSample> samples;
   final int? averageHeartRate;
   final int? maxHeartRate;
-  final int maxHrSetting;
   final int restingHrSetting;
 
   @override
@@ -476,7 +472,6 @@ class _SessionHeartRateCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             _ZoneDistributionSection(
               samples: samples,
-              maxHrSetting: maxHrSetting,
               restingHrSetting: restingHrSetting,
             ),
           ],
@@ -513,12 +508,10 @@ class _SessionHeartRateCard extends StatelessWidget {
 class _ZoneDistributionSection extends StatefulWidget {
   const _ZoneDistributionSection({
     required this.samples,
-    required this.maxHrSetting,
     required this.restingHrSetting,
   });
 
   final List<HeartRateSample> samples;
-  final int maxHrSetting;
   final int restingHrSetting;
 
   @override
@@ -562,7 +555,6 @@ class _ZoneDistributionSectionState
           const SizedBox(height: AppSpacing.sm),
           _ZoneBreakdown(
             samples: widget.samples,
-            maxHrSetting: widget.maxHrSetting,
             restingHrSetting: widget.restingHrSetting,
           ),
         ],
@@ -574,12 +566,10 @@ class _ZoneDistributionSectionState
 class _ZoneBreakdown extends StatelessWidget {
   const _ZoneBreakdown({
     required this.samples,
-    required this.maxHrSetting,
     required this.restingHrSetting,
   });
 
   final List<HeartRateSample> samples;
-  final int maxHrSetting;
   final int restingHrSetting;
 
   static const _aerobicColor = Color(0xFF3FB37F);
@@ -674,7 +664,6 @@ class _ZoneBreakdown extends StatelessWidget {
 
   PolarizationWeek _compute() {
     final calculator = TrainingLoadCalculator(
-      maxHeartRate: maxHrSetting,
       restingHeartRate: restingHrSetting,
     );
 

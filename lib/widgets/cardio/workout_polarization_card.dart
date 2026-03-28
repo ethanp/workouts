@@ -19,12 +19,10 @@ class WorkoutPolarizationCard extends StatelessWidget {
   const WorkoutPolarizationCard({
     super.key,
     required this.samples,
-    required this.maxHeartRate,
     required this.restingHeartRate,
   });
 
   final List<CardioHeartRateSample> samples;
-  final int maxHeartRate;
   final int restingHeartRate;
 
   @override
@@ -196,7 +194,6 @@ class WorkoutPolarizationCard extends StatelessWidget {
 
   PolarizationWeek _compute() {
     final calculator = TrainingLoadCalculator(
-      maxHeartRate: maxHeartRate,
       restingHeartRate: restingHeartRate,
     );
 

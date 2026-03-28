@@ -56,7 +56,6 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
   void _recomputeInBackground(int maxHeartRate) {
     final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHeartRate,
       restingHeartRate: restingHeartRate,
     );
     final progressNotifier =

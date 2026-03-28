@@ -28,10 +28,9 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             UnitSystemTile(unitSystem: unitSystem, ref: ref),
             const SizedBox(height: AppSpacing.lg),
-            const MaxHeartRateTile(),
+            const HrZonesTile(),
             const SizedBox(height: AppSpacing.lg),
-            const RestingHeartRateTile(),
-            const SizedBox(height: AppSpacing.lg),
+            const RestingHeartRateTile(),            const SizedBox(height: AppSpacing.lg),
             TrainingInfluencesTile(influencesAsync: influencesAsync),
             const SizedBox(height: AppSpacing.lg),
             SyncStatusTile(syncStatus: syncStatus),

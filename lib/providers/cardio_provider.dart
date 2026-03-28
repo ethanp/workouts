@@ -103,10 +103,8 @@ Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
 Future<void> cardioMetricsBackfill(Ref ref) async {
   final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
   if (powerSyncDatabase == null) return;
-  final maxHeartRate = ref.watch(maxHeartRateProvider);
   final restingHeartRate = ref.watch(restingHeartRateProvider);
   final trainingLoad = TrainingLoadCalculator(
-    maxHeartRate: maxHeartRate,
     restingHeartRate: restingHeartRate,
   );
   await CardioRepositoryPowerSync(powerSyncDatabase)
@@ -167,10 +165,8 @@ class CardioImportController extends _$CardioImportController {
         );
       }
 
-      final maxHeartRate = ref.read(maxHeartRateProvider);
       final restingHeartRate = ref.read(restingHeartRateProvider);
       final trainingLoad = TrainingLoadCalculator(
-        maxHeartRate: maxHeartRate,
         restingHeartRate: restingHeartRate,
       );
       final newCount = await cardioRepository.upsertImportedWorkouts(

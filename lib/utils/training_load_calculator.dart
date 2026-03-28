@@ -22,32 +22,26 @@ class TrainingLoadResult {
 
 /// Computes per-zone time and Banister TRIMP from a continuous HR series.
 ///
-/// Standard 5-zone model (% of max HR):
-///   Zone 1: 50-60%, Zone 2: 60-70%, Zone 3: 70-80%,
-///   Zone 4: 80-90%, Zone 5: 90-100%
+/// Fixed 5-zone model (bpm):
+///   Zone 1: 93-114, Zone 2: 115-145, Zone 3: 146-162,
+///   Zone 4: 163-175, Zone 5: 176-185
 ///
 /// TRIMP formula per interval:
 ///   HRratio = (bpm - restingHR) / (maxHR - restingHR)
 ///   TRIMP += (gapMinutes) * HRratio * 0.64 * e^(1.92 * HRratio)
 class TrainingLoadCalculator {
-  TrainingLoadCalculator({
-    required this.maxHeartRate,
-    required this.restingHeartRate,
-  })  : zoneBoundaries = [
-          (maxHeartRate * 0.50).floor(),
-          (maxHeartRate * 0.60).floor(),
-          (maxHeartRate * 0.70).floor(),
-          (maxHeartRate * 0.80).floor(),
-          (maxHeartRate * 0.90).floor(),
-        ],
-        _hrReserve = (maxHeartRate - restingHeartRate).toDouble();
+  TrainingLoadCalculator({required this.restingHeartRate})
+      : _hrReserve = (_trimpMaxHr - restingHeartRate).toDouble();
 
-  final int maxHeartRate;
+  static const int _trimpMaxHr = 185;
+
+  /// Zone lower bounds: [zone1, zone2, zone3, zone4, zone5].
+  static const List<int> zoneBoundaries = [93, 115, 146, 163, 176];
+
+  /// Upper bounds per zone (inclusive).
+  static const List<int> zoneUpperBounds = [114, 145, 162, 175, 185];
+
   final int restingHeartRate;
-
-  /// Zone lower bounds: [zone1Lower, zone2Lower, zone3Lower, zone4Lower, zone5Lower].
-  final List<int> zoneBoundaries;
-
   final double _hrReserve;
 
   int get zone2Lower => zoneBoundaries[1];

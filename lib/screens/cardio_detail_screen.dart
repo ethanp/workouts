@@ -25,7 +25,6 @@ class CardioDetailScreen extends ConsumerWidget {
     final routePointsAsync = ref.watch(cardioRoutePointsProvider(workout.id));
     final heartRateSamplesAsync = ref.watch(cardioHeartRateSamplesProvider(workout.id));
     final unitSystem = ref.watch(unitSystemProvider);
-    final maxHeartRate = ref.watch(maxHeartRateProvider);
     final restingHeartRate = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
@@ -56,7 +55,6 @@ class CardioDetailScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     WorkoutPolarizationCard(
                       samples: cardioHeartRateSamples,
-                      maxHeartRate: maxHeartRate,
                       restingHeartRate: restingHeartRate,
                     ),
                   ],

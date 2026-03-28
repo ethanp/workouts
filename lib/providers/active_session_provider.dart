@@ -117,10 +117,8 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    final maxHeartRate = ref.read(maxHeartRateProvider);
     final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
-      maxHeartRate: maxHeartRate,
       restingHeartRate: restingHeartRate,
     );
     await repository.completeSession(
