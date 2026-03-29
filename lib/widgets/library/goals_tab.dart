@@ -67,11 +67,12 @@ class _GoalsTabState extends ConsumerState<GoalsTab> {
   }
 
   void _showAddGoalSheet(BuildContext context) {
+    final goalsNotifier = ref.read(goalsControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         onSave: (title, category, description, priority) async {
-          await ref.read(goalsControllerProvider.notifier).addGoal(
+          await goalsNotifier.addGoal(
                 title: title,
                 category: category,
                 description: description,
@@ -83,14 +84,15 @@ class _GoalsTabState extends ConsumerState<GoalsTab> {
   }
 
   void _showAddNoteSheet(BuildContext context, List<FitnessGoal> goals) {
+    final notesNotifier =
+        ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => NoteFormSheet(
         availableGoals: goals,
         onSave: (content, category, goalId) {
-          ref
-              .read(backgroundNotesControllerProvider.notifier)
-              .addNote(content: content, category: category, goalId: goalId);
+          notesNotifier.addNote(
+              content: content, category: category, goalId: goalId);
           Navigator.of(context).pop();
         },
       ),
@@ -395,11 +397,12 @@ class _GoalCard extends ConsumerWidget {
       );
 
   void _showActions(BuildContext context, WidgetRef ref) {
+    final goalsNotifier = ref.read(goalsControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (sheetCtx) => CupertinoActionSheet(
         title: Text(goal.title),
-        actions: _actionSheetActions(sheetCtx, context, ref),
+        actions: _actionSheetActions(sheetCtx, context, ref, goalsNotifier),
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.of(sheetCtx).pop(),
           child: const Text('Cancel'),
@@ -412,6 +415,7 @@ class _GoalCard extends ConsumerWidget {
     BuildContext sheetCtx,
     BuildContext parentCtx,
     WidgetRef ref,
+    GoalsController goalsNotifier,
   ) {
     final isActive = goal.status == GoalStatus.active;
     return [
@@ -426,9 +430,7 @@ class _GoalCard extends ConsumerWidget {
         CupertinoActionSheetAction(
           onPressed: () {
             Navigator.of(sheetCtx).pop();
-            ref
-                .read(goalsControllerProvider.notifier)
-                .setGoalStatus(goal.id, GoalStatus.achieved);
+            goalsNotifier.setGoalStatus(goal.id, GoalStatus.achieved);
           },
           child: const Text('Mark as Achieved'),
         ),
@@ -436,9 +438,7 @@ class _GoalCard extends ConsumerWidget {
         CupertinoActionSheetAction(
           onPressed: () {
             Navigator.of(sheetCtx).pop();
-            ref
-                .read(goalsControllerProvider.notifier)
-                .setGoalStatus(goal.id, GoalStatus.paused);
+            goalsNotifier.setGoalStatus(goal.id, GoalStatus.paused);
           },
           child: const Text('Archive'),
         ),
@@ -446,9 +446,7 @@ class _GoalCard extends ConsumerWidget {
         CupertinoActionSheetAction(
           onPressed: () {
             Navigator.of(sheetCtx).pop();
-            ref
-                .read(goalsControllerProvider.notifier)
-                .setGoalStatus(goal.id, GoalStatus.active);
+            goalsNotifier.setGoalStatus(goal.id, GoalStatus.active);
           },
           child: const Text('Reactivate'),
         ),
@@ -456,7 +454,7 @@ class _GoalCard extends ConsumerWidget {
         isDestructiveAction: true,
         onPressed: () {
           Navigator.of(sheetCtx).pop();
-          ref.read(goalsControllerProvider.notifier).deleteGoal(goal.id);
+          goalsNotifier.deleteGoal(goal.id);
         },
         child: const Text('Delete'),
       ),
@@ -464,12 +462,13 @@ class _GoalCard extends ConsumerWidget {
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {
+    final goalsNotifier = ref.read(goalsControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         initialGoal: goal,
         onSave: (title, category, description, priority) async {
-          await ref.read(goalsControllerProvider.notifier).updateGoal(
+          await goalsNotifier.updateGoal(
                 goal.copyWith(
                   title: title,
                   category: category,
@@ -726,6 +725,8 @@ class _NoteRow extends ConsumerWidget {
       ];
 
   void _showActions(BuildContext context, WidgetRef ref) {
+    final notesNotifier =
+        ref.read(backgroundNotesControllerProvider.notifier);
     final preview = note.content.length > 50
         ? '${note.content.substring(0, 50)}…'
         : note.content;
@@ -733,7 +734,8 @@ class _NoteRow extends ConsumerWidget {
       context: context,
       builder: (sheetCtx) => CupertinoActionSheet(
         title: Text(preview),
-        actions: _noteActionSheetActions(sheetCtx, context, ref),
+        actions:
+            _noteActionSheetActions(sheetCtx, context, ref, notesNotifier),
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.of(sheetCtx).pop(),
           child: const Text('Cancel'),
@@ -746,6 +748,7 @@ class _NoteRow extends ConsumerWidget {
     BuildContext sheetCtx,
     BuildContext parentCtx,
     WidgetRef ref,
+    BackgroundNotesController notesNotifier,
   ) {
     return [
       CupertinoActionSheetAction(
@@ -759,9 +762,7 @@ class _NoteRow extends ConsumerWidget {
         CupertinoActionSheetAction(
           onPressed: () {
             Navigator.of(sheetCtx).pop();
-            ref
-                .read(backgroundNotesControllerProvider.notifier)
-                .archiveNote(note.id);
+            notesNotifier.archiveNote(note.id);
           },
           child: const Text('Archive'),
         ),
@@ -769,9 +770,7 @@ class _NoteRow extends ConsumerWidget {
         CupertinoActionSheetAction(
           onPressed: () {
             Navigator.of(sheetCtx).pop();
-            ref
-                .read(backgroundNotesControllerProvider.notifier)
-                .activateNote(note.id);
+            notesNotifier.activateNote(note.id);
           },
           child: const Text('Reactivate'),
         ),
@@ -779,9 +778,7 @@ class _NoteRow extends ConsumerWidget {
         isDestructiveAction: true,
         onPressed: () {
           Navigator.of(sheetCtx).pop();
-          ref
-              .read(backgroundNotesControllerProvider.notifier)
-              .deleteNote(note.id);
+          notesNotifier.deleteNote(note.id);
         },
         child: const Text('Delete'),
       ),
@@ -789,13 +786,15 @@ class _NoteRow extends ConsumerWidget {
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {
+    final notesNotifier =
+        ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => NoteFormSheet(
         availableGoals: allGoals,
         initialNote: note,
         onSave: (content, category, goalId) {
-          ref.read(backgroundNotesControllerProvider.notifier).updateNote(
+          notesNotifier.updateNote(
                 note.copyWith(
                   content: content,
                   category: category,

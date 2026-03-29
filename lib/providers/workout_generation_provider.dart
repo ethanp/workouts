@@ -1,8 +1,7 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:http/http.dart' as http;
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/providers/active_session_provider.dart';
@@ -14,13 +13,33 @@ part 'workout_generation_provider.g.dart';
 
 const _log = ELogger('WorkoutGeneration');
 
+sealed class WorkoutGenerationState {}
+
+class GenerationIdle extends WorkoutGenerationState {}
+
+class GenerationStreaming extends WorkoutGenerationState {
+  final String partialText;
+  GenerationStreaming(this.partialText);
+}
+
+class GenerationComplete extends WorkoutGenerationState {
+  final LlmWorkoutResponse response;
+  GenerationComplete(this.response);
+}
+
+class GenerationFailed extends WorkoutGenerationState {
+  final Object error;
+  GenerationFailed(this.error);
+}
+
 @riverpod
 class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   http.Client? _activeClient;
   WorkoutPreferences? _lastPreferences;
+  StreamSubscription<String>? _tokenSubscription;
 
   @override
-  AsyncValue<LlmWorkoutResponse?> build() => const AsyncValue.data(null);
+  WorkoutGenerationState build() => GenerationIdle();
 
   Future<void> generate({WorkoutPreferences? preferences}) {
     _lastPreferences = preferences;
@@ -30,12 +49,14 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   Future<void> refine(String feedback) => _callLlm(feedback);
 
   void cancel() {
+    _tokenSubscription?.cancel();
+    _tokenSubscription = null;
     if (_activeClient != null) {
       _log.log('Cancelling LLM request...');
       _activeClient!.close();
       _activeClient = null;
     }
-    state = const AsyncValue.data(null);
+    state = GenerationIdle();
   }
 
   Future<void> select(LlmWorkoutOption option) async {
@@ -48,44 +69,71 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   }
 
   Future<void> _callLlm([String? feedback]) async {
+    _tokenSubscription?.cancel();
     _activeClient?.close();
     _activeClient = http.Client();
 
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
-      try {
-        if (feedback == null) {
-          _log.log('Starting workout generation...');
-        } else {
-          _log.log('Refining with feedback: $feedback');
-        }
-        final workoutContext = await ref.read(contextBuilderProvider).build();
-        final contextWithPrefs = WorkoutContext(
-          goals: workoutContext.goals,
-          backgroundNotes: workoutContext.backgroundNotes,
-          recentSessions: workoutContext.recentSessions,
-          influences: workoutContext.influences,
-          knownExerciseNames: workoutContext.knownExerciseNames,
-          preferences: _lastPreferences,
-        );
-        final response = await ref
-            .read(llmServiceProvider)
-            .generateWorkoutOptions(
-              context: contextWithPrefs,
-              userFeedback: feedback,
-              client: _activeClient,
-            );
-        _log.log('Generated ${response.options.length} workout options');
-        return response;
-      } on http.ClientException catch (clientException) {
-        _log.log('LLM request cancelled: $clientException');
-        rethrow;
-      } catch (error, stackTrace) {
-        _log.error('Workout generation notifier failed: $error', null, stackTrace);
-        rethrow;
-      } finally {
-        _activeClient = null;
-      }
-    });
+    if (feedback == null) {
+      _log.log('Starting workout generation...');
+    } else {
+      _log.log('Refining with feedback: $feedback');
+    }
+
+    state = GenerationStreaming('');
+
+    try {
+      final workoutContext = await ref.read(contextBuilderProvider).build();
+      final contextWithPrefs = WorkoutContext(
+        goals: workoutContext.goals,
+        backgroundNotes: workoutContext.backgroundNotes,
+        recentSessions: workoutContext.recentSessions,
+        influences: workoutContext.influences,
+        knownExerciseNames: workoutContext.knownExerciseNames,
+        preferences: _lastPreferences,
+      );
+
+      final (:tokens, :parsed) = ref
+          .read(llmServiceProvider)
+          .streamWorkoutOptions(
+            context: contextWithPrefs,
+            userFeedback: feedback,
+            httpClient: _activeClient!,
+          );
+
+      final accumulated = StringBuffer();
+      final tokenCompleter = Completer<void>();
+
+      _tokenSubscription = tokens.listen(
+        (delta) {
+          accumulated.write(delta);
+          state = GenerationStreaming(accumulated.toString());
+        },
+        onError: (Object error) {
+          if (!tokenCompleter.isCompleted) tokenCompleter.completeError(error);
+        },
+        onDone: () {
+          if (!tokenCompleter.isCompleted) tokenCompleter.complete();
+        },
+      );
+
+      await tokenCompleter.future;
+      final response = await parsed;
+
+      _log.log('Generated ${response.options.length} workout options');
+      state = GenerationComplete(response);
+    } on http.ClientException catch (clientException) {
+      _log.log('LLM request cancelled: $clientException');
+      state = GenerationFailed(clientException);
+    } catch (error, stackTrace) {
+      _log.error(
+        'Workout generation notifier failed: $error',
+        null,
+        stackTrace,
+      );
+      state = GenerationFailed(error);
+    } finally {
+      _tokenSubscription = null;
+      _activeClient = null;
+    }
   }
 }

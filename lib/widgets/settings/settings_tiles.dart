@@ -433,9 +433,11 @@ class TemplateVersionTile extends StatelessWidget {
   );
 
   void _confirmReseed(BuildContext context) {
+    final versionNotifier =
+        ref.read(templateVersionControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
-      builder: (context) {
+      builder: (sheetCtx) {
         return CupertinoActionSheet(
           title: const Text('Update Templates?'),
           message: const Text(
@@ -444,14 +446,15 @@ class TemplateVersionTile extends StatelessWidget {
           actions: [
             CupertinoActionSheetAction(
               onPressed: () {
-                Navigator.of(context, rootNavigator: true).pop();
-                ref.read(templateVersionControllerProvider.notifier).reseed();
+                Navigator.of(sheetCtx, rootNavigator: true).pop();
+                versionNotifier.reseed();
               },
               child: const Text('Update Templates'),
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
-            onPressed: () => Navigator.of(context, rootNavigator: true).pop(),
+            onPressed: () =>
+                Navigator.of(sheetCtx, rootNavigator: true).pop(),
             child: const Text('Cancel'),
           ),
         );

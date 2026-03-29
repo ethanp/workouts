@@ -50,16 +50,15 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
           _buildHeader(),
           Expanded(
             child: _showingForm
-                ? _WorkoutPreferencesForm(
-                    onSubmit: _onFormSubmit,
-                  )
-                : generationState.when(
-                    data: (response) => response == null
-                        ? const _InitialView()
-                        : _buildOptionsView(response),
-                    loading: () => const _LoadingView(),
-                    error: (error, _) => _buildErrorView(error),
-                  ),
+                ? _WorkoutPreferencesForm(onSubmit: _onFormSubmit)
+                : switch (generationState) {
+                    GenerationIdle() => const _InitialView(),
+                    GenerationStreaming(:final partialText) =>
+                      _StreamingView(partialText: partialText),
+                    GenerationComplete(:final response) =>
+                      _buildOptionsView(response),
+                    GenerationFailed(:final error) => _buildErrorView(error),
+                  },
           ),
         ],
       ),
@@ -154,6 +153,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
             border: Border.all(color: AppColors.borderDepth1),
           ),
           maxLines: 2,
+          onChanged: (_) => setState(() {}),
         ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
@@ -547,20 +547,71 @@ class _InitialView extends StatelessWidget {
   }
 }
 
-class _LoadingView extends StatelessWidget {
-  const _LoadingView();
+class _StreamingView extends StatefulWidget {
+  const _StreamingView({required this.partialText});
+
+  final String partialText;
+
+  @override
+  State<_StreamingView> createState() => _StreamingViewState();
+}
+
+class _StreamingViewState extends State<_StreamingView> {
+  final _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(_StreamingView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.partialText.length > oldWidget.partialText.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 50),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          CupertinoActivityIndicator(radius: 20),
-          SizedBox(height: AppSpacing.lg),
-          Text('Thinking about your training...', style: AppTypography.body),
-        ],
-      ),
+    if (widget.partialText.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            CupertinoActivityIndicator(radius: 20),
+            SizedBox(height: AppSpacing.lg),
+            Text('Thinking about your training...', style: AppTypography.body),
+          ],
+        ),
+      );
+    }
+
+    return ListView(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        Text(
+          widget.partialText,
+          style: AppTypography.body.copyWith(
+            color: AppColors.textColor2,
+            fontFamily: 'Menlo',
+            fontSize: 12,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        const CupertinoActivityIndicator(radius: 8),
+      ],
     );
   }
 }
@@ -779,11 +830,16 @@ class _ExerciseRow extends StatelessWidget {
 
   final LlmExercise exercise;
 
+  static String _formatReps(String reps) {
+    if (int.tryParse(reps) != null) return '$reps reps';
+    return reps;
+  }
+
   @override
   Widget build(BuildContext context) {
     final prescription = [
       if (exercise.sets != null) '${exercise.sets} sets',
-      if (exercise.reps != null) '${exercise.reps} reps',
+      if (exercise.reps != null) _formatReps(exercise.reps!),
       if (exercise.duration != null) exercise.duration,
     ].join(' x ');
 

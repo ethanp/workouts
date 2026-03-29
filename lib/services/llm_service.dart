@@ -1,8 +1,10 @@
 import 'package:ethan_utils/ethan_utils.dart';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import 'package:workouts/services/sse_content_transformer.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
@@ -89,6 +91,83 @@ class LlmService {
     };
   }
 
+  /// Streams workout generation, returning token deltas for live display
+  /// and a future that resolves to the parsed response once complete.
+  ({Stream<String> tokens, Future<LlmWorkoutResponse> parsed})
+      streamWorkoutOptions({
+    required WorkoutContext context,
+    String? userFeedback,
+    required http.Client httpClient,
+  }) {
+    _log.log('Streaming workout options...');
+
+    final systemPrompt = _buildSystemPrompt();
+    final userPrompt = _buildUserPrompt(context, userFeedback);
+
+    final url = Uri.parse('$proxyUrl/v1/chat/completions');
+    final request = http.Request('POST', url);
+    request.headers.addAll({
+      'Content-Type': 'application/json',
+      'X-App-Name': appName,
+      'X-App-Token': appSecret,
+      'X-Client-ID': clientId,
+    });
+    request.body = jsonEncode({
+      'model': 'gpt-4o-mini',
+      'messages': [
+        {'role': 'system', 'content': systemPrompt},
+        {'role': 'user', 'content': userPrompt},
+      ],
+      'response_format': {'type': 'json_object'},
+      'max_tokens': 2000,
+      'stream': true,
+    });
+
+    final accumulated = StringBuffer();
+    final completer = Completer<LlmWorkoutResponse>();
+
+    final tokenStream = httpClient
+        .send(request)
+        .asStream()
+        .asyncExpand((streamedResponse) {
+          if (streamedResponse.statusCode == 429) {
+            throw RateLimitedException();
+          }
+          if (streamedResponse.statusCode != 200) {
+            throw LlmException(
+              'Streaming failed: ${streamedResponse.statusCode}',
+            );
+          }
+          return streamedResponse.stream.transform(SseContentTransformer());
+        })
+        .map((delta) {
+          accumulated.write(delta);
+          return delta;
+        })
+        .handleError((Object error) {
+          if (!completer.isCompleted) completer.completeError(error);
+        });
+
+    final broadcastTokens = tokenStream.asBroadcastStream(
+      onCancel: (subscription) => subscription.cancel(),
+    );
+
+    broadcastTokens.drain<void>().then((_) {
+      if (completer.isCompleted) return;
+      try {
+        final response = _parseResponse(
+          '{"choices":[{"message":{"content":${jsonEncode(accumulated.toString())}}}]}',
+        );
+        _log.log('Streamed ${response.options.length} workout options');
+        completer.complete(response);
+      } catch (error) {
+        completer.completeError(error);
+      }
+    });
+
+    return (tokens: broadcastTokens, parsed: completer.future);
+  }
+
   Future<http.Response> _feedToLlm(
     List<Map<String, String>> inputPromptInfo,
     http.Client httpClient,
@@ -113,7 +192,7 @@ class LlmService {
               'max_tokens': 2000,
             }),
           )
-          .timeout(const Duration(seconds: 30));
+          .timeout(const Duration(seconds: 60));
       _log.log('LLM proxy responded: ${response.statusCode}');
       return response;
     } catch (e) {

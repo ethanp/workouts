@@ -11,15 +11,15 @@ void main() {
   final base = DateTime(2026, 1, 1, 8, 0, 0);
   Duration sec(int s) => Duration(seconds: s);
 
-  final calc = TrainingLoadCalculator(maxHeartRate: 190, restingHeartRate: 60);
+  final calc = TrainingLoadCalculator(restingHeartRate: 60);
 
   group('zone boundaries', () {
-    test('5-zone boundaries are correct percentages of max HR', () {
-      expect(calc.zoneBoundaries, [95, 114, 133, 152, 171]);
+    test('5-zone boundaries are correct', () {
+      expect(TrainingLoadCalculator.zoneBoundaries, [93, 115, 146, 163, 176]);
     });
 
     test('zone2Lower is the zone 2 boundary', () {
-      expect(calc.zone2Lower, 114);
+      expect(calc.zone2Lower, 115);
     });
   });
 
@@ -33,7 +33,7 @@ void main() {
       expect(zone.total, 0);
     });
 
-    test('zone 1 BPM (95-113) lands in zone 1', () {
+    test('zone 1 BPM (93-114) lands in zone 1', () {
       final samples = [
         _hr(base, 100),
         _hr(base.add(sec(10)), 100),
@@ -43,7 +43,7 @@ void main() {
       expect(zone.zone2, 0);
     });
 
-    test('zone 2 BPM (114-132) lands in zone 2', () {
+    test('zone 2 BPM (115-145) lands in zone 2', () {
       final samples = [
         _hr(base, 120),
         _hr(base.add(sec(10)), 120),
@@ -54,25 +54,25 @@ void main() {
       expect(zone.zone3, 0);
     });
 
-    test('zone 3 BPM (133-151) lands in zone 3', () {
+    test('zone 3 BPM (146-162) lands in zone 3', () {
       final samples = [
-        _hr(base, 140),
-        _hr(base.add(sec(10)), 140),
+        _hr(base, 150),
+        _hr(base.add(sec(10)), 150),
       ];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone3, 10);
     });
 
-    test('zone 4 BPM (152-170) lands in zone 4', () {
+    test('zone 4 BPM (163-175) lands in zone 4', () {
       final samples = [
-        _hr(base, 160),
-        _hr(base.add(sec(10)), 160),
+        _hr(base, 170),
+        _hr(base.add(sec(10)), 170),
       ];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone4, 10);
     });
 
-    test('zone 5 BPM (171+) lands in zone 5', () {
+    test('zone 5 BPM (176+) lands in zone 5', () {
       final samples = [
         _hr(base, 180),
         _hr(base.add(sec(10)), 180),
@@ -83,8 +83,8 @@ void main() {
 
     test('exactly at zone boundary lands in the higher zone', () {
       final samples = [
-        _hr(base, 114),
-        _hr(base.add(sec(10)), 114),
+        _hr(base, 115),
+        _hr(base.add(sec(10)), 115),
       ];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone2, 10);
@@ -95,7 +95,7 @@ void main() {
       final samples = [
         _hr(base, 120),
         _hr(base.add(sec(10)), 120),
-        _hr(base.add(sec(20)), 160),
+        _hr(base.add(sec(20)), 165),
         _hr(base.add(sec(30)), 115),
         _hr(base.add(sec(40)), 115),
         _hr(base.add(sec(50)), 80),
@@ -156,7 +156,7 @@ void main() {
       ];
       final result = calc.compute(samples);
 
-      final hrRatio = (150 - 60) / (190 - 60);
+      final hrRatio = (150 - 60) / (185 - 60);
       final expectedTrimp =
           (10 / 60) * hrRatio * 0.64 * math.exp(1.92 * hrRatio);
       expect(result.trimp, closeTo(expectedTrimp, 0.001));
@@ -197,8 +197,8 @@ void main() {
       ];
       final result = calc.compute(samples);
 
-      final hrRatio140 = (140 - 60) / (190 - 60);
-      final hrRatio160 = (160 - 60) / (190 - 60);
+      final hrRatio140 = (140 - 60) / (185 - 60);
+      final hrRatio160 = (160 - 60) / (185 - 60);
       final trimp140 =
           (10 / 60) * hrRatio140 * 0.64 * math.exp(1.92 * hrRatio140);
       final trimp160 =

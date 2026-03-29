@@ -159,9 +159,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       ),
     );
 
-    if (confirmed == true) {
-      final repository = ref.read(sessionRepositoryPowerSyncProvider);
-      await repository.discardAllInProgressSessions();
+    if (confirmed == true && mounted) {
+      final sessionRepository = ref.read(sessionRepositoryPowerSyncProvider);
+      await sessionRepository.discardAllInProgressSessions();
       ref.read(activeSessionProvider.notifier).discard();
       ref.invalidate(sessionHistoryProvider);
     }

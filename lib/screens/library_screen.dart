@@ -153,11 +153,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _showAddGoalSheet() {
+    final goalsNotifier = ref.read(goalsControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         onSave: (title, category, description, priority) async {
-          await ref.read(goalsControllerProvider.notifier).addGoal(
+          await goalsNotifier.addGoal(
                 title: title,
                 category: category,
                 description: description,
@@ -169,14 +170,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   void _showAddNoteSheet(List<FitnessGoal> goals) {
+    final notesNotifier =
+        ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => NoteFormSheet(
         availableGoals: goals,
         onSave: (content, category, goalId) {
-          ref
-              .read(backgroundNotesControllerProvider.notifier)
-              .addNote(
+          notesNotifier.addNote(
                 content: content,
                 category: category,
                 goalId: goalId,
