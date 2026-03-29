@@ -104,3 +104,12 @@
   - Two-tab navigation: "Today" (current workout) and "History" (completed sessions).
   - Local-only design: no authentication, no remote dependencies, immediate app startup.
 
+## Cursor Cloud specific instructions
+
+- **Flutter SDK**: Installed at `~/flutter`. Already on `PATH` via `~/.bashrc`.
+- **`ethan_utils` dependency**: The app depends on `path: ../ethan_utils` (a shared utility library not in this repo). A stub package is created at `/ethan_utils` with a symlink at `/workspace/../ethan_utils`. The stub provides `ELogger`, DateTime/String/int/Iterable extensions, and BuildContext navigation helpers. If `flutter pub get` fails on missing `ethan_utils`, re-run the update script.
+- **`.env` file**: Required by the app at runtime (loaded via `flutter_dotenv`). Created from `.env.local.example` with placeholder values. The app is iOS-only and cannot be `flutter run` on Linux; use `flutter test` and `flutter build bundle` for validation.
+- **Lint**: `flutter analyze` — 0 errors in `lib/`. Two pre-existing errors exist in `test/training_load_calculator_test.dart` (test API out of sync with production code).
+- **Tests**: `flutter test` — 44 pass, 2 fail (same pre-existing `training_load_calculator_test.dart` issue).
+- **Code generation**: After modifying Freezed/Riverpod models, run `dart run build_runner build --delete-conflicting-outputs`.
+- **No GUI testing**: This is an iOS-only Flutter app; `flutter run` requires macOS + Xcode + iOS Simulator. Cloud agents should validate via `flutter analyze`, `flutter test`, and `flutter build bundle`.
