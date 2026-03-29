@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/providers/influences_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
@@ -17,7 +16,6 @@ class SettingsScreen extends ConsumerWidget {
     final permissionAsync = ref.watch(healthKitPermissionProvider);
     final versionAsync = ref.watch(templateVersionControllerProvider);
     final syncStatus = ref.watch(powerSyncStatusProvider);
-    final influencesAsync = ref.watch(activeInfluencesProvider);
     final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoPageScaffold(
@@ -30,8 +28,7 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
             const HrZonesTile(),
             const SizedBox(height: AppSpacing.lg),
-            const RestingHeartRateTile(),            const SizedBox(height: AppSpacing.lg),
-            TrainingInfluencesTile(influencesAsync: influencesAsync),
+            const RestingHeartRateTile(),
             const SizedBox(height: AppSpacing.lg),
             SyncStatusTile(syncStatus: syncStatus),
             const SizedBox(height: AppSpacing.lg),

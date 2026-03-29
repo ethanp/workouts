@@ -17,11 +17,15 @@ const _log = ELogger('WorkoutGeneration');
 @riverpod
 class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   http.Client? _activeClient;
+  WorkoutPreferences? _lastPreferences;
 
   @override
   AsyncValue<LlmWorkoutResponse?> build() => const AsyncValue.data(null);
 
-  Future<void> generate() => _callLlm();
+  Future<void> generate({WorkoutPreferences? preferences}) {
+    _lastPreferences = preferences;
+    return _callLlm();
+  }
 
   Future<void> refine(String feedback) => _callLlm(feedback);
 
@@ -44,7 +48,6 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   }
 
   Future<void> _callLlm([String? feedback]) async {
-    // Cancel any existing request
     _activeClient?.close();
     _activeClient = http.Client();
 
@@ -56,18 +59,25 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
         } else {
           _log.log('Refining with feedback: $feedback');
         }
-        final context = await ref.read(contextBuilderProvider).build();
+        final workoutContext = await ref.read(contextBuilderProvider).build();
+        final contextWithPrefs = WorkoutContext(
+          goals: workoutContext.goals,
+          backgroundNotes: workoutContext.backgroundNotes,
+          recentSessions: workoutContext.recentSessions,
+          influences: workoutContext.influences,
+          knownExerciseNames: workoutContext.knownExerciseNames,
+          preferences: _lastPreferences,
+        );
         final response = await ref
             .read(llmServiceProvider)
             .generateWorkoutOptions(
-              context: context,
+              context: contextWithPrefs,
               userFeedback: feedback,
               client: _activeClient,
             );
         _log.log('Generated ${response.options.length} workout options');
         return response;
       } on http.ClientException catch (clientException) {
-        // Request was cancelled
         _log.log('LLM request cancelled: $clientException');
         rethrow;
       } catch (error, stackTrace) {

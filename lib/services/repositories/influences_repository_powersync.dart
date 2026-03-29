@@ -63,6 +63,51 @@ class InfluencesRepositoryPowerSync {
     );
   }
 
+  Future<void> updateInfluence(TrainingInfluence influence) async {
+    final now = DateTime.now().toIso8601String();
+    await _powerSync.execute(
+      '''
+      UPDATE training_influences
+      SET name = ?, description = ?, principles = ?, updated_at = ?
+      WHERE id = ?
+      ''',
+      [
+        influence.name,
+        influence.description,
+        jsonEncode(influence.principles),
+        now,
+        influence.id,
+      ],
+    );
+  }
+
+  Future<void> deleteInfluence(String id) async {
+    await _powerSync.execute(
+      'DELETE FROM training_influences WHERE id = ?',
+      [id],
+    );
+  }
+
+  Future<void> addInfluence(TrainingInfluence influence) async {
+    final now = DateTime.now().toIso8601String();
+    await _powerSync.execute(
+      '''
+      INSERT INTO training_influences (
+        id, name, description, principles, is_active, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ''',
+      [
+        influence.id,
+        influence.name,
+        influence.description,
+        jsonEncode(influence.principles),
+        1,
+        now,
+        now,
+      ],
+    );
+  }
+
   Future<void> seedInfluencesIfEmpty() async {
     final count = await _powerSync.get('SELECT COUNT(*) as cnt FROM training_influences');
     if ((count['cnt'] as int) > 0) return;

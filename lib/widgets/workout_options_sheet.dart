@@ -1,7 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/llm_workout_option.dart';
+import 'package:workouts/models/training_location.dart';
+import 'package:workouts/providers/goals_provider.dart';
+import 'package:workouts/providers/locations_provider.dart';
 import 'package:workouts/providers/workout_generation_provider.dart';
+import 'package:workouts/services/context_builder.dart';
 import 'package:workouts/services/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -23,15 +27,7 @@ class WorkoutOptionsSheet extends ConsumerStatefulWidget {
 class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
   final _feedbackController = TextEditingController();
   String? _expandedOptionId;
-
-  @override
-  void initState() {
-    super.initState();
-    // Start generation when sheet opens
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(workoutGenerationProvider.notifier).generate();
-    });
-  }
+  bool _showingForm = true;
 
   @override
   void dispose() {
@@ -41,7 +37,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(workoutGenerationProvider);
+    final generationState = ref.watch(workoutGenerationProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -53,13 +49,17 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
         children: [
           _buildHeader(),
           Expanded(
-            child: state.when(
-              data: (response) => response == null
-                  ? const _InitialView()
-                  : _buildOptionsView(response),
-              loading: () => const _LoadingView(),
-              error: (error, _) => _buildErrorView(error),
-            ),
+            child: _showingForm
+                ? _WorkoutPreferencesForm(
+                    onSubmit: _onFormSubmit,
+                  )
+                : generationState.when(
+                    data: (response) => response == null
+                        ? const _InitialView()
+                        : _buildOptionsView(response),
+                    loading: () => const _LoadingView(),
+                    error: (error, _) => _buildErrorView(error),
+                  ),
           ),
         ],
       ),
@@ -84,17 +84,23 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
             child: const Text('Cancel'),
           ),
           const Text('Generate Workout', style: AppTypography.title),
-          const SizedBox(width: 60), // Balance the header
+          const SizedBox(width: 60),
         ],
       ),
     );
+  }
+
+  void _onFormSubmit(WorkoutPreferences preferences) {
+    setState(() => _showingForm = false);
+    ref.read(workoutGenerationProvider.notifier).generate(
+          preferences: preferences,
+        );
   }
 
   Widget _buildOptionsView(LlmWorkoutResponse response) {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        // Explanation
         Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           margin: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -111,24 +117,18 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
             ),
           ),
         ),
-
-        // Options
         ...response.options.map(
           (option) => _WorkoutOptionCard(
             option: option,
             isExpanded: _expandedOptionId == option.id,
             onTap: () => setState(() {
-              _expandedOptionId = _expandedOptionId == option.id
-                  ? null
-                  : option.id;
+              _expandedOptionId =
+                  _expandedOptionId == option.id ? null : option.id;
             }),
             onSelect: () => _selectOption(option),
           ),
         ),
-
         const SizedBox(height: AppSpacing.xl),
-
-        // Refinement section
         _buildRefinementSection(),
       ],
     );
@@ -172,8 +172,8 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
 
   Widget _buildErrorView(Object error) {
     final message = switch (error) {
-      RateLimitedException e => e.toString(),
-      LlmException e => e.message,
+      RateLimitedException limitedError => limitedError.toString(),
+      LlmException llmError => llmError.message,
       _ => 'Something went wrong. Please try again.',
     };
 
@@ -195,19 +195,14 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
-            _regenerateSuggestionsButton(),
+            CupertinoButton.filled(
+              onPressed: () =>
+                  ref.read(workoutGenerationProvider.notifier).generate(),
+              child: const Text('Try Again'),
+            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _regenerateSuggestionsButton() {
-    return CupertinoButton.filled(
-      onPressed: () {
-        ref.read(workoutGenerationProvider.notifier).generate();
-      },
-      child: const Text('Try Again'),
     );
   }
 
@@ -221,12 +216,334 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
   }
 }
 
+const _durationPresets = [5, 10, 15, 30, 45, 60];
+
+class _WorkoutPreferencesForm extends ConsumerStatefulWidget {
+  const _WorkoutPreferencesForm({required this.onSubmit});
+
+  final ValueChanged<WorkoutPreferences> onSubmit;
+
+  @override
+  ConsumerState<_WorkoutPreferencesForm> createState() =>
+      _WorkoutPreferencesFormState();
+}
+
+class _WorkoutPreferencesFormState
+    extends ConsumerState<_WorkoutPreferencesForm> {
+  int? _selectedDuration;
+  final Set<String> _selectedGoalIds = {};
+  String? _selectedLocationId;
+  final _notesController = TextEditingController();
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        _sectionLabel('Duration'),
+        _durationChips(),
+        const SizedBox(height: AppSpacing.xl),
+        _sectionLabel('Focus Areas'),
+        _goalChips(),
+        const SizedBox(height: AppSpacing.xl),
+        _sectionLabel('Location'),
+        _locationSelector(),
+        const SizedBox(height: AppSpacing.xl),
+        _sectionLabel('Notes'),
+        _notesField(),
+        const SizedBox(height: AppSpacing.xl),
+        _generateButton(),
+        const SizedBox(height: AppSpacing.lg),
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(
+          color: AppColors.textColor3,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
+  Widget _durationChips() {
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: _durationPresets.map((minutes) {
+        final isSelected = _selectedDuration == minutes;
+        return GestureDetector(
+          onTap: () => setState(() {
+            _selectedDuration = isSelected ? null : minutes;
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.backgroundDepth2,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(
+                color: isSelected
+                    ? AppColors.accentPrimary
+                    : AppColors.borderDepth1,
+              ),
+            ),
+            child: Text(
+              '$minutes min',
+              style: AppTypography.body.copyWith(
+                color: isSelected
+                    ? CupertinoColors.white
+                    : AppColors.textColor2,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _goalChips() {
+    final goalsAsync = ref.watch(activeGoalsStreamProvider);
+
+    return goalsAsync.when(
+      data: (activeGoals) {
+        if (activeGoals.isEmpty) {
+          return Text(
+            'No active goals. Add goals in the Library.',
+            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          );
+        }
+        return Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          children: activeGoals.map((goal) {
+            final isSelected = _selectedGoalIds.contains(goal.id);
+            return GestureDetector(
+              onTap: () => setState(() {
+                if (isSelected) {
+                  _selectedGoalIds.remove(goal.id);
+                } else {
+                  _selectedGoalIds.add(goal.id);
+                }
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : AppColors.backgroundDepth2,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.accentPrimary
+                        : AppColors.borderDepth1,
+                  ),
+                ),
+                child: Text(
+                  goal.title,
+                  style: AppTypography.body.copyWith(
+                    color: isSelected
+                        ? CupertinoColors.white
+                        : AppColors.textColor2,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const CupertinoActivityIndicator(),
+      error: (_, __) => Text(
+        'Could not load goals.',
+        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      ),
+    );
+  }
+
+  Widget _locationSelector() {
+    final locationsAsync = ref.watch(locationsProvider);
+
+    return locationsAsync.when(
+      data: (savedLocations) {
+        if (savedLocations.isEmpty) {
+          return Text(
+            'No locations saved. Add locations in the Library.',
+            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          );
+        }
+        return Column(
+          children: savedLocations.map((location) {
+            final isSelected = _selectedLocationId == location.id;
+            return GestureDetector(
+              onTap: () => setState(() {
+                _selectedLocationId = isSelected ? null : location.id;
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppColors.accentPrimary.withValues(alpha: 0.12)
+                      : AppColors.backgroundDepth2,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                  border: Border.all(
+                    color: isSelected
+                        ? AppColors.accentPrimary
+                        : AppColors.borderDepth1,
+                    width: isSelected ? 1.5 : 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      isSelected
+                          ? CupertinoIcons.checkmark_circle_fill
+                          : CupertinoIcons.circle,
+                      size: 20,
+                      color: isSelected
+                          ? AppColors.accentPrimary
+                          : AppColors.textColor3,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            location.name,
+                            style: AppTypography.body.copyWith(
+                              color: AppColors.textColor1,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          if (location.equipment.isNotEmpty)
+                            Text(
+                              location.equipment,
+                              style: AppTypography.caption
+                                  .copyWith(color: AppColors.textColor3),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        );
+      },
+      loading: () => const CupertinoActivityIndicator(),
+      error: (_, __) => Text(
+        'Could not load locations.',
+        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      ),
+    );
+  }
+
+  Widget _notesField() {
+    return CupertinoTextField(
+      controller: _notesController,
+      placeholder: 'Anything else? e.g., "I\'m feeling tired", "skip legs"',
+      placeholderStyle:
+          AppTypography.body.copyWith(color: AppColors.textColor4),
+      style: AppTypography.body.copyWith(color: AppColors.textColor1),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      maxLines: 3,
+      decoration: BoxDecoration(
+        color: AppColors.backgroundDepth2,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.borderDepth1),
+      ),
+    );
+  }
+
+  Widget _generateButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: CupertinoButton.filled(
+        onPressed: _submit,
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(CupertinoIcons.sparkles, size: 18),
+            SizedBox(width: AppSpacing.sm),
+            Text(
+              'Generate',
+              style: TextStyle(
+                color: CupertinoColors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _submit() {
+    final goalsAsync = ref.read(activeGoalsStreamProvider);
+    final locationsAsync = ref.read(locationsProvider);
+
+    final allGoals = goalsAsync.value ?? [];
+    final focusGoals = allGoals
+        .where((goal) => _selectedGoalIds.contains(goal.id))
+        .toList();
+
+    final allLocations = locationsAsync.value ?? [];
+    TrainingLocation? selectedLocation;
+    if (_selectedLocationId != null) {
+      selectedLocation = allLocations
+          .where((location) => location.id == _selectedLocationId)
+          .firstOrNull;
+    }
+
+    final notes = _notesController.text.trim();
+
+    widget.onSubmit(
+      WorkoutPreferences(
+        durationMinutes: _selectedDuration,
+        focusGoals: focusGoals,
+        location: selectedLocation,
+        notes: notes.isEmpty ? null : notes,
+      ),
+    );
+  }
+}
+
 class _InitialView extends StatelessWidget {
   const _InitialView();
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Preparing...', style: AppTypography.body));
+    return const Center(
+        child: Text('Preparing...', style: AppTypography.body));
   }
 }
 

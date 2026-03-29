@@ -7,7 +7,6 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/template_version_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
-import 'package:workouts/screens/influences_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
@@ -283,68 +282,6 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
       setState(() => _dragValue = null);
       ref.read(restingHeartRateProvider.notifier).setRestingHeartRate(value.round());
     },
-  );
-}
-
-class TrainingInfluencesTile extends StatelessWidget {
-  const TrainingInfluencesTile({super.key, required this.influencesAsync});
-
-  final AsyncValue<List<dynamic>> influencesAsync;
-
-  @override
-  Widget build(BuildContext context) {
-    final activeCount = influencesAsync.value?.length ?? 0;
-    final subtitle = activeCount == 0
-        ? 'None selected'
-        : '$activeCount influence${activeCount == 1 ? '' : 's'} active';
-
-    return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        CupertinoPageRoute<void>(builder: (_) => const InfluencesScreen()),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
-        ),
-        child: Row(
-          children: [
-            _iconBox(),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: _labelColumn(subtitle)),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              color: AppColors.textColor3,
-              size: 18,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _iconBox() => Container(
-    width: 40,
-    height: 40,
-    decoration: BoxDecoration(
-      color: AppColors.backgroundDepth3,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-    ),
-    child: const Icon(CupertinoIcons.person_2, color: AppColors.textColor2, size: 22),
-  );
-
-  Widget _labelColumn(String subtitle) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Training Influences', style: AppTypography.subtitle),
-      const SizedBox(height: AppSpacing.xs),
-      Text(
-        subtitle,
-        style: AppTypography.body.copyWith(color: AppColors.textColor3),
-      ),
-    ],
   );
 }
 

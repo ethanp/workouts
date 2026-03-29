@@ -117,6 +117,12 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
+  Table('training_locations', [
+    Column.text('name'),
+    Column.text('equipment'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
   Table('training_influences', [
     Column.text('name'),
     Column.text('description'),

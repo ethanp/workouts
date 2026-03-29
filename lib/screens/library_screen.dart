@@ -10,10 +10,12 @@ import 'package:workouts/services/repositories/template_repository_powersync.dar
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/library/exercises_tab.dart';
 import 'package:workouts/widgets/library/goals_tab.dart';
+import 'package:workouts/widgets/library/influences_tab.dart';
+import 'package:workouts/widgets/library/locations_tab.dart';
 import 'package:workouts/widgets/library/templates_tab.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
-enum _LibrarySegment { goals, exercises, templates }
+enum _LibrarySegment { goals, exercises, templates, influences, locations }
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -69,18 +71,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           if (selected != null) setState(() => _segment = selected);
         },
         children: const {
-          _LibrarySegment.goals: Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: Text('Goals'),
-          ),
-          _LibrarySegment.exercises: Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: Text('Exercises'),
-          ),
-          _LibrarySegment.templates: Padding(
-            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: Text('Templates'),
-          ),
+          _LibrarySegment.goals: _SegmentLabel('Goals'),
+          _LibrarySegment.exercises: _SegmentLabel('Exercises'),
+          _LibrarySegment.templates: _SegmentLabel('Templates'),
+          _LibrarySegment.influences: _SegmentLabel('Influences'),
+          _LibrarySegment.locations: _SegmentLabel('Locations'),
         },
       ),
     );
@@ -102,6 +97,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             key: const ValueKey(_LibrarySegment.templates),
             onAddPressed: _onAddPressed,
           ),
+        _LibrarySegment.influences => const InfluencesTab(
+            key: ValueKey(_LibrarySegment.influences),
+          ),
+        _LibrarySegment.locations => const LocationsTab(
+            key: ValueKey(_LibrarySegment.locations),
+          ),
       },
     );
   }
@@ -115,6 +116,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         break;
       case _LibrarySegment.templates:
         _showNewTemplateSheet();
+      case _LibrarySegment.influences:
+        _showAddInfluenceSheet();
+      case _LibrarySegment.locations:
+        _showAddLocationSheet();
     }
   }
 
@@ -189,8 +194,39 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 
+  void _showAddInfluenceSheet() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => const InfluenceFormSheet(),
+    );
+  }
+
+  void _showAddLocationSheet() {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (_) => const LocationFormSheet(),
+    );
+  }
+
   Future<void> _onGenerateAll() async {
     await ref.read(bulkBenefitsControllerProvider.notifier).generateAll();
+  }
+}
+
+class _SegmentLabel extends StatelessWidget {
+  const _SegmentLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+      ),
+    );
   }
 }
 

@@ -8,6 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/llm_workout_option.dart';
+import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/services/context_builder.dart';
 
 part 'llm_service.g.dart';
@@ -68,7 +69,7 @@ class LlmService {
       {'role': 'system', 'content': systemPrompt},
       {'role': 'user', 'content': userPrompt},
     ];
-    final http.Response response = await feedToLlm(inputPromptInfo, httpClient);
+    final http.Response response = await _feedToLlm(inputPromptInfo, httpClient);
 
     if (response.statusCode != 200) {
       _log.error(
@@ -88,7 +89,7 @@ class LlmService {
     };
   }
 
-  Future<http.Response> feedToLlm(
+  Future<http.Response> _feedToLlm(
     List<Map<String, String>> inputPromptInfo,
     http.Client httpClient,
   ) async {
@@ -138,8 +139,7 @@ class LlmService {
             'id': goal.id,
             'title': goal.title,
             'category': goal.category.name,
-            if (goal.description.isNotEmpty)
-              'description': goal.description,
+            if (goal.description.isNotEmpty) 'description': goal.description,
           },
         )
         .toList();
@@ -164,13 +164,10 @@ Respond with valid JSON only, no markdown. Structure:
       ..writeln('User goals:')
       ..writeln(jsonEncode(goalsJson));
 
-    final response = await feedToLlm(
-      [
-        {'role': 'system', 'content': systemPrompt},
-        {'role': 'user', 'content': userPrompt.toString()},
-      ],
-      client,
-    );
+    final response = await _feedToLlm([
+      {'role': 'system', 'content': systemPrompt},
+      {'role': 'user', 'content': userPrompt.toString()},
+    ], client);
 
     if (response.statusCode != 200) {
       throw LlmException(
@@ -179,6 +176,165 @@ Respond with valid JSON only, no markdown. Structure:
     }
 
     return _parseBenefitsResponse(response.body);
+  }
+
+  /// Given a coach/influencer/program name, generates a description and
+  /// key training principles using the LLM.
+  /// Given a coach/influencer/program name, generates or revises a description
+  /// and key training principles using the LLM.
+  ///
+  /// When [currentDescription] and [currentPrinciples] are provided, the LLM
+  /// revises and improves the existing content rather than generating from
+  /// scratch.
+  Future<TrainingInfluence> generateInfluenceDetails({
+    required String id,
+    required String name,
+    String? currentDescription,
+    List<String>? currentPrinciples,
+  }) async {
+    final hasExisting = (currentDescription?.isNotEmpty ?? false) ||
+        (currentPrinciples?.isNotEmpty ?? false);
+    _log.log(
+      hasExisting
+          ? 'Revising influence details for "$name"...'
+          : 'Generating influence details for "$name"...',
+    );
+
+    final systemPrompt = hasExisting
+        ? '''You are an expert in longevity, posture, physical therapy, mobility, occupational therapy, strength, conditioning, and movement coaching.
+The user has a training influence entry with a description and principles that they have drafted or edited. Revise and improve the content:
+- Refine the description for clarity and accuracy (keep it one sentence)
+- Improve, expand, or correct the principles (aim for 4-6 total)
+- Preserve the user's intent — enhance, don't replace wholesale
+
+Each principle should be a short sentence: a concise label, then a dash, then a brief explanation.
+
+Respond with valid JSON only, no markdown. Structure:
+{
+  "description": "string",
+  "principles": ["string", ...]
+}'''
+        : '''You are an expert in longevity, posture, physical therapy, mobility, occupational therapy, strength, conditioning, and movement coaching.
+Given a coach, program, book, or training philosophy name, provide:
+1. A concise one-sentence description of who/what they are
+2. 4-6 key training principles they are known for
+
+Each principle should be a short sentence: a concise label, then a dash, then a brief explanation.
+
+Respond with valid JSON only, no markdown. Structure:
+{
+  "description": "string",
+  "principles": ["string", ...]
+}''';
+
+    final userPrompt = StringBuffer('Name: $name');
+    if (hasExisting) {
+      if (currentDescription != null && currentDescription.isNotEmpty) {
+        userPrompt.writeln('\n\nCurrent description: $currentDescription');
+      }
+      if (currentPrinciples != null && currentPrinciples.isNotEmpty) {
+        userPrompt.writeln('\nCurrent principles:');
+        for (final principle in currentPrinciples) {
+          userPrompt.writeln('- $principle');
+        }
+      }
+    }
+
+    final response = await _feedToLlm([
+      {'role': 'system', 'content': systemPrompt},
+      {'role': 'user', 'content': userPrompt.toString()},
+    ], client);
+
+    if (response.statusCode == 429) throw RateLimitedException();
+    if (response.statusCode != 200) {
+      throw LlmException(
+        'Influence generation failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    return _parseInfluenceResponse(response.body, id: id, name: name);
+  }
+
+  TrainingInfluence _parseInfluenceResponse(
+    String body, {
+    required String id,
+    required String name,
+  }) {
+    final json = jsonDecode(body) as Map<String, dynamic>;
+    final choices = json['choices'] as List<dynamic>;
+    if (choices.isEmpty) {
+      throw LlmException('No response from model');
+    }
+
+    final message = choices[0]['message'] as Map<String, dynamic>;
+    final content = message['content'] as String;
+    final parsed = jsonDecode(content) as Map<String, dynamic>;
+
+    final description = parsed['description'] as String? ?? '';
+    final principlesJson = parsed['principles'] as List<dynamic>? ?? [];
+
+    return TrainingInfluence(
+      id: id,
+      name: name,
+      description: description,
+      principles: principlesJson.cast<String>(),
+      isActive: true,
+    );
+  }
+
+  /// Given a training location name (e.g. "Home Gym"), generates a
+  /// comma-separated equipment list. When [currentEquipment] is provided,
+  /// the LLM revises and improves the existing list.
+  Future<String> generateLocationEquipment({
+    required String locationName,
+    String? currentEquipment,
+  }) async {
+    final hasExisting = currentEquipment != null && currentEquipment.isNotEmpty;
+    _log.log(
+      hasExisting
+          ? 'Revising equipment for "$locationName"...'
+          : 'Generating equipment for "$locationName"...',
+    );
+
+    final systemPrompt = hasExisting
+        ? '''You are a fitness equipment expert. The user has a training location with an equipment list they have drafted. Revise and improve it:
+- Add commonly available items they may have missed
+- Keep the format as a comma-separated list
+- Preserve the user's existing items unless clearly wrong
+
+Respond with valid JSON only, no markdown. Structure:
+{ "equipment": "comma-separated equipment list" }'''
+        : '''You are a fitness equipment expert. Given a training location name, suggest what equipment is typically available there.
+
+Respond with valid JSON only, no markdown. Structure:
+{ "equipment": "comma-separated equipment list" }''';
+
+    final userPrompt = StringBuffer('Location: $locationName');
+    if (hasExisting) {
+      userPrompt.write('\nCurrent equipment: $currentEquipment');
+    }
+
+    final response = await _feedToLlm([
+      {'role': 'system', 'content': systemPrompt},
+      {'role': 'user', 'content': userPrompt.toString()},
+    ], client);
+
+    if (response.statusCode == 429) throw RateLimitedException();
+    if (response.statusCode != 200) {
+      throw LlmException(
+        'Equipment generation failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = json['choices'] as List<dynamic>;
+    if (choices.isEmpty) throw LlmException('No response from model');
+
+    final message = choices[0]['message'] as Map<String, dynamic>;
+    final content = message['content'] as String;
+    final parsed = jsonDecode(content) as Map<String, dynamic>;
+
+    return (parsed['equipment'] as String?) ?? '';
   }
 
   List<ExerciseBenefit> _parseBenefitsResponse(String body) {
@@ -194,10 +350,7 @@ Respond with valid JSON only, no markdown. Structure:
       final benefitsJson = parsed['benefits'] as List<dynamic>? ?? [];
 
       return benefitsJson
-          .map(
-            (item) =>
-                ExerciseBenefit.fromJson(item as Map<String, dynamic>),
-          )
+          .map((item) => ExerciseBenefit.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (error) {
       _log.error('Failed to parse benefits response: $error');
@@ -205,7 +358,8 @@ Respond with valid JSON only, no markdown. Structure:
     }
   }
 
-  String _buildSystemPrompt() {    return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
+  String _buildSystemPrompt() {
+    return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
 
 For each option provide:
 1. A descriptive title
@@ -225,9 +379,12 @@ IMPORTANT: If the user has selected training influences (coaches/philosophies th
 - Include coaching cues that reference the influence (e.g., "Crush the handle - Pavel", "Skill before intensity - Wildman")
 - The notes field for exercises should include philosophy-specific form cues when applicable
 
+IMPORTANT: When session preferences are provided, respect the target duration and available equipment strictly. Only suggest exercises that can be performed with the listed equipment. The total workout duration (including warmup and cooldown) must match the target duration.
+
 Consider:
+- Session preferences (duration, focus goals, location/equipment, notes) — highest priority constraints
 - Training influences and their principles (highest priority for exercise selection and cues)
-- Goal alignment (prioritize primary goals)
+- Goal alignment (prioritize primary goals, or focus goals if specified)
 - Recent history (avoid overtraining muscle groups)
 - User constraints (injuries, time limits, equipment)
 - Recovery needs
@@ -263,17 +420,18 @@ Respond in JSON format with this exact structure:
   String _buildUserPrompt(WorkoutContext ctx, String? feedback) {
     final buffer = StringBuffer();
 
-    appendGoalsPrompt(buffer, ctx);
-    appendInfluencesPrompt(buffer, ctx);
-    appendNotesPrompt(buffer, ctx);
-    appendRecentNotesPrompt(buffer, ctx);
+    _appendPreferences(buffer, ctx);
+    _appendGoalsPrompt(buffer, ctx);
+    _appendInfluencesPrompt(buffer, ctx);
+    _appendNotesPrompt(buffer, ctx);
+    _appendRecentNotesPrompt(buffer, ctx);
     _appendExerciseLibrary(buffer, ctx);
-    appendCallToAction(buffer, feedback);
+    _appendCallToAction(buffer, feedback);
 
     return buffer.toString();
   }
 
-  void appendInfluencesPrompt(StringBuffer buffer, WorkoutContext ctx) {
+  void _appendInfluencesPrompt(StringBuffer buffer, WorkoutContext ctx) {
     buffer.writeln('## Training Influences');
     if (ctx.influences.isEmpty) {
       buffer.writeln('No specific training influences selected.');
@@ -287,6 +445,32 @@ Respond in JSON format with this exact structure:
         }
         buffer.writeln();
       }
+    }
+    buffer.writeln();
+  }
+
+  void _appendPreferences(StringBuffer buffer, WorkoutContext ctx) {
+    final prefs = ctx.preferences;
+    if (prefs == null || prefs.isEmpty) return;
+
+    buffer.writeln('## Session Preferences');
+    if (prefs.durationMinutes != null) {
+      buffer.writeln('- Target duration: ${prefs.durationMinutes} minutes');
+    }
+    if (prefs.focusGoals.isNotEmpty) {
+      final goalNames = prefs.focusGoals.map((goal) => goal.title).join(', ');
+      buffer.writeln('- Focus: $goalNames');
+    }
+    if (prefs.location != null) {
+      buffer.writeln('- Location: ${prefs.location!.name}');
+      if (prefs.location!.equipment.isNotEmpty) {
+        buffer.writeln(
+          '- Available equipment: ${prefs.location!.equipment}',
+        );
+      }
+    }
+    if (prefs.notes != null && prefs.notes!.isNotEmpty) {
+      buffer.writeln('- Additional notes: ${prefs.notes}');
     }
     buffer.writeln();
   }
@@ -306,7 +490,7 @@ Respond in JSON format with this exact structure:
     buffer.writeln();
   }
 
-  void appendCallToAction(StringBuffer buffer, String? feedback) {
+  void _appendCallToAction(StringBuffer buffer, String? feedback) {
     buffer.writeln('## Request');
     if (feedback != null && feedback.isNotEmpty) {
       buffer.writeln(feedback);
@@ -315,7 +499,7 @@ Respond in JSON format with this exact structure:
     }
   }
 
-  void appendRecentNotesPrompt(StringBuffer buffer, WorkoutContext ctx) {
+  void _appendRecentNotesPrompt(StringBuffer buffer, WorkoutContext ctx) {
     buffer.writeln('## Recent Training (Last 7 Days)');
     if (ctx.recentSessions.isEmpty) {
       buffer.writeln('No recent sessions.');
@@ -330,7 +514,7 @@ Respond in JSON format with this exact structure:
     buffer.writeln();
   }
 
-  void appendNotesPrompt(StringBuffer buffer, WorkoutContext ctx) {
+  void _appendNotesPrompt(StringBuffer buffer, WorkoutContext ctx) {
     buffer.writeln('## Background Notes');
     if (ctx.backgroundNotes.isEmpty) {
       buffer.writeln('No specific constraints or preferences noted.');
@@ -342,7 +526,7 @@ Respond in JSON format with this exact structure:
     buffer.writeln();
   }
 
-  void appendGoalsPrompt(StringBuffer buffer, WorkoutContext ctx) {
+  void _appendGoalsPrompt(StringBuffer buffer, WorkoutContext ctx) {
     buffer.writeln('## My Goals');
     if (ctx.goals.isEmpty) {
       buffer.writeln('No specific goals set.');

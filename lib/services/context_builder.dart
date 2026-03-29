@@ -4,6 +4,7 @@ import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/training_influence.dart';
+import 'package:workouts/models/training_location.dart';
 import 'package:workouts/services/repositories/background_notes_repository_powersync.dart';
 import 'package:workouts/services/repositories/goals_repository_powersync.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
@@ -12,6 +13,27 @@ import 'package:workouts/services/repositories/template_repository_powersync.dar
 
 part 'context_builder.g.dart';
 
+/// Per-session preferences the user sets before generating a workout.
+class WorkoutPreferences {
+  final int? durationMinutes;
+  final List<FitnessGoal> focusGoals;
+  final TrainingLocation? location;
+  final String? notes;
+
+  const WorkoutPreferences({
+    this.durationMinutes,
+    this.focusGoals = const [],
+    this.location,
+    this.notes,
+  });
+
+  bool get isEmpty =>
+      durationMinutes == null &&
+      focusGoals.isEmpty &&
+      location == null &&
+      (notes == null || notes!.isEmpty);
+}
+
 /// Context gathered for LLM workout generation.
 class WorkoutContext {
   final List<FitnessGoal> goals;
@@ -19,6 +41,7 @@ class WorkoutContext {
   final List<Session> recentSessions;
   final List<TrainingInfluence> influences;
   final List<String> knownExerciseNames;
+  final WorkoutPreferences? preferences;
 
   WorkoutContext({
     required this.goals,
@@ -26,6 +49,7 @@ class WorkoutContext {
     required this.recentSessions,
     required this.influences,
     required this.knownExerciseNames,
+    this.preferences,
   });
 
   bool get isEmpty => goals.isEmpty && backgroundNotes.isEmpty && influences.isEmpty;
