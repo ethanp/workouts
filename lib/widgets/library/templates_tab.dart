@@ -5,6 +5,7 @@ import 'package:workouts/providers/templates_provider.dart';
 import 'package:workouts/screens/template_detail_screen.dart';
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class TemplatesTab extends ConsumerWidget {
   const TemplatesTab({super.key, required this.onAddPressed});
@@ -81,29 +82,12 @@ class _TemplateCard extends ConsumerWidget {
     );
   }
 
-  Future<bool> _confirmDelete(BuildContext context) async {
-    return await showCupertinoDialog<bool>(
-          context: context,
-          builder: (dialogContext) => CupertinoAlertDialog(
-            title: const Text('Delete Routine?'),
-            content: Text(
-              '"${template.name}" will be permanently deleted.',
-            ),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  Future<bool> _confirmDelete(BuildContext context) =>
+      confirmDeleteDialog(
+        context,
+        title: 'Delete Routine?',
+        content: '"${template.name}" will be permanently deleted.',
+      );
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(

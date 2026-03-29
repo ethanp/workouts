@@ -18,6 +18,7 @@ import 'package:workouts/services/repositories/cardio_repository_powersync.dart'
 import 'package:workouts/services/repositories/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class HistoryActivityListTab extends ConsumerWidget {
   const HistoryActivityListTab({super.key});
@@ -126,29 +127,13 @@ class DismissibleActivityTile extends ConsumerWidget {
 
   Future<bool> _confirmDelete(
       BuildContext context, String title, String content) async {
-    final confirmed = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: Text(title),
-        content: Text(content),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+    final confirmed = await confirmDeleteDialog(
+      context,
+      title: title,
+      content: content,
     );
-    if (confirmed == true) {
-      await onDelete();
-      return true;
-    }
-    return false;
+    if (confirmed) await onDelete();
+    return confirmed;
   }
 
   Widget _deleteBackground() {

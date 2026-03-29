@@ -214,6 +214,7 @@ class SyncDebugTile extends ConsumerStatefulWidget {
 class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   bool _expanded = false;
   bool _reconnecting = false;
+  bool _resettingSync = false;
   Map<String, int> _crudQueue = {};
   int _localWorkouts = 0;
   int _serverWorkouts = -1;
@@ -279,6 +280,18 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       await reconnectPowerSync(powerSyncDatabase);
     } finally {
       if (mounted) setState(() => _reconnecting = false);
+    }
+  }
+
+  Future<void> _resetSyncData() async {
+    setState(() => _resettingSync = true);
+    try {
+      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      await powerSyncDatabase.disconnectAndClear();
+      await reconnectPowerSync(powerSyncDatabase);
+      if (mounted) _refreshCrud();
+    } finally {
+      if (mounted) setState(() => _resettingSync = false);
     }
   }
 
@@ -437,33 +450,51 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   }
 
   Widget _actionButtons() {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            color: AppColors.backgroundDepth3,
-            onPressed: _refreshCrud,
-            child: Text(
-              'Refresh Queue',
-              style:
-                  AppTypography.body.copyWith(color: AppColors.textColor1),
+        Row(
+          children: [
+            Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                color: AppColors.backgroundDepth3,
+                onPressed: _refreshCrud,
+                child: Text(
+                  'Refresh Queue',
+                  style: AppTypography.body.copyWith(color: AppColors.textColor1),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: CupertinoButton(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                color: AppColors.backgroundDepth3,
+                onPressed: _reconnecting ? null : _forceReconnect,
+                child: _reconnecting
+                    ? const CupertinoActivityIndicator()
+                    : Text(
+                        'Force Re-sync',
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.accentPrimary,
+                        ),
+                      ),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
           child: CupertinoButton(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             color: AppColors.backgroundDepth3,
-            onPressed: _reconnecting ? null : _forceReconnect,
-            child: _reconnecting
+            onPressed: _resettingSync ? null : _resetSyncData,
+            child: _resettingSync
                 ? const CupertinoActivityIndicator()
                 : Text(
-                    'Force Re-sync',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.accentPrimary,
-                    ),
+                    'Reset Sync Data',
+                    style: AppTypography.body.copyWith(color: AppColors.error),
                   ),
           ),
         ),

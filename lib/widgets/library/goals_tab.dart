@@ -6,6 +6,7 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/providers/background_notes_provider.dart';
 import 'package:workouts/providers/goals_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class GoalsTab extends ConsumerStatefulWidget {
   const GoalsTab({super.key, required this.onAddPressed});
@@ -301,27 +302,12 @@ class _GoalCard extends ConsumerWidget {
     );
   }
 
-  Future<bool> _confirmDelete(BuildContext context) async {
-    return await showCupertinoDialog<bool>(
-          context: context,
-          builder: (dialogContext) => CupertinoAlertDialog(
-            title: const Text('Delete Goal?'),
-            content: Text('"${goal.title}" will be permanently deleted.'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  Future<bool> _confirmDelete(BuildContext context) =>
+      confirmDeleteDialog(
+        context,
+        title: 'Delete Goal?',
+        content: '"${goal.title}" will be permanently deleted.',
+      );
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(
@@ -655,27 +641,12 @@ class _NoteRow extends ConsumerWidget {
     );
   }
 
-  Future<bool> _confirmDelete(BuildContext context) async {
-    return await showCupertinoDialog<bool>(
-          context: context,
-          builder: (dialogContext) => CupertinoAlertDialog(
-            title: const Text('Delete Note?'),
-            content: const Text('This background note will be permanently deleted.'),
-            actions: [
-              CupertinoDialogAction(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Cancel'),
-              ),
-              CupertinoDialogAction(
-                isDestructiveAction: true,
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  Future<bool> _confirmDelete(BuildContext context) =>
+      confirmDeleteDialog(
+        context,
+        title: 'Delete Note?',
+        content: 'This background note will be permanently deleted.',
+      );
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(

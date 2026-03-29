@@ -20,6 +20,7 @@ import 'package:workouts/services/repositories/seed_templates.dart'
 
 part 'template_repository_powersync.g.dart';
 
+const _log = ELogger('TemplateRepo');
 const _uuid = Uuid();
 
 class TemplateRepositoryPowerSync {
@@ -51,7 +52,11 @@ class TemplateRepositoryPowerSync {
   Stream<List<WorkoutTemplate>> watchTemplates() {
     return _powerSync
         .watch('SELECT * FROM workout_templates ORDER BY created_at DESC')
-        .asyncMap(_hydrateTemplates);
+        .asyncMap((templateRows) async {
+      final templates = await _hydrateTemplates(templateRows);
+      _log.log('watchTemplates: ${templates.length} templates');
+      return templates;
+    });
   }
 
   Future<void> saveTemplate(WorkoutTemplate template) async {
@@ -80,6 +85,7 @@ class TemplateRepositoryPowerSync {
   }
 
   Future<void> deleteTemplate(String templateId) async {
+    _log.log('deleteTemplate: $templateId');
     await _powerSync.execute(
       'DELETE FROM workout_templates WHERE id = ?',
       [templateId],
@@ -93,6 +99,7 @@ class TemplateRepositoryPowerSync {
   }
 
   Future<void> reseedTemplates() async {
+    _log.log('reseedTemplates: wiping all templates, blocks, and exercises');
     await _powerSync.execute('DELETE FROM workout_block_exercises');
     await _powerSync.execute('DELETE FROM workout_blocks');
     await _powerSync.execute('DELETE FROM workout_templates');
