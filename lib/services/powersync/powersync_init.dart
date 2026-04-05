@@ -7,16 +7,20 @@ import 'package:logging/logging.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'powersync_connector.dart';
 import 'powersync_schema.dart';
 
 const _log = ELogger('PowerSyncInit');
+const _powerSyncDatabasePathPreferenceKey = 'powersync_database_path';
 
 String get _powersyncUrl => dotenv.env['POWERSYNC_URL'] ?? '';
 String get _postgrestUrl => dotenv.env['POSTGREST_URL'] ?? '';
 String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
-Future<PowerSyncDatabase> initPowerSync() async {
+Future<PowerSyncDatabase> initPowerSync({
+  required SharedPreferences sharedPreferences,
+}) async {
   _log.log('Starting PowerSync initialization...');
   _log.log('PowerSync URL: $_powersyncUrl');
   _log.log('PostgREST URL: $_postgrestUrl');
@@ -32,7 +36,9 @@ Future<PowerSyncDatabase> initPowerSync() async {
     throw StateError(errorMessage);
   }
 
-  final dbPath = await getDatabasePath();
+  final dbPath = await getDatabasePath(
+    sharedPreferences: sharedPreferences,
+  );
   _log.log('Database path: $dbPath');
 
   final dbDir = Directory(p.dirname(dbPath));
@@ -122,9 +128,30 @@ void _subscribeDownloadTableLogs(PowerSyncDatabase powerSyncDatabase) {
   });
 }
 
-Future<String> getDatabasePath() async {
+Future<String> getDatabasePath({
+  required SharedPreferences sharedPreferences,
+}) async {
+  final cachedDatabasePath =
+      sharedPreferences.getString(_powerSyncDatabasePathPreferenceKey);
+  if (cachedDatabasePath != null) {
+    final cachedDatabaseDirectory = Directory(p.dirname(cachedDatabasePath));
+    if (cachedDatabaseDirectory.existsSync()) {
+      _log.log('Using cached database path: $cachedDatabasePath');
+      return cachedDatabasePath;
+    }
+    _log.log(
+      'Cached database path missing parent directory, refreshing: '
+      '$cachedDatabasePath',
+    );
+  }
   final documentsDirectory = await getApplicationDocumentsDirectory();
-  return p.join(documentsDirectory.path, 'powersync.db');
+  final databasePath = p.join(documentsDirectory.path, 'powersync.db');
+  await sharedPreferences.setString(
+    _powerSyncDatabasePathPreferenceKey,
+    databasePath,
+  );
+  _log.log('Cached database path for future launches');
+  return databasePath;
 }
 
 /// Bulk-removes CRUD queue entries for cardio child tables whose workout_id

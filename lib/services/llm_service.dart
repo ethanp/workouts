@@ -168,6 +168,68 @@ class LlmService {
     return (tokens: broadcastTokens, parsed: completer.future);
   }
 
+  Stream<String> streamFollowup({
+    required LlmWorkoutResponse workoutResponse,
+    required String question,
+    required http.Client httpClient,
+  }) {
+    _log.log('Streaming followup Q&A...');
+
+    final workoutSummary = StringBuffer();
+    for (final option in workoutResponse.options) {
+      workoutSummary.writeln('## ${option.title} (${option.goal})');
+      workoutSummary.writeln(option.rationale);
+      for (final block in option.blocks) {
+        workoutSummary.writeln(
+            '- ${block.title} (${block.estimatedMinutes}min): '
+            '${block.exercises.map((exercise) => exercise.name).join(', ')}');
+      }
+      workoutSummary.writeln();
+    }
+
+    const systemPrompt =
+        'You are a personal fitness coach. The user just received AI-generated '
+        'workout options. Answer their question conversationally and concisely. '
+        'Do not use markdown formatting. Keep answers under 200 words.';
+
+    final userPrompt = 'Here are the workout options I was given:\n\n'
+        '$workoutSummary\n'
+        'My question: $question';
+
+    final url = Uri.parse('$proxyUrl/v1/chat/completions');
+    final request = http.Request('POST', url);
+    request.headers.addAll({
+      'Content-Type': 'application/json',
+      'X-App-Name': appName,
+      'X-App-Token': appSecret,
+      'X-Client-ID': clientId,
+    });
+    request.body = jsonEncode({
+      'model': 'gpt-4o-mini',
+      'messages': [
+        {'role': 'system', 'content': systemPrompt},
+        {'role': 'user', 'content': userPrompt},
+      ],
+      'max_tokens': 500,
+      'stream': true,
+    });
+
+    return httpClient
+        .send(request)
+        .asStream()
+        .asyncExpand((streamedResponse) {
+      if (streamedResponse.statusCode == 429) {
+        throw RateLimitedException();
+      }
+      if (streamedResponse.statusCode != 200) {
+        throw LlmException(
+          'Followup streaming failed: ${streamedResponse.statusCode}',
+        );
+      }
+      return streamedResponse.stream.transform(SseContentTransformer());
+    });
+  }
+
   Future<http.Response> _feedToLlm(
     List<Map<String, String>> inputPromptInfo,
     http.Client httpClient,

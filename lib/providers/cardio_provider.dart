@@ -9,6 +9,7 @@ import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/providers/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
@@ -100,10 +101,29 @@ Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
     );
 
 /// Backfills metrics for workouts missing computed zone data.
+/// Gated on sync status: only runs after initial sync is complete
+/// and connected, to avoid backfilling before data arrives.
 @riverpod
 Future<void> cardioMetricsBackfill(Ref ref) async {
   final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
   if (powerSyncDatabase == null) return;
+  final syncStatus = ref.watch(powerSyncStatusProvider).asData?.value;
+  if (syncStatus == null ||
+      syncStatus.hasSynced != true ||
+      syncStatus.connected != true ||
+      syncStatus.downloading) {
+    return;
+  }
+  final countRows = await powerSyncDatabase.execute('''
+    SELECT
+      (SELECT COUNT(*) FROM cardio_workouts) AS workout_count,
+      (SELECT COUNT(*) FROM cardio_computed_metrics) AS computed_metrics_count
+  ''');
+  final countRow = countRows.first;
+  final workoutCount = countRow['workout_count'] as int? ?? 0;
+  final computedMetricsCount = countRow['computed_metrics_count'] as int? ?? 0;
+  if (workoutCount == 0 || computedMetricsCount >= workoutCount) return;
+
   final restingHeartRate = ref.watch(restingHeartRateProvider);
   final trainingLoad = TrainingLoadCalculator(
     restingHeartRate: restingHeartRate,

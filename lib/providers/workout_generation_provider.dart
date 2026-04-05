@@ -32,6 +32,14 @@ class GenerationFailed extends WorkoutGenerationState {
   GenerationFailed(this.error);
 }
 
+class GenerationFollowup extends WorkoutGenerationState {
+  final LlmWorkoutResponse response;
+  final String partialAnswer;
+  final bool answering;
+  GenerationFollowup(this.response, this.partialAnswer,
+      {this.answering = true});
+}
+
 @riverpod
 class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   http.Client? _activeClient;
@@ -47,6 +55,63 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   }
 
   Future<void> refine(String feedback) => _callLlm(feedback);
+
+  Future<void> askFollowup(String question) async {
+    final currentState = state;
+    final LlmWorkoutResponse response;
+    if (currentState is GenerationComplete) {
+      response = currentState.response;
+    } else if (currentState is GenerationFollowup) {
+      response = currentState.response;
+    } else {
+      return;
+    }
+
+    _tokenSubscription?.cancel();
+    _activeClient?.close();
+    _activeClient = http.Client();
+
+    _log.log('Asking followup: $question');
+    state = GenerationFollowup(response, '', answering: true);
+
+    try {
+      final tokenStream = ref.read(llmServiceProvider).streamFollowup(
+            workoutResponse: response,
+            question: question,
+            httpClient: _activeClient!,
+          );
+
+      final accumulated = StringBuffer();
+      final tokenCompleter = Completer<void>();
+
+      _tokenSubscription = tokenStream.listen(
+        (delta) {
+          accumulated.write(delta);
+          state = GenerationFollowup(response, accumulated.toString());
+        },
+        onError: (Object error) {
+          if (!tokenCompleter.isCompleted) tokenCompleter.completeError(error);
+        },
+        onDone: () {
+          if (!tokenCompleter.isCompleted) tokenCompleter.complete();
+        },
+      );
+
+      await tokenCompleter.future;
+      _log.log('Followup answer complete');
+      state = GenerationFollowup(response, accumulated.toString(),
+          answering: false);
+    } on http.ClientException catch (clientException) {
+      _log.log('Followup request cancelled: $clientException');
+      state = GenerationComplete(response);
+    } catch (error, stackTrace) {
+      _log.error('Followup failed: $error', null, stackTrace);
+      state = GenerationComplete(response);
+    } finally {
+      _tokenSubscription = null;
+      _activeClient = null;
+    }
+  }
 
   void cancel() {
     _tokenSubscription?.cancel();

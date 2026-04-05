@@ -52,6 +52,7 @@ class CardioMetricsStore {
       WHERE m.id IS NULL OR m.zone1_seconds IS NULL
     ''');
     if (pendingRows.isEmpty) return;
+
     _log.log('Backfilling metrics for ${pendingRows.length} workouts.');
     for (final pendingRow in pendingRows) {
       await computeAndStore(
@@ -59,7 +60,7 @@ class CardioMetricsStore {
         trainingLoad: trainingLoad,
       );
     }
-    _log.log('Backfill complete.');
+    _log.log('Backfill complete for ${pendingRows.length} workouts.');
   }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String workoutId) async {

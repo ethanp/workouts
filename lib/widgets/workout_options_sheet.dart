@@ -24,10 +24,13 @@ class WorkoutOptionsSheet extends ConsumerStatefulWidget {
       _WorkoutOptionsSheetState();
 }
 
+enum _RefinementMode { refine, ask }
+
 class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
   final _feedbackController = TextEditingController();
   String? _expandedOptionId;
   bool _showingForm = true;
+  _RefinementMode _refinementMode = _RefinementMode.refine;
 
   @override
   void dispose() {
@@ -57,6 +60,12 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
                       _StreamingView(partialText: partialText),
                     GenerationComplete(:final response) =>
                       _buildOptionsView(response),
+                    GenerationFollowup(
+                      :final response,
+                      :final partialAnswer,
+                      :final answering,
+                    ) =>
+                      _buildFollowupView(response, partialAnswer, answering),
                     GenerationFailed(:final error) => _buildErrorView(error),
                   },
           ),
@@ -96,7 +105,10 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
         );
   }
 
-  Widget _buildOptionsView(LlmWorkoutResponse response) {
+  Widget _buildOptionsView(
+    LlmWorkoutResponse response, {
+    String? followupAnswer,
+  }) {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -128,20 +140,54 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
-        _buildRefinementSection(),
+        _buildRefinementSection(followupAnswer: followupAnswer),
       ],
     );
   }
 
-  Widget _buildRefinementSection() {
+  Widget _buildRefinementSection({String? followupAnswer}) {
+    final isAskMode = _refinementMode == _RefinementMode.ask;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Not quite right?', style: AppTypography.subtitle),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
+          child: CupertinoSlidingSegmentedControl<_RefinementMode>(
+            groupValue: _refinementMode,
+            onValueChanged: (mode) {
+              if (mode != null) {
+                setState(() => _refinementMode = mode);
+                _feedbackController.clear();
+              }
+            },
+            children: const {
+              _RefinementMode.refine: Text('Refine'),
+              _RefinementMode.ask: Text('Ask'),
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (followupAnswer != null && followupAnswer.isNotEmpty) ...[
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.backgroundDepth2,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: AppColors.borderDepth1),
+            ),
+            child: Text(
+              followupAnswer,
+              style: AppTypography.body.copyWith(color: AppColors.textColor2),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         CupertinoTextField(
           controller: _feedbackController,
-          placeholder: 'Tell me what to change...',
+          placeholder: isAskMode
+              ? 'Ask about this workout...'
+              : 'Tell me what to change...',
           placeholderStyle: AppTypography.body.copyWith(
             color: AppColors.textColor3,
           ),
@@ -162,8 +208,10 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
             color: AppColors.backgroundDepth3,
             onPressed: _feedbackController.text.isEmpty
                 ? null
-                : () => _refine(_feedbackController.text),
-            child: const Text('Refine'),
+                : isAskMode
+                    ? () => _askFollowup(_feedbackController.text)
+                    : () => _refine(_feedbackController.text),
+            child: Text(isAskMode ? 'Ask' : 'Refine'),
           ),
         ),
       ],
@@ -210,9 +258,62 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
     Navigator.of(context).pop(option);
   }
 
+  Widget _buildFollowupView(
+    LlmWorkoutResponse response,
+    String partialAnswer,
+    bool answering,
+  ) {
+    if (answering) {
+      return ListView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        children: [
+          ...response.options.map(
+            (option) => _WorkoutOptionCard(
+              option: option,
+              isExpanded: _expandedOptionId == option.id,
+              onTap: () => setState(() {
+                _expandedOptionId =
+                    _expandedOptionId == option.id ? null : option.id;
+              }),
+              onSelect: () => _selectOption(option),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          if (partialAnswer.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.backgroundDepth2,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.borderDepth1),
+              ),
+              child: Text(
+                partialAnswer,
+                style:
+                    AppTypography.body.copyWith(color: AppColors.textColor2),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+          const Center(child: CupertinoActivityIndicator()),
+        ],
+      );
+    }
+
+    return _buildOptionsView(
+      response,
+      followupAnswer: partialAnswer,
+    );
+  }
+
   void _refine(String feedback) {
     _feedbackController.clear();
     ref.read(workoutGenerationProvider.notifier).refine(feedback);
+  }
+
+  void _askFollowup(String question) {
+    _feedbackController.clear();
+    ref.read(workoutGenerationProvider.notifier).askFollowup(question);
   }
 }
 
