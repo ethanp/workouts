@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/providers/exercise_benefits_provider.dart';
-import 'package:workouts/providers/goals_provider.dart';
+import 'package:workouts/features/library/exercise_benefits_provider.dart';
+import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/services/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 

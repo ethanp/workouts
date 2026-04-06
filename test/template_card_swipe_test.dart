@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/providers/templates_provider.dart';
+import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/services/repositories/template_repository_powersync.dart';
-import 'package:workouts/widgets/library/templates_tab.dart';
+import 'package:workouts/features/library/templates_tab.dart';
 
 class _MockTemplateRepository extends Mock
     implements TemplateRepositoryPowerSync {}

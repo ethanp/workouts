@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/providers/active_session_provider.dart';
+import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/services/repositories/heart_rate_samples_repository_powersync.dart';
 import 'package:workouts/services/health_kit_bridge.dart';
 

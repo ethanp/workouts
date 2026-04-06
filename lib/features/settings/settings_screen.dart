@@ -1,0 +1,51 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/providers/sync_provider.dart';
+import 'package:workouts/features/library/template_version_provider.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
+import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/features/settings/debug_tiles.dart';
+import 'package:workouts/features/settings/settings_tiles.dart';
+
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final permissionAsync = ref.watch(healthKitPermissionProvider);
+    final versionAsync = ref.watch(templateVersionControllerProvider);
+    final syncStatus = ref.watch(powerSyncStatusProvider);
+    final unitSystem = ref.watch(unitSystemProvider);
+
+    return CupertinoPageScaffold(
+      navigationBar: const CupertinoNavigationBar(middle: Text('Settings')),
+      child: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            UnitSystemTile(unitSystem: unitSystem, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
+            const HrZonesTile(),
+            const SizedBox(height: AppSpacing.lg),
+            const RestingHeartRateTile(),
+            const SizedBox(height: AppSpacing.lg),
+            SyncStatusTile(syncStatus: syncStatus),
+            const SizedBox(height: AppSpacing.lg),
+            TemplateVersionTile(versionAsync: versionAsync, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
+            PermissionStatusTile(permissionAsync: permissionAsync, ref: ref),
+            const SizedBox(height: AppSpacing.lg),
+            const HealthCardioImportTile(),
+            const SizedBox(height: AppSpacing.lg),
+            const MetricsBackfillTile(),
+            const SizedBox(height: AppSpacing.lg),
+            const CardioImportDebugTile(),
+            const SizedBox(height: AppSpacing.lg),
+            const SyncDebugTile(),
+          ],
+        ),
+      ),
+    );
+  }
+}

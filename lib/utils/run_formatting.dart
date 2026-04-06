@@ -1,5 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
 
 const metersPerMile = 1609.344;
 const _kmhToMph = 0.621371;

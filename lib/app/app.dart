@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/providers/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/screens/main_tab_screen.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/theme/app_theme.dart';

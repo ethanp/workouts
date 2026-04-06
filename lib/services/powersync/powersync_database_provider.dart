@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
-import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
 
 final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>((

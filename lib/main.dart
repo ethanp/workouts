@@ -4,7 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
-import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
 
 const _log = ELogger('Main');
 

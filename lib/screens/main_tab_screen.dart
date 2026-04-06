@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/providers/active_session_provider.dart';
-import 'package:workouts/screens/history_screen.dart';
-import 'package:workouts/screens/library_screen.dart';
-import 'package:workouts/screens/session_resume_screen.dart';
-import 'package:workouts/screens/settings_screen.dart';
-import 'package:workouts/screens/today_screen.dart';
+import 'package:workouts/features/active_session/active_session_provider.dart';
+import 'package:workouts/features/history/history_screen.dart';
+import 'package:workouts/features/library/library_screen.dart';
+import 'package:workouts/features/active_session/session_resume_screen.dart';
+import 'package:workouts/features/settings/settings_screen.dart';
+import 'package:workouts/features/today/today_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class MainTabScreen extends ConsumerStatefulWidget {

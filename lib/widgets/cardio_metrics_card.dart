@@ -5,7 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/providers/unit_system_provider.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
