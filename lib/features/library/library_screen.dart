@@ -266,6 +266,7 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
 
   Widget _sheetScrollContent(BuildContext context) {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,

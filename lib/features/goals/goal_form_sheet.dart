@@ -62,6 +62,7 @@ class _GoalFormSheetState extends State<GoalFormSheet> {
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,

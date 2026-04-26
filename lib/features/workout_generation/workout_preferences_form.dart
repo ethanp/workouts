@@ -34,6 +34,7 @@ class _WorkoutPreferencesFormState
   @override
   Widget build(BuildContext context) {
     return ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         _sectionLabel('Duration'),

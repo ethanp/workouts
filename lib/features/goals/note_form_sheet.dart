@@ -59,6 +59,7 @@ class _NoteFormSheetState extends State<NoteFormSheet> {
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             mainAxisSize: MainAxisSize.min,

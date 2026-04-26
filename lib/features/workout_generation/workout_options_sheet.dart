@@ -13,9 +13,8 @@ class WorkoutOptionsSheet extends ConsumerStatefulWidget {
   const WorkoutOptionsSheet({super.key});
 
   static Future<LlmWorkoutOption?> show(BuildContext context) {
-    return showCupertinoModalPopup<LlmWorkoutOption>(
-      context: context,
-      builder: (_) => const WorkoutOptionsSheet(),
+    return Navigator.of(context).push<LlmWorkoutOption>(
+      CupertinoPageRoute(builder: (_) => const WorkoutOptionsSheet()),
     );
   }
 
@@ -42,60 +41,39 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
   Widget build(BuildContext context) {
     final generationState = ref.watch(workoutGenerationProvider);
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth1,
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+    return CupertinoPageScaffold(
+      backgroundColor: AppColors.backgroundDepth1,
+      navigationBar: CupertinoNavigationBar(
+        backgroundColor: AppColors.backgroundDepth1,
+        border: const Border(
+          bottom: BorderSide(color: AppColors.borderDepth1),
+        ),
+        leading: CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () {
+            ref.read(workoutGenerationProvider.notifier).cancel();
+            Navigator.of(context).pop();
+          },
+          child: const Text('Cancel'),
+        ),
+        middle: const Text('Generate Workout', style: AppTypography.subtitle),
       ),
-      child: Column(
-        children: [
-          _header(),
-          Expanded(
-            child: _showingForm
-                ? WorkoutPreferencesForm(onSubmit: _onFormSubmit)
-                : switch (generationState) {
-                    GenerationIdle() =>
-                      const WorkoutGenerationPreparingView(),
-                    GenerationStreaming(:final partialText) =>
-                      WorkoutGenerationStreamingView(partialText: partialText),
-                    GenerationComplete(:final response) =>
-                      _optionsView(response),
-                    GenerationFollowup(
-                      :final response,
-                      :final partialAnswer,
-                      :final answering,
-                    ) =>
-                      _followupView(response, partialAnswer, answering),
-                    GenerationFailed(:final error) => _errorView(error),
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _header() {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
-              ref.read(workoutGenerationProvider.notifier).cancel();
-              Navigator.of(context).pop();
-            },
-            child: const Text('Cancel'),
-          ),
-          const Text('Generate Workout', style: AppTypography.title),
-          const SizedBox(width: 60),
-        ],
+      child: SafeArea(
+        child: _showingForm
+            ? WorkoutPreferencesForm(onSubmit: _onFormSubmit)
+            : switch (generationState) {
+                GenerationIdle() => const WorkoutGenerationPreparingView(),
+                GenerationStreaming(:final partialText) =>
+                  WorkoutGenerationStreamingView(partialText: partialText),
+                GenerationComplete(:final response) => _optionsView(response),
+                GenerationFollowup(
+                  :final response,
+                  :final partialAnswer,
+                  :final answering,
+                ) =>
+                  _followupView(response, partialAnswer, answering),
+                GenerationFailed(:final error) => _errorView(error),
+              },
       ),
     );
   }
@@ -109,6 +87,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
 
   Widget _optionsView(LlmWorkoutResponse response, {String? followupAnswer}) {
     return ListView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         Container(

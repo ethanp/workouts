@@ -278,6 +278,7 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
 
   Widget _sheetContent() {
     return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
