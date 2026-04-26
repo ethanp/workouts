@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 
+const _recentLogLineCount = 75;
+
 const _log = ELogger('ErrorBanner');
 
 class ErrorBanner extends StatefulWidget {
@@ -188,9 +190,18 @@ class _ErrorToast extends StatelessWidget {
   }
 
   Future<void> _emailError(String errorMessage) async {
+    final logTail = appLogBuffer.entries
+        .skip((appLogBuffer.entries.length - _recentLogLineCount)
+            .clamp(0, appLogBuffer.entries.length))
+        .map((e) => e.formattedText)
+        .join('\n');
+
     final subject = Uri.encodeComponent('Workouts App Error');
     final body = Uri.encodeComponent(
-      'Error at ${DateTime.now().toIso8601String()}:\n\n$errorMessage',
+      'Error at ${DateTime.now().toIso8601String()}:\n\n'
+      '$errorMessage\n\n'
+      '--- Recent log (${ appLogBuffer.entries.length < _recentLogLineCount ? appLogBuffer.entries.length : _recentLogLineCount } lines) ---\n'
+      '$logTail',
     );
     final gmailUri = Uri.parse(
       'googlegmail:///co?to=etahnp@gmail.com&subject=$subject&body=$body',
