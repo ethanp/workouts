@@ -92,7 +92,7 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   ActivityCalendarDay activityDayFromCardio(CardioCalendarDay cardioDay) =>
       ActivityCalendarDay(
         date: cardioDay.date,
-        totalCardioDistanceMeters: cardioDay.totalDistanceMeters,
+        outdoorRunDistanceMeters: cardioDay.outdoorRunDistanceMeters,
         totalCardioDurationSeconds: cardioDay.totalDurationSeconds,
         cardioZoneTime: cardioDay.zoneTime,
         cardioTrimp: cardioDay.trimp,
@@ -109,7 +109,7 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
     SessionCalendarDay sessionDay,
   ) => ActivityCalendarDay(
     date: existingActivityDay.date,
-    totalCardioDistanceMeters: existingActivityDay.totalCardioDistanceMeters,
+    outdoorRunDistanceMeters: existingActivityDay.outdoorRunDistanceMeters,
     totalCardioDurationSeconds: existingActivityDay.totalCardioDurationSeconds,
     cardioZoneTime: existingActivityDay.cardioZoneTime,
     cardioTrimp: existingActivityDay.cardioTrimp,
@@ -124,7 +124,7 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
   ActivityCalendarDay activityDayFromSession(SessionCalendarDay sessionDay) =>
       ActivityCalendarDay(
         date: sessionDay.date,
-        totalCardioDistanceMeters: 0,
+        outdoorRunDistanceMeters: 0,
         totalCardioDurationSeconds: 0,
         cardioZoneTime: HrZoneTime.zero,
         cardioTrimp: 0,

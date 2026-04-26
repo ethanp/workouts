@@ -104,7 +104,7 @@ class ActivityCalendar extends StatelessWidget {
     for (final entry in activityData.entries) {
       if (!entry.value.hasActivity) continue;
       maxCardioMeters =
-          math.max(maxCardioMeters, entry.value.totalCardioDistanceMeters);
+          math.max(maxCardioMeters, entry.value.outdoorRunDistanceMeters);
       final sessionMinutes = entry.value.totalSessionDurationSeconds ~/ 60;
       maxSessionMinutes = math.max(maxSessionMinutes, sessionMinutes);
     }

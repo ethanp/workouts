@@ -62,7 +62,7 @@ class CalendarDayCell extends StatelessWidget {
 
     final intensity = hasActivity
         ? intensityForDay(
-            cardioMeters: entry!.totalCardioDistanceMeters,
+            cardioMeters: entry!.outdoorRunDistanceMeters,
             sessionMinutes: entry!.totalSessionDurationSeconds ~/ 60,
             globalMax: globalMax,
           )
@@ -141,8 +141,8 @@ class CalendarDayCell extends StatelessWidget {
 
   Widget _activityLabel(Color textColor) {
     final parts = <String>[];
-    if (entry!.totalCardioDistanceMeters > 0) {
-      parts.add(Format.distanceCompact(entry!.totalCardioDistanceMeters, unitSystem));
+    if (entry!.outdoorRunDistanceMeters > 0) {
+      parts.add(Format.distanceCompact(entry!.outdoorRunDistanceMeters, unitSystem));
     }
     if (entry!.totalSessionDurationSeconds > 0) {
       parts.add('${entry!.totalSessionDurationSeconds ~/ 60}m');

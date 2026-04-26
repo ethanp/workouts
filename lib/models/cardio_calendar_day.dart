@@ -5,7 +5,7 @@ import 'package:workouts/models/hr_zone_time.dart';
 class CardioCalendarDay {
   CardioCalendarDay({
     required this.date,
-    required this.totalDistanceMeters,
+    required this.outdoorRunDistanceMeters,
     required this.totalDurationSeconds,
     required this.zoneTime,
     required this.trimp,
@@ -22,7 +22,7 @@ class CardioCalendarDay {
         int.parse(dateParts[1]),
         int.parse(dateParts[2]),
       ),
-      totalDistanceMeters: _asDouble(dayRow['total_distance_meters']) ?? 0,
+      outdoorRunDistanceMeters: _asDouble(dayRow['outdoor_run_distance_meters']) ?? 0,
       totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
       zoneTime: HrZoneTime.fromRow(dayRow),
       trimp: _asDouble(dayRow['total_trimp']) ?? 0,
@@ -32,7 +32,7 @@ class CardioCalendarDay {
   }
 
   final DateTime date;
-  final double totalDistanceMeters;
+  final double outdoorRunDistanceMeters;
   final int totalDurationSeconds;
 
   final HrZoneTime zoneTime;

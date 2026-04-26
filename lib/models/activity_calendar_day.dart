@@ -4,7 +4,7 @@ import 'package:workouts/models/hr_zone_time.dart';
 class ActivityCalendarDay {
   ActivityCalendarDay({
     required this.date,
-    required this.totalCardioDistanceMeters,
+    required this.outdoorRunDistanceMeters,
     required this.totalCardioDurationSeconds,
     required this.cardioZoneTime,
     required this.cardioTrimp,
@@ -17,7 +17,7 @@ class ActivityCalendarDay {
   });
 
   final DateTime date;
-  final double totalCardioDistanceMeters;
+  final double outdoorRunDistanceMeters;
   final int totalCardioDurationSeconds;
 
   final HrZoneTime cardioZoneTime;

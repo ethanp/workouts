@@ -134,15 +134,17 @@ class _TrainingBalanceStripState
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: labelWidth,
             child: Text(
               'Cardio',
               style: AppTypography.caption.copyWith(
+                fontSize: 11,
                 color: AppColors.textColor3,
               ),
-              overflow: TextOverflow.ellipsis,
+              maxLines: 4,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -256,15 +258,17 @@ class _TrainingBalanceStripState
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
             width: labelWidth,
             child: Text(
               goal.title,
               style: AppTypography.caption.copyWith(
+                fontSize: 11,
                 color: AppColors.textColor3,
               ),
-              overflow: TextOverflow.ellipsis,
+              maxLines: 4,
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
@@ -404,8 +408,8 @@ class _TrainingBalanceStripState
       'Cardio'.length,
       (maxLength, goal) => math.max(maxLength, goal.title.length),
     );
-    // Approximate: 7px per character, capped at 90.
-    return math.min(90, longestLabel * 7.0);
+    // Approximate: 7px per character, capped at 110.
+    return math.min(110, longestLabel * 7.0);
   }
 
   List<DateTime> _recentWeekStarts() {

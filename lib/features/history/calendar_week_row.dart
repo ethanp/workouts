@@ -136,7 +136,7 @@ class _WeekSummary extends StatelessWidget {
       final entry = activityData[date];
       if (entry != null && entry.hasActivity) {
         activeDays++;
-        cardioMeters += entry.totalCardioDistanceMeters;
+        cardioMeters += entry.outdoorRunDistanceMeters;
         sessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
         gteZone2Minutes += entry.cardioZoneTime.gteZone2Minutes;
         if (entry.cardioHasHrData) hasHrData = true;

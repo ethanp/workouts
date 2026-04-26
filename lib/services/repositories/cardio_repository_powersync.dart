@@ -83,7 +83,7 @@ class CardioRepositoryPowerSync {
         '''
         SELECT
           DATE(w.started_at, 'localtime') AS day,
-          SUM(w.distance_meters)            AS total_distance_meters,
+          COALESCE(SUM(CASE WHEN w.activity_type = 'outdoorRun' THEN w.distance_meters END), 0) AS outdoor_run_distance_meters,
           SUM(w.duration_seconds)           AS total_duration_seconds,
           COALESCE(SUM(m.zone1_seconds), 0) AS total_zone1_seconds,
           COALESCE(SUM(m.zone2_seconds), 0) AS total_zone2_seconds,

@@ -85,16 +85,6 @@ class HistoryChartsTab extends ConsumerWidget {
         const TrainingBalanceStrip(),
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
-          title: 'Weekly Distance',
-          weeks: _weekDataList(
-            visibleWeeks,
-            valueFor: (week) => week.totalCardioMeters / metersPerUnit,
-          ),
-          barColor: AppColors.accentPrimary,
-          formatValue: (value) => '${value.toStringAsFixed(1)}$distanceUnit',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        WeeklyBarChart(
           title: 'Weekly Activity Days',
           weeks: _weekDataList(
             visibleWeeks,
@@ -103,12 +93,47 @@ class HistoryChartsTab extends ConsumerWidget {
           barColor: const Color(0xFF64D2FF),
           formatValue: (value) => '${value.round()}d',
         ),
+        const SizedBox(height: AppSpacing.xxl),
+        _sectionHeader('Outdoor Running'),
+        const SizedBox(height: AppSpacing.lg),
+        WeeklyBarChart(
+          title: 'Weekly Run Distance',
+          weeks: _weekDataList(
+            visibleWeeks,
+            valueFor: (week) => week.outdoorRunMeters / metersPerUnit,
+          ),
+          barColor: AppColors.accentPrimary,
+          formatValue: (value) => '${value.toStringAsFixed(1)}$distanceUnit',
+        ),
         const SizedBox(height: AppSpacing.lg),
         CardioTrendChart(
           title: 'Outdoor Run Trends',
           series: _cardioTrendSeries(workouts, bestEfforts, unitSystem),
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
+        ),
+      ],
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return Row(
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+            color: AppColors.textColor4,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        const Expanded(
+          child: SizedBox(
+            height: 0.5,
+            child: ColoredBox(color: AppColors.borderDepth1),
+          ),
         ),
       ],
     );
@@ -167,8 +192,7 @@ class HistoryChartsTab extends ConsumerWidget {
         .toList();
   }
 
-  List<WeekData> _weekDataList(
-    List<WeekAggregate> aggregates, {
+  List<WeekData> _weekDataList(    List<WeekAggregate> aggregates, {
     required double Function(WeekAggregate) valueFor,
   }) {
     return aggregates
@@ -381,7 +405,7 @@ class HistoryChartsTab extends ConsumerWidget {
       final monday = _mondayOf(day.date);
       final aggregate = byMonday[monday];
       if (aggregate == null) continue;
-      aggregate.totalCardioMeters += day.totalCardioDistanceMeters;
+      aggregate.outdoorRunMeters += day.outdoorRunDistanceMeters;
       aggregate.zoneTime = aggregate.zoneTime + day.totalZoneTime;
       aggregate.activeDays++;
     }
@@ -412,7 +436,7 @@ class WeekAggregate {
   final DateTime weekStart;
   final bool isCurrent;
   final bool beforeData;
-  double totalCardioMeters = 0;
+  double outdoorRunMeters = 0;
   HrZoneTime zoneTime = HrZoneTime.zero;
   int activeDays = 0;
 }

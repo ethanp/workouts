@@ -396,11 +396,14 @@ class _PolarizationChartState extends State<PolarizationChart> {
               width: double.infinity,
               child: Column(
                 children: [
-                  _zoneSegment(zoneTime.zone5, zoneTime.total, _z5Color, isActive: isActive, isTop: true),
-                  _zoneSegment(zoneTime.zone4, zoneTime.total, _z4Color, isActive: isActive),
-                  _zoneSegment(zoneTime.zone3, zoneTime.total, _z3Color, isActive: isActive),
-                  _zoneSegment(zoneTime.zone2, zoneTime.total, _z2Color, isActive: isActive),
-                  _zoneSegment(zoneTime.zone1, zoneTime.total, _z1Color, isActive: isActive),
+                  for (var zoneIndex = 4; zoneIndex >= 0; zoneIndex--)
+                    _zoneSegment(
+                      zoneTime.asList[zoneIndex],
+                      zoneTime.total,
+                      _zoneColors[zoneIndex],
+                      isActive: isActive,
+                      isTop: zoneIndex == 4,
+                    ),
                 ],
               ),
             ),
