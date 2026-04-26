@@ -17,7 +17,6 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
 const _kUnitSystemKey = 'unit_system';
 const _kMaxHRKey = 'maxHeartRate';
 const _kRestingHRKey = 'restingHeartRate';
-const _kZ2TargetMinutesKey = 'weeklyZ2TargetMinutes';
 
 @Riverpod(keepAlive: true)
 class UnitSystemNotifier extends _$UnitSystemNotifier {
@@ -124,20 +123,4 @@ class MetricsRecomputeProgress extends _$MetricsRecomputeProgress {
 
   void update(int done, int total) => state = (done, total);
   void clear() => state = null;
-}
-
-@Riverpod(keepAlive: true)
-class WeeklyZ2TargetMinutesNotifier
-    extends _$WeeklyZ2TargetMinutesNotifier {
-  @override
-  int build() {
-    final prefs = ref.watch(sharedPreferencesProvider);
-    return prefs.getInt(_kZ2TargetMinutesKey) ?? 150;
-  }
-
-  Future<void> setTarget(int minutes) async {
-    final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setInt(_kZ2TargetMinutesKey, minutes);
-    state = minutes;
-  }
 }

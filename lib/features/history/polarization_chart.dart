@@ -2,22 +2,49 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/models/polarization_week.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
-const _aerobicColor = Color(0xFF3FB37F); // teal-green — Z1+Z2
-const _grayZoneColor = Color(0xFFF0B347); // amber — Z3
-const _vo2maxColor = Color(0xFFE15A64); // red-orange — Z4+Z5
+String _formatMinutes(int minutes) {
+  if (minutes < 60) return '${minutes}m';
+  final hours = minutes ~/ 60;
+  final mins = minutes % 60;
+  return mins > 0 ? '${hours}h ${mins}m' : '${hours}h';
+}
 
-/// Replaces [WeeklyStackedZoneChart] with three functional buckets relevant to
-/// longevity: Aerobic Base (Z1+Z2), Gray Zone (Z3), VO₂max Stimulus (Z4+Z5).
+/// Formats a zone range label, e.g. `_formatZoneRange(1, 2)` → `"Z1–2 · 93–145"`.
+String _formatZoneRange(int fromZone, [int? toZone]) {
+  toZone ??= fromZone;
+  final lower = TrainingLoadCalculator.zoneBoundaries[fromZone - 1];
+  final upper = TrainingLoadCalculator.zoneUpperBounds[toZone - 1];
+  final zoneLabel = fromZone == toZone ? 'Z$fromZone' : 'Z$fromZone–$toZone';
+  return '$zoneLabel · $lower–$upper';
+}
+
+const _z1Color = Color(0xFF5BB5EA); // sky blue — recovery
+const _z2Color = Color(0xFF36BF7E); // emerald — aerobic base
+const _z3Color = Color(0xFFECC048); // golden amber — tempo / gray zone
+const _z4Color = Color(0xFFE87838); // burnt orange — threshold
+const _z5Color = Color(0xFFDC4858); // crimson — VO₂max
+
+const _zoneColors = [_z1Color, _z2Color, _z3Color, _z4Color, _z5Color];
+const _zoneNames = [
+  'Z1 Recovery',
+  'Z2 Aerobic',
+  'Z3 Tempo',
+  'Z4 Threshold',
+  'Z5 VO₂max',
+];
+const _zoneShortNames = ['Recovery', 'Aerobic', 'Tempo', 'Threshold', 'VO₂max'];
+const _kAerobicBaseTargetSeconds = 90 * 60; // 90 min/week aerobic base target
+
+/// Stacked weekly bar chart showing time in each of the 5 HR zones.
 ///
-/// Bar height encodes volume; color proportions encode quality. Both dimensions
-/// are simultaneously visible, so a low-volume well-polarized week is visually
-/// distinct from a high-volume Z3-heavy week.
+/// Bar height encodes total zone volume; color segments encode zone split.
+/// Both are simultaneously visible, so a polarized week (lots of blue/green
+/// and red, little amber) is visually distinct from a gray-zone-heavy week.
 ///
-/// Horizontal drag activates a scrub cursor and live readout panel — the Brett
-/// Victor "feel the data" paradigm.
+/// Horizontal drag activates a scrub cursor and live readout panel.
 class PolarizationChart extends StatefulWidget {
   const PolarizationChart({super.key, required this.weeks});
 
@@ -29,6 +56,7 @@ class PolarizationChart extends StatefulWidget {
 
 class _PolarizationChartState extends State<PolarizationChart> {
   int? _scrubIndex;
+  bool _legendExpanded = false;
 
   List<WeekZoneData> get weeks => widget.weeks;
 
@@ -63,25 +91,60 @@ class _PolarizationChartState extends State<PolarizationChart> {
   }
 
   Widget _header() {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: Text('Polarization', style: AppTypography.subtitle),
+        Row(
+          children: [
+            Expanded(
+              child: Text('Polarization', style: AppTypography.subtitle),
+            ),
+            _compactLegend(),
+          ],
         ),
-        _legend(),
+        if (_legendExpanded) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _expandedLegend(),
+        ],
       ],
     );
   }
 
-  Widget _legend() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _compactLegend() {
+    return GestureDetector(
+      onTap: () => setState(() => _legendExpanded = !_legendExpanded),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
+            if (zoneIndex > 0) const SizedBox(width: AppSpacing.sm),
+            _legendDot(_zoneColors[zoneIndex], 'Z${zoneIndex + 1}'),
+          ],
+          const SizedBox(width: 5),
+          Icon(
+            CupertinoIcons.info_circle,
+            size: 12,
+            color: _legendExpanded
+                ? AppColors.textColor3
+                : AppColors.textColor4.withValues(alpha: 0.6),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _expandedLegend() {
+    return Wrap(
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.xs,
       children: [
-        _legendDot(_aerobicColor, 'Base'),
-        const SizedBox(width: AppSpacing.sm),
-        _legendDot(_grayZoneColor, 'Gray'),
-        const SizedBox(width: AppSpacing.sm),
-        _legendDot(_vo2maxColor, 'VO₂max'),
+        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++)
+          _legendDotExpanded(
+            _zoneColors[zoneIndex],
+            _zoneShortNames[zoneIndex],
+            _formatZoneRange(zoneIndex + 1),
+          ),
       ],
     );
   }
@@ -93,15 +156,44 @@ class _PolarizationChartState extends State<PolarizationChart> {
         Container(
           width: 6,
           height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 3),
         Text(
           label,
           style: const TextStyle(fontSize: 10, color: AppColors.textColor4),
+        ),
+      ],
+    );
+  }
+
+  Widget _legendDotExpanded(Color color, String name, String range) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+        ),
+        const SizedBox(width: 3),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              name,
+              style: const TextStyle(fontSize: 10, color: AppColors.textColor4),
+            ),
+            Text(
+              range,
+              style: const TextStyle(fontSize: 8, color: AppColors.textColor4),
+            ),
+          ],
         ),
       ],
     );
@@ -161,28 +253,20 @@ class _PolarizationChartState extends State<PolarizationChart> {
       );
     }
 
-    final polarizationWeeks = weeks
-        .map((week) => PolarizationWeek.fromHrZoneTime(week.zoneTime))
-        .toList();
-
-    final maxTotal = polarizationWeeks.fold(
+    final zoneTimes = weeks.map((week) => week.zoneTime).toList();
+    final maxTotal = zoneTimes.fold(
       0,
-      (maxSoFar, week) => math.max(maxSoFar, week.totalZoneSeconds),
+      (maxSoFar, zoneTime) => math.max(maxSoFar, zoneTime.total),
     );
     final effectiveMax = maxTotal > 0 ? maxTotal : 1;
-    final maxAerobicBase = polarizationWeeks.fold(
-      0,
-      (maxSoFar, week) => math.max(maxSoFar, week.aerobicBaseSeconds),
-    );
     final barSpacing = _barSpacing();
+    final referenceFraction = _kAerobicBaseTargetSeconds / effectiveMax;
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final barWidth =
             (constraints.maxWidth - barSpacing * (weeks.length - 1)) /
             weeks.length;
-        final referenceFraction =
-            maxAerobicBase > 0 ? (maxAerobicBase * 0.8) / effectiveMax : null;
 
         return GestureDetector(
           onHorizontalDragStart: (details) => _updateScrubFromOffset(
@@ -201,9 +285,13 @@ class _PolarizationChartState extends State<PolarizationChart> {
           behavior: HitTestBehavior.opaque,
           child: Stack(
             children: [
-              _barsRow(polarizationWeeks, effectiveMax, barSpacing),
-              if (referenceFraction != null)
-                _referenceLine(referenceFraction, constraints.maxHeight),
+              _barsRow(zoneTimes, effectiveMax, barSpacing),
+              if (referenceFraction <= 1.0)
+                _referenceLine(
+                  referenceFraction,
+                  constraints.maxHeight,
+                  '90m aerobic base',
+                ),
               if (_scrubIndex != null)
                 _scrubCursor(barWidth, barSpacing),
             ],
@@ -214,7 +302,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
   }
 
   Widget _barsRow(
-    List<PolarizationWeek> polarizationWeeks,
+    List<HrZoneTime> zoneTimes,
     int effectiveMax,
     double barSpacing,
   ) {
@@ -224,25 +312,34 @@ class _PolarizationChartState extends State<PolarizationChart> {
         for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(
-            child: _stackedBar(
-              polarizationWeeks[weekIndex],
-              effectiveMax,
-              weekIndex,
-            ),
+            child: _stackedBar(zoneTimes[weekIndex], effectiveMax, weekIndex),
           ),
         ],
       ],
     );
   }
 
-  Widget _referenceLine(double referenceFraction, double chartHeight) {
+  Widget _referenceLine(double referenceFraction, double chartHeight, String label) {
     return Positioned(
       left: 0,
       right: 0,
       bottom: referenceFraction * chartHeight,
-      child: Container(
-        height: 1,
-        color: _aerobicColor.withValues(alpha: 0.35),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 8,
+              color: _z2Color.withValues(alpha: 0.6),
+            ),
+          ),
+          Container(
+            height: 1,
+            color: _z2Color.withValues(alpha: 0.35),
+          ),
+        ],
       ),
     );
   }
@@ -273,7 +370,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
   }
 
   Widget _stackedBar(
-    PolarizationWeek week,
+    HrZoneTime zoneTime,
     int maxTotalSeconds,
     int weekIndex,
   ) {
@@ -286,12 +383,10 @@ class _PolarizationChartState extends State<PolarizationChart> {
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          if (!week.hasData) {
-            return const SizedBox.expand();
-          }
+          if (zoneTime.total == 0) return const SizedBox.expand();
 
           final totalFraction =
-              (week.totalZoneSeconds / maxTotalSeconds).clamp(0.0, 1.0);
+              (zoneTime.total / maxTotalSeconds).clamp(0.0, 1.0);
           final barHeight = totalFraction * constraints.maxHeight;
 
           return Align(
@@ -301,25 +396,11 @@ class _PolarizationChartState extends State<PolarizationChart> {
               width: double.infinity,
               child: Column(
                 children: [
-                  _bucketSegment(
-                    week.vo2maxSeconds,
-                    week.totalZoneSeconds,
-                    _vo2maxColor,
-                    isActive: isActive,
-                    isTop: true,
-                  ),
-                  _bucketSegment(
-                    week.grayZoneSeconds,
-                    week.totalZoneSeconds,
-                    _grayZoneColor,
-                    isActive: isActive,
-                  ),
-                  _bucketSegment(
-                    week.aerobicBaseSeconds,
-                    week.totalZoneSeconds,
-                    _aerobicColor,
-                    isActive: isActive,
-                  ),
+                  _zoneSegment(zoneTime.zone5, zoneTime.total, _z5Color, isActive: isActive, isTop: true),
+                  _zoneSegment(zoneTime.zone4, zoneTime.total, _z4Color, isActive: isActive),
+                  _zoneSegment(zoneTime.zone3, zoneTime.total, _z3Color, isActive: isActive),
+                  _zoneSegment(zoneTime.zone2, zoneTime.total, _z2Color, isActive: isActive),
+                  _zoneSegment(zoneTime.zone1, zoneTime.total, _z1Color, isActive: isActive),
                 ],
               ),
             ),
@@ -329,7 +410,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
     );
   }
 
-  Widget _bucketSegment(
+  Widget _zoneSegment(
     int seconds,
     int totalSeconds,
     Color color, {
@@ -428,9 +509,8 @@ class _ScrubDetailPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (week == null) return _emptyState();
-    final polarization = PolarizationWeek.fromHrZoneTime(week!.zoneTime);
-    if (!polarization.hasData) return _noDataState(week!);
-    return _dataState(week!, polarization);
+    if (week!.zoneTime.total == 0) return _noDataState(week!);
+    return _dataState(week!);
   }
 
   Widget _emptyState() {
@@ -460,83 +540,89 @@ class _ScrubDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _dataState(WeekZoneData week, PolarizationWeek polarization) {
+  Widget _dataState(WeekZoneData week) {
+    final zoneTime = week.zoneTime;
+    final totalSeconds = zoneTime.total;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Text(
-              'Week of ${week.label}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              '· Total zone time: ${_formatMinutes(polarization.totalZoneMinutes)}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
-              ),
-            ),
-          ],
-        ),
+        _weekHeader(week, totalSeconds ~/ 60),
         const SizedBox(height: AppSpacing.xs),
-        _bucketRow(
-          'Aerobic Base',
-          _aerobicColor,
-          polarization.aerobicFraction,
-          polarization.aerobicBaseMinutes,
-        ),
-        const SizedBox(height: 2),
-        _bucketRow(
-          'Gray Zone',
-          _grayZoneColor,
-          polarization.grayFraction,
-          polarization.grayZoneMinutes,
-        ),
-        const SizedBox(height: 2),
-        _bucketRow(
-          'VO₂max',
-          _vo2maxColor,
-          polarization.vo2maxFraction,
-          polarization.vo2maxMinutes,
-        ),
+        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
+          if (zoneIndex > 0) const SizedBox(height: 2),
+          _zoneRow(
+            _zoneNames[zoneIndex],
+            _zoneColors[zoneIndex],
+            _formatZoneRange(zoneIndex + 1),
+            zoneTime[zoneIndex],
+            totalSeconds,
+          ),
+        ],
       ],
     );
   }
 
-  Widget _bucketRow(
-    String label,
-    Color color,
-    double fraction,
-    int minutes,
-  ) {
-    final barFlex = (fraction * 100).round().clamp(0, 100);
+  Widget _weekHeader(WeekZoneData week, int totalMinutes) {
     return Row(
       children: [
-        _bucketLabel(label),
-        Expanded(child: _bucketFractionBar(color, fraction)),
+        Text(
+          'Week of ${week.label}',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textColor3,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(width: AppSpacing.sm),
-        _bucketPercentLabel(barFlex),
-        const SizedBox(width: AppSpacing.sm),
-        _bucketMinutesLabel(minutes),
+        Text(
+          '· Total zone time: ${_formatMinutes(totalMinutes)}',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
       ],
     );
   }
 
-  Widget _bucketLabel(String label) {
+  Widget _zoneRow(
+    String label,
+    Color color,
+    String range,
+    int seconds,
+    int totalSeconds,
+  ) {
+    final fraction = totalSeconds > 0 ? seconds / totalSeconds : 0.0;
+    final percent = (fraction * 100).round().clamp(0, 100);
+    return Row(
+      children: [
+        _zoneLabel(label, range),
+        Expanded(child: _fractionBar(color, fraction)),
+        const SizedBox(width: AppSpacing.sm),
+        _percentLabel(percent),
+        const SizedBox(width: AppSpacing.sm),
+        _minutesLabel(seconds ~/ 60),
+      ],
+    );
+  }
+
+  Widget _zoneLabel(String label, String range) {
     return SizedBox(
-      width: 80,
-      child: Text(
-        label,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      width: 100,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          ),
+          Text(
+            range,
+            style: const TextStyle(fontSize: 8, color: AppColors.textColor4),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _bucketFractionBar(Color color, double fraction) {
+  Widget _fractionBar(Color color, double fraction) {
     return Stack(
       children: [
         Container(
@@ -560,7 +646,7 @@ class _ScrubDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _bucketPercentLabel(int percent) {
+  Widget _percentLabel(int percent) {
     return SizedBox(
       width: 34,
       child: Text(
@@ -571,7 +657,7 @@ class _ScrubDetailPanel extends StatelessWidget {
     );
   }
 
-  Widget _bucketMinutesLabel(int minutes) {
+  Widget _minutesLabel(int minutes) {
     return SizedBox(
       width: 40,
       child: Text(
@@ -580,15 +666,6 @@ class _ScrubDetailPanel extends StatelessWidget {
         style: AppTypography.caption.copyWith(color: AppColors.textColor4),
       ),
     );
-  }
-
-  String _formatMinutes(int minutes) {
-    if (minutes >= 60) {
-      final hours = minutes ~/ 60;
-      final mins = minutes % 60;
-      return mins > 0 ? '${hours}h ${mins}m' : '${hours}h';
-    }
-    return '${minutes}m';
   }
 }
 

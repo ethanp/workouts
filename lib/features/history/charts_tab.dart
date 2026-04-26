@@ -6,6 +6,7 @@ import 'package:flutter/material.dart' show DateTimeRange;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
+import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/features/history/activity_provider.dart';
@@ -14,10 +15,8 @@ import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/cardio_trend_chart.dart';
-import 'package:workouts/widgets/fitness_momentum_chart.dart';
 import 'package:workouts/features/history/polarization_chart.dart';
 import 'package:workouts/features/history/training_balance_strip.dart';
-import 'package:workouts/features/history/weekly_z2_dose_chart.dart';
 import 'package:workouts/widgets/weekly_bar_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
 
@@ -81,17 +80,9 @@ class HistoryChartsTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        WeeklyZ2DoseChart(weeks: _weekZoneDataList(visibleWeeks)),
-        const SizedBox(height: AppSpacing.lg),
         PolarizationChart(weeks: _weekZoneDataList(visibleWeeks)),
         const SizedBox(height: AppSpacing.lg),
         const TrainingBalanceStrip(),
-        const SizedBox(height: AppSpacing.lg),
-        FitnessMomentumChart(
-          days: days,
-          displayStart: visibleRange?.start,
-          displayEnd: visibleRange?.end,
-        ),
         const SizedBox(height: AppSpacing.lg),
         WeeklyBarChart(
           title: 'Weekly Distance',
@@ -113,13 +104,8 @@ class HistoryChartsTab extends ConsumerWidget {
           formatValue: (value) => '${value.round()}d',
         ),
         const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Best-effort pace lines currently include outdoor runs only.',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-        ),
-        const SizedBox(height: AppSpacing.xs),
         CardioTrendChart(
-          title: 'Cardio Trends',
+          title: 'Outdoor Run Trends',
           series: _cardioTrendSeries(workouts, bestEfforts, unitSystem),
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
@@ -232,7 +218,9 @@ class HistoryChartsTab extends ConsumerWidget {
 
   List<CardioWorkout> _chronologicalWorkouts(List<CardioWorkout> workouts) {
     return workouts
-        .whereL((workout) => workout.durationSeconds > 0)
+        .whereL((workout) =>
+            workout.activityType == CardioType.outdoorRun &&
+            workout.durationSeconds > 0)
         .sortedOn((workout) => workout.startedAt);
   }
 
