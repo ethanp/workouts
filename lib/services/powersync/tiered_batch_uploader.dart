@@ -30,26 +30,20 @@ class TieredBatchUploader {
       }
     }
 
-    final client = http.Client();
-    try {
-      for (final tier in _UploadGraph.tiers) {
-        final tierOps = batch.crud.whereL((op) => tier.contains(op.table));
-        await _uploadChunked(tierOps, client, tally);
-      }
-
-      final unknownOps = batch.crud
-          .whereL((op) => !_UploadGraph.allTables.contains(op.table));
-      await _uploadChunked(unknownOps, client, tally);
-    } finally {
-      client.close();
+    for (final tier in _UploadGraph.tiers) {
+      final tierOps = batch.crud.whereL((op) => tier.contains(op.table));
+      await _uploadChunked(tierOps, tally);
     }
+
+    final unknownOps = batch.crud
+        .whereL((op) => !_UploadGraph.allTables.contains(op.table));
+    await _uploadChunked(unknownOps, tally);
 
     return (uploaded, discarded);
   }
 
   Future<void> _uploadChunked(
     List<CrudEntry> ops,
-    http.Client client,
     void Function(bool) tally,
   ) async {
     for (var chunkStartIndex = 0;
@@ -59,8 +53,17 @@ class TieredBatchUploader {
         chunkStartIndex,
         math.min(chunkStartIndex + _chunkConcurrency, ops.length),
       );
+      // Each op gets its own client to avoid fd-reuse races (EBADF/errno=9)
+      // that occur when a shared keep-alive pool churns under high concurrency.
       final results = await Future.wait(
-        chunk.map((op) => _uploader.upload(op, client)),
+        chunk.map((op) async {
+          final client = http.Client();
+          try {
+            return await _uploader.upload(op, client);
+          } finally {
+            client.close();
+          }
+        }),
       );
       results.forEach(tally);
     }

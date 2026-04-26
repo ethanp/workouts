@@ -12,6 +12,9 @@ class PostgRestUploader {
 
   final String _baseUrl;
 
+  static const _pgUniqueViolation = '"23505"';
+  static const _pgFkViolation = '"23503"';
+
   // Tables that have FK dependencies — if the parent row is gone from the
   // server, we discard the child op rather than retrying forever.
   static const _childTables = {
@@ -31,7 +34,7 @@ class PostgRestUploader {
   // Non-PK unique constraints PostgREST needs for on_conflict merge-duplicates.
   // Tables not listed here fall back to the primary key (id).
   // Must match the UNIQUE constraints in init.sql.
-  // exercises is deliberately excluded — see _handleExerciseConflict.
+  // exercises is deliberately excluded — see _patchExerciseByName.
   static const _conflictColumns = {
     'workout_blocks': 'template_id,block_index',
     'workout_block_exercises': 'block_id,exercise_id,exercise_index',
@@ -55,8 +58,8 @@ class PostgRestUploader {
           await _delete(op, client);
       }
       return false;
-    } catch (e) {
-      _log.error('Upload error for ${op.table} ${op.id}: $e');
+    } catch (e, st) {
+      _log.error('Upload error for ${op.table} ${op.id}', e, st);
       errorBus.add('Upload ${op.table} ${op.op.name}: $e');
       rethrow;
     }
@@ -110,42 +113,19 @@ class PostgRestUploader {
   ) async {
     final table = op.table;
 
-    // Exercise name already exists under a different ID (happens after app
-    // reinstall — new UUIDs, same names). We can't change the server's ID
-    // because other tables (workout_block_exercises) hold FK references to it.
-    // Instead, PATCH the existing row by name without touching its ID.
-    if (responseBody.contains('"23505"') && table == 'exercises') {
-      return _patchExerciseByName(data, client);
-    }
-    if (responseBody.contains('"23503"') && table == 'exercises') {
-      return _patchExerciseByName(data, client);
+    if (table == 'exercises') {
+      if (responseBody.contains(_pgUniqueViolation) || responseBody.contains(_pgFkViolation)) {
+        await _patchExerciseByName(data, client);
+        return false;
+      }
     }
 
-    if (responseBody.contains('"23505"') && table == 'cardio_workouts') {
-      final externalId = data?['external_workout_id'] as String?;
-      if (externalId != null) {
-        await client.delete(
-          Uri.parse(
-            '$_baseUrl/$table?external_workout_id=eq.$externalId',
-          ),
-          headers: {'Content-Type': 'application/json'},
-        );
-        final retryResponse = await client.post(
-          Uri.parse('$_baseUrl/$table'),
-          headers: {
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates',
-          },
-          body: jsonEncode({...?data, 'id': op.id}),
-        );
-        _requireOk(retryResponse, 'PUT retry');
-      }
+    if (table == 'cardio_workouts' && responseBody.contains(_pgUniqueViolation)) {
+      await _retryCardioWorkoutAfterDuplicateId(op, data, client);
       return false;
     }
 
-    // FK violation: child references a parent row gone from server.
-    // Discard — modifying the local DB would generate new CRUD entries.
-    if (responseBody.contains('"23503"') && _childTables.contains(table)) {
+    if (responseBody.contains(_pgFkViolation) && _childTables.contains(table)) {
       _log.warn('Discarding orphaned $table row ${op.id}');
       return true;
     }
@@ -153,12 +133,41 @@ class PostgRestUploader {
     throw Exception('PostgREST PUT conflict: 409 $responseBody');
   }
 
-  Future<bool> _patchExerciseByName(
+  /// Deletes the server row whose `external_workout_id` collides with [op],
+  /// then re-inserts with the local UUID. Needed after app reinstall when the
+  /// HealthKit/source ID is the same but the local UUID changed.
+  Future<void> _retryCardioWorkoutAfterDuplicateId(
+    CrudEntry op,
+    Map<String, dynamic>? data,
+    http.Client client,
+  ) async {
+    final externalId = data?['external_workout_id'] as String?;
+    if (externalId != null) {
+      await client.delete(
+        Uri.parse('$_baseUrl/${op.table}?external_workout_id=eq.$externalId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      final retryResponse = await client.post(
+        Uri.parse('$_baseUrl/${op.table}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: jsonEncode({...?data, 'id': op.id}),
+      );
+      _requireOk(retryResponse, 'PUT retry');
+    }
+  }
+
+  /// Patches the existing server exercise row matched by name, leaving its ID
+  /// untouched so FK references from workout_block_exercises stay valid.
+  /// Needed after app reinstall — new UUIDs, same exercise names.
+  Future<void> _patchExerciseByName(
     Map<String, dynamic>? data,
     http.Client client,
   ) async {
     final name = data?['name'] as String?;
-    if (name == null) return false;
+    if (name == null) return;
     _log.log('Exercise "$name" exists with different ID, patching by name');
     final response = await client.patch(
       Uri.parse('$_baseUrl/exercises?name=eq.${Uri.encodeComponent(name)}'),
@@ -166,7 +175,6 @@ class PostgRestUploader {
       body: jsonEncode(data),
     );
     _requireOk(response, 'PATCH exercise by name');
-    return false;
   }
 
   Future<void> _patch(CrudEntry op, http.Client client) async {
@@ -192,7 +200,7 @@ class PostgRestUploader {
   static String _shortId(String id) =>
       id.length > 8 ? '${id.substring(0, 8)}…' : id;
 
-  void _requireOk(http.Response response, String verb) {
+  static void _requireOk(http.Response response, String verb) {
     if (response.statusCode >= 400) {
       throw Exception(
         'PostgREST $verb error: ${response.statusCode} ${response.body}',
