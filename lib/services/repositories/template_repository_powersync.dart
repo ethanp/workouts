@@ -54,7 +54,7 @@ class TemplateRepositoryPowerSync {
         .watch('SELECT * FROM workout_templates ORDER BY created_at DESC')
         .asyncMap((templateRows) async {
       final templates = await _hydrateTemplates(templateRows);
-      _log.log('watchTemplates: ${templates.length} templates');
+      _log.log('${templates.length} workout template(s) in DB');
       return templates;
     });
   }

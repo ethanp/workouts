@@ -7,7 +7,9 @@ import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/utils/training_load_calculator.dart';
 
 class CardioMetricsCard extends ConsumerWidget {
   const CardioMetricsCard({
@@ -141,7 +143,7 @@ class _TimelinePreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 120,
+      height: 150,
       child: MetricsMiniChart(samples: samples, speedSamples: speedSamples),
     );
   }
@@ -198,6 +200,13 @@ const _speedColor = AppColors.success;
 class _DualMetricPainter extends CustomPainter {
   _DualMetricPainter({required this.samples, required this.speedSamples});
 
+  static const _leftAxisWidth = 38.0;
+  static const _rightPadding = 8.0;
+  static const _topPadding = 8.0;
+  static const _bottomAxisHeight = 22.0;
+  static const _axisLabelFontSize = 10.0;
+  static const _heartRateSmoothingWindowSize = 5;
+
   final List<HeartRateSample> samples;
   final List<SpeedSample> speedSamples;
 
@@ -205,8 +214,14 @@ class _DualMetricPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final timeDomain = _resolveTimeDomain();
     if (timeDomain == null) return;
-    _drawHeartRateSeries(canvas, size, timeDomain);
-    _drawSpeedSeries(canvas, size, timeDomain);
+
+    final chartLayout = _MetricChartLayout(size: size, timeDomain: timeDomain);
+    final heartRateScale = _heartRateScale();
+    if (heartRateScale == null) return;
+
+    _drawChartBackground(canvas, chartLayout, heartRateScale);
+    _drawHeartRateSeries(canvas, chartLayout, heartRateScale);
+    _drawSpeedSeries(canvas, chartLayout);
   }
 
   _TimeDomain? _resolveTimeDomain() {
@@ -233,48 +248,194 @@ class _DualMetricPainter extends CustomPainter {
     );
   }
 
-  void _drawHeartRateSeries(Canvas canvas, Size size, _TimeDomain timeDomain) {
-    if (samples.length < 2) return;
+  _HeartRateScale? _heartRateScale() {
+    if (samples.length < 2) return null;
 
     final minBpm = samples.map((sample) => sample.bpm).min;
     final maxBpm = samples.map((sample) => sample.bpm).max;
-    final bpmRange = (maxBpm - minBpm).clamp(1, 999).toDouble();
+    final axisMinBpm = (minBpm / 10).floor() * 10;
+    final axisMaxBpm = (maxBpm / 10).ceil() * 10;
 
-    double bpmToY(int bpm) =>
-        _normalizedY(size: size, normalizedValue: (bpm - minBpm) / bpmRange);
-
-    _drawHeartRateGrid(canvas, size, minBpm, maxBpm, bpmToY);
-    _drawHeartRatePath(canvas, size, timeDomain, bpmToY);
+    return _HeartRateScale(
+      minBpm: axisMinBpm,
+      maxBpm: axisMaxBpm <= axisMinBpm ? axisMinBpm + 10 : axisMaxBpm,
+    );
   }
 
-  void _drawHeartRateGrid(
+  void _drawChartBackground(
     Canvas canvas,
-    Size size,
-    int minBpm,
-    int maxBpm,
-    double Function(int bpm) bpmToY,
+    _MetricChartLayout chartLayout,
+    _HeartRateScale heartRateScale,
   ) {
+    _drawHeartRateZoneBands(canvas, chartLayout, heartRateScale);
+
     final gridPaint = Paint()
       ..color = AppColors.borderDepth1.withValues(alpha: 0.6)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
+    final axisPaint = Paint()
+      ..color = AppColors.textColor4.withValues(alpha: 0.5)
+      ..strokeWidth = 1;
 
-    final firstTick = (minBpm / 10).ceil() * 10;
-    for (var tickBpm = firstTick; tickBpm <= maxBpm; tickBpm += 10) {
-      final gridLineY = bpmToY(tickBpm);
+    for (final tickBpm in heartRateScale.tickBpms) {
+      final gridLineY = chartLayout.yForNormalizedValue(
+        heartRateScale.normalize(tickBpm),
+      );
       canvas.drawLine(
-        Offset(0, gridLineY),
-        Offset(size.width, gridLineY),
+        Offset(chartLayout.left, gridLineY),
+        Offset(chartLayout.right, gridLineY),
         gridPaint,
+      );
+      _drawAxisLabel(
+        canvas,
+        '$tickBpm',
+        Offset(chartLayout.left - 6, gridLineY),
+        textAlign: TextAlign.right,
+        anchor: _LabelAnchor.centerRight,
+      );
+    }
+
+    canvas.drawLine(
+      Offset(chartLayout.left, chartLayout.bottom),
+      Offset(chartLayout.right, chartLayout.bottom),
+      axisPaint,
+    );
+    canvas.drawLine(
+      Offset(chartLayout.left, chartLayout.top),
+      Offset(chartLayout.left, chartLayout.bottom),
+      axisPaint,
+    );
+
+    _drawElapsedTimeTickMarks(canvas, chartLayout, axisPaint);
+    _drawElapsedTimeLabels(canvas, chartLayout);
+  }
+
+  void _drawHeartRateZoneBands(
+    Canvas canvas,
+    _MetricChartLayout chartLayout,
+    _HeartRateScale heartRateScale,
+  ) {
+    for (
+      var zoneIndex = 0;
+      zoneIndex < HrZonePalette.zoneColors.length;
+      zoneIndex++
+    ) {
+      final zoneBand = heartRateScale.visibleZoneBand(zoneIndex);
+      if (zoneBand == null) continue;
+
+      final bandTop = chartLayout.yForNormalizedValue(
+        heartRateScale.normalize(zoneBand.upperBpm),
+      );
+      final bandBottom = chartLayout.yForNormalizedValue(
+        heartRateScale.normalize(zoneBand.lowerBpm),
+      );
+      final bandRect = Rect.fromLTRB(
+        chartLayout.left,
+        bandTop,
+        chartLayout.right,
+        bandBottom,
+      );
+      canvas.drawRect(
+        bandRect,
+        Paint()
+          ..color = HrZonePalette.zoneColors[zoneIndex].withValues(alpha: 0.08),
       );
     }
   }
 
+  void _drawElapsedTimeLabels(Canvas canvas, _MetricChartLayout chartLayout) {
+    for (final elapsedTick in chartLayout.elapsedTimeTicks) {
+      final anchor = switch (elapsedTick.position) {
+        _ElapsedTickPosition.start => _LabelAnchor.topLeft,
+        _ElapsedTickPosition.middle => _LabelAnchor.topCenter,
+        _ElapsedTickPosition.end => _LabelAnchor.topRight,
+      };
+      final textAlign = elapsedTick.position == _ElapsedTickPosition.end
+          ? TextAlign.right
+          : TextAlign.center;
+      _drawAxisLabel(
+        canvas,
+        _formatElapsedTime(elapsedTick.elapsedMilliseconds),
+        Offset(elapsedTick.x, chartLayout.bottom + 7),
+        textAlign: textAlign,
+        anchor: anchor,
+      );
+    }
+  }
+
+  void _drawElapsedTimeTickMarks(
+    Canvas canvas,
+    _MetricChartLayout chartLayout,
+    Paint axisPaint,
+  ) {
+    for (final elapsedTick in chartLayout.elapsedTimeTicks) {
+      if (elapsedTick.position != _ElapsedTickPosition.middle) continue;
+      canvas.drawLine(
+        Offset(elapsedTick.x, chartLayout.bottom),
+        Offset(elapsedTick.x, chartLayout.bottom + 4),
+        axisPaint,
+      );
+    }
+  }
+
+  void _drawAxisLabel(
+    Canvas canvas,
+    String text,
+    Offset anchorPoint, {
+    TextAlign textAlign = TextAlign.left,
+    required _LabelAnchor anchor,
+  }) {
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: text,
+        style: TextStyle(
+          color: AppColors.textColor4,
+          fontSize: _axisLabelFontSize,
+        ),
+      ),
+      textAlign: textAlign,
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final labelOffset = switch (anchor) {
+      _LabelAnchor.centerRight => Offset(
+        anchorPoint.dx - textPainter.width,
+        anchorPoint.dy - textPainter.height / 2,
+      ),
+      _LabelAnchor.topLeft => anchorPoint,
+      _LabelAnchor.topCenter => Offset(
+        anchorPoint.dx - textPainter.width / 2,
+        anchorPoint.dy,
+      ),
+      _LabelAnchor.topRight => Offset(
+        anchorPoint.dx - textPainter.width,
+        anchorPoint.dy,
+      ),
+    };
+    textPainter.paint(canvas, labelOffset);
+  }
+
+  String _formatElapsedTime(int durationMilliseconds) {
+    final duration = Duration(milliseconds: durationMilliseconds);
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+    if (hours > 0) return '$hours:$minutes:$seconds';
+    return '${duration.inMinutes}:$seconds';
+  }
+
+  void _drawHeartRateSeries(
+    Canvas canvas,
+    _MetricChartLayout chartLayout,
+    _HeartRateScale heartRateScale,
+  ) {
+    _drawHeartRatePath(canvas, chartLayout, heartRateScale);
+  }
+
   void _drawHeartRatePath(
     Canvas canvas,
-    Size size,
-    _TimeDomain timeDomain,
-    double Function(int bpm) bpmToY,
+    _MetricChartLayout chartLayout,
+    _HeartRateScale heartRateScale,
   ) {
     final heartRatePaint = Paint()
       ..color = _hrColor
@@ -282,11 +443,18 @@ class _DualMetricPainter extends CustomPainter {
       ..style = PaintingStyle.stroke;
 
     final heartRatePath = Path();
-    for (var sampleIndex = 0; sampleIndex < samples.length; sampleIndex++) {
-      final sample = samples[sampleIndex];
-      final pointX = timeDomain.timeToX(sample.timestamp, size.width);
-      final pointY = bpmToY(sample.bpm);
-      if (sampleIndex == 0) {
+    final smoothedHeartRatePoints = _smoothedHeartRatePoints();
+    for (
+      var pointIndex = 0;
+      pointIndex < smoothedHeartRatePoints.length;
+      pointIndex++
+    ) {
+      final smoothedHeartRatePoint = smoothedHeartRatePoints[pointIndex];
+      final pointX = chartLayout.xForTime(smoothedHeartRatePoint.timestamp);
+      final pointY = chartLayout.yForNormalizedValue(
+        heartRateScale.normalize(smoothedHeartRatePoint.bpm),
+      );
+      if (pointIndex == 0) {
         heartRatePath.moveTo(pointX, pointY);
       } else {
         heartRatePath.lineTo(pointX, pointY);
@@ -295,7 +463,38 @@ class _DualMetricPainter extends CustomPainter {
     canvas.drawPath(heartRatePath, heartRatePaint);
   }
 
-  void _drawSpeedSeries(Canvas canvas, Size size, _TimeDomain timeDomain) {
+  List<_SmoothedHeartRatePoint> _smoothedHeartRatePoints() {
+    if (samples.length <= _heartRateSmoothingWindowSize) {
+      return samples
+          .map(
+            (sample) => _SmoothedHeartRatePoint(
+              timestamp: sample.timestamp,
+              bpm: sample.bpm.toDouble(),
+            ),
+          )
+          .toList();
+    }
+
+    final halfWindow = _heartRateSmoothingWindowSize ~/ 2;
+    return List.generate(samples.length, (sampleIndex) {
+      final windowStart = math.max(0, sampleIndex - halfWindow);
+      final windowEnd = math.min(samples.length, sampleIndex + halfWindow + 1);
+      var bpmTotal = 0;
+      for (
+        var windowIndex = windowStart;
+        windowIndex < windowEnd;
+        windowIndex++
+      ) {
+        bpmTotal += samples[windowIndex].bpm;
+      }
+      return _SmoothedHeartRatePoint(
+        timestamp: samples[sampleIndex].timestamp,
+        bpm: bpmTotal / (windowEnd - windowStart),
+      );
+    });
+  }
+
+  void _drawSpeedSeries(Canvas canvas, _MetricChartLayout chartLayout) {
     if (speedSamples.length < 2) return;
 
     final minSpeed = speedSamples
@@ -318,9 +517,9 @@ class _DualMetricPainter extends CustomPainter {
       sampleIndex++
     ) {
       final speedSample = speedSamples[sampleIndex];
-      final pointX = timeDomain.timeToX(speedSample.timestamp, size.width);
+      final pointX = chartLayout.xForTime(speedSample.timestamp);
       final normalizedSpeed = (speedSample.speedKmh - minSpeed) / speedRange;
-      final pointY = _normalizedY(size: size, normalizedValue: normalizedSpeed);
+      final pointY = chartLayout.yForNormalizedValue(normalizedSpeed);
       if (sampleIndex == 0) {
         speedPath.moveTo(pointX, pointY);
       } else {
@@ -330,17 +529,171 @@ class _DualMetricPainter extends CustomPainter {
     canvas.drawPath(speedPath, speedPaint);
   }
 
-  double _normalizedY({required Size size, required double normalizedValue}) {
-    return size.height -
-        normalizedValue * size.height * 0.9 -
-        size.height * 0.05;
-  }
-
   @override
   bool shouldRepaint(covariant _DualMetricPainter oldDelegate) {
     return oldDelegate.samples != samples ||
         oldDelegate.speedSamples != speedSamples;
   }
+}
+
+enum _LabelAnchor { centerRight, topLeft, topCenter, topRight }
+
+enum _ElapsedTickPosition { start, middle, end }
+
+class _ElapsedTimeTick {
+  const _ElapsedTimeTick({
+    required this.x,
+    required this.elapsedMilliseconds,
+    required this.position,
+  });
+
+  final double x;
+  final int elapsedMilliseconds;
+  final _ElapsedTickPosition position;
+}
+
+class _MetricChartLayout {
+  _MetricChartLayout({required Size size, required this.timeDomain}) {
+    left = _DualMetricPainter._leftAxisWidth;
+    right = size.width - _DualMetricPainter._rightPadding;
+    top = _DualMetricPainter._topPadding;
+    bottom = size.height - _DualMetricPainter._bottomAxisHeight;
+    width = right - left;
+    height = bottom - top;
+  }
+
+  static const _minuteMilliseconds = 60 * 1000;
+  static const _minimumElapsedLabelGapWidth = 44.0;
+  static const _minuteSteps = [1, 2, 5, 10, 15, 20, 30, 60, 90, 120];
+
+  final _TimeDomain timeDomain;
+  late final double left;
+  late final double right;
+  late final double top;
+  late final double bottom;
+  late final double width;
+  late final double height;
+
+  double xForTime(DateTime sampleTime) {
+    return left + timeDomain.normalizedTime(sampleTime) * width;
+  }
+
+  double xForElapsedMilliseconds(int elapsedMilliseconds) {
+    return left + elapsedMilliseconds / timeDomain.durationMilliseconds * width;
+  }
+
+  double yForNormalizedValue(double normalizedValue) {
+    return bottom - normalizedValue.clamp(0.0, 1.0) * height;
+  }
+
+  List<_ElapsedTimeTick> get elapsedTimeTicks {
+    final maxLabelCount = (width / 70).round().clamp(3, 6);
+    final elapsedTimeTicks = <_ElapsedTimeTick>[
+      _ElapsedTimeTick(
+        x: left,
+        elapsedMilliseconds: 0,
+        position: _ElapsedTickPosition.start,
+      ),
+    ];
+
+    final minuteStep = _minuteStepFor(maxLabelCount);
+    for (
+      var elapsedMinutes = minuteStep;
+      elapsedMinutes * _minuteMilliseconds < timeDomain.durationMilliseconds;
+      elapsedMinutes += minuteStep
+    ) {
+      final elapsedMilliseconds = elapsedMinutes * _minuteMilliseconds;
+      final tickX = xForElapsedMilliseconds(elapsedMilliseconds);
+      if (right - tickX < _minimumElapsedLabelGapWidth) continue;
+      elapsedTimeTicks.add(
+        _ElapsedTimeTick(
+          x: tickX,
+          elapsedMilliseconds: elapsedMilliseconds,
+          position: _ElapsedTickPosition.middle,
+        ),
+      );
+    }
+
+    elapsedTimeTicks.add(
+      _ElapsedTimeTick(
+        x: right,
+        elapsedMilliseconds: timeDomain.durationMilliseconds,
+        position: _ElapsedTickPosition.end,
+      ),
+    );
+    return elapsedTimeTicks;
+  }
+
+  int _minuteStepFor(int maxLabelCount) {
+    for (final minuteStep in _minuteSteps) {
+      final stepMilliseconds = minuteStep * _minuteMilliseconds;
+      final middleLabelCount =
+          (timeDomain.durationMilliseconds - 1) ~/ stepMilliseconds;
+      if (middleLabelCount + 2 <= maxLabelCount) return minuteStep;
+    }
+
+    final middleLabelCapacity = math.max(1, maxLabelCount - 2);
+    final durationMinutes =
+        (timeDomain.durationMilliseconds / _minuteMilliseconds).ceil();
+    return (durationMinutes / middleLabelCapacity).ceil();
+  }
+}
+
+class _HeartRateScale {
+  const _HeartRateScale({required this.minBpm, required this.maxBpm});
+
+  final int minBpm;
+  final int maxBpm;
+
+  List<int> get tickBpms {
+    final bpmRange = maxBpm - minBpm;
+    final tickStep = bpmRange <= 30 ? 10 : 20;
+    final ticks = <int>[];
+    for (var tickBpm = minBpm; tickBpm <= maxBpm; tickBpm += tickStep) {
+      ticks.add(tickBpm);
+    }
+    if (ticks.last != maxBpm) ticks.add(maxBpm);
+    return ticks;
+  }
+
+  double normalize(num bpm) {
+    final bpmRange = maxBpm - minBpm;
+    if (bpmRange <= 0) return 0.5;
+    return (bpm - minBpm) / bpmRange;
+  }
+
+  _VisibleHeartRateZoneBand? visibleZoneBand(int zoneIndex) {
+    final rawLowerBpm = TrainingLoadCalculator.zoneBoundaries[zoneIndex];
+    final rawUpperBpm = zoneIndex == HrZonePalette.zoneColors.length - 1
+        ? math.max(maxBpm, TrainingLoadCalculator.zoneUpperBounds[zoneIndex])
+        : TrainingLoadCalculator.zoneUpperBounds[zoneIndex];
+
+    final visibleLowerBpm = math.max(minBpm, rawLowerBpm);
+    final visibleUpperBpm = math.min(maxBpm, rawUpperBpm);
+    if (visibleUpperBpm <= visibleLowerBpm) return null;
+
+    return _VisibleHeartRateZoneBand(
+      lowerBpm: visibleLowerBpm,
+      upperBpm: visibleUpperBpm,
+    );
+  }
+}
+
+class _VisibleHeartRateZoneBand {
+  const _VisibleHeartRateZoneBand({
+    required this.lowerBpm,
+    required this.upperBpm,
+  });
+
+  final int lowerBpm;
+  final int upperBpm;
+}
+
+class _SmoothedHeartRatePoint {
+  const _SmoothedHeartRatePoint({required this.timestamp, required this.bpm});
+
+  final DateTime timestamp;
+  final double bpm;
 }
 
 class _TimeDomain {
@@ -352,10 +705,9 @@ class _TimeDomain {
   final DateTime startTime;
   final int durationMilliseconds;
 
-  double timeToX(DateTime sampleTime, double chartWidth) {
+  double normalizedTime(DateTime sampleTime) {
     return sampleTime.difference(startTime).inMilliseconds /
-        durationMilliseconds *
-        chartWidth;
+        durationMilliseconds;
   }
 }
 
@@ -367,9 +719,9 @@ class SpeedSample {
 }
 
 List<SpeedSample> _computeSpeedSamples(List<CardioRoutePoint> points) {
-  final timedPoints = points
-      .whereL((routePoint) => routePoint.recordedAt != null)
-    ..sortOn((routePoint) => routePoint.recordedAt!);
+  final timedPoints = points.whereL(
+    (routePoint) => routePoint.recordedAt != null,
+  )..sortOn((routePoint) => routePoint.recordedAt!);
 
   if (timedPoints.length < 2) return [];
 

@@ -41,7 +41,8 @@ void _logSyncStatus(SyncStatus status, SyncStatus? previous) {
 }
 
 List<String> _connectionChanges(SyncStatus status, SyncStatus? previous) {
-  if (previous == null || previous.connected != status.connected) {
+  if (previous == null) return [];
+  if (previous.connected != status.connected) {
     return [status.connected ? '🟢 Connected' : '🔴 Disconnected'];
   }
   return [];

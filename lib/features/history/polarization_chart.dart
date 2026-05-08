@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 String _formatMinutes(int minutes) {
@@ -21,21 +22,9 @@ String _formatZoneRange(int fromZone, [int? toZone]) {
   return '$zoneLabel · $lower–$upper';
 }
 
-const _z1Color = Color(0xFF5BB5EA); // sky blue — recovery
-const _z2Color = Color(0xFF36BF7E); // emerald — aerobic base
-const _z3Color = Color(0xFFECC048); // golden amber — tempo / gray zone
-const _z4Color = Color(0xFFE87838); // burnt orange — threshold
-const _z5Color = Color(0xFFDC4858); // crimson — VO₂max
-
-const _zoneColors = [_z1Color, _z2Color, _z3Color, _z4Color, _z5Color];
-const _zoneNames = [
-  'Z1 Recovery',
-  'Z2 Aerobic',
-  'Z3 Tempo',
-  'Z4 Threshold',
-  'Z5 VO₂max',
-];
-const _zoneShortNames = ['Recovery', 'Aerobic', 'Tempo', 'Threshold', 'VO₂max'];
+const _zoneColors = HrZonePalette.zoneColors;
+const _zoneNames = HrZonePalette.zoneNames;
+const _zoneShortNames = HrZonePalette.zoneShortNames;
 const _kAerobicBaseTargetSeconds = 90 * 60; // 90 min/week aerobic base target
 
 /// Stacked weekly bar chart showing time in each of the 5 HR zones.
@@ -332,12 +321,12 @@ class _PolarizationChartState extends State<PolarizationChart> {
             label,
             style: TextStyle(
               fontSize: 8,
-              color: _z2Color.withValues(alpha: 0.6),
+              color: HrZonePalette.zone2.withValues(alpha: 0.6),
             ),
           ),
           Container(
             height: 1,
-            color: _z2Color.withValues(alpha: 0.35),
+            color: HrZonePalette.zone2.withValues(alpha: 0.35),
           ),
         ],
       ),

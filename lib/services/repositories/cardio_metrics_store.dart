@@ -53,14 +53,14 @@ class CardioMetricsStore {
     ''');
     if (pendingRows.isEmpty) return;
 
-    _log.log('Backfilling metrics for ${pendingRows.length} workouts.');
+    _log.log('Computing missing cardio metrics for ${pendingRows.length} workouts...');
     for (final pendingRow in pendingRows) {
       await computeAndStore(
         pendingRow['id'] as String,
         trainingLoad: trainingLoad,
       );
     }
-    _log.log('Backfill complete for ${pendingRows.length} workouts.');
+    _log.log('Cardio metrics computed for ${pendingRows.length} workouts.');
   }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String workoutId) async {

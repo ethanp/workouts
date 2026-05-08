@@ -6,7 +6,7 @@ import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class CalendarWeekRow extends StatelessWidget {
-  static const summaryWidth = 60.0;
+  static const summaryWidth = 74.0;
 
   const CalendarWeekRow({
     super.key,
@@ -64,13 +64,15 @@ class CalendarWeekRow extends StatelessWidget {
       if (isInMonth) {
         final date = DateTime(monthDate.year, monthDate.month, dayOffset + 1);
         if (day == 6) ownsWeek = true;
-        cells.add(CalendarDayCell(
-          date: date,
-          entry: activityData[date],
-          globalMax: globalMax,
-          unitSystem: unitSystem,
-          onTap: () => onDateTap(date),
-        ));
+        cells.add(
+          CalendarDayCell(
+            date: date,
+            entry: activityData[date],
+            globalMax: globalMax,
+            unitSystem: unitSystem,
+            onTap: () => onDateTap(date),
+          ),
+        );
       } else {
         cells.add(const EmptyDayCell());
       }
@@ -78,7 +80,6 @@ class CalendarWeekRow extends StatelessWidget {
 
     return (cells, ownsWeek);
   }
-
 }
 
 class _WeekSummary extends StatelessWidget {
@@ -111,23 +112,19 @@ class _WeekSummary extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: SizedBox(
         width: CalendarWeekRow.summaryWidth,
-        child: stats != null && stats.activeDays > 0
-            ? _content(stats)
-            : null,
+        child: stats != null && stats.activeDays > 0 ? _content(stats) : null,
       ),
     );
   }
 
   _WeekStats _aggregate() {
-    final sundayOffset =
-        week * DateTime.daysPerWeek + 6 - (firstWeekday - 1);
-    final sunday =
-        DateTime(monthDate.year, monthDate.month, sundayOffset + 1);
+    final sundayOffset = week * DateTime.daysPerWeek + 6 - (firstWeekday - 1);
+    final sunday = DateTime(monthDate.year, monthDate.month, sundayOffset + 1);
     final monday = sunday.subtract(const Duration(days: 6));
 
     var activeDays = 0;
     var cardioMeters = 0.0;
-    var sessionMinutes = 0;
+    var totalMinutes = 0;
     var gteZone2Minutes = 0;
     var hasHrData = false;
 
@@ -137,7 +134,10 @@ class _WeekSummary extends StatelessWidget {
       if (entry != null && entry.hasActivity) {
         activeDays++;
         cardioMeters += entry.outdoorRunDistanceMeters;
-        sessionMinutes += entry.totalSessionDurationSeconds ~/ 60;
+        totalMinutes +=
+            (entry.totalCardioDurationSeconds +
+                entry.totalSessionDurationSeconds) ~/
+            60;
         gteZone2Minutes += entry.cardioZoneTime.gteZone2Minutes;
         if (entry.cardioHasHrData) hasHrData = true;
       }
@@ -146,7 +146,7 @@ class _WeekSummary extends StatelessWidget {
     return _WeekStats(
       activeDays: activeDays,
       cardioMeters: cardioMeters,
-      sessionMinutes: sessionMinutes,
+      totalMinutes: totalMinutes,
       gteZone2Minutes: gteZone2Minutes,
       hasHrData: hasHrData,
     );
@@ -155,7 +155,7 @@ class _WeekSummary extends StatelessWidget {
   Widget _content(_WeekStats stats) {
     final intensity = CalendarDayCell.intensityForDay(
       cardioMeters: stats.cardioMeters,
-      sessionMinutes: stats.sessionMinutes,
+      sessionMinutes: stats.totalMinutes,
       globalMax: globalMax,
     );
 
@@ -184,16 +184,14 @@ class _WeekSummary extends StatelessWidget {
     if (stats.cardioMeters > 0) {
       parts.add(Format.distanceCompact(stats.cardioMeters, unitSystem));
     }
-    if (stats.sessionMinutes > 0) parts.add('${stats.sessionMinutes}m');
+    if (stats.totalMinutes > 0) parts.add('${stats.totalMinutes}m');
 
     return Text(
       parts.join(' · '),
       style: TextStyle(
         fontSize: _summaryFontSize,
         fontWeight: intensity > 0.5 ? FontWeight.w600 : FontWeight.normal,
-        color: CupertinoColors.white.withValues(
-          alpha: 0.4 + intensity * 0.6,
-        ),
+        color: CupertinoColors.white.withValues(alpha: 0.4 + intensity * 0.6),
       ),
     );
   }
@@ -236,14 +234,14 @@ class _WeekStats {
   const _WeekStats({
     required this.activeDays,
     required this.cardioMeters,
-    required this.sessionMinutes,
+    required this.totalMinutes,
     required this.gteZone2Minutes,
     required this.hasHrData,
   });
 
   final int activeDays;
   final double cardioMeters;
-  final int sessionMinutes;
+  final int totalMinutes;
   final int gteZone2Minutes;
   final bool hasHrData;
 }

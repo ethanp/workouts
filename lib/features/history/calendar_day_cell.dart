@@ -5,7 +5,10 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class WeekMax {
-  const WeekMax({required this.maxCardioMeters, required this.maxSessionMinutes});
+  const WeekMax({
+    required this.maxCardioMeters,
+    required this.maxSessionMinutes,
+  });
 
   final double maxCardioMeters;
   final int maxSessionMinutes;
@@ -14,6 +17,7 @@ class WeekMax {
 class CalendarDayCell extends StatelessWidget {
   static const cellSize = 39.0;
   static const cellMargin = 2.0;
+  static const cellExtent = cellSize + cellMargin * 2;
 
   static Color intensityColor(double intensity) {
     return Color.lerp(
@@ -142,7 +146,13 @@ class CalendarDayCell extends StatelessWidget {
   Widget _activityLabel(Color textColor) {
     final parts = <String>[];
     if (entry!.outdoorRunDistanceMeters > 0) {
-      parts.add(Format.distanceCompact(entry!.outdoorRunDistanceMeters, unitSystem));
+      parts.add(
+        Format.distanceCompact(entry!.outdoorRunDistanceMeters, unitSystem),
+      );
+    }
+    if (entry!.totalCardioDurationSeconds > 0 &&
+        entry!.outdoorRunDistanceMeters <= 0) {
+      parts.add('${entry!.totalCardioDurationSeconds ~/ 60}m');
     }
     if (entry!.totalSessionDurationSeconds > 0) {
       parts.add('${entry!.totalSessionDurationSeconds ~/ 60}m');
@@ -176,8 +186,8 @@ class EmptyDayCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(
-      width: CalendarDayCell.cellSize,
-      height: CalendarDayCell.cellSize,
+      width: CalendarDayCell.cellExtent,
+      height: CalendarDayCell.cellExtent,
     );
   }
 }

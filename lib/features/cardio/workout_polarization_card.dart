@@ -1,20 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
-import 'package:workouts/models/polarization_week.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
-const _aerobicColor = Color(0xFF3FB37F);
-const _grayZoneColor = Color(0xFFF0B347);
-const _vo2maxColor = Color(0xFFE15A64);
-
-/// Shows the 3-bucket polarization breakdown for a single cardio workout.
-///
-/// Uses the same functional groupings as the history [PolarizationChart] so the
-/// user builds a consistent mental model: aerobic base / gray zone / VO₂max
-/// stimulus at both the aggregate and individual-workout level.
-///
-/// Renders nothing if samples is empty — absence is honest.
+/// Shows the 5-zone heart-rate breakdown for a single cardio workout.
 class WorkoutPolarizationCard extends StatelessWidget {
   const WorkoutPolarizationCard({
     super.key,
@@ -29,8 +20,9 @@ class WorkoutPolarizationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (samples.isEmpty) return const SizedBox.shrink();
 
-    final polarization = _compute();
-    if (!polarization.hasData) return const SizedBox.shrink();
+    final zoneTime = _compute();
+    if (zoneTime.total == 0) return const SizedBox.shrink();
+    final representedZoneIndexes = _representedZoneIndexes(zoneTime);
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -42,17 +34,18 @@ class WorkoutPolarizationCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _header(polarization),
+          _header(zoneTime),
           const SizedBox(height: AppSpacing.md),
-          _proportionalBar(polarization),
+          _proportionalBar(zoneTime),
           const SizedBox(height: AppSpacing.md),
-          _bucketLabels(polarization),
+          _zoneLabels(zoneTime, representedZoneIndexes),
         ],
       ),
     );
   }
 
-  Widget _header(PolarizationWeek polarization) {
+  Widget _header(HrZoneTime zoneTime) {
+    final dominantZoneIndex = _dominantZoneIndex(zoneTime);
     return Row(
       children: [
         const Icon(
@@ -61,22 +54,22 @@ class WorkoutPolarizationCard extends StatelessWidget {
           color: AppColors.textColor2,
         ),
         const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text('Zone Distribution', style: AppTypography.title),
-        ),
+        Expanded(child: Text('Zone Distribution', style: AppTypography.title)),
         Container(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.sm,
             vertical: AppSpacing.xs,
           ),
           decoration: BoxDecoration(
-            color: _qualityColor(polarization).withValues(alpha: 0.15),
+            color: HrZonePalette.zoneColors[dominantZoneIndex].withValues(
+              alpha: 0.15,
+            ),
             borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Text(
-            polarization.qualityLabel,
+            HrZonePalette.zoneNames[dominantZoneIndex],
             style: AppTypography.caption.copyWith(
-              color: _qualityColor(polarization),
+              color: HrZonePalette.zoneColors[dominantZoneIndex],
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -85,93 +78,86 @@ class WorkoutPolarizationCard extends StatelessWidget {
     );
   }
 
-  Widget _proportionalBar(PolarizationWeek polarization) {
+  Widget _proportionalBar(HrZoneTime zoneTime) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(4),
       child: SizedBox(
         height: 10,
         child: Row(
           children: [
-            _barSegment(
-              polarization.aerobicFraction,
-              _aerobicColor,
-              isFirst: true,
-            ),
-            _barSegment(
-              polarization.grayFraction,
-              _grayZoneColor,
-            ),
-            _barSegment(
-              polarization.vo2maxFraction,
-              _vo2maxColor,
-              isLast: true,
-            ),
+            for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++)
+              _barSegment(
+                seconds: zoneTime[zoneIndex],
+                totalSeconds: zoneTime.total,
+                color: HrZonePalette.zoneColors[zoneIndex],
+              ),
           ],
         ),
       ),
     );
   }
 
-  Widget _barSegment(
-    double fraction,
-    Color color, {
-    bool isFirst = false,
-    bool isLast = false,
+  Widget _barSegment({
+    required int seconds,
+    required int totalSeconds,
+    required Color color,
   }) {
-    if (fraction <= 0) return const SizedBox.shrink();
+    if (seconds <= 0 || totalSeconds <= 0) return const SizedBox.shrink();
     return Flexible(
-      flex: (fraction * 1000).round(),
+      flex: seconds,
       child: Container(color: color),
     );
   }
 
-  Widget _bucketLabels(PolarizationWeek polarization) {
+  Widget _zoneLabels(HrZoneTime zoneTime, List<int> representedZoneIndexes) {
     return Row(
       children: [
-        _bucketCell(
-          'Aerobic Base',
-          _aerobicColor,
-          polarization.aerobicFraction,
-          polarization.aerobicBaseMinutes,
-        ),
-        _bucketCell(
-          'Gray Zone',
-          _grayZoneColor,
-          polarization.grayFraction,
-          polarization.grayZoneMinutes,
-        ),
-        _bucketCell(
-          'VO₂max',
-          _vo2maxColor,
-          polarization.vo2maxFraction,
-          polarization.vo2maxMinutes,
-        ),
+        for (final zoneIndex in representedZoneIndexes)
+          _zoneCell(zoneTime, zoneIndex),
       ],
     );
   }
 
-  Widget _bucketCell(
-    String label,
-    Color color,
-    double fraction,
-    int minutes,
-  ) {
-    final percent = (fraction * 100).round();
+  List<int> _representedZoneIndexes(HrZoneTime zoneTime) {
+    final representedZoneIndexes = <int>[];
+    for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) {
+      if (zoneTime[zoneIndex] > 0) representedZoneIndexes.add(zoneIndex);
+    }
+    return representedZoneIndexes;
+  }
+
+  int _dominantZoneIndex(HrZoneTime zoneTime) {
+    var dominantZoneIndex = 0;
+    var dominantZoneSeconds = zoneTime[0];
+    for (var zoneIndex = 1; zoneIndex < 5; zoneIndex++) {
+      if (zoneTime[zoneIndex] <= dominantZoneSeconds) continue;
+      dominantZoneIndex = zoneIndex;
+      dominantZoneSeconds = zoneTime[zoneIndex];
+    }
+    return dominantZoneIndex;
+  }
+
+  Widget _zoneCell(HrZoneTime zoneTime, int zoneIndex) {
+    final seconds = zoneTime[zoneIndex];
+    final percent = (seconds / zoneTime.total * 100).round();
     return Expanded(
       child: Column(
         children: [
           Text(
             '$percent%',
-            style: AppTypography.subtitle.copyWith(color: color),
+            style: AppTypography.subtitle.copyWith(
+              color: HrZonePalette.zoneColors[zoneIndex],
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 2),
           Text(
-            '${minutes}m',
+            _formatZoneDuration(seconds),
             style: AppTypography.caption.copyWith(color: AppColors.textColor3),
           ),
           const SizedBox(height: 1),
           Text(
-            label,
+            HrZonePalette.zoneNames[zoneIndex],
             style: AppTypography.caption.copyWith(
               color: AppColors.textColor4,
               fontSize: 10,
@@ -183,34 +169,28 @@ class WorkoutPolarizationCard extends StatelessWidget {
     );
   }
 
-  Color _qualityColor(PolarizationWeek polarization) {
-    final grayPercent = polarization.grayFraction * 100;
-    if (grayPercent >= 35) return _grayZoneColor;
-    if (polarization.aerobicFraction >= 0.70 && grayPercent <= 15) {
-      return _aerobicColor;
-    }
-    return AppColors.textColor3;
+  String _formatZoneDuration(int seconds) {
+    if (seconds < 60) return '${seconds}s';
+    return '${seconds ~/ 60}m';
   }
 
-  PolarizationWeek _compute() {
+  HrZoneTime _compute() {
     final calculator = TrainingLoadCalculator(
       restingHeartRate: restingHeartRate,
     );
 
-    final timestamped = samples
-        .map(
-          (sample) => TimestampedHeartRate(
-            timestamp: sample.timestamp,
-            bpm: sample.bpm,
-          ),
-        )
-        .toList()
-      ..sort(
-        (firstSample, secondSample) =>
-            firstSample.timestamp.compareTo(secondSample.timestamp),
+    final timestamped = <TimestampedHeartRate>[];
+    for (final sample in samples) {
+      timestamped.add(
+        TimestampedHeartRate(timestamp: sample.timestamp, bpm: sample.bpm),
       );
+    }
+    timestamped.sort(
+      (firstSample, secondSample) =>
+          firstSample.timestamp.compareTo(secondSample.timestamp),
+    );
 
     final result = calculator.compute(timestamped);
-    return PolarizationWeek.fromHrZoneTime(result.zoneTime);
+    return result.zoneTime;
   }
 }

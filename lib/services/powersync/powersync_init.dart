@@ -21,11 +21,6 @@ String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 Future<PowerSyncDatabase> initPowerSync({
   required SharedPreferences sharedPreferences,
 }) async {
-  _log.log('Starting PowerSync initialization...');
-  _log.log('PowerSync URL: $_powersyncUrl');
-  _log.log('PostgREST URL: $_postgrestUrl');
-  _log.log('JWT Secret configured: ${_jwtSecret.isNotEmpty}');
-
   if (_powersyncUrl.isEmpty || _postgrestUrl.isEmpty || _jwtSecret.isEmpty) {
     final errorMessage =
         'Missing required .env configuration. '
@@ -39,7 +34,6 @@ Future<PowerSyncDatabase> initPowerSync({
   final dbPath = await getDatabasePath(
     sharedPreferences: sharedPreferences,
   );
-  _log.log('Database path: $dbPath');
 
   final dbDir = Directory(p.dirname(dbPath));
   if (!dbDir.existsSync()) {
@@ -63,22 +57,17 @@ Future<PowerSyncDatabase> initPowerSync({
   });
 
   try {
-    _log.log('Creating PowerSyncDatabase instance...');
     final powerSyncDatabase = PowerSyncDatabase(
       schema: schema,
       path: dbPath,
       logger: powerSyncLogger,
     );
 
-    _log.log('Initializing database...');
     await powerSyncDatabase.initialize();
-    _log.log('Database initialized successfully');
 
     await _purgeOrphanedCardioChildCrudEntries(powerSyncDatabase);
 
-    _log.log('Connecting to PowerSync service...');
     await reconnectPowerSync(powerSyncDatabase);
-    _log.log('PowerSync connection established');
 
     if (kDebugMode) _subscribeDownloadTableLogs(powerSyncDatabase);
 
@@ -119,9 +108,9 @@ void _subscribeDownloadTableLogs(PowerSyncDatabase powerSyncDatabase) {
       wasDownloading = false;
       if (tablesInCurrentDownload.isNotEmpty) {
         final sorted = tablesInCurrentDownload.toList()..sort();
-        _log.log('⬇️ Download wrote: ${sorted.join(', ')}');
+        _log.log('⬇️ Synced tables: ${sorted.join(', ')}');
       } else {
-        _log.log('⬇️ Download complete (no table writes observed)');
+        _log.log('⬇️ Sync complete (no data written)');
       }
       tablesInCurrentDownload.clear();
     }
@@ -136,11 +125,11 @@ Future<String> getDatabasePath({
   if (cachedDatabasePath != null) {
     final cachedDatabaseDirectory = Directory(p.dirname(cachedDatabasePath));
     if (cachedDatabaseDirectory.existsSync()) {
-      _log.log('Using cached database path: $cachedDatabasePath');
+      _log.log('Database path (from cache): $cachedDatabasePath');
       return cachedDatabasePath;
     }
     _log.log(
-      'Cached database path missing parent directory, refreshing: '
+      'Cached database path directory no longer exists, re-resolving: '
       '$cachedDatabasePath',
     );
   }
@@ -150,7 +139,7 @@ Future<String> getDatabasePath({
     _powerSyncDatabasePathPreferenceKey,
     databasePath,
   );
-  _log.log('Cached database path for future launches');
+  _log.log('Database path (resolved): $databasePath');
   return databasePath;
 }
 
@@ -178,7 +167,7 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
             OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
           )
       ''');
-      _log.log('Purged $orphanCount orphaned cardio child CRUD entries.');
+      _log.log('Removed $orphanCount stale upload entries for deleted cardio workouts.');
     }
   } catch (error) {
     _log.warn('Could not purge orphaned cardio CRUD entries: $error');

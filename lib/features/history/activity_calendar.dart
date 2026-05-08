@@ -103,10 +103,15 @@ class ActivityCalendar extends StatelessWidget {
     int maxSessionMinutes = 0;
     for (final entry in activityData.entries) {
       if (!entry.value.hasActivity) continue;
-      maxCardioMeters =
-          math.max(maxCardioMeters, entry.value.outdoorRunDistanceMeters);
-      final sessionMinutes = entry.value.totalSessionDurationSeconds ~/ 60;
-      maxSessionMinutes = math.max(maxSessionMinutes, sessionMinutes);
+      maxCardioMeters = math.max(
+        maxCardioMeters,
+        entry.value.outdoorRunDistanceMeters,
+      );
+      final totalMinutes =
+          (entry.value.totalCardioDurationSeconds +
+              entry.value.totalSessionDurationSeconds) ~/
+          60;
+      maxSessionMinutes = math.max(maxSessionMinutes, totalMinutes);
     }
     return WeekMax(
       maxCardioMeters: maxCardioMeters,
@@ -117,9 +122,7 @@ class ActivityCalendar extends StatelessWidget {
   List<Widget> _buildMonths(WeekMax globalMax) {
     if (activityData.isEmpty) return [];
 
-    final oldest = activityData.keys.reduce(
-      (a, b) => a.isBefore(b) ? a : b,
-    );
+    final oldest = activityData.keys.reduce((a, b) => a.isBefore(b) ? a : b);
     final now = DateTime.now();
     final months = <Widget>[];
 
@@ -158,8 +161,18 @@ class ActivityCalendar extends StatelessWidget {
   }
 
   static const _monthNames = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   Widget _monthHeader(DateTime date) {
@@ -183,7 +196,7 @@ class ActivityCalendar extends StatelessWidget {
       children: [
         for (final label in _dayLabels)
           SizedBox(
-            width: CalendarDayCell.cellSize + CalendarDayCell.cellMargin * 2,
+            width: CalendarDayCell.cellExtent,
             child: Text(
               label,
               textAlign: TextAlign.center,
@@ -198,7 +211,11 @@ class ActivityCalendar extends StatelessWidget {
     );
   }
 
-  List<Widget> _weekRows(DateTime monthDate, int daysInMonth, WeekMax globalMax) {
+  List<Widget> _weekRows(
+    DateTime monthDate,
+    int daysInMonth,
+    WeekMax globalMax,
+  ) {
     final firstWeekday = DateTime(monthDate.year, monthDate.month, 1).weekday;
     final totalDays = firstWeekday - 1 + daysInMonth;
     final weeksInMonth = (totalDays / DateTime.daysPerWeek).ceil();

@@ -23,26 +23,33 @@ class CardioDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final routePointsAsync = ref.watch(cardioRoutePointsProvider(workout.id));
-    final heartRateSamplesAsync = ref.watch(cardioHeartRateSamplesProvider(workout.id));
+    final heartRateSamplesAsync = ref.watch(
+      cardioHeartRateSamplesProvider(workout.id),
+    );
     final unitSystem = ref.watch(unitSystemProvider);
     final restingHeartRate = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(middle: Text('Workout Detail')),
+      navigationBar: const CupertinoNavigationBar(
+        middle: Text('Workout Detail'),
+      ),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             _WorkoutSummaryCard(workout: workout, unitSystem: unitSystem),
-            const SizedBox(height: AppSpacing.md),
-            routePointsAsync.when(
-              data: (routePoints) => _RouteCard(routePoints: routePoints),
-              loading: () => const Center(child: CupertinoActivityIndicator()),
-              error: (error, _) => Text(
-                'Unable to load route: $error',
-                style: AppTypography.body.copyWith(color: AppColors.error),
+            if (workout.activityType.hasRoute) ...[
+              const SizedBox(height: AppSpacing.md),
+              routePointsAsync.when(
+                data: (routePoints) => _RouteCard(routePoints: routePoints),
+                loading: () =>
+                    const Center(child: CupertinoActivityIndicator()),
+                error: (error, _) => Text(
+                  'Unable to load route: $error',
+                  style: AppTypography.body.copyWith(color: AppColors.error),
+                ),
               ),
-            ),
+            ],
             const SizedBox(height: AppSpacing.md),
             heartRateSamplesAsync.when(
               data: (cardioHeartRateSamples) => Column(
@@ -110,12 +117,13 @@ class _WorkoutSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(workout.activityType.displayName, style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.xs),
-          if (workout.activityType.hasDistance)
+          if (_hasRecordedDistance) ...[
+            const SizedBox(height: AppSpacing.xs),
             Text(
               Format.distance(workout.distanceMeters, unitSystem),
               style: AppTypography.title,
             ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           Text(
             _subtitleText(),
@@ -126,9 +134,12 @@ class _WorkoutSummaryCard extends StatelessWidget {
     );
   }
 
+  bool get _hasRecordedDistance =>
+      workout.activityType.hasDistance && workout.distanceMeters > 0;
+
   String _subtitleText() {
     final duration = Format.duration(workout.durationSeconds);
-    if (!workout.activityType.hasDistance || workout.distanceMeters <= 0) {
+    if (!_hasRecordedDistance) {
       return duration;
     }
     return '$duration  ·  ${Format.pace(workout.durationSeconds, workout.distanceMeters, unitSystem)}';
