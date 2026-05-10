@@ -1,6 +1,7 @@
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
+import 'package:workouts/models/weight.dart';
 
 const currentSeedTemplateIds = {'seed-template-full-gym-session-0001'};
 
@@ -113,7 +114,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '3 x 8-10',
         setCount: 3,
         reps: 8,
-        weightKg: _pounds(50),
+        weight: Weight.pounds(50),
         restDuration: const Duration(seconds: 90),
         cues: [
           'Keep chest glued to pad',
@@ -127,7 +128,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '3 x 8-10',
         setCount: 3,
         reps: 8,
-        weightKg: _pounds(50),
+        weight: Weight.pounds(50),
         restDuration: const Duration(seconds: 90),
         cues: ['Ribcage down', 'Smooth control', "Don't shrug"],
       ),
@@ -137,7 +138,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '2 x 10',
         setCount: 2,
         reps: 10,
-        weightKg: _pounds(45),
+        weight: Weight.pounds(45),
         restDuration: const Duration(seconds: 75),
         cues: [
           'Let shoulder blades protract slightly forward',
@@ -150,7 +151,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '2 x 10',
         setCount: 2,
         reps: 10,
-        weightKg: _pounds(60),
+        weight: Weight.pounds(60),
         restDuration: const Duration(seconds: 75),
         cues: ['Smooth squeeze at peak contraction', 'Control the return'],
       ),
@@ -160,7 +161,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '2 x 10 light/moderate',
         setCount: 2,
         reps: 10,
-        weightKg: _pounds(30),
+        weight: Weight.pounds(30),
         restDuration: const Duration(seconds: 75),
         cues: ['Moderate load only', 'No aggressive lockout'],
       ),
@@ -170,7 +171,7 @@ WorkoutBlock _gymStrengthBlock() {
         prescription: '2 x 12',
         setCount: 2,
         reps: 12,
-        weightKg: _pounds(70),
+        weight: Weight.pounds(70),
         restDuration: const Duration(seconds: 60),
         cues: ['Slow stretch at bottom', 'Slight pause at top'],
       ),
@@ -268,15 +269,13 @@ WorkoutBlock _optionalRecoveryBlock() {
   );
 }
 
-double _pounds(double pounds) => pounds * 0.45359237;
-
 WorkoutExercise _repsExercise({
   required String id,
   required String name,
   required String prescription,
   required int setCount,
   required int reps,
-  double? weightKg,
+  Weight? weight,
   Duration? restDuration,
   required List<String> cues,
 }) {
@@ -290,7 +289,7 @@ WorkoutExercise _repsExercise({
     cues: cues,
     plannedSets: [
       for (var setIndex = 0; setIndex < setCount; setIndex++)
-        PlannedSet(reps: reps, weightKg: weightKg),
+        PlannedSet(reps: reps, weight: weight),
     ],
   );
 }

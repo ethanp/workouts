@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/utils/json_parsing.dart';
 
 part 'training_influence.freezed.dart';
 part 'training_influence.g.dart';
@@ -22,13 +21,11 @@ abstract class TrainingInfluence with _$TrainingInfluence {
 
   factory TrainingInfluence.fromRow(Map<String, dynamic> influenceRow) {
     final String principlesJson = influenceRow['principles'] as String? ?? '[]';
-    final List<String> parsedPrinciples = (jsonDecode(principlesJson) as List)
-        .cast<String>();
     return TrainingInfluence(
       id: influenceRow['id'] as String,
       name: influenceRow['name'] as String,
       description: (influenceRow['description'] as String?) ?? '',
-      principles: parsedPrinciples,
+      principles: stringListFromJsonText(principlesJson),
       isActive: (influenceRow['is_active'] as int? ?? 0) == 1,
       createdAt: _asDateTime(influenceRow['created_at']),
       updatedAt: _asDateTime(influenceRow['updated_at']),

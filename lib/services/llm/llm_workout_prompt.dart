@@ -16,7 +16,7 @@ Each block must have:
 - Title
 - Type (one of: warmup, animalFlow, strength, mobility, core, conditioning, cooldown)
 - Estimated duration in minutes
-- List of exercises with modality and typed planned sets
+- List of exercises with modality, human-readable prescription, and typed planned sets
 - Optional description and number of rounds (default 1)
 
 IMPORTANT: If the user has selected training influences (coaches/philosophies they follow), incorporate their principles into workout design:
@@ -53,6 +53,7 @@ Respond in JSON format with this exact structure:
           "exercises": [
             {
               "name": "Exercise name",
+              "prescription": "2 warmup sets + 3 x 5 @ 60 kg",
               "modality": "reps",
               "plannedSets": [
                 { "type": "warmup", "reps": 8, "weightKg": 20.0 },
@@ -72,6 +73,7 @@ Respond in JSON format with this exact structure:
 
 Exercise rules:
 - `modality` must be one of: reps, timed, hold, mobility, breath.
+- Every exercise must include `prescription`: a concise, user-facing summary of the full prescription, including sets, reps/duration, load when relevant, and warmups when included.
 - Every exercise must include `plannedSets`; use one object per set in performance order.
 - Every planned set must include `type`: warmup or working.
 - Use `weightKg` only when external load is relevant. Store all load in kilograms.

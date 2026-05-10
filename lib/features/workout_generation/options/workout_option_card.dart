@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/llm_workout_option.dart';
-import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutOptionCard extends StatelessWidget {
@@ -218,9 +217,7 @@ class _ExerciseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final prescription = exercise.plannedSets.isEmpty
-        ? exercise.modality.name
-        : plannedSetsPrescriptionLabel(exercise.plannedSets);
+    final prescription = exercise.prescription;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),

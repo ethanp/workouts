@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/weight_display.dart';
 
 class SessionSetLogRow extends StatelessWidget {
   const SessionSetLogRow({
@@ -44,7 +45,9 @@ class SessionSetLogRow extends StatelessWidget {
     final details = <String>[];
 
     if (plannedSet != null) details.add(plannedSet.type.name);
-    if (log.weightKg != null) details.add('${log.weightKg}kg');
+    if (log.weight != null) {
+      details.add(WeightDisplay.format(log.weight!, exercise));
+    }
     if (log.reps != null) details.add('${log.reps} reps');
     if (log.duration != null) details.add(_durationLabel(log.duration!));
     if (log.unitRemaining != null) {
@@ -64,14 +67,16 @@ class SessionSetLogRow extends StatelessWidget {
 
   bool _matchesPlan(PlannedSet plannedSet) {
     return log.reps == plannedSet.reps &&
-        log.weightKg == plannedSet.weightKg &&
+        log.weight == plannedSet.weight &&
         log.duration == plannedSet.duration;
   }
 
   String _plannedSetLabel(PlannedSet plannedSet) {
     final labelParts = <String>[];
     if (plannedSet.reps != null) labelParts.add('${plannedSet.reps} reps');
-    if (plannedSet.weightKg != null) labelParts.add('${plannedSet.weightKg}kg');
+    if (plannedSet.weight != null) {
+      labelParts.add(WeightDisplay.format(plannedSet.weight!, exercise));
+    }
     if (plannedSet.duration != null) {
       labelParts.add(_durationLabel(plannedSet.duration!));
     }

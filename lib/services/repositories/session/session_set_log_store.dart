@@ -25,7 +25,7 @@ class SessionSetLogStore {
         setLog.sessionBlockId,
         setLog.exerciseId,
         setLog.setIndex,
-        setLog.weightKg,
+        setLog.weight?.kilograms,
         setLog.reps,
         setLog.duration?.inSeconds,
         setLog.unitRemaining,

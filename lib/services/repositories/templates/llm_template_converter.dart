@@ -38,15 +38,11 @@ WorkoutBlock _blockFromLlmBlock(LlmWorkoutBlock blockOption) {
 
 WorkoutExercise _exerciseFromLlmExercise(LlmExercise llmExercise) {
   final plannedSets = llmExercise.plannedSets;
-  final prescription = plannedSets.isEmpty
-      ? '1 set'
-      : plannedSetsPrescriptionLabel(plannedSets);
-
   return WorkoutExercise(
     id: _uuid.v4(),
     name: llmExercise.name,
     modality: llmExercise.modality,
-    prescription: prescription,
+    prescription: llmExercise.prescription,
     targetSets: plannedSets.isEmpty ? 1 : plannedSets.length,
     restDuration: llmExercise.restSeconds == null
         ? null

@@ -51,7 +51,7 @@ class CardioImportPayload {
       activityType: CardioType.fromDbKey(activityTypeKey),
       startedAt: startedAt,
       endedAt: endedAt,
-      durationSeconds: payload['durationSeconds'] as int? ?? 0,
+      durationSeconds: _asInt(payload['durationSeconds']) ?? 0,
       distanceMeters: _asDouble(payload['distanceMeters']) ?? 0,
       energyKcal: _asDouble(payload['energyKcal']),
       avgHeartRateBpm: _asDouble(payload['avgHeartRateBpm']),
@@ -122,6 +122,12 @@ class HeartRateSamplePayload {
     }
     return parsedSamples;
   }
+}
+
+int? _asInt(Object? value) {
+  if (value == null) return null;
+  if (value is num) return value.round();
+  return int.tryParse('$value');
 }
 
 double? _asDouble(Object? value) {

@@ -1,5 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/models/weight.dart';
 
 class DurationSecondsConverter extends JsonConverter<Duration, int> {
   const DurationSecondsConverter();
@@ -20,4 +21,15 @@ class NullableDurationSecondsConverter extends JsonConverter<Duration?, int?> {
 
   @override
   int? toJson(Duration? object) => object?.inSeconds;
+}
+
+class NullableWeightKilogramsConverter extends JsonConverter<Weight?, num?> {
+  const NullableWeightKilogramsConverter();
+
+  @override
+  Weight? fromJson(num? json) =>
+      json.map((weightKg) => Weight.kilograms(weightKg.toDouble()));
+
+  @override
+  num? toJson(Weight? object) => object?.kilograms;
 }

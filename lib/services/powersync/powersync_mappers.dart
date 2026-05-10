@@ -1,10 +1,10 @@
-import 'dart:convert';
-
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
+import 'package:workouts/utils/json_parsing.dart';
 
 /// Parse targetSets from prescription string.
 /// Formats: "3 × 8" -> 3, "5 per side" -> 1, "3 × 5 per side" -> 3
@@ -24,11 +24,6 @@ ExerciseModality _parseModality(String? value) {
     (exerciseModality) => exerciseModality.name == modalityStr,
     orElse: () => ExerciseModality.reps,
   );
-}
-
-List<String> _parseCues(String? cuesJson) {
-  if (cuesJson == null || cuesJson.isEmpty) return <String>[];
-  return (jsonDecode(cuesJson) as List).cast<String>();
 }
 
 Duration? _durationFromSeconds(Object? raw) {
@@ -70,7 +65,9 @@ WorkoutExercise _exerciseFromJoinRow({
     prescription: prescription,
     targetSets: targetSets,
     equipment: row[_prefixed(exercisePrefix, 'equipment')] as String?,
-    cues: _parseCues(row[_prefixed(exercisePrefix, 'cues')] as String?),
+    cues: stringListFromJsonText(
+      row[_prefixed(exercisePrefix, 'cues')] as String?,
+    ),
     benefits: ExerciseBenefit.listFromJsonString(
       row[_prefixed(exercisePrefix, 'benefits')] as String?,
     ),
@@ -152,11 +149,16 @@ SessionSetLog sessionSetLogFromRow(Map<String, dynamic> row) {
     sessionBlockId: row['block_id'] as String,
     exerciseId: row['exercise_id'] as String,
     setIndex: row['set_index'] as int,
-    weightKg: row['weight_kg'] as double?,
+    weight: _weightFromKg(row['weight_kg']),
     reps: row['reps'] as int?,
     duration: _durationFromSeconds(row['duration_seconds']),
     unitRemaining: row['unit_remaining'] as int?,
   );
+}
+
+Weight? _weightFromKg(Object? weightKg) {
+  if (weightKg is! num) return null;
+  return Weight.kilograms(weightKg.toDouble());
 }
 
 /// Map normalized session_blocks row to SessionBlock model.

@@ -1,4 +1,8 @@
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
+
+import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/utils/json_converters.dart';
@@ -13,7 +17,9 @@ abstract class SessionSetLog with _$SessionSetLog {
     required String sessionBlockId,
     required String exerciseId,
     required int setIndex,
-    double? weightKg,
+    @JsonKey(name: 'weightKg')
+    @NullableWeightKilogramsConverter()
+    Weight? weight,
     int? reps,
     @NullableDurationSecondsConverter() Duration? duration,
     int? unitRemaining,

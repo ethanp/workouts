@@ -1,8 +1,12 @@
+// ignore_for_file: invalid_annotation_target
+
 import 'dart:convert';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
+import 'package:workouts/models/weight.dart';
 import 'package:workouts/utils/json_converters.dart';
+import 'package:workouts/utils/weight_display.dart';
 
 part 'workout_exercise.freezed.dart';
 part 'workout_exercise.g.dart';
@@ -16,8 +20,9 @@ abstract class PlannedSet with _$PlannedSet {
   const factory PlannedSet({
     @Default(PlannedSetType.working) PlannedSetType type,
     int? reps,
-    double? weightKg,
-    // ignore: invalid_annotation_target
+    @JsonKey(name: 'weightKg')
+    @NullableWeightKilogramsConverter()
+    Weight? weight,
     @JsonKey(name: 'durationSeconds')
     @NullableDurationSecondsConverter()
     Duration? duration,
@@ -50,7 +55,7 @@ abstract class PlannedSet with _$PlannedSet {
       final doubleDecoded = jsonDecode(decoded);
       if (doubleDecoded is List<dynamic>) return doubleDecoded;
     }
-    return const [];
+    throw const FormatException('planned_sets must decode to a list');
   }
 
   static Map<String, dynamic> _plannedSetJsonMap(Object? plannedSetValue) {
@@ -63,7 +68,7 @@ abstract class PlannedSet with _$PlannedSet {
       if (decoded is Map<String, dynamic>) return decoded;
       if (decoded is Map) return Map<String, dynamic>.from(decoded);
     }
-    return const {};
+    throw const FormatException('planned set entry must decode to a map');
   }
 
   static String listToJsonString(List<PlannedSet> plannedSets) =>
@@ -105,12 +110,14 @@ abstract class WorkoutExercise with _$WorkoutExercise {
 
   String get prescriptionLabel {
     if (plannedSets.isEmpty) return prescription;
-    return plannedSetsPrescriptionLabel(plannedSets);
+    return plannedSetsPrescriptionLabel(plannedSets, this);
   }
 }
 
-String plannedSetsPrescriptionLabel(List<PlannedSet> plannedSets) =>
-    _PlannedSetLabelFormatter(plannedSets).label;
+String plannedSetsPrescriptionLabel(
+  List<PlannedSet> plannedSets,
+  WorkoutExercise exercise,
+) => _PlannedSetLabelFormatter(plannedSets, exercise).label;
 
 List<PlannedSet> plannedSetsFromLegacyPrescription({
   required ExerciseModality modality,
@@ -177,9 +184,10 @@ Duration? _legacyPrescriptionDuration(String prescription) {
 }
 
 class _PlannedSetLabelFormatter {
-  const _PlannedSetLabelFormatter(this.plannedSets);
+  const _PlannedSetLabelFormatter(this.plannedSets, this.exercise);
 
   final List<PlannedSet> plannedSets;
+  final WorkoutExercise exercise;
 
   String get label {
     final groupedLabels = <String>[];
@@ -204,7 +212,7 @@ class _PlannedSetLabelFormatter {
     final allSame = workingSets.every(
       (plannedSet) =>
           plannedSet.reps == firstWorkingSet.reps &&
-          plannedSet.weightKg == firstWorkingSet.weightKg &&
+          plannedSet.weight == firstWorkingSet.weight &&
           plannedSet.duration == firstWorkingSet.duration,
     );
     if (!allSame) return '${workingSets.length} working';
@@ -215,20 +223,13 @@ class _PlannedSetLabelFormatter {
   }
 
   String _targetLabel(PlannedSet plannedSet) {
-    if (plannedSet.reps != null && plannedSet.weightKg != null) {
-      return '${plannedSet.reps} @ ${_formatWeight(plannedSet.weightKg!)}kg';
+    if (plannedSet.reps != null && plannedSet.weight != null) {
+      return '${plannedSet.reps} @ ${WeightDisplay.format(plannedSet.weight!, exercise)}';
     }
     if (plannedSet.reps != null) return '${plannedSet.reps} reps';
     if (plannedSet.duration != null) {
       return '${plannedSet.duration!.inSeconds}s';
     }
     return '';
-  }
-
-  String _formatWeight(double weightKg) {
-    if (weightKg == weightKg.roundToDouble()) {
-      return weightKg.round().toString();
-    }
-    return weightKg.toStringAsFixed(1);
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/weight_display.dart';
 
 class SetCaptureSheet extends StatefulWidget {
   const SetCaptureSheet({required this.exercise, required this.plannedSet});
@@ -25,9 +26,9 @@ class SetCaptureSheetState extends State<SetCaptureSheet> {
       text: (plannedSet?.reps ?? 1).toString(),
     );
     _weightController = TextEditingController(
-      text: plannedSet?.weightKg == null
+      text: plannedSet?.weight == null
           ? ''
-          : _formatWeight(plannedSet!.weightKg!),
+          : WeightDisplay.inputValue(plannedSet!.weight!, widget.exercise),
     );
   }
 
@@ -61,7 +62,11 @@ class SetCaptureSheetState extends State<SetCaptureSheet> {
             const SizedBox(height: AppSpacing.md),
             _numberField(_repsController, 'Reps'),
             const SizedBox(height: AppSpacing.sm),
-            _numberField(_weightController, 'Weight (kg)', decimal: true),
+            _numberField(
+              _weightController,
+              'Weight (${WeightDisplay.unitLabel(widget.exercise)})',
+              decimal: true,
+            ),
             const SizedBox(height: AppSpacing.lg),
             _actions(context),
           ],
@@ -142,7 +147,10 @@ class SetCaptureSheetState extends State<SetCaptureSheet> {
   SetLogInput _input() {
     return SetLogInput(
       reps: int.tryParse(_repsController.text.trim()),
-      weightKg: double.tryParse(_weightController.text.trim()),
+      weight: WeightDisplay.inputValueToWeight(
+        _weightController.text,
+        widget.exercise,
+      ),
       duration: widget.plannedSet?.duration ?? widget.exercise.workDuration,
       unitRemaining: widget.plannedSet?.unitRemaining,
     );
@@ -151,19 +159,12 @@ class SetCaptureSheetState extends State<SetCaptureSheet> {
   String _plannedSetLabel(PlannedSet plannedSet) {
     final labelParts = <String>[];
     if (plannedSet.reps != null) labelParts.add('${plannedSet.reps} reps');
-    if (plannedSet.weightKg != null) {
-      labelParts.add('${_formatWeight(plannedSet.weightKg!)}kg');
+    if (plannedSet.weight != null) {
+      labelParts.add(WeightDisplay.format(plannedSet.weight!, widget.exercise));
     }
     if (plannedSet.duration != null) {
       labelParts.add('${plannedSet.duration!.inSeconds}s');
     }
     return labelParts.isEmpty ? 'set' : labelParts.join(' @ ');
-  }
-
-  String _formatWeight(double weightKg) {
-    if (weightKg == weightKg.roundToDouble()) {
-      return weightKg.round().toString();
-    }
-    return weightKg.toStringAsFixed(1);
   }
 }

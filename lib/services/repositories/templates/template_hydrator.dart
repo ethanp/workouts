@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/exercise_benefit.dart';
@@ -7,6 +5,7 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
+import 'package:workouts/utils/json_parsing.dart';
 
 class TemplateHydrator {
   TemplateHydrator(this._powerSync);
@@ -38,7 +37,7 @@ class TemplateHydrator {
         modality: modality,
         prescription: '',
         equipment: exerciseRow['equipment'] as String?,
-        cues: _parseCues(exerciseRow['cues'] as String?),
+        cues: stringListFromJsonText(exerciseRow['cues'] as String?),
         benefits: ExerciseBenefit.listFromJsonString(
           exerciseRow['benefits'] as String?,
         ),
@@ -99,9 +98,4 @@ class TemplateHydrator {
       (exerciseJoinRow) => mappers.workoutExerciseFromJoinRow(exerciseJoinRow),
     );
   }
-}
-
-List<String> _parseCues(String? cuesJson) {
-  if (cuesJson == null || cuesJson.isEmpty) return const [];
-  return (jsonDecode(cuesJson) as List).cast<String>();
 }

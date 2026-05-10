@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/features/history/history_provider.dart';
@@ -77,7 +78,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
   Future<void> logSet({
     required SessionBlock block,
     required WorkoutExercise exercise,
-    double? weightKg,
+    Weight? weight,
     int? reps,
     Duration? duration,
     int? unitRemaining,
@@ -94,7 +95,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       sessionBlockId: block.id,
       exerciseId: exercise.id,
       setIndex: nextSetIndex,
-      weightKg: weightKg,
+      weight: weight,
       reps: reps,
       duration: duration,
       unitRemaining: unitRemaining,

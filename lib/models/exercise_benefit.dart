@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:workouts/utils/json_parsing.dart';
+
 /// A named physiological benefit of an exercise, optionally linked to
 /// one or more of the user's fitness goals by ID.
 ///
@@ -17,15 +19,16 @@ class ExerciseBenefit {
   /// An empty list means the benefit is informational only (no goal link).
   final List<String> goalIds;
 
-  factory ExerciseBenefit.fromJson(Map<String, dynamic> json) =>
-      ExerciseBenefit(
-        name: json['name'] as String,
-        goalIds:
-            (json['goalIds'] as List<dynamic>?)
-                ?.map((goalId) => goalId as String)
-                .toList() ??
-            const [],
-      );
+  factory ExerciseBenefit.fromJson(Map<String, dynamic> json) {
+    final name = json['name'] as String?;
+    if (name == null || name.isEmpty) {
+      throw const FormatException('ExerciseBenefit requires a name');
+    }
+    final goalIds = json['goalIds'] is List
+        ? (json['goalIds'] as List).whereType<String>().toList()
+        : const <String>[];
+    return ExerciseBenefit(name: name, goalIds: goalIds);
+  }
 
   Map<String, dynamic> toJson() => {'name': name, 'goalIds': goalIds};
 
@@ -42,7 +45,10 @@ class ExerciseBenefit {
     try {
       final decoded = jsonDecode(jsonStr) as List<dynamic>;
       return decoded
-          .map((item) => ExerciseBenefit.fromJson(item as Map<String, dynamic>))
+          .map(jsonMapFromObject)
+          .whereType<Map<String, dynamic>>()
+          .map(_tryFromJson)
+          .whereType<ExerciseBenefit>()
           .toList();
     } catch (_) {
       return const [];
@@ -52,4 +58,12 @@ class ExerciseBenefit {
   /// Encode a list of benefits to a JSON string for DB storage.
   static String listToJsonString(List<ExerciseBenefit> benefits) =>
       jsonEncode(benefits.map((benefit) => benefit.toJson()).toList());
+
+  static ExerciseBenefit? _tryFromJson(Map<String, dynamic> json) {
+    try {
+      return ExerciseBenefit.fromJson(json);
+    } catch (_) {
+      return null;
+    }
+  }
 }

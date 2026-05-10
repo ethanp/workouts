@@ -272,7 +272,7 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
   Widget _addBenefitButton(List<FitnessGoal> activeGoals) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () => _addManualBenefit(activeGoals),
+      onPressed: _addManualBenefit,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
@@ -337,149 +337,40 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     }
   }
 
-  Future<void> _addManualBenefit(List<FitnessGoal> activeGoals) async {
-    await showCupertinoDialog<void>(
-      context: context,
-      builder: (dialogContext) => _AddBenefitDialog(
-        activeGoals: activeGoals,
-        onAdd: (benefit) => setState(() => _editableBenefits.add(benefit)),
-      ),
-    );
+  void _addManualBenefit() {
+    setState(() {
+      _editableBenefits.add(
+        ExerciseBenefit(name: _nextManualBenefitName(), goalIds: const []),
+      );
+    });
+  }
+
+  String _nextManualBenefitName() {
+    const baseName = 'Manual benefit';
+    final existingNames = _editableBenefits
+        .map((benefit) => benefit.name)
+        .toSet();
+    if (!existingNames.contains(baseName)) return baseName;
+
+    var benefitNumber = 2;
+    while (existingNames.contains('$baseName $benefitNumber')) {
+      benefitNumber++;
+    }
+    return '$baseName $benefitNumber';
   }
 
   Future<void> _apply(BuildContext context) async {
-    await ref
-        .read(exerciseBenefitsControllerProvider.notifier)
-        .saveBenefits(widget.exercise, _editableBenefits);
+    final benefitsController = ref.read(
+      exerciseBenefitsControllerProvider.notifier,
+    );
+    await benefitsController.saveBenefits(widget.exercise, _editableBenefits);
+    final saveState = ref.read(exerciseBenefitsControllerProvider);
+    if (mounted && saveState.hasError) {
+      setState(() => _generationError = 'Save failed: ${saveState.error}');
+      return;
+    }
     if (mounted) {
       Navigator.of(this.context).pop();
     }
-  }
-}
-
-class _AddBenefitDialog extends StatefulWidget {
-  const _AddBenefitDialog({required this.activeGoals, required this.onAdd});
-
-  final List<FitnessGoal> activeGoals;
-  final void Function(ExerciseBenefit) onAdd;
-
-  @override
-  State<_AddBenefitDialog> createState() => _AddBenefitDialogState();
-}
-
-class _AddBenefitDialogState extends State<_AddBenefitDialog> {
-  final _nameController = TextEditingController();
-  final Set<String> _selectedGoalIds = {};
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return CupertinoAlertDialog(
-      title: const Text('Add Benefit'),
-      content: _dialogContent(),
-      actions: [_cancelAction(context), _addAction(context)],
-    );
-  }
-
-  Widget _dialogContent() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: AppSpacing.sm),
-        _nameField(),
-        if (widget.activeGoals.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          _goalLinkSection(),
-        ],
-      ],
-    );
-  }
-
-  Widget _nameField() {
-    return CupertinoTextField(
-      controller: _nameController,
-      placeholder: 'e.g. "spinal stability"',
-      style: const TextStyle(color: AppColors.textColor1),
-    );
-  }
-
-  Widget _goalLinkSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            'Link to goals (optional):',
-            style: TextStyle(fontSize: 12, color: AppColors.textColor3),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: widget.activeGoals.map(_goalToggleChip).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _goalToggleChip(FitnessGoal goal) {
-    final isSelected = _selectedGoalIds.contains(goal.id);
-    return GestureDetector(
-      onTap: () => setState(() {
-        if (isSelected) {
-          _selectedGoalIds.remove(goal.id);
-        } else {
-          _selectedGoalIds.add(goal.id);
-        }
-      }),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 2,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? AppColors.accentPrimary.withValues(alpha: 0.2)
-              : AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        child: Text(
-          goal.title,
-          style: TextStyle(
-            fontSize: 11,
-            color: isSelected ? AppColors.accentPrimary : AppColors.textColor3,
-          ),
-        ),
-      ),
-    );
-  }
-
-  CupertinoDialogAction _cancelAction(BuildContext context) {
-    return CupertinoDialogAction(
-      onPressed: () => Navigator.of(context).pop(),
-      child: const Text('Cancel'),
-    );
-  }
-
-  CupertinoDialogAction _addAction(BuildContext context) {
-    return CupertinoDialogAction(
-      isDefaultAction: true,
-      onPressed: () {
-        final name = _nameController.text.trim();
-        if (name.isEmpty) return;
-        widget.onAdd(
-          ExerciseBenefit(name: name, goalIds: _selectedGoalIds.toList()),
-        );
-        Navigator.of(context).pop();
-      },
-      child: const Text('Add'),
-    );
   }
 }

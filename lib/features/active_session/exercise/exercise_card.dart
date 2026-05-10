@@ -207,7 +207,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
         .logSet(
           block: block,
           exercise: exercise,
-          weightKg: setLogInput.weightKg,
+          weight: setLogInput.weight,
           reps: setLogInput.reps,
           duration: setLogInput.duration,
           unitRemaining: setLogInput.unitRemaining,
@@ -230,7 +230,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
 
   bool _shouldPromptForActuals(PlannedSet? plannedSet) {
     if (exercise.modality == ExerciseModality.reps) return true;
-    return plannedSet?.reps != null || plannedSet?.weightKg != null;
+    return plannedSet?.reps != null || plannedSet?.weight != null;
   }
 
   Future<void> _unlogSet(BuildContext context, WidgetRef ref) async {

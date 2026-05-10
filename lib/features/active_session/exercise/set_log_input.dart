@@ -1,8 +1,9 @@
+import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
 class SetLogInput {
   const SetLogInput({
-    this.weightKg,
+    this.weight,
     this.reps,
     this.duration,
     this.unitRemaining,
@@ -13,7 +14,7 @@ class SetLogInput {
     WorkoutExercise exercise,
   ) {
     return SetLogInput(
-      weightKg: plannedSet?.weightKg,
+      weight: plannedSet?.weight,
       reps:
           plannedSet?.reps ??
           (exercise.modality == ExerciseModality.reps ? 1 : null),
@@ -22,7 +23,7 @@ class SetLogInput {
     );
   }
 
-  final double? weightKg;
+  final Weight? weight;
   final int? reps;
   final Duration? duration;
   final int? unitRemaining;

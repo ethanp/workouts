@@ -37,6 +37,7 @@ abstract class LlmWorkoutBlock with _$LlmWorkoutBlock {
 abstract class LlmExercise with _$LlmExercise {
   const factory LlmExercise({
     required String name,
+    required String prescription,
     @Default(ExerciseModality.reps) ExerciseModality modality,
     @Default([]) List<PlannedSet> plannedSets,
     int? restSeconds,
