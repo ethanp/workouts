@@ -35,6 +35,7 @@ class TemplateExerciseStore {
         'name': exercise.name,
         'modality': exercise.modality.name,
         'equipment': exercise.equipment ?? '',
+        'set_metrics_style': exercise.setMetricsStyle.name,
         'cues': jsonEncode(exercise.cues),
         'benefits': ExerciseBenefit.listToJsonString(exercise.benefits),
         'created_at': now,

@@ -49,6 +49,7 @@ class SessionHydrator {
         e.name as e_name,
         e.modality as e_modality,
         e.equipment as e_equipment,
+        e.set_metrics_style as e_set_metrics_style,
         e.cues as e_cues,
         e.benefits as e_benefits,
         sbe.prescription as sbe_prescription,

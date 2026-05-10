@@ -13,19 +13,24 @@ class SessionTimerDisplay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final safeDuration = duration.isNegative ? Duration.zero : duration;
-    final timeLabel = _formatTimeLabel(safeDuration);
-    final statusLabel = isPaused ? 'Paused' : 'Elapsed';
-    final statusColor = isPaused ? AppColors.warning : AppColors.textColor2;
-    final timeStyle = AppTypography.displayLarge(context).copyWith(
-      fontSize: 44,
-      letterSpacing: 2.4,
+    final Duration safeDuration = duration.isNegative
+        ? Duration.zero
+        : duration;
+    final String timeLabel = _formatTimeLabel(safeDuration);
+    final String statusLabel = isPaused ? 'Paused' : 'Elapsed';
+    final Color statusColor = isPaused
+        ? AppColors.warning
+        : AppColors.textColor2;
+    final TextStyle timeStyle = AppTypography.displayLarge(context).copyWith(
+      fontSize: 32,
+      letterSpacing: 1.8,
       color: CupertinoColors.white,
       fontFeatures: const [FontFeature.tabularFigures()],
     );
-    final statusStyle = AppTypography.caption.copyWith(
+    final TextStyle statusStyle = AppTypography.caption.copyWith(
+      fontSize: 12,
       color: statusColor,
-      letterSpacing: 1.2,
+      letterSpacing: 0.9,
       fontWeight: FontWeight.w500,
     );
 
@@ -55,19 +60,19 @@ class SessionTimerDisplay extends StatelessWidget {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
-      borderRadius: BorderRadius.circular(AppRadius.lg),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       border: Border.all(color: AppColors.borderDepth2),
       boxShadow: [
         BoxShadow(
-          color: AppColors.accentPrimary.withValues(alpha: 0.22),
-          blurRadius: 20,
-          offset: const Offset(0, 14),
+          color: AppColors.accentPrimary.withValues(alpha: 0.16),
+          blurRadius: 14,
+          offset: const Offset(0, 8),
         ),
       ],
     ),
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.xl,
-      vertical: AppSpacing.md,
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.sm,
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +83,7 @@ class SessionTimerDisplay extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(timeLabel, style: timeStyle),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: 2),
         Text(statusLabel, style: statusStyle),
       ],
     ),

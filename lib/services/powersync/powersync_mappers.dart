@@ -1,4 +1,5 @@
 import 'package:workouts/models/exercise_benefit.dart';
+import 'package:workouts/models/exercise_set_metrics.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_block.dart';
@@ -24,6 +25,33 @@ ExerciseModality _parseModality(String? value) {
     (exerciseModality) => exerciseModality.name == modalityStr,
     orElse: () => ExerciseModality.reps,
   );
+}
+
+ExerciseSetMetricsStyle parseSetMetricsStyle(
+  String? value, {
+  required ExerciseModality modality,
+  required List<PlannedSet> plannedSets,
+}) {
+  final inferredSetMetricsStyle = inferSetMetricsStyle(
+    modality: modality,
+    plannedSets: plannedSets,
+  );
+  final setMetricsStyleValue = value ?? '';
+  final storedSetMetricsStyle = ExerciseSetMetricsStyle.values.firstWhere(
+    (setMetricsStyle) => setMetricsStyle.name == setMetricsStyleValue,
+    orElse: () => inferredSetMetricsStyle,
+  );
+  if (inferredSetMetricsStyle == ExerciseSetMetricsStyle.repsAndWeight) {
+    return inferredSetMetricsStyle;
+  }
+  if (inferredSetMetricsStyle == ExerciseSetMetricsStyle.durationOnly) {
+    return inferredSetMetricsStyle;
+  }
+  if (inferredSetMetricsStyle == ExerciseSetMetricsStyle.repsAndDuration &&
+      storedSetMetricsStyle != ExerciseSetMetricsStyle.repsAndWeight) {
+    return inferredSetMetricsStyle;
+  }
+  return storedSetMetricsStyle;
 }
 
 Duration? _durationFromSeconds(Object? raw) {
@@ -65,6 +93,11 @@ WorkoutExercise _exerciseFromJoinRow({
     prescription: prescription,
     targetSets: targetSets,
     equipment: row[_prefixed(exercisePrefix, 'equipment')] as String?,
+    setMetricsStyle: parseSetMetricsStyle(
+      row[_prefixed(exercisePrefix, 'set_metrics_style')] as String?,
+      modality: modality,
+      plannedSets: plannedSets,
+    ),
     cues: stringListFromJsonText(
       row[_prefixed(exercisePrefix, 'cues')] as String?,
     ),

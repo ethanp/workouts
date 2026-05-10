@@ -233,15 +233,16 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.xs),
-                        Row(
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
                           children: [
                             prescriptionBadge(exercise.prescription),
+                            setMetricsBadge(exercise.setMetrics.label),
                             if (exercise.equipment != null) ...[
-                              const SizedBox(width: AppSpacing.sm),
                               equipmentBadge(exercise.equipment!),
                             ],
                             if (exercise.benefits.isNotEmpty) ...[
-                              const SizedBox(width: AppSpacing.sm),
                               _benefitsBadge(exercise.benefits.length),
                             ],
                           ],
@@ -357,6 +358,23 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget setMetricsBadge(String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accentPrimary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: Text(
+        label,
+        style: AppTypography.caption.copyWith(color: AppColors.accentPrimary),
       ),
     );
   }

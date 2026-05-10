@@ -8,12 +8,14 @@ class CurrentSetValueStepper {
     required this.exercise,
     required this.repsController,
     required this.weightController,
+    required this.durationController,
     required this.onChanged,
   });
 
   final WorkoutExercise exercise;
   final TextEditingController repsController;
   final TextEditingController weightController;
+  final TextEditingController durationController;
   final VoidCallback onChanged;
 
   void decrementReps() => _setReps(_decrementedReps);
@@ -23,6 +25,10 @@ class CurrentSetValueStepper {
   void decrementWeight() => _setWeightText(_decrementedWeightText);
 
   void incrementWeight() => _setWeightText(_incrementedWeightText);
+
+  void decrementDuration() => _setDurationSeconds(_decrementedDurationSeconds);
+
+  void incrementDuration() => _setDurationSeconds(_incrementedDurationSeconds);
 
   int get _decrementedReps => (_repsValue - 1).clamp(0, 99).toInt();
 
@@ -36,16 +42,27 @@ class CurrentSetValueStepper {
   String get _incrementedWeightText =>
       _formatDisplayNumber(_displayWeightValue + _weightStep);
 
+  int get _decrementedDurationSeconds =>
+      (_durationSecondsValue - _durationStepSeconds).clamp(0, 5999).toInt();
+
+  int get _incrementedDurationSeconds =>
+      _durationSecondsValue + _durationStepSeconds;
+
   int get _repsValue => int.tryParse(repsController.text.trim()) ?? 0;
 
   double get _displayWeightValue =>
       double.tryParse(weightController.text.trim()) ?? 0;
+
+  int get _durationSecondsValue =>
+      int.tryParse(durationController.text.trim()) ?? 0;
 
   double get _weightStep {
     final WeightUnit weightUnit = WeightDisplay.unitForExercise(exercise);
     if (weightUnit == WeightUnit.kilograms) return 1;
     return 5;
   }
+
+  int get _durationStepSeconds => 5;
 
   String _formatDisplayNumber(double displayNumber) {
     final double roundedDisplayNumber = displayNumber.roundToDouble();
@@ -62,6 +79,11 @@ class CurrentSetValueStepper {
 
   void _setWeightText(String weightText) {
     _setControllerText(weightController, weightText);
+    onChanged();
+  }
+
+  void _setDurationSeconds(int durationSeconds) {
+    _setControllerText(durationController, durationSeconds.toString());
     onChanged();
   }
 

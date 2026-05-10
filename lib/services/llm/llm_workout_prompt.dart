@@ -55,6 +55,7 @@ Respond in JSON format with this exact structure:
               "name": "Exercise name",
               "prescription": "2 warmup sets + 3 x 5 @ 60 kg",
               "modality": "reps",
+              "setMetricsStyle": "repsAndWeight",
               "plannedSets": [
                 { "type": "warmup", "reps": 8, "weightKg": 20.0 },
                 { "type": "working", "reps": 5, "weightKg": 60.0 }
@@ -73,6 +74,11 @@ Respond in JSON format with this exact structure:
 
 Exercise rules:
 - `modality` must be one of: reps, timed, hold, mobility, breath.
+- `setMetricsStyle` must be one of: repsOnly, repsAndWeight, durationOnly, repsAndDuration.
+- Use `repsAndWeight` for externally loaded exercises such as barbell, dumbbell, kettlebell, cable, machine, sled, or weighted bodyweight work.
+- Use `repsOnly` for bodyweight or unloaded rep work such as pushups, bird dogs, dead bugs, squats, hinges, or crawls.
+- Use `durationOnly` for timed holds, breathing, carries, rests, or intervals where the completed set is recorded only by time.
+- Use `repsAndDuration` when each set has both a count and a duration, such as balance-on-one-foot sets, mobility reps with holds, or side-specific timed reps.
 - Every exercise must include `prescription`: a concise, user-facing summary of the full prescription, including sets, reps/duration, load when relevant, and warmups when included.
 - Every exercise must include `plannedSets`; use one object per set in performance order.
 - Every planned set must include `type`: warmup or working.

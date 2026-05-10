@@ -50,29 +50,29 @@ class DismissibleExerciseCard extends ConsumerWidget {
   }
 
   Future<bool> _confirmRemove(BuildContext context, bool hasLogs) async {
-    if (!hasLogs) return true;
+    final String confirmationMessage = hasLogs
+        ? 'This exercise has logged sets. Removing it will delete all progress for this exercise.'
+        : 'Remove this exercise from the current block?';
 
-    final result = await showCupertinoDialog<bool>(
+    final bool? confirmedRemoval = await showCupertinoDialog<bool>(
       context: context,
-      builder: (ctx) => CupertinoAlertDialog(
+      builder: (dialogContext) => CupertinoAlertDialog(
         title: const Text('Remove Exercise?'),
-        content: const Text(
-          'This exercise has logged sets. Removing it will delete all progress for this exercise.',
-        ),
+        content: Text(confirmationMessage),
         actions: [
           CupertinoDialogAction(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Remove'),
           ),
         ],
       ),
     );
-    return result ?? false;
+    return confirmedRemoval ?? false;
   }
 
   Future<bool> _confirmAndRemove(
@@ -80,13 +80,14 @@ class DismissibleExerciseCard extends ConsumerWidget {
     WidgetRef ref,
     bool hasLogs,
   ) async {
-    final confirmed = await _confirmRemove(context, hasLogs);
-    if (!confirmed) return false;
+    final ActiveSessionNotifier activeSessionNotifier = ref.read(
+      activeSessionProvider.notifier,
+    );
+    final bool confirmedRemoval = await _confirmRemove(context, hasLogs);
+    if (!confirmedRemoval) return false;
     if (!context.mounted) return false;
 
-    await ref
-        .read(activeSessionProvider.notifier)
-        .removeExercise(block, exercise.id);
+    await activeSessionNotifier.removeExercise(block, exercise.id);
     return false;
   }
 }

@@ -14,11 +14,13 @@ class SetLogInput {
     WorkoutExercise exercise,
   ) {
     return SetLogInput(
-      weight: plannedSet?.weight,
-      reps:
-          plannedSet?.reps ??
-          (exercise.modality == ExerciseModality.reps ? 1 : null),
-      duration: plannedSet?.duration ?? exercise.workDuration,
+      weight: exercise.setMetrics.supportsAddedWeight
+          ? plannedSet?.weight
+          : null,
+      reps: plannedSet?.reps ?? (exercise.setMetrics.tracksReps ? 1 : null),
+      duration: exercise.setMetrics.tracksDuration
+          ? plannedSet?.duration ?? exercise.workDuration
+          : null,
       unitRemaining: plannedSet?.unitRemaining,
     );
   }

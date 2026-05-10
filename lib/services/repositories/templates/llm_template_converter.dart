@@ -44,6 +44,12 @@ WorkoutExercise _exerciseFromLlmExercise(LlmExercise llmExercise) {
     modality: llmExercise.modality,
     prescription: llmExercise.prescription,
     targetSets: plannedSets.isEmpty ? 1 : plannedSets.length,
+    setMetricsStyle:
+        llmExercise.setMetricsStyle ??
+        inferSetMetricsStyle(
+          modality: llmExercise.modality,
+          plannedSets: plannedSets,
+        ),
     restDuration: llmExercise.restSeconds == null
         ? null
         : Duration(seconds: llmExercise.restSeconds!),

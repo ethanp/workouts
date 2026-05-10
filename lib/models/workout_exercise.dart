@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
+import 'package:workouts/models/exercise_set_metrics.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/utils/json_converters.dart';
 import 'package:workouts/utils/weight_display.dart';
@@ -90,6 +91,8 @@ abstract class WorkoutExercise with _$WorkoutExercise {
     @NullableDurationSecondsConverter() Duration? restDuration,
     @Default([]) List<ExerciseBenefit> benefits,
     @Default([]) List<PlannedSet> plannedSets,
+    @Default(ExerciseSetMetricsStyle.repsOnly)
+    ExerciseSetMetricsStyle setMetricsStyle,
   }) = _WorkoutExercise;
 
   const WorkoutExercise._();
@@ -112,6 +115,36 @@ abstract class WorkoutExercise with _$WorkoutExercise {
     if (plannedSets.isEmpty) return prescription;
     return plannedSetsPrescriptionLabel(plannedSets, this);
   }
+
+  ExerciseSetMetrics get setMetrics => ExerciseSetMetrics(setMetricsStyle);
+
+  bool get supportsAddedWeight => setMetrics.supportsAddedWeight;
+}
+
+ExerciseSetMetricsStyle inferSetMetricsStyle({
+  required ExerciseModality modality,
+  required List<PlannedSet> plannedSets,
+}) {
+  final hasWeightedSet = plannedSets.any(
+    (plannedSet) => plannedSet.weight != null,
+  );
+  if (hasWeightedSet) return ExerciseSetMetricsStyle.repsAndWeight;
+
+  final hasReps = plannedSets.any((plannedSet) => plannedSet.reps != null);
+  final hasDuration = plannedSets.any(
+    (plannedSet) => plannedSet.duration != null,
+  );
+  if (hasReps && hasDuration) return ExerciseSetMetricsStyle.repsAndDuration;
+  if (hasDuration) return ExerciseSetMetricsStyle.durationOnly;
+  if (hasReps) return ExerciseSetMetricsStyle.repsOnly;
+
+  return switch (modality) {
+    ExerciseModality.timed ||
+    ExerciseModality.hold => ExerciseSetMetricsStyle.durationOnly,
+    ExerciseModality.mobility ||
+    ExerciseModality.breath => ExerciseSetMetricsStyle.repsAndDuration,
+    ExerciseModality.reps => ExerciseSetMetricsStyle.repsOnly,
+  };
 }
 
 String plannedSetsPrescriptionLabel(

@@ -37,6 +37,11 @@ class TemplateHydrator {
         modality: modality,
         prescription: '',
         equipment: exerciseRow['equipment'] as String?,
+        setMetricsStyle: mappers.parseSetMetricsStyle(
+          exerciseRow['set_metrics_style'] as String?,
+          modality: modality,
+          plannedSets: const [],
+        ),
         cues: stringListFromJsonText(exerciseRow['cues'] as String?),
         benefits: ExerciseBenefit.listFromJsonString(
           exerciseRow['benefits'] as String?,
@@ -80,6 +85,7 @@ class TemplateHydrator {
         e.name as e_name,
         e.modality as e_modality,
         e.equipment as e_equipment,
+        e.set_metrics_style as e_set_metrics_style,
         e.cues as e_cues,
         e.benefits as e_benefits,
         wbe.prescription as wbe_prescription,

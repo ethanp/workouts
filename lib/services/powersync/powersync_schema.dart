@@ -8,6 +8,7 @@ const schema = Schema([
     Column.text('name'),
     Column.text('modality'),
     Column.text('equipment'),
+    Column.text('set_metrics_style'),
     Column.text('cues'),
     Column.text('benefits'),
     Column.text('created_at'),

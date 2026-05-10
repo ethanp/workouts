@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/models/exercise_set_metrics.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
 part 'llm_workout_option.freezed.dart';
@@ -39,6 +40,7 @@ abstract class LlmExercise with _$LlmExercise {
     required String name,
     required String prescription,
     @Default(ExerciseModality.reps) ExerciseModality modality,
+    ExerciseSetMetricsStyle? setMetricsStyle,
     @Default([]) List<PlannedSet> plannedSets,
     int? restSeconds,
     String? notes,

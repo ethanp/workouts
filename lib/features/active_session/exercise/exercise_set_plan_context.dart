@@ -4,17 +4,14 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
 class ExerciseSetPlanContext {
-  const ExerciseSetPlanContext({
-    required this.block,
-    required this.exercise,
-  });
+  const ExerciseSetPlanContext({required this.block, required this.exercise});
 
   final SessionBlock block;
   final WorkoutExercise exercise;
 
-  List<SessionSetLog> get exerciseLogs =>
-      block.logs
-          .whereL((sessionSetLog) => sessionSetLog.exerciseId == exercise.id);
+  List<SessionSetLog> get exerciseLogs => block.logs.whereL(
+    (sessionSetLog) => sessionSetLog.exerciseId == exercise.id,
+  );
 
   int get loggedSetCount => exerciseLogs.length;
 
@@ -35,9 +32,12 @@ class ExerciseSetPlanContext {
 
   bool get showsCurrentSetEditor {
     final PlannedSet? plannedSet = nextPlannedSet;
-    return exercise.modality == ExerciseModality.reps ||
+    return exercise.setMetrics.tracksReps ||
+        exercise.setMetrics.supportsAddedWeight ||
+        exercise.setMetrics.tracksDuration ||
         plannedSet?.reps != null ||
-        plannedSet?.weight != null;
+        plannedSet?.weight != null ||
+        plannedSet?.duration != null;
   }
 
   bool get showsTimingWarning {

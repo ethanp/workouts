@@ -314,10 +314,12 @@ class _ExerciseRow extends ConsumerWidget {
 
   Widget _exerciseMeta() {
     final benefitCount = exercise.benefits.length;
-    return Row(
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
       children: [
         _ModalityPill(modality: exercise.modality),
-        const SizedBox(width: AppSpacing.sm),
+        _SetMetricsPill(label: exercise.setMetrics.label),
         Text(
           benefitCount == 0
               ? 'No benefits'
@@ -349,6 +351,31 @@ class _ExerciseRow extends ConsumerWidget {
     Navigator.of(context).push(
       CupertinoPageRoute<void>(
         builder: (_) => ExerciseBenefitsSheet(exercise: exercise),
+      ),
+    );
+  }
+}
+
+class _SetMetricsPill extends StatelessWidget {
+  const _SetMetricsPill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.accentPrimary.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10,
+          color: AppColors.accentPrimary,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
