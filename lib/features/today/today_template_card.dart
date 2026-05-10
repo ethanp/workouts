@@ -33,133 +33,115 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
       .fold(0, (value, count) => value + count);
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth2),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _header(),
-          const SizedBox(height: AppSpacing.sm),
-          _statsAndStartRow(),
-          _expandToggle(),
-          if (_isExpanded) ...[
-            const SizedBox(height: AppSpacing.md),
-            _blockList(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _header() {
-    return Column(
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: AppColors.backgroundDepth2,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      border: Border.all(color: AppColors.borderDepth2),
+    ),
+    padding: const EdgeInsets.all(AppSpacing.md),
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(template.name, style: AppTypography.title),
-        if (template.goal.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
+        _header(),
+        const SizedBox(height: AppSpacing.sm),
+        _statsAndStartRow(),
+        _expandToggle(),
+        if (_isExpanded) ...[
+          const SizedBox(height: AppSpacing.md),
+          _blockList(),
+        ],
+      ],
+    ),
+  );
+
+  Widget _header() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(template.name, style: AppTypography.title),
+      if (template.goal.isNotEmpty) ...[
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          template.goal,
+          style: AppTypography.body.copyWith(color: AppColors.textColor2),
+        ),
+      ],
+    ],
+  );
+
+  Widget _statsAndStartRow() => Row(
+    children: [
+      _stat('${totalDuration}m'),
+      _statDivider(),
+      _stat('${template.blocks.length} blocks'),
+      _statDivider(),
+      _stat('$exerciseCount exercises'),
+      const Spacer(),
+      _startButton(),
+    ],
+  );
+
+  Widget _stat(String value) => Text(
+    value,
+    style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+  );
+
+  Widget _statDivider() => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    child: Text(
+      '·',
+      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+    ),
+  );
+
+  Widget _startButton() => CupertinoButton(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    ),
+    color: AppColors.accentPrimary,
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    minimumSize: Size.zero,
+    onPressed: widget.onStart,
+    child: const Text(
+      'Start',
+      style: TextStyle(
+        color: CupertinoColors.white,
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+
+  Widget _expandToggle() => GestureDetector(
+    onTap: () => setState(() => _isExpanded = !_isExpanded),
+    behavior: HitTestBehavior.opaque,
+    child: Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            _isExpanded
+                ? CupertinoIcons.chevron_up
+                : CupertinoIcons.chevron_down,
+            size: 18,
+            color: AppColors.textColor3,
+          ),
+          const SizedBox(width: AppSpacing.xs),
           Text(
-            template.goal,
-            style: AppTypography.body.copyWith(color: AppColors.textColor2),
+            _isExpanded ? 'Hide details' : 'Show details',
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
           ),
         ],
-      ],
-    );
-  }
-
-  Widget _statsAndStartRow() {
-    return Row(
-      children: [
-        _stat('${totalDuration}m'),
-        _statDivider(),
-        _stat('${template.blocks.length} blocks'),
-        _statDivider(),
-        _stat('$exerciseCount exercises'),
-        const Spacer(),
-        _startButton(),
-      ],
-    );
-  }
-
-  Widget _stat(String value) {
-    return Text(
-      value,
-      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-    );
-  }
-
-  Widget _statDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      child: Text(
-        '·',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
       ),
-    );
-  }
+    ),
+  );
 
-  Widget _startButton() {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      color: AppColors.accentPrimary,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      minimumSize: Size.zero,
-      onPressed: widget.onStart,
-      child: const Text(
-        'Start',
-        style: TextStyle(
-          color: CupertinoColors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  Widget _expandToggle() {
-    return GestureDetector(
-      onTap: () => setState(() => _isExpanded = !_isExpanded),
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.sm),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              _isExpanded
-                  ? CupertinoIcons.chevron_up
-                  : CupertinoIcons.chevron_down,
-              size: 18,
-              color: AppColors.textColor3,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              _isExpanded ? 'Hide details' : 'Show details',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _blockList() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: template.blocks.mapL(_blockPreview),
-    );
-  }
+  Widget _blockList() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: template.blocks.mapL(_blockPreview),
+  );
 
   Widget _blockPreview(WorkoutBlock block) {
     final blockLabel = switch (block.type) {
@@ -225,19 +207,17 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
     );
   }
 
-  Widget _exercisePreview(WorkoutExercise exercise) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(child: Text(exercise.name, style: AppTypography.body)),
-          Text(
-            exercise.prescription,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _exercisePreview(WorkoutExercise exercise) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text(exercise.name, style: AppTypography.body)),
+        Text(
+          exercise.prescription,
+          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        ),
+      ],
+    ),
+  );
 }

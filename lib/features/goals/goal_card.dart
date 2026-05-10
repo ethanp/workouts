@@ -50,12 +50,6 @@ class GoalCard extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _PriorityBadge(
-                  priority: goal.priority,
-                  color: categoryStyle.color,
-                  isArchived: isArchived,
-                ),
-                const SizedBox(width: AppSpacing.md),
                 Expanded(child: _cardContent(categoryStyle)),
                 const Icon(
                   CupertinoIcons.chevron_right,
@@ -96,8 +90,9 @@ class GoalCard extends ConsumerWidget {
       children: [
         Text(
           goal.title,
-          style: AppTypography.subtitle.copyWith(
-            color: isArchived ? AppColors.textColor3 : AppColors.textColor1,
+          style: AppTypography.body.copyWith(
+            fontWeight: FontWeight.w600,
+            color: isArchived ? AppColors.textColor3 : AppColors.textColor2,
           ),
         ),
         if (_showsStatusRow) ...[
@@ -254,40 +249,6 @@ class GoalCard extends ConsumerWidget {
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _PriorityBadge extends StatelessWidget {
-  const _PriorityBadge({
-    required this.priority,
-    required this.color,
-    this.isArchived = false,
-  });
-
-  final int priority;
-  final Color color;
-  final bool isArchived;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveColor = isArchived ? color.withValues(alpha: 0.4) : color;
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: effectiveColor.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      alignment: Alignment.center,
-      child: Text(
-        '$priority',
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          color: effectiveColor,
-        ),
       ),
     );
   }

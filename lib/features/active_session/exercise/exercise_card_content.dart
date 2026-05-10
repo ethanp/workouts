@@ -32,49 +32,43 @@ class ExerciseCardContent extends StatelessWidget {
   WorkoutExercise get exercise => planContext.exercise;
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _exerciseHeader(),
-          ..._exerciseDetails(),
-          ..._currentSetEditorSection(),
-          const SizedBox(height: AppSpacing.sm),
-          _actionRow(),
-          ..._timerSection(),
-        ],
-      ),
-    );
-  }
-
-  BoxDecoration _cardDecoration() {
-    return BoxDecoration(
-      color: AppColors.backgroundDepth2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: Border.all(color: AppColors.borderDepth1),
-    );
-  }
-
-  List<Widget> _exerciseDetails() {
-    return [
-      if (exercise.restDuration != null) ...[
-        const SizedBox(height: AppSpacing.xs),
-        _restLabel(),
-      ],
-      if (exercise.cues.isNotEmpty) ...[
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: _cardDecoration(),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _exerciseHeader(),
+        ..._exerciseDetails(),
+        ..._currentSetEditorSection(),
         const SizedBox(height: AppSpacing.sm),
-        ExpandableCues(cues: exercise.cues),
+        _actionRow(),
+        ..._timerSection(),
       ],
-      if (planContext.showsTimingWarning) ...[
-        const SizedBox(height: AppSpacing.xs),
-        _timingWarning(),
-      ],
-    ];
-  }
+    ),
+  );
+
+  BoxDecoration _cardDecoration() => BoxDecoration(
+    color: AppColors.backgroundDepth2,
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    border: Border.all(color: AppColors.borderDepth1),
+  );
+
+  List<Widget> _exerciseDetails() => [
+    if (exercise.restDuration != null) ...[
+      const SizedBox(height: AppSpacing.xs),
+      _restLabel(),
+    ],
+    if (exercise.cues.isNotEmpty) ...[
+      const SizedBox(height: AppSpacing.sm),
+      ExpandableCues(cues: exercise.cues),
+    ],
+    if (planContext.showsTimingWarning) ...[
+      const SizedBox(height: AppSpacing.xs),
+      _timingWarning(),
+    ],
+  ];
 
   List<Widget> _currentSetEditorSection() {
     if (!planContext.showsCurrentSetEditor) return const [];
@@ -102,48 +96,40 @@ class ExerciseCardContent extends StatelessWidget {
     ];
   }
 
-  Widget _exerciseHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
-        Text(exercise.prescriptionLabel, style: AppTypography.caption),
-      ],
-    );
-  }
+  Widget _exerciseHeader() => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
+      Text(exercise.prescriptionLabel, style: AppTypography.caption),
+    ],
+  );
 
-  Widget _restLabel() {
-    return Text(
-      'Rest: ${Format.restDuration(exercise.restDuration!)}',
-      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
-    );
-  }
+  Widget _restLabel() => Text(
+    'Rest: ${Format.restDuration(exercise.restDuration!)}',
+    style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+  );
 
-  Widget _timingWarning() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        'Timer unavailable (old session). Start a new session for auto-timer.',
-        style: AppTypography.caption.copyWith(color: AppColors.warning),
-      ),
-    );
-  }
+  Widget _timingWarning() => Container(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: AppColors.warning.withValues(alpha: 0.15),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+    ),
+    child: Text(
+      'Timer unavailable (old session). Start a new session for auto-timer.',
+      style: AppTypography.caption.copyWith(color: AppColors.warning),
+    ),
+  );
 
-  Widget _actionRow() {
-    return ExerciseCardActions(
-      completedSetCount: planContext.loggedSetCount,
-      plannedSetCount: planContext.plannedSetCount,
-      nextPlannedSet: planContext.nextPlannedSet,
-      onLogSet: onLogSet,
-      onUnlogSet: onUnlogSet,
-    );
-  }
+  Widget _actionRow() => ExerciseCardActions(
+    completedSetCount: planContext.loggedSetCount,
+    plannedSetCount: planContext.plannedSetCount,
+    nextPlannedSet: planContext.nextPlannedSet,
+    onLogSet: onLogSet,
+    onUnlogSet: onUnlogSet,
+  );
 }

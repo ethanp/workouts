@@ -41,23 +41,21 @@ class TodayScreen extends ConsumerWidget {
     List<WorkoutTemplate> items,
     WidgetRef ref,
     BuildContext context,
-  ) {
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      children: [
-        _GenerateWorkoutButton(
-          onSelected: (option) =>
-              ref.read(workoutGenerationProvider.notifier).select(option),
-        ),
-        const SizedBox(height: AppSpacing.xxl),
-        _SavedTemplatesSection(
-          templates: items,
-          onStartTemplate: (template) =>
-              ref.read(activeSessionProvider.notifier).start(template.id),
-        ),
-      ],
-    );
-  }
+  ) => ListView(
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    children: [
+      _GenerateWorkoutButton(
+        onSelected: (option) =>
+            ref.read(workoutGenerationProvider.notifier).select(option),
+      ),
+      const SizedBox(height: AppSpacing.xxl),
+      _SavedTemplatesSection(
+        templates: items,
+        onStartTemplate: (template) =>
+            ref.read(activeSessionProvider.notifier).start(template.id),
+      ),
+    ],
+  );
 }
 
 class _SavedTemplatesSection extends StatelessWidget {
@@ -70,50 +68,43 @@ class _SavedTemplatesSection extends StatelessWidget {
   final ValueChanged<WorkoutTemplate> onStartTemplate;
 
   @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionHeader(),
-        const SizedBox(height: AppSpacing.md),
-        if (templates.isEmpty)
-          _emptyState()
-        else
-          for (final template in templates) ...[
-            TodayTemplateCard(
-              template: template,
-              onStart: () => onStartTemplate(template),
-            ),
-            if (template != templates.last)
-              const SizedBox(height: AppSpacing.lg),
-          ],
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _sectionHeader(),
+      const SizedBox(height: AppSpacing.md),
+      if (templates.isEmpty)
+        _emptyState()
+      else
+        for (final template in templates) ...[
+          TodayTemplateCard(
+            template: template,
+            onStart: () => onStartTemplate(template),
+          ),
+          if (template != templates.last) const SizedBox(height: AppSpacing.lg),
+        ],
+    ],
+  );
 
-  Widget _sectionHeader() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Saved templates', style: AppTypography.subtitle),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Reusable plans assigned to today.',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-        ),
-      ],
-    );
-  }
-
-  Widget _emptyState() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Text(
-        'No saved templates assigned for today.',
-        style: AppTypography.body.copyWith(color: AppColors.textColor4),
+  Widget _sectionHeader() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Saved templates', style: AppTypography.subtitle),
+      const SizedBox(height: AppSpacing.xs),
+      Text(
+        'Reusable plans assigned to today.',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
       ),
-    );
-  }
+    ],
+  );
+
+  Widget _emptyState() => Padding(
+    padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+    child: Text(
+      'No saved templates assigned for today.',
+      style: AppTypography.body.copyWith(color: AppColors.textColor4),
+    ),
+  );
 }
 
 class _GenerateWorkoutButton extends StatelessWidget {
@@ -155,45 +146,35 @@ class _GenerateWorkoutButton extends StatelessWidget {
     );
   }
 
-  Widget subtitle() {
-    return Text(
-      'Create a workout for today based on your context and desires.',
-      style: AppTypography.body.copyWith(color: AppColors.textColor2),
-    );
-  }
+  Widget subtitle() => Text(
+    'Create a workout for today based on your context and desires.',
+    style: AppTypography.body.copyWith(color: AppColors.textColor2),
+  );
 
-  Widget _cardText() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        headline(),
-        const SizedBox(height: AppSpacing.xs),
-        subtitle(),
-      ],
-    );
-  }
+  Widget _cardText() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      headline(),
+      const SizedBox(height: AppSpacing.xs),
+      subtitle(),
+    ],
+  );
 
-  Widget _leadingIcon() {
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: AppColors.accentSecondary.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      child: const Icon(
-        CupertinoIcons.add,
-        color: AppColors.accentSecondary,
-        size: 18,
-      ),
-    );
-  }
+  Widget _leadingIcon() => Container(
+    width: 32,
+    height: 32,
+    decoration: BoxDecoration(
+      color: AppColors.accentSecondary.withValues(alpha: 0.16),
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    child: const Icon(
+      CupertinoIcons.add,
+      color: AppColors.accentSecondary,
+      size: 18,
+    ),
+  );
 
-  Widget headline() {
-    return Row(
-      children: [
-        Text('Design your own workout', style: AppTypography.subtitle),
-      ],
-    );
-  }
+  Widget headline() => Row(
+    children: [Text('Design your own workout', style: AppTypography.subtitle)],
+  );
 }

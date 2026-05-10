@@ -32,53 +32,49 @@ class SessionResumeMetricsPanel extends StatelessWidget {
   final VoidCallback onAddNote;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _timerAndProgress(),
-          const SizedBox(height: AppSpacing.sm),
-          BlockNavigationHintRow(
-            onPrevious: onPreviousBlock,
-            onNext: onNextBlock,
-          ),
-          if (watchConnected) ...[
-            const SizedBox(height: AppSpacing.md),
-            CardioMetricsCard(samples: heartRateSamples),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          SessionResumeActionRow(
-            isPaused: session.isPaused,
-            watchConnected: watchConnected,
-            onTogglePause: onTogglePause,
-            onAddNote: onAddNote,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timerAndProgress() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Flexible(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: SessionTimerDisplay(
-              duration: elapsedDuration,
-              isPaused: session.isPaused,
-            ),
-          ),
+        _timerAndProgress(),
+        const SizedBox(height: AppSpacing.sm),
+        BlockNavigationHintRow(
+          onPrevious: onPreviousBlock,
+          onNext: onNextBlock,
         ),
-        const SizedBox(width: AppSpacing.md),
-        BlockProgressIndicator(
-          currentIndex: currentBlockIndex,
-          totalBlocks: session.blocks.length,
+        if (watchConnected) ...[
+          const SizedBox(height: AppSpacing.md),
+          CardioMetricsCard(samples: heartRateSamples),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        SessionResumeActionRow(
+          isPaused: session.isPaused,
+          watchConnected: watchConnected,
+          onTogglePause: onTogglePause,
+          onAddNote: onAddNote,
         ),
       ],
-    );
-  }
+    ),
+  );
+
+  Widget _timerAndProgress() => Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Flexible(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: SessionTimerDisplay(
+            duration: elapsedDuration,
+            isPaused: session.isPaused,
+          ),
+        ),
+      ),
+      const SizedBox(width: AppSpacing.md),
+      BlockProgressIndicator(
+        currentIndex: currentBlockIndex,
+        totalBlocks: session.blocks.length,
+      ),
+    ],
+  );
 }
