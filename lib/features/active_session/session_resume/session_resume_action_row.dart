@@ -21,14 +21,13 @@ class SessionResumeActionRow extends StatelessWidget {
     return Row(
       children: [
         _pauseButton(),
-        if (isPaused) ...[
-          const SizedBox(width: AppSpacing.md),
-          _pausedPill(),
-        ],
+        if (isPaused) ...[const SizedBox(width: AppSpacing.md), _pausedPill()],
         const SizedBox(width: AppSpacing.md),
         _addNoteButton(),
-        const Spacer(),
-        WatchConnectionIndicator(isConnected: watchConnected),
+        if (!isPaused) ...[
+          const Spacer(),
+          WatchConnectionIndicator(isConnected: watchConnected),
+        ],
       ],
     );
   }

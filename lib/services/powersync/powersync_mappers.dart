@@ -236,6 +236,9 @@ Session sessionFromRow(
   Map<String, dynamic> sessionRow,
   List<SessionBlock> blocks,
 ) {
+  final DateTime? pausedAt = _nullableLocalDateTimeFromRow(
+    sessionRow['paused_at'],
+  );
   return Session(
     id: sessionRow['id'] as String,
     templateId: sessionRow['template_id'] as String,
@@ -248,8 +251,8 @@ Session sessionFromRow(
     averageHeartRate: sessionRow['average_heart_rate'] as int?,
     maxHeartRate: sessionRow['max_heart_rate'] as int?,
     blocks: blocks,
-    isPaused: false, // Not in normalized schema, defaults to false
-    pausedAt: _nullableLocalDateTimeFromRow(sessionRow['paused_at']),
+    isPaused: pausedAt != null,
+    pausedAt: pausedAt,
     totalPausedDuration: Duration(
       seconds: sessionRow['total_paused_duration_seconds'] as int? ?? 0,
     ),
