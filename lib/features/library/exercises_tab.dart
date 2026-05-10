@@ -16,8 +16,6 @@ class ExercisesTab extends ConsumerStatefulWidget {
 }
 
 class _ExercisesTabState extends ConsumerState<ExercisesTab> {
-  String _searchQuery = '';
-
   @override
   Widget build(BuildContext context) {
     final exercisesAsync = ref.watch(allExercisesProvider);
@@ -26,9 +24,7 @@ class _ExercisesTabState extends ConsumerState<ExercisesTab> {
     return exercisesAsync.when(
       data: (exercises) => _ExercisesBody(
         exercises: exercises,
-        searchQuery: _searchQuery,
         bulkProgress: bulkProgress,
-        onSearchChanged: (query) => setState(() => _searchQuery = query),
         onGenerateAll: widget.onGenerateAllPressed,
       ),
       loading: () => const Center(child: CupertinoActivityIndicator()),
@@ -45,25 +41,13 @@ class _ExercisesTabState extends ConsumerState<ExercisesTab> {
 class _ExercisesBody extends ConsumerWidget {
   const _ExercisesBody({
     required this.exercises,
-    required this.searchQuery,
     required this.bulkProgress,
-    required this.onSearchChanged,
     required this.onGenerateAll,
   });
 
   final List<WorkoutExercise> exercises;
-  final String searchQuery;
   final BulkBenefitsProgress? bulkProgress;
-  final ValueChanged<String> onSearchChanged;
   final VoidCallback onGenerateAll;
-
-  List<WorkoutExercise> get _filteredExercises {
-    if (searchQuery.isEmpty) return exercises;
-    final query = searchQuery.toLowerCase();
-    return exercises
-        .where((exercise) => exercise.name.toLowerCase().contains(query))
-        .toList();
-  }
 
   bool get _hasMissingBenefits =>
       exercises.any((exercise) => exercise.benefits.isEmpty);
@@ -74,19 +58,15 @@ class _ExercisesBody extends ConsumerWidget {
   }
 
   List<Widget> _slivers(BuildContext context) {
-    final filteredExercises = _filteredExercises;
     return [
-      _searchBarSliver(),
+      _headerSliver(),
       ..._bannerSlivers(),
-      if (filteredExercises.isEmpty)
-        _emptySliver()
-      else
-        _exerciseListSliver(filteredExercises),
+      if (exercises.isEmpty) _emptySliver() else _exerciseListSliver(exercises),
       const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
     ];
   }
 
-  Widget _searchBarSliver() {
+  Widget _headerSliver() {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -95,10 +75,9 @@ class _ExercisesBody extends ConsumerWidget {
           AppSpacing.lg,
           AppSpacing.sm,
         ),
-        child: CupertinoSearchTextField(
-          placeholder: 'Search exercises',
-          onChanged: onSearchChanged,
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
+        child: Text(
+          '${exercises.length} exercises',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
         ),
       ),
     );
@@ -124,9 +103,7 @@ class _ExercisesBody extends ConsumerWidget {
     return SliverFillRemaining(
       child: Center(
         child: Text(
-          searchQuery.isEmpty
-              ? 'No exercises yet'
-              : 'No results for "$searchQuery"',
+          'No exercises yet',
           style: AppTypography.caption.copyWith(color: AppColors.textColor4),
         ),
       ),

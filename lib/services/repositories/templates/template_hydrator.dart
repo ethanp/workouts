@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
+import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
@@ -17,6 +20,31 @@ class TemplateHydrator {
     return exerciseNameRows.mapL(
       (exerciseNameRow) => exerciseNameRow['name'] as String,
     );
+  }
+
+  Future<List<WorkoutExercise>> fetchExercises() async {
+    final exerciseRows = await _powerSync.getAll(
+      'SELECT * FROM exercises ORDER BY name',
+    );
+    final exercises = exerciseRows.mapL((exerciseRow) {
+      final modality = ExerciseModality.values.firstWhere(
+        (exerciseModality) =>
+            exerciseModality.name == exerciseRow['modality'] as String?,
+        orElse: () => ExerciseModality.reps,
+      );
+      return WorkoutExercise(
+        id: exerciseRow['id'] as String,
+        name: exerciseRow['name'] as String,
+        modality: modality,
+        prescription: '',
+        equipment: exerciseRow['equipment'] as String?,
+        cues: _parseCues(exerciseRow['cues'] as String?),
+        benefits: ExerciseBenefit.listFromJsonString(
+          exerciseRow['benefits'] as String?,
+        ),
+      );
+    });
+    return exercises;
   }
 
   Future<List<WorkoutTemplate>> hydrateTemplates(
@@ -71,4 +99,9 @@ class TemplateHydrator {
       (exerciseJoinRow) => mappers.workoutExerciseFromJoinRow(exerciseJoinRow),
     );
   }
+}
+
+List<String> _parseCues(String? cuesJson) {
+  if (cuesJson == null || cuesJson.isEmpty) return const [];
+  return (jsonDecode(cuesJson) as List).cast<String>();
 }

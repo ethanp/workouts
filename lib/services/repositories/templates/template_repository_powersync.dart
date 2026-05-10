@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/llm_workout_option.dart';
+import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_extensions.dart';
@@ -30,10 +31,13 @@ class TemplateRepositoryPowerSync {
   late final TemplateHydrator _hydrator;
   late final TemplateBlockStore _blockStore;
   late final TemplateExerciseStore _exerciseStore;
+  Future<List<WorkoutTemplate>>? _seedRefresh;
 
   static const int currentTemplateVersion = 9;
 
   Future<List<String>> fetchExerciseNames() => _hydrator.fetchExerciseNames();
+
+  Future<List<WorkoutExercise>> fetchExercises() => _hydrator.fetchExercises();
 
   Future<List<WorkoutTemplate>> fetchTemplates() async {
     await _exerciseStore.cleanOrphanedBlockExercises();
@@ -41,10 +45,10 @@ class TemplateRepositoryPowerSync {
     final templateRows = await _powerSync.getAll(
       'SELECT * FROM workout_templates ORDER BY created_at DESC',
     );
-    if (templateRows.isEmpty) return _reseedTemplates();
+    if (templateRows.isEmpty) return _runSeedRefresh(_reseedTemplates);
     if (await _needsSeedReset()) {
       _log.log('Seed templates are stale; resetting workout data.');
-      return reseedTemplates();
+      return _runSeedRefresh(reseedTemplates);
     }
     final templates = await _hydrator.hydrateTemplates(templateRows);
     return templates;
@@ -54,10 +58,10 @@ class TemplateRepositoryPowerSync {
     return _powerSync
         .watch('SELECT * FROM workout_templates ORDER BY created_at DESC')
         .asyncMap((templateRows) async {
-          if (templateRows.isEmpty) return _reseedTemplates();
+          if (templateRows.isEmpty) return _runSeedRefresh(_reseedTemplates);
           if (await _needsSeedReset()) {
             _log.log('Seed templates are stale; resetting workout data.');
-            return reseedTemplates();
+            return _runSeedRefresh(reseedTemplates);
           }
           final templates = await _hydrator.hydrateTemplates(templateRows);
           _log.log('${templates.length} workout template(s) in DB');
@@ -111,17 +115,19 @@ class TemplateRepositoryPowerSync {
     _log.log(
       'reseedTemplates: wiping workout sessions, templates, and exercises',
     );
-    await _powerSync.execute('DELETE FROM session_set_logs');
-    await _powerSync.execute('DELETE FROM session_notes');
-    await _powerSync.execute('DELETE FROM heart_rate_samples');
-    await _powerSync.execute('DELETE FROM session_computed_metrics');
-    await _powerSync.execute('DELETE FROM session_block_exercises');
-    await _powerSync.execute('DELETE FROM session_blocks');
-    await _powerSync.execute('DELETE FROM sessions');
-    await _powerSync.execute('DELETE FROM workout_block_exercises');
-    await _powerSync.execute('DELETE FROM workout_blocks');
-    await _powerSync.execute('DELETE FROM workout_templates');
-    await _powerSync.execute('DELETE FROM exercises');
+    await _powerSync.writeTransaction((transaction) async {
+      await transaction.execute('DELETE FROM session_set_logs');
+      await transaction.execute('DELETE FROM session_notes');
+      await transaction.execute('DELETE FROM heart_rate_samples');
+      await transaction.execute('DELETE FROM session_computed_metrics');
+      await transaction.execute('DELETE FROM session_block_exercises');
+      await transaction.execute('DELETE FROM session_blocks');
+      await transaction.execute('DELETE FROM sessions');
+      await transaction.execute('DELETE FROM workout_block_exercises');
+      await transaction.execute('DELETE FROM workout_blocks');
+      await transaction.execute('DELETE FROM workout_templates');
+      await transaction.execute('DELETE FROM exercises');
+    });
     return _reseedTemplates();
   }
 
@@ -136,6 +142,23 @@ class TemplateRepositoryPowerSync {
       await saveTemplate(template);
     }
     return templates;
+  }
+
+  Future<List<WorkoutTemplate>> _runSeedRefresh(
+    Future<List<WorkoutTemplate>> Function() refresh,
+  ) {
+    final seedRefresh = _seedRefresh;
+    if (seedRefresh != null) {
+      return seedRefresh;
+    }
+
+    final nextSeedRefresh = refresh();
+    _seedRefresh = nextSeedRefresh;
+    return nextSeedRefresh.whenComplete(() {
+      if (identical(_seedRefresh, nextSeedRefresh)) {
+        _seedRefresh = null;
+      }
+    });
   }
 
   Future<bool> _needsSeedReset() async {

@@ -7,10 +7,9 @@ import 'package:workouts/services/powersync/postgrest_uploader.dart';
 
 /// Uploads a [CrudBatch] in FK-safe tier order with concurrent chunking.
 ///
-/// Tables are grouped into tiers via [_UploadGraph] so that parent rows
-/// (e.g. exercises, runs) are uploaded before the child rows that reference
-/// them. Within each tier, ops are uploaded in concurrent chunks of
-/// [_chunkConcurrency].
+/// Deletes are uploaded child-first so server FK constraints release parents
+/// before parent rows are removed. Puts/patches are uploaded parent-first so
+/// child rows can reference already-existing parents.
 class TieredBatchUploader {
   TieredBatchUploader(this._uploader);
 
@@ -30,17 +29,42 @@ class TieredBatchUploader {
       }
     }
 
-    for (final tier in _UploadGraph.tiers) {
-      final tierOps = batch.crud.whereL((op) => tier.contains(op.table));
+    await _uploadDeletes(batch.crud, tally);
+    await _uploadPutsAndPatches(batch.crud, tally);
+
+    return (uploaded, discarded);
+  }
+
+  Future<void> _uploadDeletes(
+    List<CrudEntry> ops,
+    void Function(bool) tally,
+  ) async {
+    final deleteOps = ops.whereL((op) => op.op == UpdateType.delete);
+    for (final tier in _UploadGraph.tiers.reversed) {
+      final tierOps = deleteOps.whereL((op) => tier.contains(op.table));
       await _uploadChunked(tierOps, tally);
     }
 
-    final unknownOps = batch.crud.whereL(
+    final unknownOps = deleteOps.whereL(
       (op) => !_UploadGraph.allTables.contains(op.table),
     );
     await _uploadChunked(unknownOps, tally);
+  }
 
-    return (uploaded, discarded);
+  Future<void> _uploadPutsAndPatches(
+    List<CrudEntry> ops,
+    void Function(bool) tally,
+  ) async {
+    final upsertOps = ops.whereL((op) => op.op != UpdateType.delete);
+    for (final tier in _UploadGraph.tiers) {
+      final tierOps = upsertOps.whereL((op) => tier.contains(op.table));
+      await _uploadChunked(tierOps, tally);
+    }
+
+    final unknownOps = upsertOps.whereL(
+      (op) => !_UploadGraph.allTables.contains(op.table),
+    );
+    await _uploadChunked(unknownOps, tally);
   }
 
   Future<void> _uploadChunked(

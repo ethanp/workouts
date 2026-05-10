@@ -68,7 +68,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       child: CupertinoSlidingSegmentedControl<_LibrarySegment>(
         groupValue: _segment,
         onValueChanged: (selected) {
-          if (selected != null) setState(() => _segment = selected);
+          if (selected != null) {
+            setState(() => _segment = selected);
+          }
         },
         children: const {
           _LibrarySegment.goals: _SegmentLabel('Goals'),
