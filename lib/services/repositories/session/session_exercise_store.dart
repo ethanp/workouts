@@ -66,7 +66,7 @@ class SessionExerciseStore {
 
     await _setLogStore.touchSessionUpdatedAt(
       session.id,
-      DateTime.now().toIso8601String(),
+      DateTime.now().toUtc().toIso8601String(),
     );
     return _sessionHydrator.fetchSessionById(session.id);
   }
@@ -95,7 +95,7 @@ class SessionExerciseStore {
 
     await _setLogStore.touchSessionUpdatedAt(
       session.id,
-      DateTime.now().toIso8601String(),
+      DateTime.now().toUtc().toIso8601String(),
     );
     return _sessionHydrator.fetchSessionById(session.id);
   }

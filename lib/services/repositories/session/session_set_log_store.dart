@@ -11,7 +11,7 @@ class SessionSetLogStore {
     required Session session,
     required SessionSetLog setLog,
   }) async {
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
 
     await _powerSync.execute(
       '''
@@ -62,7 +62,10 @@ class SessionSetLogStore {
       [block.id, exercise.id, latestSetIndex],
     );
 
-    await touchSessionUpdatedAt(session.id, DateTime.now().toIso8601String());
+    await touchSessionUpdatedAt(
+      session.id,
+      DateTime.now().toUtc().toIso8601String(),
+    );
   }
 
   Future<void> touchSessionUpdatedAt(String sessionId, String now) =>

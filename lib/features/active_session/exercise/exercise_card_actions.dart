@@ -23,6 +23,22 @@ class ExerciseCardActions extends StatelessWidget {
     final isComplete =
         plannedSetCount > 0 && completedSetCount >= plannedSetCount;
 
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useCompactProgressLabel =
+            isComplete || constraints.maxWidth < 360;
+        return _actionRow(
+          isComplete: isComplete,
+          useCompactProgressLabel: useCompactProgressLabel,
+        );
+      },
+    );
+  }
+
+  Widget _actionRow({
+    required bool isComplete,
+    required bool useCompactProgressLabel,
+  }) {
     return Row(
       children: [
         CupertinoButton.filled(
@@ -60,12 +76,18 @@ class ExerciseCardActions extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        _progressBadge(isComplete),
+        _progressBadge(
+          isComplete: isComplete,
+          useCompactLabel: useCompactProgressLabel,
+        ),
       ],
     );
   }
 
-  Widget _progressBadge(bool isComplete) {
+  Widget _progressBadge({
+    required bool isComplete,
+    required bool useCompactLabel,
+  }) {
     final background = isComplete
         ? AppColors.success.withValues(alpha: 0.15)
         : AppColors.backgroundDepth3;
@@ -85,7 +107,7 @@ class ExerciseCardActions extends StatelessWidget {
         border: Border.all(color: border),
       ),
       child: Text(
-        '$completedSetCount of $plannedSetCount completed',
+        _progressLabel(useCompactLabel),
         style: AppTypography.caption.copyWith(
           fontWeight: FontWeight.w500,
           color: textColor,
@@ -101,5 +123,10 @@ class ExerciseCardActions extends StatelessWidget {
       PlannedSetType.warmup => 'Log Warmup',
       PlannedSetType.working => 'Log Set',
     };
+  }
+
+  String _progressLabel(bool useCompactLabel) {
+    if (useCompactLabel) return '$completedSetCount of $plannedSetCount';
+    return '$completedSetCount of $plannedSetCount completed';
   }
 }

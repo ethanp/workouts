@@ -20,15 +20,16 @@ class SessionMaterializer {
     );
 
     final sessionId = _uuid.v4();
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now();
+    final nowUtcText = now.toUtc().toIso8601String();
 
-    await _insertSessionRow(sessionId, templateId, now);
+    await _insertSessionRow(sessionId, templateId, nowUtcText);
     final blocks = await _materializeBlocks(sessionId, template.blocks);
 
     return Session(
       id: sessionId,
       templateId: templateId,
-      startedAt: DateTime.now(),
+      startedAt: now,
       blocks: blocks,
     );
   }

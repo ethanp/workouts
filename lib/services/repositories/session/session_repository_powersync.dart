@@ -74,8 +74,8 @@ class SessionRepositoryPowerSync {
     String? feeling,
     TrainingLoadCalculator? trainingLoad,
   }) async {
-    final now = DateTime.now().toIso8601String();
     final completedAt = DateTime.now();
+    final completedAtUtcText = completedAt.toUtc().toIso8601String();
 
     var activeDuration = completedAt.difference(session.startedAt);
     if (session.isPaused && session.pausedAt != null) {
@@ -102,12 +102,12 @@ class SessionRepositoryPowerSync {
       WHERE id = ?
       ''',
       [
-        completedAt.toIso8601String(),
+        completedAtUtcText,
         activeDuration.inSeconds,
         notes ?? '',
         avgBpm?.round(),
         maxBpm,
-        now,
+        completedAtUtcText,
         session.id,
       ],
     );
@@ -149,7 +149,7 @@ class SessionRepositoryPowerSync {
   }
 
   Future<void> pauseSession(Session session) async {
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     await _powerSync.execute(
       'UPDATE sessions SET paused_at = ?, updated_at = ? WHERE id = ?',
       [now, now, session.id],
@@ -157,7 +157,7 @@ class SessionRepositoryPowerSync {
   }
 
   Future<void> resumeSession(Session session) async {
-    final now = DateTime.now().toIso8601String();
+    final now = DateTime.now().toUtc().toIso8601String();
     if (session.pausedAt == null) return;
 
     final pauseDuration = DateTime.now().difference(session.pausedAt!);

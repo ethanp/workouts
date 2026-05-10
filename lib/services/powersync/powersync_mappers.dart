@@ -59,6 +59,16 @@ Duration? _durationFromSeconds(Object? raw) {
   return Duration(seconds: raw as int);
 }
 
+DateTime _localDateTimeFromRow(Object? raw) {
+  if (raw is! String) throw const FormatException('timestamp must be text');
+  return DateTime.parse(raw).toLocal();
+}
+
+DateTime? _nullableLocalDateTimeFromRow(Object? raw) {
+  if (raw == null) return null;
+  return _localDateTimeFromRow(raw);
+}
+
 String _prefixed(String prefix, String name) {
   return prefix.isEmpty ? name : '${prefix}_$name';
 }
@@ -229,10 +239,8 @@ Session sessionFromRow(
   return Session(
     id: sessionRow['id'] as String,
     templateId: sessionRow['template_id'] as String,
-    startedAt: DateTime.parse(sessionRow['started_at'] as String),
-    completedAt: sessionRow['completed_at'] != null
-        ? DateTime.parse(sessionRow['completed_at'] as String)
-        : null,
+    startedAt: _localDateTimeFromRow(sessionRow['started_at']),
+    completedAt: _nullableLocalDateTimeFromRow(sessionRow['completed_at']),
     duration: sessionRow['duration_seconds'] != null
         ? Duration(seconds: sessionRow['duration_seconds'] as int)
         : null,
@@ -241,14 +249,10 @@ Session sessionFromRow(
     maxHeartRate: sessionRow['max_heart_rate'] as int?,
     blocks: blocks,
     isPaused: false, // Not in normalized schema, defaults to false
-    pausedAt: sessionRow['paused_at'] != null
-        ? DateTime.parse(sessionRow['paused_at'] as String)
-        : null,
+    pausedAt: _nullableLocalDateTimeFromRow(sessionRow['paused_at']),
     totalPausedDuration: Duration(
       seconds: sessionRow['total_paused_duration_seconds'] as int? ?? 0,
     ),
-    updatedAt: sessionRow['updated_at'] != null
-        ? DateTime.parse(sessionRow['updated_at'] as String)
-        : null,
+    updatedAt: _nullableLocalDateTimeFromRow(sessionRow['updated_at']),
   );
 }
