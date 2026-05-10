@@ -38,8 +38,7 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
     return CupertinoTabScaffold(
       tabBar: _tabBar(),
       tabBuilder: (_, selectedIndex) => CupertinoTabView(
-        builder: (_) =>
-            _tabContent(selectedIndex, activeSession, sessionUIVisible),
+        builder: (_) => _tabContent(selectedIndex),
       ),
     );
   }
@@ -67,25 +66,14 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
     onTap: (value) => setState(() => index = value),
   );
 
-  Widget _tabContent(
-    int selectedIndex,
-    AsyncValue<Session?> activeSession,
-    bool sessionUIVisible,
-  ) {
+  Widget _tabContent(int selectedIndex) {
     final screen = switch (selectedIndex) {
       0 => const TodayScreen(),
       1 => const LibraryScreen(),
       2 => const HistoryScreen(),
       _ => const SettingsScreen(),
     };
-
-    return activeSession.when(
-      data: (session) => session != null && !sessionUIVisible
-          ? _ActiveSessionWrapper(child: screen)
-          : screen,
-      loading: () => screen,
-      error: (_, _) => screen,
-    );
+    return _ActiveSessionWrapper(child: screen);
   }
 }
 
@@ -97,13 +85,18 @@ class _ActiveSessionWrapper extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(activeSessionProvider).value;
+    final sessionUIVisible = ref.watch(sessionUIVisibilityProvider);
+    final showBanner = session != null && !sessionUIVisible;
 
-    // Session may become null during discard - just show child
-    if (session == null) return child;
-
+    // Always render the same Column structure so the child's state (e.g.
+    // HistoryScreen's selected tab) is never discarded when the banner
+    // appears or disappears.
     return Column(
       children: [
-        _activeSessionBanner(ref, session),
+        if (showBanner)
+          _activeSessionBanner(ref, session!)
+        else
+          const SizedBox.shrink(),
         Expanded(child: child),
       ],
     );

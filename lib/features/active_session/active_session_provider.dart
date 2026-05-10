@@ -1,7 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:powersync/powersync.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
@@ -24,11 +23,17 @@ const _watchBridge = WatchConnectivityBridge();
 
 @riverpod
 class ActiveSessionNotifier extends _$ActiveSessionNotifier {
-  bool _resumeAttempted = false;
-
   @override
   Future<Session?> build() async {
-    _resumeAttempted = false;
+    // If build() is re-triggered while a session is already active (e.g. due
+    // to a watch-command stream emission), preserve the current session rather
+    // than querying the DB again.
+    try {
+      final alreadyActive = state.value;
+      if (alreadyActive != null) return alreadyActive;
+    } catch (_) {
+      // state is not yet initialized on the very first build — continue.
+    }
 
     final commandStream = ref.watch(watchCommandStreamProvider);
     commandStream.whenData((command) {
@@ -37,33 +42,19 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       }
     });
 
-    // Use listen — not watch — so DB transitions don't cause build() to
-    // re-run and reset an already-active session.
-    ref.listen<AsyncValue<PowerSyncDatabase>>(
-      powerSyncDatabaseProvider,
-      (_, dbAsync) {
-        if (dbAsync.hasValue) _tryRestoreSession();
-      },
-    );
+    // Wait for the DB before querying for a resumable session.
+    await ref.watch(powerSyncDatabaseProvider.future);
 
-    // Handle the case where the DB was already ready before build() ran.
-    if (ref.read(powerSyncDatabaseProvider).hasValue) _tryRestoreSession();
-
-    return null;
-  }
-
-  Future<void> _tryRestoreSession() async {
-    if (_resumeAttempted || state.value != null) return;
-    _resumeAttempted = true;
     try {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
       final resumableSession = await repository.fetchResumableSession();
-      if (resumableSession != null && ref.mounted && state.value == null) {
+      if (resumableSession != null) {
         _log.log('Restored in-progress session ${resumableSession.id}.');
-        state = AsyncData(resumableSession);
       }
+      return resumableSession;
     } catch (error) {
       _log.log('Failed to restore session: $error');
+      return null;
     }
   }
 
