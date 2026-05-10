@@ -83,15 +83,22 @@ class _SessionViewState extends ConsumerState<_SessionView> {
     final heartRateSamples = ref.watch(heartRateTimelineProvider);
     final watchStatus = ref.watch(watchConnectionStatusProvider).value ?? false;
     final session = active ?? widget.session;
+    final bool keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return CupertinoPageScaffold(
       navigationBar: _navigationBar(context),
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            _sessionMetricsPanel(session, heartRateSamples, watchStatus),
-            _blockPager(session),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!keyboardVisible)
+                  _sessionMetricsPanel(session, heartRateSamples, watchStatus),
+                _blockPager(session),
+              ],
+            ),
+            if (keyboardVisible) _keyboardEnterAccessory(),
           ],
         ),
       ),
@@ -160,6 +167,43 @@ class _SessionViewState extends ConsumerState<_SessionView> {
       itemBuilder: (context, index) => BlockView(block: session.blocks[index]),
     ),
   );
+
+  Widget _keyboardEnterAccessory() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 0,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth2,
+          border: Border(top: BorderSide(color: AppColors.borderDepth1)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SizedBox(
+            height: 44,
+            child: Row(
+              children: [
+                const Spacer(),
+                CupertinoButton(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  onPressed: _dismissKeyboard,
+                  child: Text(
+                    'Enter',
+                    style: AppTypography.button.copyWith(
+                      color: AppColors.accentPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _swipeInstructions(Session session) {
     return Row(
@@ -332,6 +376,10 @@ class _SessionViewState extends ConsumerState<_SessionView> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   Future<void> _togglePause(Session session) async {

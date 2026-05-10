@@ -17,15 +17,17 @@ class WeightDisplay {
     return unitForExercise(exercise).label;
   }
 
-  static String format(Weight weight, WorkoutExercise exercise) {
-    return weight.format(unitForExercise(exercise));
-  }
-
   static String inputValue(Weight weight, WorkoutExercise exercise) {
     return weight.inputValue(unitForExercise(exercise));
   }
 
   static Weight? inputValueToWeight(String input, WorkoutExercise exercise) {
     return Weight.fromInput(input, unitForExercise(exercise));
+  }
+}
+
+extension WorkoutWeightDisplay on Weight {
+  String formatFor(WorkoutExercise exercise) {
+    return format(WeightDisplay.unitForExercise(exercise));
   }
 }

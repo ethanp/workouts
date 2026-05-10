@@ -1,17 +1,12 @@
-import 'dart:async';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
-import 'package:workouts/features/active_session/exercise/exercise_card_actions.dart';
-import 'package:workouts/features/active_session/exercise/set_capture_sheet.dart';
+import 'package:workouts/features/active_session/exercise/current_set_draft_controller.dart';
+import 'package:workouts/features/active_session/exercise/exercise_card_content.dart';
+import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
-import 'package:workouts/features/active_session/exercise_timer_panel.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/expandable_cues.dart';
 
 class ExerciseCard extends ConsumerStatefulWidget {
   const ExerciseCard({
@@ -32,317 +27,78 @@ class ExerciseCard extends ConsumerStatefulWidget {
 }
 
 class _ExerciseCardState extends ConsumerState<ExerciseCard> {
-  Timer? _timer;
-  Duration? _remaining;
-  TimerPhase _phase = TimerPhase.idle;
-  bool _isPaused = false;
-
-  Duration get _setupDuration => widget.exercise.setupDuration ?? Duration.zero;
-
-  Duration get _workDuration => widget.exercise.workDuration ?? Duration.zero;
-
-  bool get _hasTiming =>
-      _setupDuration > Duration.zero || _workDuration > Duration.zero;
-
-  bool get _isRunningPhase =>
-      _phase == TimerPhase.setup || _phase == TimerPhase.work;
-
-  bool get _shouldAutoStart => widget.isNextRecommended && _hasTiming;
+  final _currentSetDraftController = CurrentSetDraftController();
 
   SessionBlock get block => widget.block;
-  WorkoutExercise get exercise => widget.exercise;
-  List<SessionSetLog> get _exerciseLogs =>
-      block.logs.where((log) => log.exerciseId == exercise.id).toList();
 
-  PlannedSet? get _nextPlannedSet {
-    final setIndex = _exerciseLogs.length;
-    if (setIndex >= exercise.plannedSets.length) return null;
-    return exercise.plannedSets[setIndex];
-  }
+  WorkoutExercise get exercise => widget.exercise;
+
+  ExerciseSetPlanContext get _planContext =>
+      ExerciseSetPlanContext(block: block, exercise: exercise);
 
   @override
   void initState() {
     super.initState();
-    if (_shouldAutoStart) _startInitialPhase();
+    _syncCurrentSetDraft();
   }
 
   @override
   void didUpdateWidget(covariant ExerciseCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_shouldAutoStart && !_isRunningPhase) {
-      _startInitialPhase();
-    } else if (!_shouldAutoStart && _phase != TimerPhase.idle) {
-      _resetTimer();
-    }
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+    _syncCurrentSetDraft();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _exerciseHeader(),
-          if (exercise.restDuration != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Rest: ${Format.restDuration(exercise.restDuration!)}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-              ),
-            ),
-          ],
-          if (exercise.cues.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ExpandableCues(cues: exercise.cues),
-          ],
-          if (_showTimingWarning) ...[
-            const SizedBox(height: AppSpacing.xs),
-            _timingWarning(),
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          _actionRow(),
-          if (_hasTiming) ...[
-            const SizedBox(height: AppSpacing.md),
-            ExerciseTimerPanel(
-              phase: _phase,
-              remaining: _remaining,
-              isPaused: _isPaused,
-              onStart: _startInitialPhase,
-              onPause: _pauseTimer,
-              onResume: _resumeTimer,
-              onReset: _resetTimer,
-              onSkipToComplete: _skipToComplete,
-              onAdjustTime: _adjustTime,
-              canPause: _isRunningPhase && !_isPaused,
-              canResume: _isRunningPhase && _isPaused,
-              canStart: !_isRunningPhase,
-              canReset: _phase != TimerPhase.idle,
-              canAdjust: _isRunningPhase,
-              canSkip:
-                  _phase != TimerPhase.idle && _phase != TimerPhase.complete,
-              hasSetupPhase: _setupDuration > Duration.zero,
-              hasWorkPhase: _workDuration > Duration.zero,
-            ),
-          ],
-        ],
-      ),
+    final ExerciseSetPlanContext planContext = _syncedPlanContext();
+    return ExerciseCardContent(
+      planContext: planContext,
+      isNextRecommended: widget.isNextRecommended,
+      currentSetInput: _currentSetDraftController.currentInput(planContext),
+      onCurrentSetChanged: _currentSetDraftController.update,
+      onLogSet: _logSet,
+      onUnlogSet: planContext.loggedSetCount == 0 ? null : _unlogSet,
+      onTimerCompleted: _logSetAndAdvance,
     );
   }
 
-  bool get _showTimingWarning {
-    final expectedTiming =
-        exercise.modality == ExerciseModality.timed &&
-        exercise.prescription.contains('setup');
-    return expectedTiming && !_hasTiming;
+  ExerciseSetPlanContext _syncedPlanContext() {
+    final ExerciseSetPlanContext planContext = _planContext;
+    _currentSetDraftController.syncToContext(planContext);
+    return planContext;
   }
 
-  int get _loggedSets =>
-      block.logs.where((log) => log.exerciseId == exercise.id).length;
-
-  Widget _exerciseHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
-        Text(exercise.prescriptionLabel, style: AppTypography.caption),
-      ],
+  Future<void> _logSet() async {
+    final ActiveSessionNotifier activeSessionNotifier = ref.read(
+      activeSessionProvider.notifier,
+    );
+    final ExerciseSetPlanContext planContext = _syncedPlanContext();
+    final SetLogInput setLogInput = _currentSetDraftController.inputForLogging(
+      planContext,
+    );
+    await activeSessionNotifier.logSet(
+      block: block,
+      exercise: exercise,
+      weight: setLogInput.weight,
+      reps: setLogInput.reps,
+      duration: setLogInput.duration,
+      unitRemaining: setLogInput.unitRemaining,
     );
   }
 
-  Widget _timingWarning() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        'Timer unavailable (old session). Start a new session for auto-timer.',
-        style: AppTypography.caption.copyWith(color: AppColors.warning),
-      ),
+  void _syncCurrentSetDraft() {
+    _currentSetDraftController.syncToContext(_planContext);
+  }
+
+  Future<void> _unlogSet() async {
+    final ActiveSessionNotifier activeSessionNotifier = ref.read(
+      activeSessionProvider.notifier,
     );
-  }
-
-  Widget _actionRow() {
-    return ExerciseCardActions(
-      completedSetCount: _loggedSets,
-      plannedSetCount: exercise.effectiveTargetSets,
-      nextPlannedSet: _nextPlannedSet,
-      onLogSet: () => _logSet(context, ref),
-      onUnlogSet: _loggedSets == 0 ? null : () => _unlogSet(context, ref),
-    );
-  }
-
-  Future<void> _logSet(
-    BuildContext context,
-    WidgetRef ref, {
-    bool promptForActuals = true,
-  }) async {
-    final plannedSet = _nextPlannedSet;
-    final setLogInput = promptForActuals
-        ? await _captureSetInput(context, plannedSet)
-        : SetLogInput.fromPlan(plannedSet, exercise);
-    if (setLogInput == null) return;
-
-    await ref
-        .read(activeSessionProvider.notifier)
-        .logSet(
-          block: block,
-          exercise: exercise,
-          weight: setLogInput.weight,
-          reps: setLogInput.reps,
-          duration: setLogInput.duration,
-          unitRemaining: setLogInput.unitRemaining,
-        );
-  }
-
-  Future<SetLogInput?> _captureSetInput(
-    BuildContext context,
-    PlannedSet? plannedSet,
-  ) {
-    if (!_shouldPromptForActuals(plannedSet)) {
-      return Future.value(SetLogInput.fromPlan(plannedSet, exercise));
-    }
-    return showCupertinoModalPopup<SetLogInput>(
-      context: context,
-      builder: (context) =>
-          SetCaptureSheet(exercise: exercise, plannedSet: plannedSet),
-    );
-  }
-
-  bool _shouldPromptForActuals(PlannedSet? plannedSet) {
-    if (exercise.modality == ExerciseModality.reps) return true;
-    return plannedSet?.reps != null || plannedSet?.weight != null;
-  }
-
-  Future<void> _unlogSet(BuildContext context, WidgetRef ref) async {
-    await ref
-        .read(activeSessionProvider.notifier)
-        .unlogSet(block: block, exercise: exercise);
-  }
-
-  void _startInitialPhase() {
-    if (!_hasTiming) return;
-    final phase = _setupDuration > Duration.zero
-        ? TimerPhase.setup
-        : TimerPhase.work;
-    if (phase == TimerPhase.work && _workDuration <= Duration.zero) return;
-    _startPhase(phase);
-  }
-
-  void _startPhase(TimerPhase phase) {
-    final duration = _durationForPhase(phase);
-    if (duration <= Duration.zero) {
-      _advancePhase(phase);
-      return;
-    }
-    setState(() {
-      _phase = phase;
-      _isPaused = false;
-      _remaining = duration;
-    });
-    _startTicker();
-  }
-
-  void _startTicker() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
-  }
-
-  void _onTick() {
-    if (!mounted || _isPaused || _remaining == null) return;
-    final next = _remaining! - const Duration(seconds: 1);
-    if (next <= Duration.zero) {
-      _advancePhase(_phase);
-    } else {
-      setState(() => _remaining = next);
-    }
-  }
-
-  void _advancePhase(TimerPhase phase) {
-    if (phase == TimerPhase.setup && _workDuration > Duration.zero) {
-      _startPhase(TimerPhase.work);
-    } else {
-      _completeTimer();
-    }
-  }
-
-  void _completeTimer() {
-    _timer?.cancel();
-    setState(() {
-      _phase = TimerPhase.complete;
-      _isPaused = false;
-      _remaining = Duration.zero;
-    });
-    _logSetAndAdvance();
-  }
-
-  void _pauseTimer() {
-    if (!_isRunningPhase || _isPaused) return;
-    _timer?.cancel();
-    setState(() => _isPaused = true);
-  }
-
-  void _resumeTimer() {
-    if (!_isRunningPhase || !_isPaused) return;
-    setState(() => _isPaused = false);
-    _startTicker();
-  }
-
-  void _resetTimer() {
-    _timer?.cancel();
-    setState(() {
-      _phase = TimerPhase.idle;
-      _isPaused = false;
-      _remaining = null;
-    });
-  }
-
-  void _skipToComplete() {
-    _timer?.cancel();
-    setState(() {
-      _phase = TimerPhase.complete;
-      _isPaused = false;
-      _remaining = Duration.zero;
-    });
-    _logSetAndAdvance();
+    await activeSessionNotifier.unlogSet(block: block, exercise: exercise);
   }
 
   Future<void> _logSetAndAdvance() async {
-    await _logSet(context, ref, promptForActuals: false);
+    await _logSet();
     widget.onSetLogged();
   }
-
-  void _adjustTime(int seconds) {
-    if (!_isRunningPhase || _remaining == null) return;
-    setState(() {
-      final adjusted = _remaining! + Duration(seconds: seconds);
-      _remaining = adjusted < Duration.zero ? Duration.zero : adjusted;
-      if (_remaining == Duration.zero) _advancePhase(_phase);
-    });
-  }
-
-  Duration _durationForPhase(TimerPhase phase) => switch (phase) {
-    TimerPhase.setup => _setupDuration,
-    TimerPhase.work => _workDuration,
-    TimerPhase.idle || TimerPhase.complete => Duration.zero,
-  };
 }

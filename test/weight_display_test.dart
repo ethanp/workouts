@@ -21,7 +21,7 @@ void main() {
 
       expect(WeightDisplay.unitLabel(exercise), 'lb');
       expect(
-        WeightDisplay.format(const Weight.kilograms(22.6796185), exercise),
+        const Weight.kilograms(22.6796185).formatFor(exercise),
         '50lb',
       );
       expect(
@@ -39,7 +39,7 @@ void main() {
 
       expect(WeightDisplay.unitLabel(exercise), 'kg');
       expect(
-        WeightDisplay.format(const Weight.kilograms(20), exercise),
+        const Weight.kilograms(20).formatFor(exercise),
         '20kg',
       );
       expect(

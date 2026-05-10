@@ -160,7 +160,7 @@ class SetCaptureSheetState extends State<SetCaptureSheet> {
     final labelParts = <String>[];
     if (plannedSet.reps != null) labelParts.add('${plannedSet.reps} reps');
     if (plannedSet.weight != null) {
-      labelParts.add(WeightDisplay.format(plannedSet.weight!, widget.exercise));
+      labelParts.add(plannedSet.weight!.formatFor(widget.exercise));
     }
     if (plannedSet.duration != null) {
       labelParts.add('${plannedSet.duration!.inSeconds}s');

@@ -46,7 +46,7 @@ class SessionSetLogRow extends StatelessWidget {
 
     if (plannedSet != null) details.add(plannedSet.type.name);
     if (log.weight != null) {
-      details.add(WeightDisplay.format(log.weight!, exercise));
+      details.add(log.weight!.formatFor(exercise));
     }
     if (log.reps != null) details.add('${log.reps} reps');
     if (log.duration != null) details.add(_durationLabel(log.duration!));
@@ -75,7 +75,7 @@ class SessionSetLogRow extends StatelessWidget {
     final labelParts = <String>[];
     if (plannedSet.reps != null) labelParts.add('${plannedSet.reps} reps');
     if (plannedSet.weight != null) {
-      labelParts.add(WeightDisplay.format(plannedSet.weight!, exercise));
+      labelParts.add(plannedSet.weight!.formatFor(exercise));
     }
     if (plannedSet.duration != null) {
       labelParts.add(_durationLabel(plannedSet.duration!));

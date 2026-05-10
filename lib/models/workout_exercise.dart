@@ -224,7 +224,7 @@ class _PlannedSetLabelFormatter {
 
   String _targetLabel(PlannedSet plannedSet) {
     if (plannedSet.reps != null && plannedSet.weight != null) {
-      return '${plannedSet.reps} @ ${WeightDisplay.format(plannedSet.weight!, exercise)}';
+      return '${plannedSet.reps} @ ${plannedSet.weight!.formatFor(exercise)}';
     }
     if (plannedSet.reps != null) return '${plannedSet.reps} reps';
     if (plannedSet.duration != null) {
