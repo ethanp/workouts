@@ -29,11 +29,12 @@ class _GoalsTabState extends ConsumerState<GoalsTab> {
     return goalsAsync.when(
       data: (goals) {
         final notes = notesAsync.value ?? [];
-        final activeGoals = goals
-            .where((goal) => goal.status == GoalStatus.active)
-            .toList()
-          ..sort((firstGoal, secondGoal) =>
-              firstGoal.priority.compareTo(secondGoal.priority));
+        final activeGoals =
+            goals.where((goal) => goal.status == GoalStatus.active).toList()
+              ..sort(
+                (firstGoal, secondGoal) =>
+                    firstGoal.priority.compareTo(secondGoal.priority),
+              );
         final archivedGoals = goals
             .where((goal) => goal.status != GoalStatus.active)
             .toList();
@@ -85,15 +86,17 @@ class _GoalsTabState extends ConsumerState<GoalsTab> {
   }
 
   void _showAddNoteSheet(BuildContext context, List<FitnessGoal> goals) {
-    final notesNotifier =
-        ref.read(backgroundNotesControllerProvider.notifier);
+    final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => NoteFormSheet(
         availableGoals: goals,
         onSave: (content, category, goalId) {
           notesNotifier.addNote(
-              content: content, category: category, goalId: goalId);
+            content: content,
+            category: category,
+            goalId: goalId,
+          );
           Navigator.of(context).pop();
         },
       ),

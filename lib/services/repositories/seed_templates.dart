@@ -2,442 +2,319 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 
+const currentSeedTemplateIds = {'seed-template-full-gym-session-0001'};
+
 List<WorkoutTemplate> buildSeedTemplates() {
-  return [
-    _kettlebellClubSession(),
-    _mobilityStrengthFoundation(),
-  ];
+  return [_fullGymSession()];
 }
 
-WorkoutTemplate _kettlebellClubSession() {
-  final warmup = WorkoutBlock(
-    id: 'seed-kb-block-warmup-000000000001',
-    title: 'Warmup & Mobility',
-    type: WorkoutBlockType.warmup,
-    targetDuration: const Duration(minutes: 8),
-    description: 'Open shoulders, hips, and spine before load.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-club-halos-00000000001',
-        name: 'Club Halos',
-        modality: ExerciseModality.reps,
-        prescription: '6 per direction',
-        targetSets: 2,
-        equipment: 'Club',
-        cues: ['Smooth arc, open shoulders'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-hip-flexor-stretch-001',
-        name: 'Half-kneeling Hip Flexor Stretch',
-        modality: ExerciseModality.hold,
-        prescription: '30s per side',
-        targetSets: 2,
-        equipment: 'Club overhead',
-        cues: ['Posterior tilt, reach tall'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-cat-cow-thread-00000001',
-        name: 'Cat-Cow to Thread Needle',
-        modality: ExerciseModality.mobility,
-        prescription: '5 per side',
-        targetSets: 2,
-        cues: ['Segment spine, reach long'],
-      ),
-    ],
-  );
-
-  final animalFlow = WorkoutBlock(
-    id: 'seed-kb-block-animal-flow-000000001',
-    title: 'Animal Movement Integration',
-    type: WorkoutBlockType.animalFlow,
-    targetDuration: const Duration(minutes: 12),
-    description: 'Prime scapula, ribs, and core with dynamic patterns.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-beast-crawl-000000001',
-        name: 'Beast Crawl',
-        modality: ExerciseModality.timed,
-        prescription: '3 × 20-30s',
-        targetSets: 3,
-        cues: ['Knees hover, contralateral steps'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-crab-reach-0000000001',
-        name: 'Crab Reach',
-        modality: ExerciseModality.reps,
-        prescription: '3 × 5 per side',
-        targetSets: 3,
-        cues: ['Drive hips, open chest'],
-      ),
-    ],
-  );
-
-  final posteriorChain = WorkoutBlock(
-    id: 'seed-kb-block-posterior-chain-0001',
-    title: 'Posterior Chain + Scapula',
-    type: WorkoutBlockType.strength,
-    targetDuration: const Duration(minutes: 10),
-    description: 'Posterior chain hinge and scapular control.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-kb-rdl-000000000001',
-        name: 'Kettlebell Romanian Deadlift',
-        modality: ExerciseModality.reps,
-        prescription: '3 × 8',
-        targetSets: 3,
-        equipment: 'Kettlebell',
-        cues: ['Lat pack, hinge tall'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-front-shield-cast-0001',
-        name: 'Club Front Shield Cast',
-        modality: ExerciseModality.reps,
-        prescription: '3 × 6 per side',
-        targetSets: 3,
-        cues: ['Brace ribs, smooth arc'],
-      ),
-    ],
-  );
-
-  final hipExtension = WorkoutBlock(
-    id: 'seed-kb-block-hip-extension-00001',
-    title: 'Hip Extension + Stability',
-    type: WorkoutBlockType.strength,
-    targetDuration: const Duration(minutes: 10),
-    description: 'Load unilateral press and anti-lateral flexion.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-hk-kb-press-000000001',
-        name: 'Half-kneeling Kettlebell Press',
-        modality: ExerciseModality.reps,
-        prescription: '3 × 6 per side',
-        targetSets: 3,
-        cues: ['Glute lock, tall press'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-suitcase-carry-000001',
-        name: 'Kettlebell Suitcase Carry',
-        modality: ExerciseModality.timed,
-        prescription: '3 × 40s per side',
-        targetSets: 3,
-        cues: ['Ribs stacked, smooth walk'],
-      ),
-    ],
-  );
-
-  final mobility = WorkoutBlock(
-    id: 'seed-kb-block-mobility-focus-00001',
-    title: 'Mobility Focus',
-    type: WorkoutBlockType.mobility,
-    targetDuration: const Duration(minutes: 10),
-    description: 'Restore length and rotation after loading.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-goblet-deep-lunge-001',
-        name: 'Goblet Deep Lunge Hold',
-        modality: ExerciseModality.hold,
-        prescription: '2 × 30s per side',
-        targetSets: 2,
-        cues: ['Knee tracks, hips square'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-club-side-bend-00001',
-        name: 'Club Side Bend (Tall Kneel)',
-        modality: ExerciseModality.reps,
-        prescription: '2 × 6 per side',
-        targetSets: 2,
-        cues: ['Long spine, oblique squeeze'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-thoracic-rotation-01',
-        name: 'Standing Thoracic Rotation with Club',
-        modality: ExerciseModality.reps,
-        prescription: '8 per side',
-        targetSets: 2,
-        cues: ['Hip lock, rotate through T-spine'],
-      ),
-    ],
-  );
-
-  final cooldown = WorkoutBlock(
-    id: 'seed-kb-block-cooldown-000000001',
-    title: 'Cooldown & Breathwork',
-    type: WorkoutBlockType.cooldown,
-    targetDuration: const Duration(minutes: 10),
-    description: 'Downshift nervous system and integrate mobility gains.',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-kb-ex-supine-9090-breath-01',
-        name: 'Supine 90/90 Breathing',
-        modality: ExerciseModality.breath,
-        prescription: '2 × 5 breaths',
-        targetSets: 2,
-        cues: ['Nasal inhale, long exhale'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-childs-pose-side-001',
-        name: "Child's Pose with Side Reach",
-        modality: ExerciseModality.mobility,
-        prescription: '45s per side',
-        targetSets: 2,
-        cues: ['Reach long, breathe lateral ribs'],
-      ),
-      WorkoutExercise(
-        id: 'seed-kb-ex-box-breathing-00001',
-        name: 'Box Breathing 4-4-4-4',
-        modality: ExerciseModality.breath,
-        prescription: '2 minutes',
-        targetSets: 1,
-        cues: ['Equal phases, relaxed jaw'],
-      ),
-    ],
-  );
-
+WorkoutTemplate _fullGymSession() {
   return WorkoutTemplate(
-    id: 'seed-template-kb-club-base-0000001',
-    name: 'KB + Club Base Session',
-    goal: 'Strength, mobility, scapular integration',
-    blocks: [warmup, animalFlow, posteriorChain, hipExtension, mobility, cooldown],
-    notes: '60-minute session blending load and flow.',
+    id: 'seed-template-full-gym-session-0001',
+    name: 'At-home Warmup + Gym Strength + Zone 2',
+    goal: 'Activation, machine strength, aerobic base, and cooldown',
+    notes:
+        'Full session: 8-10 min at-home activation, gym strength, 25-30 min Zone 2, cooldown, and optional sauna.',
+    blocks: [
+      _warmupActivationBlock(),
+      _gymStrengthBlock(),
+      _zone2CardioBlock(),
+      _cooldownBlock(),
+      _optionalRecoveryBlock(),
+    ],
   );
 }
 
-WorkoutTemplate _mobilityStrengthFoundation() {
-  final mobilityBlock = WorkoutBlock(
-    id: 'seed-msf-block-mobility-act-0001',
-    title: 'Mobility & Activation',
+WorkoutBlock _warmupActivationBlock() {
+  return WorkoutBlock(
+    id: 'seed-full-block-warmup-activation-0001',
+    title: 'At-home Warmup / Activation',
     type: WorkoutBlockType.warmup,
     targetDuration: const Duration(minutes: 10),
-    description: '0–10 min',
+    description:
+        'Wake up feet, ankles, glutes, core, and split-stance control.',
     exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-treadmill-warmup-01',
-        name: 'Treadmill Warm-up',
-        modality: ExerciseModality.timed,
-        prescription: '4 minutes',
-        targetSets: 1,
-        cues: ['2.5–3.0 mph', 'Loose arms', 'Shoulders down', 'Normal breathing', 'No posture forcing'],
+      _durationExercise(
+        id: 'seed-full-ex-short-foot-drill-0001',
+        name: 'Short Foot Drill',
+        prescription: '2 x 20s per side',
+        setCount: 2,
+        duration: const Duration(seconds: 20),
+        modality: ExerciseModality.hold,
+        cues: ['Work one side at a time', 'Keep toes relaxed'],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-open-books-000001',
-        name: 'Open Books',
-        modality: ExerciseModality.reps,
-        prescription: '6 per side',
-        targetSets: 1,
-        cues: ['Gentle rotation', 'Follow hand with eyes', 'Keep knees stacked'],
+      _durationExercise(
+        id: 'seed-full-ex-ankle-circles-0001',
+        name: 'Ankle Circles',
+        prescription: '1 min each',
+        setCount: 1,
+        duration: const Duration(minutes: 1),
+        modality: ExerciseModality.mobility,
+        cues: ['Smooth circles', 'Move through full comfortable range'],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-cat-cow-0000000001',
-        name: 'Cat-Cow',
-        modality: ExerciseModality.reps,
-        prescription: '10 slow reps',
-        targetSets: 1,
-        cues: ['Gentle movements', 'Breathe with motion', 'Segment the spine'],
+      _durationExercise(
+        id: 'seed-full-ex-calf-rocks-0001',
+        name: 'Calf Rocks',
+        prescription: '1 min each',
+        setCount: 1,
+        duration: const Duration(minutes: 1),
+        modality: ExerciseModality.mobility,
+        cues: ['Rock slowly', 'Keep pressure through tripod foot'],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-sternum-float-0001',
-        name: 'Sternum Float',
-        modality: ExerciseModality.breath,
-        prescription: '3 × 5 breaths',
-        targetSets: 3,
-        cues: ['1 cm lift', 'Shoulders DOWN', 'Gentle elevation only'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-wall-slides-000001',
-        name: 'Wall Slides',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        targetSets: 1,
-        cues: ['Elbows and wrists on wall', 'Slide up smoothly', 'Keep shoulders relaxed'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-scap-retractions-1',
-        name: 'Scapular Retractions',
-        modality: ExerciseModality.reps,
-        prescription: '10 reps',
-        targetSets: 1,
-        cues: ['30% effort', 'Gentle squeeze', 'No neck tension'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-serratus-pushup-01',
-        name: 'Serratus Wall Push-up',
-        modality: ExerciseModality.reps,
-        prescription: '8 reps',
-        targetSets: 1,
-        cues: ['Protract shoulder blades', 'Push through palms', 'Keep elbows straight'],
-      ),
-    ],
-  );
-
-  final lowerBodyBlock = WorkoutBlock(
-    id: 'seed-msf-block-lower-body-00001',
-    title: 'Lower Body Strength',
-    type: WorkoutBlockType.strength,
-    targetDuration: const Duration(minutes: 15),
-    description: '10–25 min',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-goblet-squat-00001',
-        name: 'Goblet Squat',
-        modality: ExerciseModality.reps,
-        prescription: '8–12 reps',
-        targetSets: 3,
-        equipment: '16 kg KB or 20 lb DB',
-        restDuration: const Duration(seconds: 60),
-        cues: ['Chest soft', 'Elbows inside knees', 'Torso vertical', 'No pinching shoulder blades'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-step-ups-000000001',
-        name: 'Step-Ups',
-        modality: ExerciseModality.reps,
-        prescription: '8–10 per leg',
-        targetSets: 3,
-        equipment: 'Bodyweight or light DBs',
-        restDuration: const Duration(seconds: 45),
-        cues: ['Slow lowering', 'Drive through heel', 'Arms hang loose'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-glute-bridge-00001',
+      _repsExercise(
+        id: 'seed-full-ex-glute-bridge-0001',
         name: 'Glute Bridge',
-        modality: ExerciseModality.reps,
-        prescription: '10–12 reps',
-        targetSets: 3,
-        cues: ['Squeeze glutes at top', 'Ribs down', 'No neck pushing into floor'],
+        prescription: '2 x 10 slow reps',
+        setCount: 2,
+        reps: 10,
+        cues: ['Slow reps', 'Reach knees forward as hips extend'],
       ),
-    ],
-  );
-
-  final coreBlock = WorkoutBlock(
-    id: 'seed-msf-block-core-lower-cross1',
-    title: 'Core & Lower-Cross Fix',
-    type: WorkoutBlockType.core,
-    targetDuration: const Duration(minutes: 10),
-    description: '25–35 min',
-    exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-dead-bug-000000001',
+      _repsExercise(
+        id: 'seed-full-ex-bird-dog-0001',
+        name: 'Bird Dog',
+        prescription: '2 x 6 per side',
+        setCount: 2,
+        reps: 6,
+        cues: ['Keep pelvis level', 'Reach long instead of high'],
+      ),
+      _repsExercise(
+        id: 'seed-full-ex-dead-bug-0001',
         name: 'Dead Bug',
-        modality: ExerciseModality.reps,
-        prescription: '8 per side (slow)',
-        targetSets: 3,
-        cues: [
-          'Ribs down',
-          'Low back gently touching floor',
-          'Move limbs like wet noodles — not stiff',
-          'No neck involvement',
-        ],
+        prescription: '2 x 6 per side',
+        setCount: 2,
+        reps: 6,
+        cues: ['Full exhale', 'Keep low back quiet'],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-hollow-body-00001',
-        name: 'Modified Hollow Body Hold',
+      _durationExercise(
+        id: 'seed-full-ex-bodyweight-split-squat-hold-0001',
+        name: 'Bodyweight Split Squat Hold',
+        prescription: '20s per side',
+        setCount: 1,
+        duration: const Duration(seconds: 20),
         modality: ExerciseModality.hold,
-        prescription: '10–20 seconds',
-        targetSets: 3,
-        cues: [
-          'Knees bent 90°',
-          'Ribs down',
-          'Arms by sides or lightly overhead',
-          'Head barely floated off ground',
-          'STOP if neck takes over',
-        ],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-stir-the-pot-0001',
-        name: 'Stir-the-Pot',
-        modality: ExerciseModality.hold,
-        prescription: '10–20 sec each direction',
-        targetSets: 2,
-        equipment: 'Stability ball',
-        cues: ['Tiny circles', 'Torso rigid', "Don't let shoulders shrug", 'Neck neutral, looking slightly down'],
+        cues: ['Stay tall', 'Keep front foot grounded'],
       ),
     ],
   );
+}
 
-  final pullBlock = WorkoutBlock(
-    id: 'seed-msf-block-pull-scapular-001',
-    title: 'Pull / Scapular Strength',
+WorkoutBlock _gymStrengthBlock() {
+  return WorkoutBlock(
+    id: 'seed-full-block-gym-strength-0001',
+    title: 'Gym Strength Block',
     type: WorkoutBlockType.strength,
-    targetDuration: const Duration(minutes: 10),
-    description: '35–45 min',
+    targetDuration: const Duration(minutes: 45),
+    description:
+        'Machine and cable strength work with controlled tempo and setup buffer.',
     exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-low-row-000000001',
-        name: 'Low Row',
-        modality: ExerciseModality.reps,
-        prescription: '10–12 reps',
-        targetSets: 3,
-        equipment: 'Band or cable (light)',
-        cues: ['Keep elbows tucked', 'No shoulder retraction pinch', 'Think "elbows slide back"', 'Stop immediately if triceps tingles'],
+      _repsExercise(
+        id: 'seed-full-ex-chest-supported-row-machine-0001',
+        name: 'Chest-supported Row Machine',
+        prescription: '3 x 8-10',
+        setCount: 3,
+        reps: 8,
+        weightKg: _pounds(50),
+        restDuration: const Duration(seconds: 90),
+        cues: [
+          'Keep chest glued to pad',
+          'Shoulders down and back',
+          'Slight pause at torso',
+        ],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-face-pull-000000001',
-        name: 'Face Pull',
-        modality: ExerciseModality.reps,
-        prescription: '12 reps',
-        targetSets: 2,
-        equipment: 'Band (NOT cable)',
-        cues: ['Elbows high', 'Pull toward forehead', 'Light resistance only', 'Feel mid-back, NOT traps'],
+      _repsExercise(
+        id: 'seed-full-ex-chest-press-machine-0001',
+        name: 'Chest Press Machine',
+        prescription: '3 x 8-10',
+        setCount: 3,
+        reps: 8,
+        weightKg: _pounds(50),
+        restDuration: const Duration(seconds: 90),
+        cues: ['Ribcage down', 'Smooth control', "Don't shrug"],
+      ),
+      _repsExercise(
+        id: 'seed-full-ex-seated-cable-row-neutral-0001',
+        name: 'Seated Cable Row (Neutral Grip)',
+        prescription: '2 x 10',
+        setCount: 2,
+        reps: 10,
+        weightKg: _pounds(45),
+        restDuration: const Duration(seconds: 75),
+        cues: [
+          'Let shoulder blades protract slightly forward',
+          'Drive elbows back',
+        ],
+      ),
+      _repsExercise(
+        id: 'seed-full-ex-leg-curl-machine-0001',
+        name: 'Leg Curl Machine',
+        prescription: '2 x 10',
+        setCount: 2,
+        reps: 10,
+        weightKg: _pounds(60),
+        restDuration: const Duration(seconds: 75),
+        cues: ['Smooth squeeze at peak contraction', 'Control the return'],
+      ),
+      _repsExercise(
+        id: 'seed-full-ex-leg-extension-machine-0001',
+        name: 'Leg Extension Machine',
+        prescription: '2 x 10 light/moderate',
+        setCount: 2,
+        reps: 10,
+        weightKg: _pounds(30),
+        restDuration: const Duration(seconds: 75),
+        cues: ['Moderate load only', 'No aggressive lockout'],
+      ),
+      _repsExercise(
+        id: 'seed-full-ex-bent-leg-horizontal-calf-raise-0001',
+        name: 'Bent Leg Horizontal Calf Raise',
+        prescription: '2 x 12',
+        setCount: 2,
+        reps: 12,
+        weightKg: _pounds(70),
+        restDuration: const Duration(seconds: 60),
+        cues: ['Slow stretch at bottom', 'Slight pause at top'],
       ),
     ],
   );
+}
 
-  final conditioningBlock = WorkoutBlock(
-    id: 'seed-msf-block-conditioning-001',
-    title: 'Conditioning Flush',
+WorkoutBlock _zone2CardioBlock() {
+  return WorkoutBlock(
+    id: 'seed-full-block-zone2-cardio-0001',
+    title: 'Zone 2 Cardio',
     type: WorkoutBlockType.conditioning,
-    targetDuration: const Duration(minutes: 10),
-    description: '45–55 min',
+    targetDuration: const Duration(minutes: 30),
+    description: 'Preferred: Precor elliptical / AMT.',
     exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-easy-bike-treadmill1',
-        name: 'Easy Bike or Treadmill Walk',
+      _durationExercise(
+        id: 'seed-full-ex-precor-elliptical-amt-zone2-0001',
+        name: 'Precor Elliptical / AMT',
+        prescription: '25-30 min Zone 2',
+        setCount: 1,
+        duration: const Duration(minutes: 25),
         modality: ExerciseModality.timed,
-        prescription: '8 minutes',
-        targetSets: 1,
-        cues: ['Relaxed gait', 'Arms loose', 'Shallow incline optional', 'Avoid posture forcing'],
+        cues: [
+          'Stay around conversational pace',
+          'Focus foot pressure between 2nd-3rd toes',
+          'Relax shoulders',
+          'Gradually ramp intensity instead of jumping HR immediately',
+        ],
       ),
     ],
   );
+}
 
-  final cooldownBlock = WorkoutBlock(
-    id: 'seed-msf-block-cooldown-000001',
-    title: 'Cool-down',
+WorkoutBlock _cooldownBlock() {
+  return WorkoutBlock(
+    id: 'seed-full-block-cooldown-0001',
+    title: 'Cooldown',
     type: WorkoutBlockType.cooldown,
-    targetDuration: const Duration(minutes: 5),
-    description: '55–60 min',
+    targetDuration: const Duration(minutes: 8),
+    description: 'Walk, stretch, and decompress gently.',
     exercises: [
-      WorkoutExercise(
-        id: 'seed-msf-ex-foam-thoracic-0001',
-        name: 'Foam Roller Thoracic Extensions',
-        modality: ExerciseModality.reps,
-        prescription: '6 reps',
-        targetSets: 2,
-        cues: ['Gentle extensions', 'Avoid the neck entirely'],
+      _durationExercise(
+        id: 'seed-full-ex-easy-walk-0001',
+        name: 'Easy Walk',
+        prescription: '3 min',
+        setCount: 1,
+        duration: const Duration(minutes: 3),
+        modality: ExerciseModality.timed,
+        cues: ['Easy pace', 'Let breathing settle'],
       ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-shoulder-drop-0001',
-        name: 'Shoulder Drop + Long Exhale',
-        modality: ExerciseModality.breath,
-        prescription: '1 minute',
-        targetSets: 1,
-        cues: ['Inhale 4 sec → exhale 6 sec', 'Let the rib cage gently settle'],
-      ),
-      WorkoutExercise(
-        id: 'seed-msf-ex-hip-flexor-str-001',
+      _durationExercise(
+        id: 'seed-full-ex-hip-flexor-stretch-0001',
         name: 'Hip Flexor Stretch',
+        prescription: '30s per side',
+        setCount: 1,
+        duration: const Duration(seconds: 30),
         modality: ExerciseModality.hold,
-        prescription: '30 sec per side',
-        targetSets: 1,
-        cues: ['Gentle posterior tilt', 'No arching low back'],
+        cues: ['Posterior tilt', 'Reach tall'],
+      ),
+      _durationExercise(
+        id: 'seed-full-ex-pull-up-bar-hang-0001',
+        name: 'Pull-up Bar Hang',
+        prescription: '2 x 20-30s',
+        setCount: 2,
+        duration: const Duration(seconds: 20),
+        modality: ExerciseModality.hold,
+        cues: ['Only if available', 'Gentle decompression only'],
       ),
     ],
   );
+}
 
-  return WorkoutTemplate(
-    id: 'seed-template-mobility-strength-1',
-    name: 'Mobility & Strength Foundation',
-    goal: 'Nerve-safe strength, mobility, and scapular stability',
-    blocks: [mobilityBlock, lowerBodyBlock, coreBlock, pullBlock, conditioningBlock, cooldownBlock],
-    notes: '60-minute session designed for thoracic mobility and lower-cross pattern correction with detailed form cues.',
+WorkoutBlock _optionalRecoveryBlock() {
+  return WorkoutBlock(
+    id: 'seed-full-block-optional-recovery-0001',
+    title: 'Optional',
+    type: WorkoutBlockType.cooldown,
+    targetDuration: const Duration(minutes: 10),
+    description: 'Optional sauna finish.',
+    exercises: [
+      _durationExercise(
+        id: 'seed-full-ex-sauna-0001',
+        name: 'Sauna',
+        prescription: '5-10 min moderate heat',
+        setCount: 1,
+        duration: const Duration(minutes: 5),
+        modality: ExerciseModality.breath,
+        cues: [
+          'Moderate heat',
+          'Nasal breathing as tolerated',
+          'Switch to mouth breathing if nostrils start burning again',
+        ],
+      ),
+    ],
+  );
+}
+
+double _pounds(double pounds) => pounds * 0.45359237;
+
+WorkoutExercise _repsExercise({
+  required String id,
+  required String name,
+  required String prescription,
+  required int setCount,
+  required int reps,
+  double? weightKg,
+  Duration? restDuration,
+  required List<String> cues,
+}) {
+  return WorkoutExercise(
+    id: id,
+    name: name,
+    modality: ExerciseModality.reps,
+    prescription: prescription,
+    targetSets: setCount,
+    restDuration: restDuration,
+    cues: cues,
+    plannedSets: [
+      for (var setIndex = 0; setIndex < setCount; setIndex++)
+        PlannedSet(reps: reps, weightKg: weightKg),
+    ],
+  );
+}
+
+WorkoutExercise _durationExercise({
+  required String id,
+  required String name,
+  required String prescription,
+  required int setCount,
+  required Duration duration,
+  required ExerciseModality modality,
+  required List<String> cues,
+}) {
+  return WorkoutExercise(
+    id: id,
+    name: name,
+    modality: modality,
+    prescription: prescription,
+    targetSets: setCount,
+    cues: cues,
+    workDuration: duration,
+    plannedSets: [
+      for (var setIndex = 0; setIndex < setCount; setIndex++)
+        PlannedSet(duration: duration),
+    ],
   );
 }

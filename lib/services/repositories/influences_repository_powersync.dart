@@ -26,12 +26,16 @@ class InfluencesRepositoryPowerSync {
     return _ensureSeeded().asStream().asyncExpand((_) {
       return _powerSync
           .watch('SELECT * FROM training_influences ORDER BY name ASC')
-          .map((influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow));
+          .map(
+            (influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow),
+          );
     });
   }
 
   Future<void> _ensureSeeded() async {
-    final count = await _powerSync.get('SELECT COUNT(*) as cnt FROM training_influences');
+    final count = await _powerSync.get(
+      'SELECT COUNT(*) as cnt FROM training_influences',
+    );
     if ((count['cnt'] as int) == 0) {
       await seedInfluencesIfEmpty();
     }
@@ -43,7 +47,9 @@ class InfluencesRepositoryPowerSync {
           .watch(
             'SELECT * FROM training_influences WHERE is_active = 1 ORDER BY name ASC',
           )
-          .map((influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow));
+          .map(
+            (influenceRows) => influenceRows.mapL(TrainingInfluence.fromRow),
+          );
     });
   }
 
@@ -82,10 +88,9 @@ class InfluencesRepositoryPowerSync {
   }
 
   Future<void> deleteInfluence(String id) async {
-    await _powerSync.execute(
-      'DELETE FROM training_influences WHERE id = ?',
-      [id],
-    );
+    await _powerSync.execute('DELETE FROM training_influences WHERE id = ?', [
+      id,
+    ]);
   }
 
   Future<void> addInfluence(TrainingInfluence influence) async {
@@ -109,7 +114,9 @@ class InfluencesRepositoryPowerSync {
   }
 
   Future<void> seedInfluencesIfEmpty() async {
-    final count = await _powerSync.get('SELECT COUNT(*) as cnt FROM training_influences');
+    final count = await _powerSync.get(
+      'SELECT COUNT(*) as cnt FROM training_influences',
+    );
     if ((count['cnt'] as int) > 0) return;
 
     final now = DateTime.now().toIso8601String();
@@ -133,7 +140,6 @@ class InfluencesRepositoryPowerSync {
       );
     }
   }
-
 }
 
 @riverpod

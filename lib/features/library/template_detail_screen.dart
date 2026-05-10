@@ -32,9 +32,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
       backgroundColor: AppColors.backgroundDepth1,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.borderDepth1),
-        ),
+        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
         middle: Text(
           widget.template.name,
           style: AppTypography.subtitle,
@@ -97,8 +95,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
 
   Widget _headerStatsRow() {
     final totalBlocks = widget.template.blocks.length;
-    final totalExercises =
-        widget.template.blocks.expand((block) => block.exercises).length;
+    final totalExercises = widget.template.blocks
+        .expand((block) => block.exercises)
+        .length;
     return Row(
       children: [
         _metaStat(
@@ -194,9 +193,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 color: AppColors.borderDepth1,
               ),
-              ...block.exercises.map(
-                (exercise) => _exerciseRow(exercise),
-              ),
+              ...block.exercises.map((exercise) => _exerciseRow(exercise)),
               const SizedBox(height: AppSpacing.xs),
             ],
           ],
@@ -289,13 +286,13 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
   }
 
   Widget _dotSeparator() => Container(
-        width: 3,
-        height: 3,
-        decoration: const BoxDecoration(
-          color: AppColors.textColor4,
-          shape: BoxShape.circle,
-        ),
-      );
+    width: 3,
+    height: 3,
+    decoration: const BoxDecoration(
+      color: AppColors.textColor4,
+      shape: BoxShape.circle,
+    ),
+  );
 
   Widget _exerciseRow(WorkoutExercise exercise) {
     return Padding(
@@ -323,9 +320,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
               ),
             ),
           ),
-          if (exercise.prescription.isNotEmpty)
+          if (exercise.prescriptionLabel.isNotEmpty)
             Text(
-              exercise.prescription,
+              exercise.prescriptionLabel,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textColor4,
                 fontWeight: FontWeight.w500,
@@ -365,12 +362,12 @@ class _BlockTypeBadge extends StatelessWidget {
   }
 
   Color get _color => switch (type) {
-        WorkoutBlockType.warmup => AppColors.warning,
-        WorkoutBlockType.animalFlow => AppColors.accentSecondary,
-        WorkoutBlockType.strength => AppColors.error,
-        WorkoutBlockType.mobility => AppColors.success,
-        WorkoutBlockType.core => AppColors.accentPrimary,
-        WorkoutBlockType.conditioning => AppColors.warning,
-        WorkoutBlockType.cooldown => AppColors.textColor3,
-      };
+    WorkoutBlockType.warmup => AppColors.warning,
+    WorkoutBlockType.animalFlow => AppColors.accentSecondary,
+    WorkoutBlockType.strength => AppColors.error,
+    WorkoutBlockType.mobility => AppColors.success,
+    WorkoutBlockType.core => AppColors.accentPrimary,
+    WorkoutBlockType.conditioning => AppColors.warning,
+    WorkoutBlockType.cooldown => AppColors.textColor3,
+  };
 }

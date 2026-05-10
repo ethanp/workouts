@@ -11,10 +11,7 @@ class TimestampedHeartRate {
 }
 
 class TrainingLoadResult {
-  const TrainingLoadResult({
-    this.zoneTime = HrZoneTime.zero,
-    this.trimp = 0,
-  });
+  const TrainingLoadResult({this.zoneTime = HrZoneTime.zero, this.trimp = 0});
 
   final HrZoneTime zoneTime;
   final double trimp;
@@ -31,7 +28,7 @@ class TrainingLoadResult {
 ///   TRIMP += (gapMinutes) * HRratio * 0.64 * e^(1.92 * HRratio)
 class TrainingLoadCalculator {
   TrainingLoadCalculator({required this.restingHeartRate})
-      : _hrReserve = (_trimpMaxHr - restingHeartRate).toDouble();
+    : _hrReserve = (_trimpMaxHr - restingHeartRate).toDouble();
 
   static const int _trimpMaxHr = 185;
 
@@ -57,8 +54,7 @@ class TrainingLoadCalculator {
 
     for (var sampleIndex = 0; sampleIndex < samples.length - 1; sampleIndex++) {
       final bpm = samples[sampleIndex].bpm;
-      final gapSeconds = samples[sampleIndex + 1]
-          .timestamp
+      final gapSeconds = samples[sampleIndex + 1].timestamp
           .difference(samples[sampleIndex].timestamp)
           .inSeconds
           .clamp(0, maxGapSeconds);

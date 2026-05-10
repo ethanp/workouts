@@ -132,7 +132,11 @@ class ExerciseTimerPanel extends StatelessWidget {
                 ? onStart
                 : null,
             child: Text(
-              canPause ? 'Pause' : canResume ? 'Resume' : 'Start',
+              canPause
+                  ? 'Pause'
+                  : canResume
+                  ? 'Resume'
+                  : 'Start',
               style: const TextStyle(
                 color: CupertinoColors.white,
                 fontSize: 16,

@@ -113,7 +113,9 @@ class _ExercisesBody extends ConsumerWidget {
       ];
     }
     if (_hasMissingBenefits) {
-      return [SliverToBoxAdapter(child: _GenerateAllBanner(onTap: onGenerateAll))];
+      return [
+        SliverToBoxAdapter(child: _GenerateAllBanner(onTap: onGenerateAll)),
+      ];
     }
     return [];
   }
@@ -394,20 +396,20 @@ class _ModalityIcon extends StatelessWidget {
   }
 
   IconData get _icon => switch (modality) {
-        ExerciseModality.reps => CupertinoIcons.repeat,
-        ExerciseModality.timed => CupertinoIcons.timer,
-        ExerciseModality.hold => CupertinoIcons.pause_circle,
-        ExerciseModality.mobility => CupertinoIcons.arrow_2_circlepath,
-        ExerciseModality.breath => CupertinoIcons.wind,
-      };
+    ExerciseModality.reps => CupertinoIcons.repeat,
+    ExerciseModality.timed => CupertinoIcons.timer,
+    ExerciseModality.hold => CupertinoIcons.pause_circle,
+    ExerciseModality.mobility => CupertinoIcons.arrow_2_circlepath,
+    ExerciseModality.breath => CupertinoIcons.wind,
+  };
 
   Color get _color => switch (modality) {
-        ExerciseModality.reps => AppColors.accentPrimary,
-        ExerciseModality.timed => AppColors.warning,
-        ExerciseModality.hold => AppColors.accentSecondary,
-        ExerciseModality.mobility => AppColors.success,
-        ExerciseModality.breath => AppColors.textColor3,
-      };
+    ExerciseModality.reps => AppColors.accentPrimary,
+    ExerciseModality.timed => AppColors.warning,
+    ExerciseModality.hold => AppColors.accentSecondary,
+    ExerciseModality.mobility => AppColors.success,
+    ExerciseModality.breath => AppColors.textColor3,
+  };
 }
 
 class _ModalityPill extends StatelessWidget {

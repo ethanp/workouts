@@ -4,8 +4,19 @@ import 'package:flutter/painting.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 const _months = [
-  '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+  '',
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
 ];
 
 class ChartDateLayout {
@@ -67,7 +78,8 @@ class ChartDateLayout {
     var cursor = DateTime(minDate.year, minDate.month, minDate.day + stepDays);
     final minGap = stepDays ~/ 2;
     while (cursor.isBefore(
-        DateTime(maxDate.year, maxDate.month, maxDate.day - minGap))) {
+      DateTime(maxDate.year, maxDate.month, maxDate.day - minGap),
+    )) {
       ticks.add(cursor);
       cursor = DateTime(cursor.year, cursor.month, cursor.day + stepDays);
     }
@@ -93,8 +105,10 @@ class ChartDateLayout {
         textDirection: TextDirection.ltr,
       )..layout();
 
-      final labelX = (xForDate(date) - textPainter.width / 2)
-          .clamp(left - 4, right - textPainter.width + 4);
+      final labelX = (xForDate(date) - textPainter.width / 2).clamp(
+        left - 4,
+        right - textPainter.width + 4,
+      );
       textPainter.paint(canvas, Offset(labelX, bottom + 6));
     }
   }
@@ -122,7 +136,11 @@ class ChartDateLayout {
     for (var year = minDate.year + 1; year <= maxDate.year; year++) {
       final DateTime jan1 = DateTime(year);
       final double boundaryX = xForDate(jan1);
-      canvas.drawLine(Offset(boundaryX, top), Offset(boundaryX, bottom), linePaint);
+      canvas.drawLine(
+        Offset(boundaryX, top),
+        Offset(boundaryX, bottom),
+        linePaint,
+      );
 
       final textPainter = TextPainter(
         text: TextSpan(

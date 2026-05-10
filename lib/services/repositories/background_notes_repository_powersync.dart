@@ -73,7 +73,9 @@ class BackgroundNotesRepositoryPowerSync {
   }
 
   Future<void> deleteNote(String noteId) async {
-    await _powerSync.execute('DELETE FROM background_notes WHERE id = ?', [noteId]);
+    await _powerSync.execute('DELETE FROM background_notes WHERE id = ?', [
+      noteId,
+    ]);
   }
 }
 

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/library/template_detail_screen.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
@@ -44,8 +44,7 @@ class _TemplateList extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       itemCount: templates.length,
-      separatorBuilder: (_, __) =>
-          const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, templateIndex) =>
           _TemplateCard(template: templates[templateIndex]),
     );
@@ -60,8 +59,9 @@ class _TemplateCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final blockCount = template.blocks.length;
-    final exerciseCount =
-        template.blocks.expand((block) => block.exercises).length;
+    final exerciseCount = template.blocks
+        .expand((block) => block.exercises)
+        .length;
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
@@ -82,12 +82,11 @@ class _TemplateCard extends ConsumerWidget {
     );
   }
 
-  Future<bool> _confirmDelete(BuildContext context) =>
-      confirmDeleteDialog(
-        context,
-        title: 'Delete Routine?',
-        content: '"${template.name}" will be permanently deleted.',
-      );
+  Future<bool> _confirmDelete(BuildContext context) => confirmDeleteDialog(
+    context,
+    title: 'Delete Routine?',
+    content: '"${template.name}" will be permanently deleted.',
+  );
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(
@@ -96,7 +95,11 @@ class _TemplateCard extends ConsumerWidget {
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: AppSpacing.lg),
-    child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white, size: 22),
+    child: const Icon(
+      CupertinoIcons.trash,
+      color: CupertinoColors.white,
+      size: 22,
+    ),
   );
 
   Widget _card(int blockCount, int exerciseCount) {
@@ -161,9 +164,7 @@ class _TemplateCard extends ConsumerWidget {
         const SizedBox(height: AppSpacing.xs),
         Row(
           children: [
-            _metaChip(
-              '$blockCount ${blockCount == 1 ? 'block' : 'blocks'}',
-            ),
+            _metaChip('$blockCount ${blockCount == 1 ? 'block' : 'blocks'}'),
             const SizedBox(width: AppSpacing.xs),
             _metaChip(
               '$exerciseCount ${exerciseCount == 1 ? 'exercise' : 'exercises'}',

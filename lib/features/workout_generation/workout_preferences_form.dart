@@ -157,8 +157,9 @@ class _WorkoutPreferencesFormState
                     color: isSelected
                         ? CupertinoColors.white
                         : AppColors.textColor2,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.w600
+                        : FontWeight.normal,
                   ),
                 ),
               ),
@@ -250,8 +251,7 @@ class _WorkoutPreferencesFormState
         if (location.equipment.isNotEmpty)
           Text(
             location.equipment,
-            style:
-                AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -263,8 +263,9 @@ class _WorkoutPreferencesFormState
     return CupertinoTextField(
       controller: _notesController,
       placeholder: 'Anything else? e.g., "I\'m feeling tired", "skip legs"',
-      placeholderStyle:
-          AppTypography.body.copyWith(color: AppColors.textColor4),
+      placeholderStyle: AppTypography.body.copyWith(
+        color: AppColors.textColor4,
+      ),
       style: AppTypography.body.copyWith(color: AppColors.textColor1),
       padding: const EdgeInsets.all(AppSpacing.md),
       maxLines: 3,

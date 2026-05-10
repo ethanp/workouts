@@ -6,7 +6,7 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/library/exercise_picker_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/features/active_session/exercise_card.dart';
+import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
 
 class BlockView extends ConsumerStatefulWidget {
   const BlockView({super.key, required this.block});
@@ -151,8 +151,7 @@ class _BlockViewState extends ConsumerState<BlockView> {
     final currentIndex = widget.block.exercises.indexWhere(
       (workoutExercise) => workoutExercise.id == currentExerciseId,
     );
-    if (currentIndex >= 0 &&
-        currentIndex < widget.block.exercises.length - 1) {
+    if (currentIndex >= 0 && currentIndex < widget.block.exercises.length - 1) {
       _scrollToExercise(widget.block.exercises[currentIndex + 1].id);
     }
   }

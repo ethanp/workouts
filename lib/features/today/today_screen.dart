@@ -8,7 +8,7 @@ import 'package:workouts/features/workout_generation/workout_generation_provider
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/features/today/today_template_card.dart';
-import 'package:workouts/features/workout_generation/workout_options_sheet.dart';
+import 'package:workouts/features/workout_generation/options/workout_options_sheet.dart';
 
 class TodayScreen extends ConsumerWidget {
   const TodayScreen({super.key});

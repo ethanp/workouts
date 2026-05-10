@@ -34,8 +34,7 @@ class TrainingBalanceStrip extends ConsumerStatefulWidget {
       _TrainingBalanceStripState();
 }
 
-class _TrainingBalanceStripState
-    extends ConsumerState<TrainingBalanceStrip> {
+class _TrainingBalanceStripState extends ConsumerState<TrainingBalanceStrip> {
   String? _expandedDotKey;
 
   @override
@@ -68,12 +67,10 @@ class _TrainingBalanceStripState
                     const Center(child: CupertinoActivityIndicator()),
                 error: (_, __) => _errorText('Unable to load sessions'),
               ),
-              loading: () =>
-                  const Center(child: CupertinoActivityIndicator()),
+              loading: () => const Center(child: CupertinoActivityIndicator()),
               error: (_, __) => _errorText('Unable to load activity'),
             ),
-            loading: () =>
-                const Center(child: CupertinoActivityIndicator()),
+            loading: () => const Center(child: CupertinoActivityIndicator()),
             error: (_, __) => _errorText('Unable to load goals'),
           ),
         ],
@@ -87,13 +84,11 @@ class _TrainingBalanceStripState
   );
 
   List<FitnessGoal> _activeGoalsByPriority(List<FitnessGoal> goals) {
-    final activeGoals = goals
-        .where((goal) => goal.status == GoalStatus.active)
-        .toList()
-      ..sort(
-        (firstGoal, secondGoal) =>
-            firstGoal.priority.compareTo(secondGoal.priority),
-      );
+    final activeGoals =
+        goals.where((goal) => goal.status == GoalStatus.active).toList()..sort(
+          (firstGoal, secondGoal) =>
+              firstGoal.priority.compareTo(secondGoal.priority),
+        );
     return activeGoals.take(_kMaxGoalRows).toList();
   }
 
@@ -179,7 +174,9 @@ class _TrainingBalanceStripState
       spacing: _kDotSpacing,
       runSpacing: _kDotSpacing,
       children: cardioDays.map((day) {
-        final polarization = PolarizationWeek.fromHrZoneTime(day.cardioZoneTime);
+        final polarization = PolarizationWeek.fromHrZoneTime(
+          day.cardioZoneTime,
+        );
         final dotKey = 'cardio-${day.date.toIso8601String()}';
         final isExpanded = _expandedDotKey == dotKey;
         final dot = _cardioDot(
@@ -199,9 +196,7 @@ class _TrainingBalanceStripState
     required bool isExpanded,
   }) {
     return GestureDetector(
-      onTap: () => setState(
-        () => _expandedDotKey = isExpanded ? null : dotKey,
-      ),
+      onTap: () => setState(() => _expandedDotKey = isExpanded ? null : dotKey),
       child: Container(
         width: _kDotSize,
         height: _kDotSize,
@@ -228,8 +223,8 @@ class _TrainingBalanceStripState
             '${durationMinutes}m cardio',
             if (day.cardioHasHrData)
               '${polarization.aerobicBaseMinutes}m base · '
-              '${polarization.grayZoneMinutes}m gray · '
-              '${polarization.vo2maxMinutes}m VO₂max',
+                  '${polarization.grayZoneMinutes}m gray · '
+                  '${polarization.vo2maxMinutes}m VO₂max',
           ],
         ),
       ],
@@ -314,9 +309,7 @@ class _TrainingBalanceStripState
 
   Widget _sessionDot({required String dotKey, required bool isExpanded}) {
     return GestureDetector(
-      onTap: () => setState(
-        () => _expandedDotKey = isExpanded ? null : dotKey,
-      ),
+      onTap: () => setState(() => _expandedDotKey = isExpanded ? null : dotKey),
       child: Container(
         width: _kDotSize,
         height: _kDotSize,
@@ -364,10 +357,7 @@ class _TrainingBalanceStripState
         .toList();
   }
 
-  Widget _dotDetailCard({
-    required String title,
-    required List<String> lines,
-  }) {
+  Widget _dotDetailCard({required String title, required List<String> lines}) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -439,9 +429,7 @@ class _TrainingBalanceStripState
     return indexed;
   }
 
-  Map<DateTime, List<Session>> _indexSessionsByMonday(
-    List<Session> sessions,
-  ) {
+  Map<DateTime, List<Session>> _indexSessionsByMonday(List<Session> sessions) {
     final indexed = <DateTime, List<Session>>{};
     for (final session in sessions) {
       final sessionDate = session.completedAt ?? session.startedAt;

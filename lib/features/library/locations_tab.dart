@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/training_location.dart';
 import 'package:workouts/features/library/locations_provider.dart';
-import 'package:workouts/services/llm_service.dart';
+import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/locations_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
@@ -81,9 +81,7 @@ class _LocationsList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         _explanationBanner(),
-        ...locations.map(
-          (location) => _LocationCard(location: location),
-        ),
+        ...locations.map((location) => _LocationCard(location: location)),
       ],
     );
   }
@@ -99,11 +97,7 @@ class _LocationsList extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            CupertinoIcons.lightbulb,
-            color: AppColors.textColor2,
-            size: 20,
-          ),
+          Icon(CupertinoIcons.lightbulb, color: AppColors.textColor2, size: 20),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
@@ -138,22 +132,25 @@ class _LocationCard extends ConsumerWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context) => confirmDeleteDialog(
-        context,
-        title: 'Delete Location?',
-        content: '"${location.name}" will be permanently deleted.',
-      );
+    context,
+    title: 'Delete Location?',
+    content: '"${location.name}" will be permanently deleted.',
+  );
 
   Widget _deleteBackground() => Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(CupertinoIcons.trash,
-            color: CupertinoColors.white, size: 22),
-      );
+    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(
+      CupertinoIcons.trash,
+      color: CupertinoColors.white,
+      size: 22,
+    ),
+  );
 
   Widget _card(BuildContext context) {
     return Container(
@@ -267,7 +264,9 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.backgroundDepth2,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
@@ -309,15 +308,15 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
   }
 
   Widget _dragHandle() => Center(
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.borderDepth3,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      );
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.borderDepth3,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
 
   Widget _nameField() {
     return Column(
@@ -418,8 +417,11 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
               : Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(CupertinoIcons.sparkles, size: 16,
-                        color: AppColors.accentPrimary),
+                    const Icon(
+                      CupertinoIcons.sparkles,
+                      size: 16,
+                      color: AppColors.accentPrimary,
+                    ),
                     const SizedBox(width: AppSpacing.xs),
                     Text(
                       _equipmentController.text.trim().isNotEmpty
@@ -455,8 +457,7 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
       final currentEquipment = _equipmentController.text.trim();
       final equipment = await llm.generateLocationEquipment(
         locationName: _nameController.text.trim(),
-        currentEquipment:
-            currentEquipment.isNotEmpty ? currentEquipment : null,
+        currentEquipment: currentEquipment.isNotEmpty ? currentEquipment : null,
       );
       if (!mounted) return;
       setState(() {

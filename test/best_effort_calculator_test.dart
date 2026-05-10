@@ -10,15 +10,14 @@ CardioRoutePoint _point({
   required double lat,
   required double lng,
   required DateTime recordedAt,
-}) =>
-    CardioRoutePoint(
-      id: 'pt-$index',
-      workoutId: 'w1',
-      pointIndex: index,
-      latitude: lat,
-      longitude: lng,
-      recordedAt: recordedAt,
-    );
+}) => CardioRoutePoint(
+  id: 'pt-$index',
+  workoutId: 'w1',
+  pointIndex: index,
+  latitude: lat,
+  longitude: lng,
+  recordedAt: recordedAt,
+);
 
 /// Creates a straight-line route of [count] evenly spaced points heading due
 /// east from (0, 0). Each pair of consecutive points is ~111 meters apart
@@ -53,13 +52,19 @@ void main() {
     test('returns empty when no points have timestamps', () {
       final noTimestamps = [
         CardioRoutePoint(
-            id: 'a', workoutId: 'w', pointIndex: 0, latitude: 0, longitude: 0),
+          id: 'a',
+          workoutId: 'w',
+          pointIndex: 0,
+          latitude: 0,
+          longitude: 0,
+        ),
         CardioRoutePoint(
-            id: 'b',
-            workoutId: 'w',
-            pointIndex: 1,
-            latitude: 0,
-            longitude: 0.01),
+          id: 'b',
+          workoutId: 'w',
+          pointIndex: 1,
+          latitude: 0,
+          longitude: 0.01,
+        ),
       ];
       expect(_calculator.compute(noTimestamps), isEmpty);
     });
@@ -98,21 +103,24 @@ void main() {
       // Each pair ~111m apart
       final route = <CardioRoutePoint>[];
       for (var i = 0; i < 5; i++) {
-        route.add(_point(
-          index: i,
-          lat: 0,
-          lng: i * 0.001,
-          recordedAt: start.add(Duration(seconds: i * 60)),
-        ));
+        route.add(
+          _point(
+            index: i,
+            lat: 0,
+            lng: i * 0.001,
+            recordedAt: start.add(Duration(seconds: i * 60)),
+          ),
+        );
       }
       for (var i = 5; i < 10; i++) {
-        route.add(_point(
-          index: i,
-          lat: 0,
-          lng: i * 0.001,
-          recordedAt:
-              start.add(Duration(seconds: 4 * 60 + (i - 4) * 10)),
-        ));
+        route.add(
+          _point(
+            index: i,
+            lat: 0,
+            lng: i * 0.001,
+            recordedAt: start.add(Duration(seconds: 4 * 60 + (i - 4) * 10)),
+          ),
+        );
       }
 
       final results = _calculator.compute(route);
@@ -188,8 +196,7 @@ void main() {
     test('bucket meters are correctly derived from metersPerMile', () {
       expect(DistanceBucket.halfMile.meters, closeTo(metersPerMile / 2, 0.01));
       expect(DistanceBucket.oneMile.meters, closeTo(metersPerMile, 0.01));
-      expect(
-          DistanceBucket.fiveMiles.meters, closeTo(metersPerMile * 5, 0.01));
+      expect(DistanceBucket.fiveMiles.meters, closeTo(metersPerMile * 5, 0.01));
     });
   });
 }

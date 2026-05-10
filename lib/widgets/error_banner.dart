@@ -191,8 +191,12 @@ class _ErrorToast extends StatelessWidget {
 
   Future<void> _emailError(String errorMessage) async {
     final logTail = appLogBuffer.entries
-        .skip((appLogBuffer.entries.length - _recentLogLineCount)
-            .clamp(0, appLogBuffer.entries.length))
+        .skip(
+          (appLogBuffer.entries.length - _recentLogLineCount).clamp(
+            0,
+            appLogBuffer.entries.length,
+          ),
+        )
         .map((e) => e.formattedText)
         .join('\n');
 
@@ -200,7 +204,7 @@ class _ErrorToast extends StatelessWidget {
     final body = Uri.encodeComponent(
       'Error at ${DateTime.now().toIso8601String()}:\n\n'
       '$errorMessage\n\n'
-      '--- Recent log (${ appLogBuffer.entries.length < _recentLogLineCount ? appLogBuffer.entries.length : _recentLogLineCount } lines) ---\n'
+      '--- Recent log (${appLogBuffer.entries.length < _recentLogLineCount ? appLogBuffer.entries.length : _recentLogLineCount} lines) ---\n'
       '$logTail',
     );
     final gmailUri = Uri.parse(

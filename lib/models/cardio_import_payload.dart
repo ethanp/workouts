@@ -45,8 +45,7 @@ class CardioImportPayload {
         endedAt == null) {
       return null;
     }
-    final activityTypeKey =
-        payload['activityType'] as String? ?? 'outdoorRun';
+    final activityTypeKey = payload['activityType'] as String? ?? 'outdoorRun';
     return CardioImportPayload(
       externalWorkoutId: externalWorkoutId,
       activityType: CardioType.fromDbKey(activityTypeKey),
@@ -62,8 +61,9 @@ class CardioImportPayload {
       sourceBundleId: payload['sourceBundleId'] as String?,
       deviceModel: payload['deviceModel'] as String?,
       routePoints: RoutePointPayload.parseList(payload['routePoints']),
-      heartRateSamples:
-          HeartRateSamplePayload.parseList(payload['heartRateSeries']),
+      heartRateSamples: HeartRateSamplePayload.parseList(
+        payload['heartRateSeries'],
+      ),
     );
   }
 }
@@ -118,9 +118,7 @@ class HeartRateSamplePayload {
       final String? timestamp = sampleMap['timestamp'] as String?;
       final int? bpm = _asDouble(sampleMap['bpm'])?.round();
       if (timestamp == null || bpm == null) continue;
-      parsedSamples.add(
-        HeartRateSamplePayload(timestamp: timestamp, bpm: bpm),
-      );
+      parsedSamples.add(HeartRateSamplePayload(timestamp: timestamp, bpm: bpm));
     }
     return parsedSamples;
   }

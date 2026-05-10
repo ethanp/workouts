@@ -5,11 +5,7 @@ import 'package:workouts/features/active_session/session_notes_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class AddNoteSheet extends ConsumerStatefulWidget {
-  const AddNoteSheet({
-    super.key,
-    required this.sessionId,
-    this.currentBlockId,
-  });
+  const AddNoteSheet({super.key, required this.sessionId, this.currentBlockId});
 
   final String sessionId;
   final String? currentBlockId;
@@ -93,8 +89,7 @@ class _AddNoteSheetState extends ConsumerState<AddNoteSheet> {
         Text('Add Note', style: AppTypography.title),
         CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed:
-              _contentController.text.trim().isEmpty || _isSaving
+          onPressed: _contentController.text.trim().isEmpty || _isSaving
               ? null
               : _saveNote,
           child: const Text('Save'),

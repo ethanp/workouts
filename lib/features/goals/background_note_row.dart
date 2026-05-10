@@ -54,10 +54,7 @@ class BackgroundNoteRow extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                Text(
-                  note.category.icon,
-                  style: const TextStyle(fontSize: 18),
-                ),
+                Text(note.category.icon, style: const TextStyle(fontSize: 18)),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(child: _noteContent(linkedGoal, categoryColor)),
               ],
@@ -69,21 +66,24 @@ class BackgroundNoteRow extends ConsumerWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context) => confirmDeleteDialog(
-        context,
-        title: 'Delete Note?',
-        content: 'This background note will be permanently deleted.',
-      );
+    context,
+    title: 'Delete Note?',
+    content: 'This background note will be permanently deleted.',
+  );
 
   Widget _deleteBackground() => Container(
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(CupertinoIcons.trash,
-            color: CupertinoColors.white, size: 22),
-      );
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(
+      CupertinoIcons.trash,
+      color: CupertinoColors.white,
+      size: 22,
+    ),
+  );
 
   Widget _noteContent(FitnessGoal? linkedGoal, Color categoryColor) {
     return Column(
@@ -97,14 +97,14 @@ class BackgroundNoteRow extends ConsumerWidget {
   }
 
   Widget _contentText() => Text(
-        note.content,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.body.copyWith(
-          color: isArchived ? AppColors.textColor3 : AppColors.textColor2,
-          fontSize: 14,
-        ),
-      );
+    note.content,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+    style: AppTypography.body.copyWith(
+      color: isArchived ? AppColors.textColor3 : AppColors.textColor2,
+      fontSize: 14,
+    ),
+  );
 
   Widget _noteMeta(FitnessGoal? linkedGoal, Color categoryColor) {
     return Row(
@@ -137,24 +137,23 @@ class BackgroundNoteRow extends ConsumerWidget {
   }
 
   List<Widget> _linkedGoalIndicator(FitnessGoal linkedGoal) => [
-        const SizedBox(width: AppSpacing.sm),
-        const Icon(CupertinoIcons.link, size: 11, color: AppColors.textColor4),
-        const SizedBox(width: 2),
-        Flexible(
-          child: Text(
-            linkedGoal.title,
-            style: AppTypography.caption.copyWith(
-              fontSize: 11,
-              color: AppColors.textColor4,
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
+    const SizedBox(width: AppSpacing.sm),
+    const Icon(CupertinoIcons.link, size: 11, color: AppColors.textColor4),
+    const SizedBox(width: 2),
+    Flexible(
+      child: Text(
+        linkedGoal.title,
+        style: AppTypography.caption.copyWith(
+          fontSize: 11,
+          color: AppColors.textColor4,
         ),
-      ];
+        overflow: TextOverflow.ellipsis,
+      ),
+    ),
+  ];
 
   void _showActions(BuildContext context, WidgetRef ref) {
-    final notesNotifier =
-        ref.read(backgroundNotesControllerProvider.notifier);
+    final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
     final preview = note.content.length > 50
         ? '${note.content.substring(0, 50)}…'
         : note.content;
@@ -162,8 +161,7 @@ class BackgroundNoteRow extends ConsumerWidget {
       context: context,
       builder: (sheetCtx) => CupertinoActionSheet(
         title: Text(preview),
-        actions:
-            _noteActionSheetActions(sheetCtx, context, ref, notesNotifier),
+        actions: _noteActionSheetActions(sheetCtx, context, ref, notesNotifier),
         cancelButton: CupertinoActionSheetAction(
           onPressed: () => Navigator.of(sheetCtx).pop(),
           child: const Text('Cancel'),
@@ -214,8 +212,7 @@ class BackgroundNoteRow extends ConsumerWidget {
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {
-    final notesNotifier =
-        ref.read(backgroundNotesControllerProvider.notifier);
+    final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (_) => NoteFormSheet(
@@ -223,11 +220,7 @@ class BackgroundNoteRow extends ConsumerWidget {
         initialNote: note,
         onSave: (content, category, goalId) {
           notesNotifier.updateNote(
-            note.copyWith(
-              content: content,
-              category: category,
-              goalId: goalId,
-            ),
+            note.copyWith(content: content, category: category, goalId: goalId),
           );
           Navigator.of(context).pop();
         },

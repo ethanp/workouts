@@ -70,8 +70,9 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
     final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
     final bridge = ref.read(healthKitBridgeProvider);
 
-    final totalRows =
-        await powerSyncDatabase.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+    final totalRows = await powerSyncDatabase.execute(
+      'SELECT COUNT(*) AS cnt FROM cardio_workouts',
+    );
     final localWorkouts = totalRows.first['cnt'] as int? ?? 0;
 
     final importedRows = await powerSyncDatabase.execute(
@@ -227,7 +228,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
   Future<void> _refreshCrud() async {
     try {
-      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      final powerSyncDatabase = await ref.read(
+        powerSyncDatabaseProvider.future,
+      );
 
       final crudRows = await powerSyncDatabase.execute(
         "SELECT json_extract(data, '\$.type') AS tbl, COUNT(*) AS cnt "
@@ -238,8 +241,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
           (row['tbl'] as String? ?? 'unknown'): row['cnt'] as int? ?? 0,
       };
 
-      final workoutRows =
-          await powerSyncDatabase.execute('SELECT COUNT(*) AS cnt FROM cardio_workouts');
+      final workoutRows = await powerSyncDatabase.execute(
+        'SELECT COUNT(*) AS cnt FROM cardio_workouts',
+      );
       final localWorkouts = workoutRows.first['cnt'] as int? ?? 0;
 
       int serverWorkouts = -1;
@@ -276,7 +280,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _forceReconnect() async {
     setState(() => _reconnecting = true);
     try {
-      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      final powerSyncDatabase = await ref.read(
+        powerSyncDatabaseProvider.future,
+      );
       await reconnectPowerSync(powerSyncDatabase);
     } finally {
       if (mounted) setState(() => _reconnecting = false);
@@ -286,7 +292,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _resetSyncData() async {
     setState(() => _resettingSync = true);
     try {
-      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      final powerSyncDatabase = await ref.read(
+        powerSyncDatabaseProvider.future,
+      );
       await powerSyncDatabase.disconnectAndClear();
       await reconnectPowerSync(powerSyncDatabase);
       if (mounted) _refreshCrud();
@@ -343,9 +351,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
               ),
             ),
             const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text('Sync Debug', style: AppTypography.subtitle),
-            ),
+            Expanded(child: Text('Sync Debug', style: AppTypography.subtitle)),
             Icon(
               _expanded
                   ? CupertinoIcons.chevron_up
@@ -377,8 +383,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Widget _connectionSection(AsyncValue<SyncStatus> syncStatus) {
     return syncStatus.when(
       data: (status) {
-        final connectionLabel =
-            status.connected ? '🟢 Connected' : '🔴 Disconnected';
+        final connectionLabel = status.connected
+            ? '🟢 Connected'
+            : '🔴 Disconnected';
 
         String? activityLabel;
         if (status.downloading) {
@@ -399,8 +406,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DebugRow('Connection', connectionLabel),
-            if (activityLabel != null)
-              DebugRow('Activity', activityLabel),
+            if (activityLabel != null) DebugRow('Activity', activityLabel),
             DebugRow('Initial sync done', '${status.hasSynced ?? false}'),
             DebugRow('Last synced', lastSyncLabel),
           ],
@@ -416,10 +422,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DebugRow(
-          'Pending uploads',
-          totalQueued > 0 ? '$totalQueued ops' : '0',
-        ),
+        DebugRow('Pending uploads', totalQueued > 0 ? '$totalQueued ops' : '0'),
         if (_crudQueue.isNotEmpty)
           ..._crudQueue.entries.map(
             (entry) => Padding(
@@ -461,7 +464,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
                 onPressed: _refreshCrud,
                 child: Text(
                   'Refresh Queue',
-                  style: AppTypography.body.copyWith(color: AppColors.textColor1),
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textColor1,
+                  ),
                 ),
               ),
             ),

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/features/library/influences_provider.dart';
-import 'package:workouts/services/llm_service.dart';
+import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
@@ -60,9 +60,7 @@ class _InfluencesList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
         _explanationBanner(),
-        ...influences.map(
-          (influence) => _InfluenceCard(influence: influence),
-        ),
+        ...influences.map((influence) => _InfluenceCard(influence: influence)),
       ],
     );
   }
@@ -78,11 +76,7 @@ class _InfluencesList extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            CupertinoIcons.lightbulb,
-            color: AppColors.textColor2,
-            size: 20,
-          ),
+          Icon(CupertinoIcons.lightbulb, color: AppColors.textColor2, size: 20),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
@@ -128,22 +122,25 @@ class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
   }
 
   Future<bool> _confirmDelete(BuildContext context) => confirmDeleteDialog(
-        context,
-        title: 'Delete Influence?',
-        content: '"${widget.influence.name}" will be permanently deleted.',
-      );
+    context,
+    title: 'Delete Influence?',
+    content: '"${widget.influence.name}" will be permanently deleted.',
+  );
 
   Widget _deleteBackground() => Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(CupertinoIcons.trash,
-            color: CupertinoColors.white, size: 22),
-      );
+    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(
+      CupertinoIcons.trash,
+      color: CupertinoColors.white,
+      size: 22,
+    ),
+  );
 
   Widget _card(TrainingInfluence influence) {
     return Container(
@@ -360,7 +357,9 @@ class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.backgroundDepth2,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
@@ -406,15 +405,15 @@ class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
   }
 
   Widget _dragHandle() => Center(
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.borderDepth3,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      );
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.borderDepth3,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
 
   Widget _nameField() {
     return Column(
@@ -582,9 +581,9 @@ class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
   }
 
   Widget _actionButtons() {
-    final canGenerate =
-        _nameController.text.trim().isNotEmpty && !_generating;
-    final canSave = _hasFields &&
+    final canGenerate = _nameController.text.trim().isNotEmpty && !_generating;
+    final canSave =
+        _hasFields &&
         _nameController.text.trim().isNotEmpty &&
         _descriptionController.text.trim().isNotEmpty;
 
@@ -656,10 +655,8 @@ class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
       final influence = await llm.generateInfluenceDetails(
         id: influenceId,
         name: _nameController.text.trim(),
-        currentDescription:
-            description.isNotEmpty ? description : null,
-        currentPrinciples:
-            principles.isNotEmpty ? principles : null,
+        currentDescription: description.isNotEmpty ? description : null,
+        currentPrinciples: principles.isNotEmpty ? principles : null,
       );
       if (!mounted) return;
       setState(() {

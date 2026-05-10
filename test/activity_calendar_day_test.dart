@@ -13,20 +13,19 @@ ActivityCalendarDay _day({
   double sessionTrimp = 0,
   int sessionCount = 0,
   int sessionDuration = 0,
-}) =>
-    ActivityCalendarDay(
-      date: DateTime(2026, 3, 1),
-      totalCardioDistanceMeters: cardioDistance,
-      totalCardioDurationSeconds: cardioDuration,
-      cardioZoneTime: cardioZoneTime,
-      cardioTrimp: cardioTrimp,
-      cardioHasHrData: cardioHasHrData,
-      cardioCount: cardioCount,
-      totalSessionDurationSeconds: sessionDuration,
-      sessionZoneTime: sessionZoneTime,
-      sessionTrimp: sessionTrimp,
-      sessionCount: sessionCount,
-    );
+}) => ActivityCalendarDay(
+  date: DateTime(2026, 3, 1),
+  outdoorRunDistanceMeters: cardioDistance,
+  totalCardioDurationSeconds: cardioDuration,
+  cardioZoneTime: cardioZoneTime,
+  cardioTrimp: cardioTrimp,
+  cardioHasHrData: cardioHasHrData,
+  cardioCount: cardioCount,
+  totalSessionDurationSeconds: sessionDuration,
+  sessionZoneTime: sessionZoneTime,
+  sessionTrimp: sessionTrimp,
+  sessionCount: sessionCount,
+);
 
 void main() {
   group('ActivityCalendarDay', () {

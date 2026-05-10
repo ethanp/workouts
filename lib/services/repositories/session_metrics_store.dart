@@ -1,4 +1,3 @@
-
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
@@ -18,10 +17,12 @@ class SessionMetricsStore {
     String sessionId, {
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final result =
-        await _loadAndCompute(sessionId, trainingLoad: trainingLoad);
-    await _persistMetrics(sessionId, result,
-        restingHr: trainingLoad.restingHeartRate);
+    final result = await _loadAndCompute(sessionId, trainingLoad: trainingLoad);
+    await _persistMetrics(
+      sessionId,
+      result,
+      restingHr: trainingLoad.restingHeartRate,
+    );
   }
 
   Future<void> recomputeAllZones({
@@ -32,12 +33,12 @@ class SessionMetricsStore {
       "SELECT id FROM sessions WHERE completed_at IS NOT NULL"
       " ORDER BY started_at DESC",
     );
-    _log.log(
-      'Recomputing session zones for ${sessionRows.length} sessions.',
-    );
-    for (var sessionIndex = 0;
-        sessionIndex < sessionRows.length;
-        sessionIndex++) {
+    _log.log('Recomputing session zones for ${sessionRows.length} sessions.');
+    for (
+      var sessionIndex = 0;
+      sessionIndex < sessionRows.length;
+      sessionIndex++
+    ) {
       await _recomputeZones(
         sessionRows[sessionIndex]['id'] as String,
         trainingLoad: trainingLoad,
@@ -50,17 +51,14 @@ class SessionMetricsStore {
   Future<void> backfillMissing({
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final List<Map<String, dynamic>> pendingRows =
-        await _powerSync.execute('''
+    final List<Map<String, dynamic>> pendingRows = await _powerSync.execute('''
       SELECT s.id FROM sessions s
       LEFT JOIN session_computed_metrics m ON m.id = s.id
       WHERE s.completed_at IS NOT NULL
         AND (m.id IS NULL OR m.zone1_seconds IS NULL)
     ''');
     if (pendingRows.isEmpty) return;
-    _log.log(
-      'Backfilling session metrics for ${pendingRows.length} sessions.',
-    );
+    _log.log('Backfilling session metrics for ${pendingRows.length} sessions.');
     for (final pendingRow in pendingRows) {
       await computeAndStore(
         pendingRow['id'] as String,

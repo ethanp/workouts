@@ -9,16 +9,15 @@ CardioCalendarDay _day({
   int workoutCount = 0,
   double distance = 0,
   int duration = 0,
-}) =>
-    CardioCalendarDay(
-      date: DateTime(2026, 3, 1),
-      totalDistanceMeters: distance,
-      totalDurationSeconds: duration,
-      zoneTime: zoneTime,
-      trimp: trimp,
-      hasHrData: hasHrData,
-      workoutCount: workoutCount,
-    );
+}) => CardioCalendarDay(
+  date: DateTime(2026, 3, 1),
+  outdoorRunDistanceMeters: distance,
+  totalDurationSeconds: duration,
+  zoneTime: zoneTime,
+  trimp: trimp,
+  hasHrData: hasHrData,
+  workoutCount: workoutCount,
+);
 
 void main() {
   group('CardioCalendarDay', () {

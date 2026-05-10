@@ -9,8 +9,9 @@ const _uuid = Uuid();
 
 @riverpod
 Stream<List<SessionNote>> sessionNotesStream(Ref ref, String sessionId) {
-  final sessionNotesRepository =
-      ref.watch(sessionNotesRepositoryPowerSyncProvider);
+  final sessionNotesRepository = ref.watch(
+    sessionNotesRepositoryPowerSyncProvider,
+  );
   return sessionNotesRepository.watchNotesForSession(sessionId);
 }
 
@@ -26,8 +27,9 @@ class SessionNotesController extends _$SessionNotesController {
     String? exerciseId,
     String? blockId,
   }) async {
-    final sessionNotesRepository =
-        ref.read(sessionNotesRepositoryPowerSyncProvider);
+    final sessionNotesRepository = ref.read(
+      sessionNotesRepositoryPowerSyncProvider,
+    );
     final note = SessionNote(
       id: _uuid.v4(),
       sessionId: sessionId,
@@ -42,14 +44,16 @@ class SessionNotesController extends _$SessionNotesController {
   }
 
   Future<void> updateNote(SessionNote note, String newContent) async {
-    final sessionNotesRepository =
-        ref.read(sessionNotesRepositoryPowerSyncProvider);
+    final sessionNotesRepository = ref.read(
+      sessionNotesRepositoryPowerSyncProvider,
+    );
     await sessionNotesRepository.saveNote(note.copyWith(content: newContent));
   }
 
   Future<void> deleteNote(String id) async {
-    final sessionNotesRepository =
-        ref.read(sessionNotesRepositoryPowerSyncProvider);
+    final sessionNotesRepository = ref.read(
+      sessionNotesRepositoryPowerSyncProvider,
+    );
     await sessionNotesRepository.deleteNote(id);
   }
 }

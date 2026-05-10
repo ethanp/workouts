@@ -1,6 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 
 part 'history_provider.g.dart';
 

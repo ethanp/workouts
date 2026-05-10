@@ -47,14 +47,28 @@ WorkoutExercise _exerciseFromJoinRow({
 }) {
   final prescription =
       row[_prefixed(linkPrefix, 'prescription')] as String? ?? '';
+  final storedPlannedSets = PlannedSet.listFromJsonString(
+    row[_prefixed(linkPrefix, 'planned_sets')] as String?,
+  );
+  final modality = _parseModality(
+    row[_prefixed(exercisePrefix, 'modality')] as String?,
+  );
+  final targetSets = storedPlannedSets.isNotEmpty
+      ? storedPlannedSets.length
+      : parseTargetSetsFromPrescription(prescription);
+  final plannedSets = storedPlannedSets.isNotEmpty
+      ? storedPlannedSets
+      : plannedSetsFromLegacyPrescription(
+          modality: modality,
+          prescription: prescription,
+          targetSets: targetSets,
+        );
   return WorkoutExercise(
     id: row[_prefixed(exercisePrefix, 'id')] as String,
     name: row[_prefixed(exercisePrefix, 'name')] as String,
-    modality: _parseModality(
-      row[_prefixed(exercisePrefix, 'modality')] as String?,
-    ),
+    modality: modality,
     prescription: prescription,
-    targetSets: parseTargetSetsFromPrescription(prescription),
+    targetSets: targetSets,
     equipment: row[_prefixed(exercisePrefix, 'equipment')] as String?,
     cues: _parseCues(row[_prefixed(exercisePrefix, 'cues')] as String?),
     benefits: ExerciseBenefit.listFromJsonString(
@@ -69,6 +83,7 @@ WorkoutExercise _exerciseFromJoinRow({
     restDuration: _durationFromSeconds(
       row[_prefixed(linkPrefix, 'rest_duration_seconds')],
     ),
+    plannedSets: plannedSets,
   );
 }
 
@@ -96,7 +111,8 @@ WorkoutBlock workoutBlockFromRow(
   return WorkoutBlock(
     id: blockRow['id'] as String,
     type: WorkoutBlockType.values.firstWhere(
-      (workoutBlockType) => workoutBlockType.name == (blockRow['type'] as String),
+      (workoutBlockType) =>
+          workoutBlockType.name == (blockRow['type'] as String),
       orElse: () => WorkoutBlockType.strength,
     ),
     title: blockRow['title'] as String,
@@ -153,7 +169,8 @@ SessionBlock sessionBlockFromRow(
     id: blockRow['id'] as String,
     sessionId: blockRow['session_id'] as String,
     type: WorkoutBlockType.values.firstWhere(
-      (workoutBlockType) => workoutBlockType.name == (blockRow['type'] as String),
+      (workoutBlockType) =>
+          workoutBlockType.name == (blockRow['type'] as String),
       orElse: () => WorkoutBlockType.strength,
     ),
     blockIndex: blockRow['block_index'] as int,
@@ -200,4 +217,3 @@ Session sessionFromRow(
         : null,
   );
 }
-

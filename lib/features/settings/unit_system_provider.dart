@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
-import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'unit_system_provider.g.dart';
@@ -57,8 +57,9 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
     final trainingLoad = TrainingLoadCalculator(
       restingHeartRate: restingHeartRate,
     );
-    final progressNotifier =
-        ref.read(metricsRecomputeProgressProvider.notifier);
+    final progressNotifier = ref.read(
+      metricsRecomputeProgressProvider.notifier,
+    );
     CardioRepositoryPowerSync cardioRepo;
     SessionRepositoryPowerSync sessionRepo;
     try {
@@ -74,24 +75,25 @@ class MaxHeartRateNotifier extends _$MaxHeartRateNotifier {
       final int total = cardioTotal + sessionsTotal;
       if (ref.mounted && total > 0) progressNotifier.update(done, total);
     }
+
     Future.wait([
-      cardioRepo.recomputeZones(
-        trainingLoad: trainingLoad,
-        onProgress: (done, total) {
-          cardioDone = done;
-          cardioTotal = total;
-          reportCombinedProgress();
-        },
-      ),
-      sessionRepo.recomputeZones(
-        trainingLoad: trainingLoad,
-        onProgress: (done, total) {
-          sessionsDone = done;
-          sessionsTotal = total;
-          reportCombinedProgress();
-        },
-      ),
-    ])
+          cardioRepo.recomputeZones(
+            trainingLoad: trainingLoad,
+            onProgress: (done, total) {
+              cardioDone = done;
+              cardioTotal = total;
+              reportCombinedProgress();
+            },
+          ),
+          sessionRepo.recomputeZones(
+            trainingLoad: trainingLoad,
+            onProgress: (done, total) {
+              sessionsDone = done;
+              sessionsTotal = total;
+              reportCombinedProgress();
+            },
+          ),
+        ])
         .then((_) {
           if (ref.mounted) progressNotifier.clear();
         })

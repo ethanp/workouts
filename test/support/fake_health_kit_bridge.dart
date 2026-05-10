@@ -19,7 +19,8 @@ class FakeHealthKitBridge extends HealthKitBridge {
   Future<HealthPermissionStatus> getAuthorizationStatus() async => status;
 
   @override
-  Future<HealthPermissionStatus> requestAuthorization() async => requestedStatus;
+  Future<HealthPermissionStatus> requestAuthorization() async =>
+      requestedStatus;
 
   @override
   Stream<HeartRateSample> heartRateStream() => _controller.stream;

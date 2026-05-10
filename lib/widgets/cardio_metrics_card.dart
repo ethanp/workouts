@@ -761,6 +761,7 @@ List<SpeedSample> _computeSpeedSamples(List<CardioRoutePoint> points) {
   return _rollingAverage(rawSamples, windowSize: 9);
 }
 
+// Haversine estimates great-circle distance between two GPS coordinates.
 double _haversineMeters(double lat1, double lon1, double lat2, double lon2) {
   const earthRadius = 6371000.0;
   final phi1 = lat1 * math.pi / 180;

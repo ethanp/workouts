@@ -1,4 +1,3 @@
-
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
@@ -26,14 +25,12 @@ class CardioImporter {
   }) async {
     _log.log('Starting import of ${payloads.length} cardio workouts.');
     var inserted = 0;
-    for (var payloadIndex = 0;
-        payloadIndex < payloads.length;
-        payloadIndex++) {
-      final CardioImportPayload? workout =
-          CardioImportPayload.tryParse(payloads[payloadIndex]);
+    for (var payloadIndex = 0; payloadIndex < payloads.length; payloadIndex++) {
+      final CardioImportPayload? workout = CardioImportPayload.tryParse(
+        payloads[payloadIndex],
+      );
       if (workout != null) {
-        final bool wasNew =
-            await _upsert(workout, trainingLoad: trainingLoad);
+        final bool wasNew = await _upsert(workout, trainingLoad: trainingLoad);
         if (wasNew) inserted++;
       } else {
         _log.warn(
@@ -52,11 +49,11 @@ class CardioImporter {
     CardioImportPayload workout, {
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final String workoutId =
-        await _resolveWorkoutId(workout.externalWorkoutId);
+    final String workoutId = await _resolveWorkoutId(workout.externalWorkoutId);
     if (await _existingCreatedAt(workoutId) != null) {
       _log.fine(
-          'Skipping workout ${workout.externalWorkoutId} (already stored).');
+        'Skipping workout ${workout.externalWorkoutId} (already stored).',
+      );
       return false;
     }
     _log.fine(
@@ -67,8 +64,7 @@ class CardioImporter {
     await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
     await _saveRoutePoints(workoutId, workout.routePoints, now: now);
     await _saveHeartRateSamples(workoutId, workout.heartRateSamples, now: now);
-    await _metricsStore.computeAndStore(
-        workoutId, trainingLoad: trainingLoad);
+    await _metricsStore.computeAndStore(workoutId, trainingLoad: trainingLoad);
     await _bestEffortStore.computeAndStore(workoutId);
     return true;
   }
@@ -184,10 +180,9 @@ class CardioImporter {
       [externalWorkoutId, deterministicId],
     );
     for (final staleRow in staleRows) {
-      await _powerSync.execute(
-        'DELETE FROM cardio_workouts WHERE id = ?',
-        [staleRow['id']],
-      );
+      await _powerSync.execute('DELETE FROM cardio_workouts WHERE id = ?', [
+        staleRow['id'],
+      ]);
     }
     return deterministicId;
   }

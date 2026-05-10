@@ -1,7 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
-
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
@@ -64,22 +63,17 @@ Stream<T> _watchRepo<T>(
 }
 
 @riverpod
-Stream<List<CardioWorkout>> cardioWorkouts(Ref ref) =>
-    _watchRepo(
-      ref,
-      (cardioRepository) => cardioRepository.watchCardioWorkouts(),
-    );
+Stream<List<CardioWorkout>> cardioWorkouts(Ref ref) => _watchRepo(
+  ref,
+  (cardioRepository) => cardioRepository.watchCardioWorkouts(),
+);
 
 @riverpod
 Stream<List<CardioCalendarDay>> cardioCalendarDays(Ref ref) =>
-    _watchRepo(
-      ref,
-      (cardioRepository) => cardioRepository.watchCalendarDays(),
-    );
+    _watchRepo(ref, (cardioRepository) => cardioRepository.watchCalendarDays());
 
 @riverpod
-Stream<List<CardioRoutePoint>> cardioRoutePoints(
-        Ref ref, String workoutId) =>
+Stream<List<CardioRoutePoint>> cardioRoutePoints(Ref ref, String workoutId) =>
     _watchRepo(
       ref,
       (cardioRepository) => cardioRepository.watchRoutePoints(workoutId),
@@ -87,18 +81,16 @@ Stream<List<CardioRoutePoint>> cardioRoutePoints(
 
 @riverpod
 Stream<List<CardioHeartRateSample>> cardioHeartRateSamples(
-        Ref ref, String workoutId) =>
-    _watchRepo(
-      ref,
-      (cardioRepository) => cardioRepository.watchHeartRateSamples(workoutId),
-    );
+  Ref ref,
+  String workoutId,
+) => _watchRepo(
+  ref,
+  (cardioRepository) => cardioRepository.watchHeartRateSamples(workoutId),
+);
 
 @riverpod
 Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
-    _watchRepo(
-      ref,
-      (cardioRepository) => cardioRepository.watchBestEfforts(),
-    );
+    _watchRepo(ref, (cardioRepository) => cardioRepository.watchBestEfforts());
 
 /// Backfills metrics for workouts missing computed zone data.
 /// Gated on sync status: only runs after initial sync is complete
@@ -128,8 +120,9 @@ Future<void> cardioMetricsBackfill(Ref ref) async {
   final trainingLoad = TrainingLoadCalculator(
     restingHeartRate: restingHeartRate,
   );
-  await CardioRepositoryPowerSync(powerSyncDatabase)
-      .backfillMissingMetrics(trainingLoad: trainingLoad);
+  await CardioRepositoryPowerSync(
+    powerSyncDatabase,
+  ).backfillMissingMetrics(trainingLoad: trainingLoad);
 }
 
 @riverpod
@@ -163,13 +156,11 @@ class CardioImportController extends _$CardioImportController {
             totalWorkouts: 0,
             processedWorkouts: 0,
             inProgress: true,
-            status:
-                'Fetching last $maxWorkouts workouts from Apple Health…',
+            status: 'Fetching last $maxWorkouts workouts from Apple Health…',
           ),
         );
       }
-      final importedWorkouts =
-          await healthKitBridge.fetchRecentCardioWorkouts(
+      final importedWorkouts = await healthKitBridge.fetchRecentCardioWorkouts(
         maxWorkouts: maxWorkouts,
         includeRoute: true,
         maxRoutePoints: maxRoutePoints,
@@ -200,8 +191,7 @@ class CardioImportController extends _$CardioImportController {
                 totalWorkouts: totalWorkouts,
                 processedWorkouts: processedWorkouts,
                 inProgress: true,
-                status:
-                    'Adding new workouts (skips ones already stored)…',
+                status: 'Adding new workouts (skips ones already stored)…',
               ),
             );
           }
@@ -225,8 +215,7 @@ class CardioImportController extends _$CardioImportController {
         );
         Future.delayed(const Duration(seconds: 3), () {
           if (ref.mounted) {
-            state =
-                const AsyncValue.data(CardioImportProgress.idle());
+            state = const AsyncValue.data(CardioImportProgress.idle());
           }
         });
       }

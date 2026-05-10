@@ -75,15 +75,13 @@ class HealthKitBridge {
     bool includeHeartRateSeries = true,
   }) async {
     try {
-      final payload = await _methodChannel.invokeMethod<List<Object?>>(
-        'fetchRecentCardioWorkouts',
-        {
-          'maxWorkouts': maxWorkouts,
-          'includeRoute': includeRoute,
-          'maxRoutePoints': maxRoutePoints,
-          'includeHeartRateSeries': includeHeartRateSeries,
-        },
-      );
+      final payload = await _methodChannel
+          .invokeMethod<List<Object?>>('fetchRecentCardioWorkouts', {
+            'maxWorkouts': maxWorkouts,
+            'includeRoute': includeRoute,
+            'maxRoutePoints': maxRoutePoints,
+            'includeHeartRateSeries': includeHeartRateSeries,
+          });
       if (payload == null) {
         return const [];
       }

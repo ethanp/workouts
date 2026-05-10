@@ -8,8 +8,8 @@ import 'package:workouts/models/training_location.dart';
 import 'package:workouts/services/repositories/background_notes_repository_powersync.dart';
 import 'package:workouts/services/repositories/goals_repository_powersync.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
-import 'package:workouts/services/repositories/session_repository_powersync.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 
 part 'context_builder.g.dart';
 
@@ -52,7 +52,8 @@ class WorkoutContext {
     this.preferences,
   });
 
-  bool get isEmpty => goals.isEmpty && backgroundNotes.isEmpty && influences.isEmpty;
+  bool get isEmpty =>
+      goals.isEmpty && backgroundNotes.isEmpty && influences.isEmpty;
 }
 
 class ContextBuilder {
@@ -73,7 +74,9 @@ class ContextBuilder {
   Future<WorkoutContext> build() async {
     // Fetch active goals, sorted by priority
     final goals = await goalsRepo.fetchGoals();
-    final activeGoals = goals.whereL((goal) => goal.status == GoalStatus.active);
+    final activeGoals = goals.whereL(
+      (goal) => goal.status == GoalStatus.active,
+    );
 
     // Fetch active background notes
     final allNotes = await notesRepo.fetchNotes();
@@ -85,7 +88,8 @@ class ContextBuilder {
     final recentSessions = sessions
         .where(
           (session) =>
-              session.completedAt != null && session.completedAt!.isAfter(cutoff),
+              session.completedAt != null &&
+              session.completedAt!.isAfter(cutoff),
         )
         .take(10) // Limit to last 10 sessions for token budget
         .toList();

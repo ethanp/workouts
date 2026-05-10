@@ -87,15 +87,8 @@ class CardioTrendPainter extends CustomPainter {
     }
   }
 
-  void _drawSeries(
-    Canvas canvas,
-    ChartDateLayout layout,
-    TrendSeries series,
-  ) {
-    final range = SeriesValueScale(
-      series.points,
-      invertY: series.invertY,
-    );
+  void _drawSeries(Canvas canvas, ChartDateLayout layout, TrendSeries series) {
+    final range = SeriesValueScale(series.points, invertY: series.invertY);
 
     final clipRect = Rect.fromLTRB(
       layout.left,
@@ -143,8 +136,10 @@ class CardioTrendPainter extends CustomPainter {
     if (visiblePoints.length < 2) return;
 
     final trend = computeTrendLine(visiblePoints, layout.minDate);
-    final dateRangeSeconds =
-        layout.maxDate.difference(layout.minDate).inSeconds.toDouble();
+    final dateRangeSeconds = layout.maxDate
+        .difference(layout.minDate)
+        .inSeconds
+        .toDouble();
 
     final startValue = trend.intercept;
     final endValue = trend.intercept + trend.slope * dateRangeSeconds;

@@ -50,7 +50,9 @@ class _ExpandableCuesState extends State<ExpandableCues> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          _isExpanded ? CupertinoIcons.chevron_down : CupertinoIcons.chevron_right,
+          _isExpanded
+              ? CupertinoIcons.chevron_down
+              : CupertinoIcons.chevron_right,
           size: 16,
           color: AppColors.textColor3,
         ),
@@ -89,7 +91,9 @@ class _ExpandableCuesState extends State<ExpandableCues> {
               Expanded(
                 child: Text(
                   cue,
-                  style: AppTypography.body.copyWith(color: AppColors.textColor3),
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textColor3,
+                  ),
                 ),
               ),
             ],

@@ -32,8 +32,7 @@ String generatePowerSyncToken({String userId = 'default'}) {
 
 class WorkoutsBackendConnector extends PowerSyncBackendConnector {
   WorkoutsBackendConnector(this.powersyncUrl, String postgrestUrl)
-      : _batchUploader =
-            TieredBatchUploader(PostgRestUploader(postgrestUrl));
+    : _batchUploader = TieredBatchUploader(PostgRestUploader(postgrestUrl));
 
   final String powersyncUrl;
   final TieredBatchUploader _batchUploader;

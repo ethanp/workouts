@@ -32,7 +32,22 @@ class CardioRepositoryPowerSync {
   );
 
   Stream<List<CardioWorkout>> watchCardioWorkouts() => _powerSync
-      .watch('SELECT * FROM cardio_workouts ORDER BY started_at DESC')
+      .watch(
+        '''
+        SELECT
+          w.*,
+          COALESCE(m.zone1_seconds, 0) AS zone1_seconds,
+          COALESCE(m.zone2_seconds, 0) AS zone2_seconds,
+          COALESCE(m.zone3_seconds, 0) AS zone3_seconds,
+          COALESCE(m.zone4_seconds, 0) AS zone4_seconds,
+          COALESCE(m.zone5_seconds, 0) AS zone5_seconds,
+          COALESCE(m.has_hr_samples, 0) AS has_hr_samples
+        FROM cardio_workouts w
+        LEFT JOIN cardio_computed_metrics m ON m.id = w.id
+        ORDER BY w.started_at DESC
+        ''',
+        triggerOnTables: const {'cardio_workouts', 'cardio_computed_metrics'},
+      )
       .map((workoutRows) => workoutRows.mapL(CardioWorkout.fromRow));
 
   Stream<List<CardioRoutePoint>> watchRoutePoints(
@@ -51,9 +66,7 @@ class CardioRepositoryPowerSync {
         'SELECT * FROM cardio_heart_rate_samples WHERE workout_id = ? ORDER BY timestamp ASC',
         parameters: [workoutId],
       )
-      .map(
-        (sampleRows) => sampleRows.mapL(CardioHeartRateSample.fromRow),
-      );
+      .map((sampleRows) => sampleRows.mapL(CardioHeartRateSample.fromRow));
 
   Stream<List<CardioBestEffort>> watchBestEfforts() => _powerSync
       .watch(
@@ -106,7 +119,20 @@ class CardioRepositoryPowerSync {
     final String dayString =
         '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
     final List<Map<String, dynamic>> workoutRows = await _powerSync.execute(
-      "SELECT * FROM cardio_workouts WHERE DATE(started_at, 'localtime') = ? ORDER BY started_at ASC",
+      '''
+      SELECT
+        w.*,
+        COALESCE(m.zone1_seconds, 0) AS zone1_seconds,
+        COALESCE(m.zone2_seconds, 0) AS zone2_seconds,
+        COALESCE(m.zone3_seconds, 0) AS zone3_seconds,
+        COALESCE(m.zone4_seconds, 0) AS zone4_seconds,
+        COALESCE(m.zone5_seconds, 0) AS zone5_seconds,
+        COALESCE(m.has_hr_samples, 0) AS has_hr_samples
+      FROM cardio_workouts w
+      LEFT JOIN cardio_computed_metrics m ON m.id = w.id
+      WHERE DATE(w.started_at, 'localtime') = ?
+      ORDER BY w.started_at ASC
+      ''',
       [dayString],
     );
     return workoutRows.mapL(CardioWorkout.fromRow);

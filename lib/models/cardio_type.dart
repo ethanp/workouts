@@ -16,9 +16,8 @@ enum CardioType {
 
   String get dbKey => name;
 
-  static CardioType fromDbKey(String key) =>
-      values.firstWhere(
-        (cardioType) => cardioType.name == key,
-        orElse: () => outdoorRun,
-      );
+  static CardioType fromDbKey(String key) => values.firstWhere(
+    (cardioType) => cardioType.name == key,
+    orElse: () => outdoorRun,
+  );
 }

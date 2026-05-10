@@ -84,8 +84,9 @@ class GoalsList extends StatelessWidget {
         ),
       ),
       const SizedBox(height: AppSpacing.sm),
-      ...activeNotes
-          .map((note) => BackgroundNoteRow(note: note, allGoals: allGoals)),
+      ...activeNotes.map(
+        (note) => BackgroundNoteRow(note: note, allGoals: allGoals),
+      ),
       const SizedBox(height: AppSpacing.xl),
     ];
   }
@@ -113,8 +114,11 @@ class GoalsList extends StatelessWidget {
           (goal) => GoalCard(goal: goal, allGoals: allGoals, isArchived: true),
         ),
         ...archivedNotes.map(
-          (note) =>
-              BackgroundNoteRow(note: note, allGoals: allGoals, isArchived: true),
+          (note) => BackgroundNoteRow(
+            note: note,
+            allGoals: allGoals,
+            isArchived: true,
+          ),
         ),
       ],
     ];

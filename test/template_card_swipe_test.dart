@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/features/library/templates_tab.dart';
 
 class _MockTemplateRepository extends Mock
@@ -25,16 +25,20 @@ Widget _buildFullContext({required _MockTemplateRepository mockRepository}) {
       workoutTemplatesProvider.overrideWith(
         (_) => Stream.value([_fakeTemplate]),
       ),
-      templateRepositoryPowerSyncProvider.overrideWith(
-        (_) => mockRepository,
-      ),
+      templateRepositoryPowerSyncProvider.overrideWith((_) => mockRepository),
     ],
     child: CupertinoApp(
       home: CupertinoTabScaffold(
         tabBar: CupertinoTabBar(
           items: const [
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(CupertinoIcons.book), label: 'Library'),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.book),
+              label: 'Library',
+            ),
           ],
           currentIndex: 1,
         ),
@@ -70,31 +74,30 @@ void main() {
     when(() => mockRepository.deleteTemplate(any())).thenAnswer((_) async {});
   });
 
-  testWidgets('shows confirm dialog when card is swiped left — full app context', (tester) async {
+  testWidgets(
+    'shows confirm dialog when card is swiped left — full app context',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildFullContext(mockRepository: mockRepository),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Test Routine'), findsOneWidget);
+
+      await tester.fling(find.text('Test Routine'), const Offset(-300, 0), 800);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete Routine?'), findsOneWidget);
+    },
+  );
+
+  testWidgets('calls deleteTemplate after tapping Delete — full app context', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildFullContext(mockRepository: mockRepository));
     await tester.pumpAndSettle();
 
-    expect(find.text('Test Routine'), findsOneWidget);
-
-    await tester.fling(
-      find.text('Test Routine'),
-      const Offset(-300, 0),
-      800,
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Delete Routine?'), findsOneWidget);
-  });
-
-  testWidgets('calls deleteTemplate after tapping Delete — full app context', (tester) async {
-    await tester.pumpWidget(_buildFullContext(mockRepository: mockRepository));
-    await tester.pumpAndSettle();
-
-    await tester.fling(
-      find.text('Test Routine'),
-      const Offset(-300, 0),
-      800,
-    );
+    await tester.fling(find.text('Test Routine'), const Offset(-300, 0), 800);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Delete'));
@@ -103,15 +106,13 @@ void main() {
     verify(() => mockRepository.deleteTemplate('test-template-id')).called(1);
   });
 
-  testWidgets('does not delete when Cancel is tapped — full app context', (tester) async {
+  testWidgets('does not delete when Cancel is tapped — full app context', (
+    tester,
+  ) async {
     await tester.pumpWidget(_buildFullContext(mockRepository: mockRepository));
     await tester.pumpAndSettle();
 
-    await tester.fling(
-      find.text('Test Routine'),
-      const Offset(-300, 0),
-      800,
-    );
+    await tester.fling(find.text('Test Routine'), const Offset(-300, 0), 800);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Cancel'));

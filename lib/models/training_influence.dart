@@ -22,8 +22,8 @@ abstract class TrainingInfluence with _$TrainingInfluence {
 
   factory TrainingInfluence.fromRow(Map<String, dynamic> influenceRow) {
     final String principlesJson = influenceRow['principles'] as String? ?? '[]';
-    final List<String> parsedPrinciples =
-        (jsonDecode(principlesJson) as List).cast<String>();
+    final List<String> parsedPrinciples = (jsonDecode(principlesJson) as List)
+        .cast<String>();
     return TrainingInfluence(
       id: influenceRow['id'] as String,
       name: influenceRow['name'] as String,
@@ -41,7 +41,8 @@ const seedInfluences = [
   TrainingInfluence(
     id: 'pavel-tsatsouline',
     name: 'Pavel Tsatsouline',
-    description: 'Founder of StrongFirst, known for bringing kettlebells to the West',
+    description:
+        'Founder of StrongFirst, known for bringing kettlebells to the West',
     principles: [
       'Submaximal training - train heavy but leave reps in the tank',
       'Tension techniques - crush the handle, brace the core',

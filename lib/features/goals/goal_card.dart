@@ -68,21 +68,24 @@ class GoalCard extends ConsumerWidget {
   }
 
   Future<bool> _confirmDelete(BuildContext context) => confirmDeleteDialog(
-        context,
-        title: 'Delete Goal?',
-        content: '"${goal.title}" will be permanently deleted.',
-      );
+    context,
+    title: 'Delete Goal?',
+    content: '"${goal.title}" will be permanently deleted.',
+  );
 
   Widget _deleteBackground() => Container(
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        child: const Icon(CupertinoIcons.trash,
-            color: CupertinoColors.white, size: 22),
-      );
+    decoration: BoxDecoration(
+      color: AppColors.error,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    alignment: Alignment.centerRight,
+    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    child: const Icon(
+      CupertinoIcons.trash,
+      color: CupertinoColors.white,
+      size: 22,
+    ),
+  );
 
   Widget _cardContent(Color categoryColor) {
     return Column(
@@ -119,45 +122,45 @@ class GoalCard extends ConsumerWidget {
   }
 
   List<Widget> _achievedBadge() => [
-        const SizedBox(width: AppSpacing.sm),
-        const Icon(
-          CupertinoIcons.checkmark_seal_fill,
-          size: 13,
-          color: AppColors.success,
-        ),
-        const SizedBox(width: 3),
-        Text(
-          'Achieved',
-          style: AppTypography.caption.copyWith(
-            fontSize: 12,
-            color: AppColors.success,
-          ),
-        ),
-      ];
+    const SizedBox(width: AppSpacing.sm),
+    const Icon(
+      CupertinoIcons.checkmark_seal_fill,
+      size: 13,
+      color: AppColors.success,
+    ),
+    const SizedBox(width: 3),
+    Text(
+      'Achieved',
+      style: AppTypography.caption.copyWith(
+        fontSize: 12,
+        color: AppColors.success,
+      ),
+    ),
+  ];
 
   List<Widget> _pausedBadge() => [
-        const SizedBox(width: AppSpacing.sm),
-        const Icon(
-          CupertinoIcons.pause_circle_fill,
-          size: 13,
-          color: AppColors.textColor4,
-        ),
-        const SizedBox(width: 3),
-        Text(
-          'Archived',
-          style: AppTypography.caption.copyWith(
-            fontSize: 12,
-            color: AppColors.textColor4,
-          ),
-        ),
-      ];
+    const SizedBox(width: AppSpacing.sm),
+    const Icon(
+      CupertinoIcons.pause_circle_fill,
+      size: 13,
+      color: AppColors.textColor4,
+    ),
+    const SizedBox(width: 3),
+    Text(
+      'Archived',
+      style: AppTypography.caption.copyWith(
+        fontSize: 12,
+        color: AppColors.textColor4,
+      ),
+    ),
+  ];
 
   Widget _descriptionText() => Text(
-        goal.description,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      );
+    goal.description,
+    style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+  );
 
   void _showActions(BuildContext context, WidgetRef ref) {
     final goalsNotifier = ref.read(goalsControllerProvider.notifier);
@@ -260,10 +263,10 @@ class GoalCard extends ConsumerWidget {
       GoalCategory.endurance || GoalCategory.quickness => AppColors.warning,
       GoalCategory.mobility ||
       GoalCategory.balance ||
-      GoalCategory.coordination =>
-        AppColors.accentSecondary,
+      GoalCategory.coordination => AppColors.accentSecondary,
       GoalCategory.physique || GoalCategory.posture => AppColors.accentPrimary,
-      GoalCategory.rehabilitation || GoalCategory.longevity => AppColors.success,
+      GoalCategory.rehabilitation ||
+      GoalCategory.longevity => AppColors.success,
       GoalCategory.skill => AppColors.textColor2,
     };
   }

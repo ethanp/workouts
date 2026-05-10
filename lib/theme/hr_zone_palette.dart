@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 
 class HrZonePalette {
@@ -17,11 +18,7 @@ class HrZonePalette {
     'Threshold',
     'VO₂max',
   ];
-  static const zoneNames = [
-    'Z1 Recovery',
-    'Z2 Aerobic',
-    'Z3 Tempo',
-    'Z4 Threshold',
-    'Z5 VO₂max',
-  ];
+  static final zoneNames = zoneShortNames.mapLWithIndex(
+    (shortName, zoneIndex) => 'Z${zoneIndex + 1} $shortName',
+  );
 }

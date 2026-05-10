@@ -67,31 +67,38 @@ class UnitSystemTile extends StatelessWidget {
     ],
   );
 
-  Widget _unitSegmentedControl() => CupertinoSlidingSegmentedControl<UnitSystem>(
-    groupValue: unitSystem,
-    children: const {
-      UnitSystem.imperial: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        child: Text('mi'),
-      ),
-      UnitSystem.metric: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        child: Text('km'),
-      ),
-    },
-    onValueChanged: (value) {
-      if (value != null) {
-        ref.read(unitSystemProvider.notifier).setUnitSystem(value);
-      }
-    },
-  );
+  Widget _unitSegmentedControl() =>
+      CupertinoSlidingSegmentedControl<UnitSystem>(
+        groupValue: unitSystem,
+        children: const {
+          UnitSystem.imperial: Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: Text('mi'),
+          ),
+          UnitSystem.metric: Padding(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: Text('km'),
+          ),
+        },
+        onValueChanged: (value) {
+          if (value != null) {
+            ref.read(unitSystemProvider.notifier).setUnitSystem(value);
+          }
+        },
+      );
 }
 
 class HrZonesTile extends StatelessWidget {
   const HrZonesTile({super.key});
 
   static const _zoneLabels = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'];
-  static const _zoneNames = ['Recovery', 'Aerobic', 'Tempo', 'Threshold', 'Max'];
+  static const _zoneNames = [
+    'Recovery',
+    'Aerobic',
+    'Tempo',
+    'Threshold',
+    'Max',
+  ];
   static const _zoneColors = [
     Color(0xFF5BA4CF),
     Color(0xFF3FB37F),
@@ -129,7 +136,11 @@ class HrZonesTile extends StatelessWidget {
           color: AppColors.backgroundDepth3,
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
-        child: const Icon(CupertinoIcons.heart_fill, color: AppColors.error, size: 22),
+        child: const Icon(
+          CupertinoIcons.heart_fill,
+          color: AppColors.error,
+          size: 22,
+        ),
       ),
       const SizedBox(width: AppSpacing.md),
       Text('Heart Rate Zones', style: AppTypography.subtitle),
@@ -253,7 +264,9 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
             Text('Resting Heart Rate', style: AppTypography.subtitle),
             Text(
               '$displayedHeartRate bpm',
-              style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor3,
+              ),
             ),
           ],
         ),
@@ -280,7 +293,9 @@ class _RestingHeartRateTileState extends ConsumerState<RestingHeartRateTile> {
     onChanged: (value) => setState(() => _dragValue = value),
     onChangeEnd: (value) {
       setState(() => _dragValue = null);
-      ref.read(restingHeartRateProvider.notifier).setRestingHeartRate(value.round());
+      ref
+          .read(restingHeartRateProvider.notifier)
+          .setRestingHeartRate(value.round());
     },
   );
 }
@@ -362,7 +377,10 @@ class TemplateVersionTile extends StatelessWidget {
     );
   }
 
-  Widget _dataContent(BuildContext context, TemplateVersionStatus status) => Column(
+  Widget _dataContent(
+    BuildContext context,
+    TemplateVersionStatus status,
+  ) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text('Workout Templates', style: AppTypography.subtitle),
@@ -433,8 +451,9 @@ class TemplateVersionTile extends StatelessWidget {
   );
 
   void _confirmReseed(BuildContext context) {
-    final versionNotifier =
-        ref.read(templateVersionControllerProvider.notifier);
+    final versionNotifier = ref.read(
+      templateVersionControllerProvider.notifier,
+    );
     showCupertinoModalPopup<void>(
       context: context,
       builder: (sheetCtx) {
@@ -453,8 +472,7 @@ class TemplateVersionTile extends StatelessWidget {
             ),
           ],
           cancelButton: CupertinoActionSheetAction(
-            onPressed: () =>
-                Navigator.of(sheetCtx, rootNavigator: true).pop(),
+            onPressed: () => Navigator.of(sheetCtx, rootNavigator: true).pop(),
             child: const Text('Cancel'),
           ),
         );
@@ -654,25 +672,26 @@ class MetricsBackfillTile extends ConsumerWidget {
     );
   }
 
-  Widget _backfillButton(MetricsBackfillStatus status, WidgetRef ref) => SizedBox(
-    width: double.infinity,
-    child: CupertinoButton.filled(
-      onPressed: status.inProgress
-          ? null
-          : () => ref
-                .read(metricsBackfillControllerProvider.notifier)
-                .runBackfill(),
-      child: status.inProgress
-          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-          : const Text(
-              'Run Backfill',
-              style: TextStyle(
-                color: CupertinoColors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-    ),
-  );
+  Widget _backfillButton(MetricsBackfillStatus status, WidgetRef ref) =>
+      SizedBox(
+        width: double.infinity,
+        child: CupertinoButton.filled(
+          onPressed: status.inProgress
+              ? null
+              : () => ref
+                    .read(metricsBackfillControllerProvider.notifier)
+                    .runBackfill(),
+          child: status.inProgress
+              ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+              : const Text(
+                  'Run Backfill',
+                  style: TextStyle(
+                    color: CupertinoColors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ),
+      );
 
   Widget _statusLabel(MetricsBackfillStatus status) => Text(
     status.label,

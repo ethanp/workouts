@@ -20,7 +20,8 @@ class ExerciseBenefit {
   factory ExerciseBenefit.fromJson(Map<String, dynamic> json) =>
       ExerciseBenefit(
         name: json['name'] as String,
-        goalIds: (json['goalIds'] as List<dynamic>?)
+        goalIds:
+            (json['goalIds'] as List<dynamic>?)
                 ?.map((goalId) => goalId as String)
                 .toList() ??
             const [],
@@ -41,10 +42,7 @@ class ExerciseBenefit {
     try {
       final decoded = jsonDecode(jsonStr) as List<dynamic>;
       return decoded
-          .map(
-            (item) =>
-                ExerciseBenefit.fromJson(item as Map<String, dynamic>),
-          )
+          .map((item) => ExerciseBenefit.fromJson(item as Map<String, dynamic>))
           .toList();
     } catch (_) {
       return const [];

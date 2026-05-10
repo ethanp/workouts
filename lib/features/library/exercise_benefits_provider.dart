@@ -2,7 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 
 part 'exercise_benefits_provider.g.dart';
 

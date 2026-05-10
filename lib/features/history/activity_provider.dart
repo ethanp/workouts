@@ -13,8 +13,8 @@ import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
-import 'package:workouts/services/repositories/session_repository_powersync.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'activity_provider.g.dart';
@@ -44,7 +44,9 @@ Stream<List<ActivityItem>> activityList(Ref ref) {
   void emit() {
     if (lastCardioWorkouts != null && lastSessions != null) {
       final activityItems = <ActivityItem>[
-        ...lastCardioWorkouts!.map((cardioWorkout) => ActivityCardio(cardioWorkout)),
+        ...lastCardioWorkouts!.map(
+          (cardioWorkout) => ActivityCardio(cardioWorkout),
+        ),
         ...lastSessions!
             .where((session) => session.completedAt != null)
             .map((session) => ActivitySession(session)),
@@ -157,11 +159,15 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
     }
   }
 
-  final sub1 = cardioRepository.watchCalendarDays().listen((cardioCalendarDays) {
+  final sub1 = cardioRepository.watchCalendarDays().listen((
+    cardioCalendarDays,
+  ) {
     lastCardioDays = cardioCalendarDays;
     emit();
   });
-  final sub2 = sessionRepository.watchSessionCalendarDays().listen((sessionCalendarDays) {
+  final sub2 = sessionRepository.watchSessionCalendarDays().listen((
+    sessionCalendarDays,
+  ) {
     lastSessionDays = sessionCalendarDays;
     emit();
   });
@@ -186,10 +192,7 @@ DateTimeRange? chartDateRange(Ref ref) {
   if (earliest == null) return null;
 
   final now = DateTime.now();
-  return DateTimeRange(
-    start: earliest.startOfDay,
-    end: now.startOfDay,
-  );
+  return DateTimeRange(start: earliest.startOfDay, end: now.startOfDay);
 }
 
 @riverpod
@@ -232,7 +235,10 @@ class MetricsBackfillController extends _$MetricsBackfillController {
     final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
     if (powerSyncDatabase == null) return;
 
-    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling zone metrics...');
+    state = const MetricsBackfillStatus(
+      inProgress: true,
+      label: 'Backfilling zone metrics...',
+    );
     final restingHeartRate = ref.read(restingHeartRateProvider);
     final trainingLoad = TrainingLoadCalculator(
       restingHeartRate: restingHeartRate,
@@ -240,13 +246,21 @@ class MetricsBackfillController extends _$MetricsBackfillController {
     final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
     await cardioRepository.backfillMissingMetrics(trainingLoad: trainingLoad);
 
-    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling best efforts...');
+    state = const MetricsBackfillStatus(
+      inProgress: true,
+      label: 'Backfilling best efforts...',
+    );
     await cardioRepository.backfillMissingBestEfforts();
 
-    state = const MetricsBackfillStatus(inProgress: true, label: 'Backfilling session metrics...');
+    state = const MetricsBackfillStatus(
+      inProgress: true,
+      label: 'Backfilling session metrics...',
+    );
     final templateRepo = ref.read(templateRepositoryPowerSyncProvider);
-    await SessionRepositoryPowerSync(powerSyncDatabase, templateRepo)
-        .backfillMissingMetrics(trainingLoad: trainingLoad);
+    await SessionRepositoryPowerSync(
+      powerSyncDatabase,
+      templateRepo,
+    ).backfillMissingMetrics(trainingLoad: trainingLoad);
 
     state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
     Future.delayed(const Duration(seconds: 3), () {

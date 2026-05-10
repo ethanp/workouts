@@ -43,8 +43,10 @@ class ChartTooltip {
 
   List<_TooltipLine> _buildLines() {
     final hoverDate = layout.dateForX(_clampedX);
-    final secondsFromOrigin =
-        hoverDate.difference(layout.minDate).inSeconds.toDouble();
+    final secondsFromOrigin = hoverDate
+        .difference(layout.minDate)
+        .inSeconds
+        .toDouble();
 
     final lines = <_TooltipLine>[
       _TooltipLine(text: _formatDate(hoverDate), color: AppColors.textColor3),
@@ -54,10 +56,12 @@ class ChartTooltip {
       if (series.points.length < 2) continue;
       final trend = computeTrendLine(series.points, layout.minDate);
       final yHat = trend.intercept + trend.slope * secondsFromOrigin;
-      lines.add(_TooltipLine(
-        text: '${series.label}: ${series.formatValue(yHat.abs())}',
-        color: series.color,
-      ));
+      lines.add(
+        _TooltipLine(
+          text: '${series.label}: ${series.formatValue(yHat.abs())}',
+          color: series.color,
+        ),
+      );
     }
 
     return lines;

@@ -111,8 +111,7 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Listener(
-          onPointerSignal: (event) =>
-              _handlePointerSignal(event, constraints),
+          onPointerSignal: (event) => _handlePointerSignal(event, constraints),
           child: GestureDetector(
             onScaleStart: (details) {
               _lastScale = 1.0;
@@ -144,9 +143,8 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     if (details.scale != 1.0) {
       final scaleDelta = details.scale / _lastScale;
       _lastScale = details.scale;
-      final focalRatio =
-          (details.localFocalPoint.dx / constraints.maxWidth)
-              .clamp(0.0, 1.0);
+      final focalRatio = (details.localFocalPoint.dx / constraints.maxWidth)
+          .clamp(0.0, 1.0);
       zoomNotifier.zoom(fullRange, scaleDelta, focalRatio);
     } else {
       final dx = details.localFocalPoint.dx - _lastFocalPoint.dx;
@@ -169,16 +167,19 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     BoxConstraints constraints,
   ) {
     if (event is! PointerScrollEvent) return;
-    final cmdHeld = HardwareKeyboard.instance.logicalKeysPressed
-        .any((key) =>
-            key == LogicalKeyboardKey.metaLeft ||
-            key == LogicalKeyboardKey.metaRight);
+    final cmdHeld = HardwareKeyboard.instance.logicalKeysPressed.any(
+      (key) =>
+          key == LogicalKeyboardKey.metaLeft ||
+          key == LogicalKeyboardKey.metaRight,
+    );
     if (!cmdHeld) return;
 
     final scrollDelta = event.scrollDelta.dy;
     final scaleFactor = scrollDelta < 0 ? 1.15 : 0.87;
-    final focalRatio =
-        (event.localPosition.dx / constraints.maxWidth).clamp(0.0, 1.0);
+    final focalRatio = (event.localPosition.dx / constraints.maxWidth).clamp(
+      0.0,
+      1.0,
+    );
     ref
         .read(chartZoomProvider.notifier)
         .zoom(widget.fullRange, scaleFactor, focalRatio);

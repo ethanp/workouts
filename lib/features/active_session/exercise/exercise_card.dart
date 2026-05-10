@@ -2,88 +2,16 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/features/active_session/active_session_provider.dart';
+import 'package:workouts/features/active_session/exercise/exercise_card_actions.dart';
+import 'package:workouts/features/active_session/exercise/set_capture_sheet.dart';
+import 'package:workouts/features/active_session/exercise/set_log_input.dart';
+import 'package:workouts/features/active_session/exercise_timer_panel.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
-import 'package:workouts/features/active_session/exercise_timer_panel.dart';
-
-class DismissibleExerciseCard extends ConsumerWidget {
-  const DismissibleExerciseCard({
-    super.key,
-    required this.block,
-    required this.exercise,
-    required this.isNextRecommended,
-    required this.onSetLogged,
-  });
-
-  final SessionBlock block;
-  final WorkoutExercise exercise;
-  final bool isNextRecommended;
-  final VoidCallback onSetLogged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hasLogs = block.logs.any(
-      (sessionSetLog) => sessionSetLog.exerciseId == exercise.id,
-    );
-
-    return Dismissible(
-      key: ValueKey('dismiss-${exercise.id}'),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => _confirmRemove(context, hasLogs),
-      onDismissed: (_) {
-        ref
-            .read(activeSessionProvider.notifier)
-            .removeExercise(block, exercise.id);
-      },
-      background: Container(
-        alignment: Alignment.centerRight,
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white),
-      ),
-      child: ExerciseCard(
-        block: block,
-        exercise: exercise,
-        isNextRecommended: isNextRecommended,
-        onSetLogged: onSetLogged,
-      ),
-    );
-  }
-
-  Future<bool> _confirmRemove(BuildContext context, bool hasLogs) async {
-    if (!hasLogs) return true;
-
-    final result = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (ctx) => CupertinoAlertDialog(
-        title: const Text('Remove Exercise?'),
-        content: const Text(
-          'This exercise has logged sets. Removing it will delete all progress for this exercise.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-}
 
 class ExerciseCard extends ConsumerStatefulWidget {
   const ExerciseCard({
@@ -109,11 +37,9 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   TimerPhase _phase = TimerPhase.idle;
   bool _isPaused = false;
 
-  Duration get _setupDuration =>
-      widget.exercise.setupDuration ?? Duration.zero;
+  Duration get _setupDuration => widget.exercise.setupDuration ?? Duration.zero;
 
-  Duration get _workDuration =>
-      widget.exercise.workDuration ?? Duration.zero;
+  Duration get _workDuration => widget.exercise.workDuration ?? Duration.zero;
 
   bool get _hasTiming =>
       _setupDuration > Duration.zero || _workDuration > Duration.zero;
@@ -125,6 +51,14 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
 
   SessionBlock get block => widget.block;
   WorkoutExercise get exercise => widget.exercise;
+  List<SessionSetLog> get _exerciseLogs =>
+      block.logs.where((log) => log.exerciseId == exercise.id).toList();
+
+  PlannedSet? get _nextPlannedSet {
+    final setIndex = _exerciseLogs.length;
+    if (setIndex >= exercise.plannedSets.length) return null;
+    return exercise.plannedSets[setIndex];
+  }
 
   @override
   void initState() {
@@ -224,7 +158,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
-        Text(exercise.prescription, style: AppTypography.caption),
+        Text(exercise.prescriptionLabel, style: AppTypography.caption),
       ],
     );
   }
@@ -248,85 +182,55 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   }
 
   Widget _actionRow() {
-    final completedSets = _loggedSets;
-    final targetSets = exercise.targetSets;
-    final isComplete = targetSets > 0 && completedSets >= targetSets;
-
-    return Row(
-      children: [
-        CupertinoButton.filled(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.sm,
-          ),
-          onPressed: () => _logSet(context, ref),
-          child: const Text(
-            'Log Set',
-            style: TextStyle(
-              color: CupertinoColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        CupertinoButton(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          color: AppColors.backgroundDepth3,
-          disabledColor: AppColors.backgroundDepth4,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          onPressed: _loggedSets == 0 ? null : () => _unlogSet(context, ref),
-          child: const Text(
-            'Unlog',
-            style: TextStyle(
-              color: CupertinoColors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const Spacer(),
-        _progressBadge(completedSets, targetSets, isComplete),
-      ],
+    return ExerciseCardActions(
+      completedSetCount: _loggedSets,
+      plannedSetCount: exercise.effectiveTargetSets,
+      nextPlannedSet: _nextPlannedSet,
+      onLogSet: () => _logSet(context, ref),
+      onUnlogSet: _loggedSets == 0 ? null : () => _unlogSet(context, ref),
     );
   }
 
-  Widget _progressBadge(int completed, int target, bool isComplete) {
-    final background = isComplete
-        ? AppColors.success.withValues(alpha: 0.15)
-        : AppColors.backgroundDepth3;
-    final border = isComplete
-        ? AppColors.success.withValues(alpha: 0.3)
-        : AppColors.borderDepth2;
-    final textColor = isComplete ? AppColors.success : AppColors.textColor3;
+  Future<void> _logSet(
+    BuildContext context,
+    WidgetRef ref, {
+    bool promptForActuals = true,
+  }) async {
+    final plannedSet = _nextPlannedSet;
+    final setLogInput = promptForActuals
+        ? await _captureSetInput(context, plannedSet)
+        : SetLogInput.fromPlan(plannedSet, exercise);
+    if (setLogInput == null) return;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: border),
-      ),
-      child: Text(
-        '$completed of $target completed',
-        style: AppTypography.caption.copyWith(
-          fontWeight: FontWeight.w500,
-          color: textColor,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _logSet(BuildContext context, WidgetRef ref) async {
     await ref
         .read(activeSessionProvider.notifier)
-        .logSet(block: block, exercise: exercise, reps: 1);
+        .logSet(
+          block: block,
+          exercise: exercise,
+          weightKg: setLogInput.weightKg,
+          reps: setLogInput.reps,
+          duration: setLogInput.duration,
+          unitRemaining: setLogInput.unitRemaining,
+        );
+  }
+
+  Future<SetLogInput?> _captureSetInput(
+    BuildContext context,
+    PlannedSet? plannedSet,
+  ) {
+    if (!_shouldPromptForActuals(plannedSet)) {
+      return Future.value(SetLogInput.fromPlan(plannedSet, exercise));
+    }
+    return showCupertinoModalPopup<SetLogInput>(
+      context: context,
+      builder: (context) =>
+          SetCaptureSheet(exercise: exercise, plannedSet: plannedSet),
+    );
+  }
+
+  bool _shouldPromptForActuals(PlannedSet? plannedSet) {
+    if (exercise.modality == ExerciseModality.reps) return true;
+    return plannedSet?.reps != null || plannedSet?.weightKg != null;
   }
 
   Future<void> _unlogSet(BuildContext context, WidgetRef ref) async {
@@ -423,7 +327,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   }
 
   Future<void> _logSetAndAdvance() async {
-    await _logSet(context, ref);
+    await _logSet(context, ref, promptForActuals: false);
     widget.onSetLogged();
   }
 

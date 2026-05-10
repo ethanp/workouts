@@ -1,4 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:workouts/models/workout_exercise.dart';
 
 part 'llm_workout_option.freezed.dart';
 part 'llm_workout_option.g.dart';
@@ -36,9 +37,9 @@ abstract class LlmWorkoutBlock with _$LlmWorkoutBlock {
 abstract class LlmExercise with _$LlmExercise {
   const factory LlmExercise({
     required String name,
-    String? sets,
-    String? reps,
-    String? duration,
+    @Default(ExerciseModality.reps) ExerciseModality modality,
+    @Default([]) List<PlannedSet> plannedSets,
+    int? restSeconds,
     String? notes,
   }) = _LlmExercise;
 

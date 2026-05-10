@@ -15,29 +15,37 @@ class BestEffortCalculator {
     final bestEfforts = <CardioBestEffort>[];
     for (final bucket in DistanceBucket.values) {
       if (totalDistance < bucket.meters) continue;
-      final elapsedSeconds = _fastestWindow(timedPoints, cumulativeMeters, bucket.meters);
+      final elapsedSeconds = _fastestWindow(
+        timedPoints,
+        cumulativeMeters,
+        bucket.meters,
+      );
       if (elapsedSeconds != null) {
-        bestEfforts.add(CardioBestEffort(bucket: bucket, elapsedSeconds: elapsedSeconds));
+        bestEfforts.add(
+          CardioBestEffort(bucket: bucket, elapsedSeconds: elapsedSeconds),
+        );
       }
     }
     return bestEfforts;
   }
 
-  List<CardioRoutePoint> _timedPointsSortedByTime(List<CardioRoutePoint> points) {
-    final timedPoints = points
-        .where((routePoint) => routePoint.recordedAt != null)
-        .toList()
-      ..sort(
-        (firstPoint, secondPoint) =>
-            firstPoint.recordedAt!.compareTo(secondPoint.recordedAt!),
-      );
+  List<CardioRoutePoint> _timedPointsSortedByTime(
+    List<CardioRoutePoint> points,
+  ) {
+    final timedPoints =
+        points.where((routePoint) => routePoint.recordedAt != null).toList()
+          ..sort(
+            (firstPoint, secondPoint) =>
+                firstPoint.recordedAt!.compareTo(secondPoint.recordedAt!),
+          );
     return timedPoints;
   }
 
   List<double> _buildCumulativeDistances(List<CardioRoutePoint> points) {
     final cumulative = List<double>.filled(points.length, 0.0);
     for (var pointIndex = 1; pointIndex < points.length; pointIndex++) {
-      cumulative[pointIndex] = cumulative[pointIndex - 1] +
+      cumulative[pointIndex] =
+          cumulative[pointIndex - 1] +
           _haversineMeters(
             points[pointIndex - 1].latitude,
             points[pointIndex - 1].longitude,
@@ -59,16 +67,19 @@ class BestEffortCalculator {
     var start = 0;
 
     for (var end = 1; end < points.length; end++) {
-      while (cumulativeMeters[end] - cumulativeMeters[start + 1] >= targetMeters) {
+      while (cumulativeMeters[end] - cumulativeMeters[start + 1] >=
+          targetMeters) {
         start++;
       }
 
       final windowDistance = cumulativeMeters[end] - cumulativeMeters[start];
       if (windowDistance < targetMeters) continue;
 
-      final windowSeconds = points[end].recordedAt!
-          .difference(points[start].recordedAt!)
-          .inMilliseconds / 1000.0;
+      final windowSeconds =
+          points[end].recordedAt!
+              .difference(points[start].recordedAt!)
+              .inMilliseconds /
+          1000.0;
       if (windowSeconds <= 0) continue;
 
       if (bestSeconds == null || windowSeconds < bestSeconds) {
@@ -80,8 +91,10 @@ class BestEffortCalculator {
   }
 
   static double _haversineMeters(
-    double lat1, double lon1,
-    double lat2, double lon2,
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
   ) {
     const earthRadius = 6371000.0;
     final phi1 = lat1 * math.pi / 180;
@@ -94,6 +107,8 @@ class BestEffortCalculator {
             math.cos(phi2) *
             math.sin(dLambda / 2) *
             math.sin(dLambda / 2);
-    return earthRadius * 2 * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
+    return earthRadius *
+        2 *
+        math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine));
   }
 }

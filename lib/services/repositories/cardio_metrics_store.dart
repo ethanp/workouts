@@ -1,4 +1,3 @@
-
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
@@ -18,10 +17,12 @@ class CardioMetricsStore {
     String workoutId, {
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final result =
-        await _loadAndCompute(workoutId, trainingLoad: trainingLoad);
-    await _persistMetrics(workoutId, result,
-        restingHr: trainingLoad.restingHeartRate);
+    final result = await _loadAndCompute(workoutId, trainingLoad: trainingLoad);
+    await _persistMetrics(
+      workoutId,
+      result,
+      restingHr: trainingLoad.restingHeartRate,
+    );
   }
 
   Future<void> recomputeAllZones({
@@ -45,15 +46,16 @@ class CardioMetricsStore {
   Future<void> backfillMissing({
     required TrainingLoadCalculator trainingLoad,
   }) async {
-    final List<Map<String, dynamic>> pendingRows =
-        await _powerSync.execute('''
+    final List<Map<String, dynamic>> pendingRows = await _powerSync.execute('''
       SELECT w.id FROM cardio_workouts w
       LEFT JOIN cardio_computed_metrics m ON m.id = w.id
       WHERE m.id IS NULL OR m.zone1_seconds IS NULL
     ''');
     if (pendingRows.isEmpty) return;
 
-    _log.log('Computing missing cardio metrics for ${pendingRows.length} workouts...');
+    _log.log(
+      'Computing missing cardio metrics for ${pendingRows.length} workouts...',
+    );
     for (final pendingRow in pendingRows) {
       await computeAndStore(
         pendingRow['id'] as String,

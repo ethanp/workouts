@@ -49,10 +49,9 @@ class LocationsRepositoryPowerSync {
   }
 
   Future<void> deleteLocation(String id) async {
-    await _powerSync.execute(
-      'DELETE FROM training_locations WHERE id = ?',
-      [id],
-    );
+    await _powerSync.execute('DELETE FROM training_locations WHERE id = ?', [
+      id,
+    ]);
   }
 }
 

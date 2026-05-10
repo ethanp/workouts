@@ -9,7 +9,7 @@ import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/goals/goals_tab.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/library/exercises_tab.dart';
 import 'package:workouts/features/library/influences_tab.dart';
@@ -35,9 +35,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       backgroundColor: AppColors.backgroundDepth1,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(
-          bottom: BorderSide(color: AppColors.borderDepth1),
-        ),
+        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
         leading: const SyncStatusIcon(),
         middle: const Text('Library', style: AppTypography.subtitle),
         trailing: _addButton(),
@@ -88,23 +86,23 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       duration: const Duration(milliseconds: 180),
       child: switch (_segment) {
         _LibrarySegment.goals => GoalsTab(
-            key: const ValueKey(_LibrarySegment.goals),
-            onAddPressed: _onAddPressed,
-          ),
+          key: const ValueKey(_LibrarySegment.goals),
+          onAddPressed: _onAddPressed,
+        ),
         _LibrarySegment.exercises => ExercisesTab(
-            key: const ValueKey(_LibrarySegment.exercises),
-            onGenerateAllPressed: _onGenerateAll,
-          ),
+          key: const ValueKey(_LibrarySegment.exercises),
+          onGenerateAllPressed: _onGenerateAll,
+        ),
         _LibrarySegment.templates => TemplatesTab(
-            key: const ValueKey(_LibrarySegment.templates),
-            onAddPressed: _onAddPressed,
-          ),
+          key: const ValueKey(_LibrarySegment.templates),
+          onAddPressed: _onAddPressed,
+        ),
         _LibrarySegment.influences => const InfluencesTab(
-            key: ValueKey(_LibrarySegment.influences),
-          ),
+          key: ValueKey(_LibrarySegment.influences),
+        ),
         _LibrarySegment.locations => const LocationsTab(
-            key: ValueKey(_LibrarySegment.locations),
-          ),
+          key: ValueKey(_LibrarySegment.locations),
+        ),
       },
     );
   }
@@ -161,29 +159,28 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       builder: (_) => GoalFormSheet(
         onSave: (title, category, description, priority) async {
           await goalsNotifier.addGoal(
-                title: title,
-                category: category,
-                description: description,
-                priority: priority,
-              );
+            title: title,
+            category: category,
+            description: description,
+            priority: priority,
+          );
         },
       ),
     );
   }
 
   void _showAddNoteSheet(List<FitnessGoal> goals) {
-    final notesNotifier =
-        ref.read(backgroundNotesControllerProvider.notifier);
+    final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
     showCupertinoModalPopup<void>(
       context: context,
       builder: (ctx) => NoteFormSheet(
         availableGoals: goals,
         onSave: (content, category, goalId) {
           notesNotifier.addNote(
-                content: content,
-                category: category,
-                goalId: goalId,
-              );
+            content: content,
+            category: category,
+            goalId: goalId,
+          );
           Navigator.of(ctx).pop();
         },
       ),
@@ -225,10 +222,7 @@ class _SegmentLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-      ),
+      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w400),
     );
   }
 }
@@ -254,11 +248,12 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.backgroundDepth2,
-        borderRadius:
-            BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
       child: SafeArea(top: false, child: _sheetScrollContent(context)),
     );
@@ -355,15 +350,15 @@ class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
   }
 
   Widget _dragHandle() => Center(
-        child: Container(
-          width: 36,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.borderDepth3,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      );
+    child: Container(
+      width: 36,
+      height: 4,
+      decoration: BoxDecoration(
+        color: AppColors.borderDepth3,
+        borderRadius: BorderRadius.circular(2),
+      ),
+    ),
+  );
 
   Widget _formField({required String label, required Widget child}) {
     return Column(

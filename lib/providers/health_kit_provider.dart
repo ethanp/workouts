@@ -62,8 +62,9 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
       state = updated;
 
       try {
-        final heartRateRepository =
-            ref.read(heartRateSamplesRepositoryPowerSyncProvider);
+        final heartRateRepository = ref.read(
+          heartRateSamplesRepositoryPowerSyncProvider,
+        );
         await heartRateRepository.addSample(normalized);
       } catch (_) {
         // Ignore persistence errors; UI still renders live data.
@@ -79,4 +80,3 @@ class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
     return activeSession?.id;
   }
 }
-

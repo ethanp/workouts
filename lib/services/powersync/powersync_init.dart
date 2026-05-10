@@ -31,9 +31,7 @@ Future<PowerSyncDatabase> initPowerSync({
     throw StateError(errorMessage);
   }
 
-  final dbPath = await getDatabasePath(
-    sharedPreferences: sharedPreferences,
-  );
+  final dbPath = await getDatabasePath(sharedPreferences: sharedPreferences);
 
   final dbDir = Directory(p.dirname(dbPath));
   if (!dbDir.existsSync()) {
@@ -48,7 +46,11 @@ Future<PowerSyncDatabase> initPowerSync({
   powerSyncLogger.level = kDebugMode ? Level.INFO : Level.WARNING;
   powerSyncLogger.onRecord.listen((record) {
     if (record.level >= Level.SEVERE) {
-      powerSyncInternalLog.error(record.message, record.error, record.stackTrace);
+      powerSyncInternalLog.error(
+        record.message,
+        record.error,
+        record.stackTrace,
+      );
     } else if (record.level >= Level.WARNING) {
       powerSyncInternalLog.warn(record.message);
     } else {
@@ -120,8 +122,9 @@ void _subscribeDownloadTableLogs(PowerSyncDatabase powerSyncDatabase) {
 Future<String> getDatabasePath({
   required SharedPreferences sharedPreferences,
 }) async {
-  final cachedDatabasePath =
-      sharedPreferences.getString(_powerSyncDatabasePathPreferenceKey);
+  final cachedDatabasePath = sharedPreferences.getString(
+    _powerSyncDatabasePathPreferenceKey,
+  );
   if (cachedDatabasePath != null) {
     final cachedDatabaseDirectory = Directory(p.dirname(cachedDatabasePath));
     if (cachedDatabaseDirectory.existsSync()) {
@@ -167,7 +170,9 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
             OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
           )
       ''');
-      _log.log('Removed $orphanCount stale upload entries for deleted cardio workouts.');
+      _log.log(
+        'Removed $orphanCount stale upload entries for deleted cardio workouts.',
+      );
     }
   } catch (error) {
     _log.warn('Could not purge orphaned cardio CRUD entries: $error');

@@ -81,8 +81,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
   Widget build(BuildContext context) {
     final active = ref.watch(activeSessionProvider).value;
     final heartRateSamples = ref.watch(heartRateTimelineProvider);
-    final watchStatus =
-        ref.watch(watchConnectionStatusProvider).value ?? false;
+    final watchStatus = ref.watch(watchConnectionStatusProvider).value ?? false;
     final session = active ?? widget.session;
 
     return CupertinoPageScaffold(
@@ -119,48 +118,46 @@ class _SessionViewState extends ConsumerState<_SessionView> {
     Session session,
     List<HeartRateSample> heartRateSamples,
     bool watchStatus,
-  ) =>
-      Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  ) => Padding(
+    padding: const EdgeInsets.all(AppSpacing.lg),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: SessionTimerDisplay(
-                      duration: _elapsedDuration(session),
-                      isPaused: session.isPaused,
-                    ),
-                  ),
+            Flexible(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SessionTimerDisplay(
+                  duration: _elapsedDuration(session),
+                  isPaused: session.isPaused,
                 ),
-                const SizedBox(width: AppSpacing.md),
-                BlockProgressIndicator(
-                  currentIndex: _currentBlockIndex,
-                  totalBlocks: session.blocks.length,
-                ),
-              ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.sm),
-            _swipeInstructions(session),
-            const SizedBox(height: AppSpacing.md),
-            CardioMetricsCard(samples: heartRateSamples),
-            const SizedBox(height: AppSpacing.md),
-            _actionBar(session, watchStatus),
+            const SizedBox(width: AppSpacing.md),
+            BlockProgressIndicator(
+              currentIndex: _currentBlockIndex,
+              totalBlocks: session.blocks.length,
+            ),
           ],
         ),
-      );
+        const SizedBox(height: AppSpacing.sm),
+        _swipeInstructions(session),
+        const SizedBox(height: AppSpacing.md),
+        CardioMetricsCard(samples: heartRateSamples),
+        const SizedBox(height: AppSpacing.md),
+        _actionBar(session, watchStatus),
+      ],
+    ),
+  );
 
   Widget _blockPager(Session session) => Expanded(
     child: PageView.builder(
       controller: pageController,
       itemCount: session.blocks.length,
       onPageChanged: (index) => setState(() => _currentBlockIndex = index),
-      itemBuilder: (context, index) =>
-          BlockView(block: session.blocks[index]),
+      itemBuilder: (context, index) => BlockView(block: session.blocks[index]),
     ),
   );
 
@@ -354,8 +351,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
         actions: [
           CupertinoActionSheetAction(
             isDefaultAction: true,
-            onPressed: () =>
-                Navigator.of(popupContext).pop(_FinishAction.save),
+            onPressed: () => Navigator.of(popupContext).pop(_FinishAction.save),
             child: const Text('Save Session'),
           ),
           CupertinoActionSheetAction(
@@ -366,8 +362,7 @@ class _SessionViewState extends ConsumerState<_SessionView> {
           ),
         ],
         cancelButton: CupertinoActionSheetAction(
-          onPressed: () =>
-              Navigator.of(popupContext).pop(_FinishAction.cancel),
+          onPressed: () => Navigator.of(popupContext).pop(_FinishAction.cancel),
           child: const Text('Cancel'),
         ),
       ),

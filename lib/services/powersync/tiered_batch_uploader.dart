@@ -35,8 +35,9 @@ class TieredBatchUploader {
       await _uploadChunked(tierOps, tally);
     }
 
-    final unknownOps = batch.crud
-        .whereL((op) => !_UploadGraph.allTables.contains(op.table));
+    final unknownOps = batch.crud.whereL(
+      (op) => !_UploadGraph.allTables.contains(op.table),
+    );
     await _uploadChunked(unknownOps, tally);
 
     return (uploaded, discarded);
@@ -46,9 +47,11 @@ class TieredBatchUploader {
     List<CrudEntry> ops,
     void Function(bool) tally,
   ) async {
-    for (var chunkStartIndex = 0;
-        chunkStartIndex < ops.length;
-        chunkStartIndex += _chunkConcurrency) {
+    for (
+      var chunkStartIndex = 0;
+      chunkStartIndex < ops.length;
+      chunkStartIndex += _chunkConcurrency
+    ) {
       final chunk = ops.sublist(
         chunkStartIndex,
         math.min(chunkStartIndex + _chunkConcurrency, ops.length),
@@ -109,9 +112,7 @@ class _UploadGraph {
 
     while (remaining.isNotEmpty) {
       final tier = remaining.entries
-          .where(
-            (tableEntry) => tableEntry.value.every(placed.contains),
-          )
+          .where((tableEntry) => tableEntry.value.every(placed.contains))
           .map((tableEntry) => tableEntry.key)
           .toSet();
       if (tier.isEmpty) {

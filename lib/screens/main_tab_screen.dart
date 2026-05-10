@@ -38,7 +38,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
     return CupertinoTabScaffold(
       tabBar: _tabBar(),
       tabBuilder: (_, selectedIndex) => CupertinoTabView(
-        builder: (_) => _tabContent(selectedIndex, activeSession, sessionUIVisible),
+        builder: (_) =>
+            _tabContent(selectedIndex, activeSession, sessionUIVisible),
       ),
     );
   }

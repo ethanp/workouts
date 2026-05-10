@@ -3,16 +3,13 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/services/llm_service.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/llm/llm_service.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 
 part 'bulk_benefits_provider.g.dart';
 
 class BulkBenefitsProgress {
-  const BulkBenefitsProgress({
-    required this.completed,
-    required this.total,
-  });
+  const BulkBenefitsProgress({required this.completed, required this.total});
 
   final int completed;
   final int total;
@@ -40,8 +37,9 @@ class BulkBenefitsController extends _$BulkBenefitsController {
     if (!ref.mounted || _cancelled) return;
 
     final activeGoals = ref.read(activeGoalsStreamProvider).value ?? [];
-    final exercisesNeedingBenefits =
-        exercises.whereL((exercise) => exercise.benefits.isEmpty);
+    final exercisesNeedingBenefits = exercises.whereL(
+      (exercise) => exercise.benefits.isEmpty,
+    );
 
     if (exercisesNeedingBenefits.isEmpty) return;
 
@@ -53,9 +51,11 @@ class BulkBenefitsController extends _$BulkBenefitsController {
     final llmService = ref.read(llmServiceProvider);
     final repository = ref.read(templateRepositoryPowerSyncProvider);
 
-    for (var exerciseIndex = 0;
-        exerciseIndex < exercisesNeedingBenefits.length;
-        exerciseIndex++) {
+    for (
+      var exerciseIndex = 0;
+      exerciseIndex < exercisesNeedingBenefits.length;
+      exerciseIndex++
+    ) {
       if (_cancelled) return;
       final exercise = exercisesNeedingBenefits[exerciseIndex];
       try {

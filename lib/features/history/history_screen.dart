@@ -7,11 +7,11 @@ import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/features/history/history_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/repositories/session_repository_powersync.dart';
+import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/features/history/activity_list_tab.dart';
+import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
 import 'package:workouts/features/history/calendar_tab.dart';
-import 'package:workouts/features/history/charts_tab.dart';
+import 'package:workouts/features/history/charts/history_charts_tab.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 enum HistoryTab { charts, list, calendar }
@@ -69,8 +69,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   ) {
     final cancelAll = sessionHistory.maybeWhen(
       data: (sessions) {
-        final inProgressCount =
-            sessions.where((session) => session.completedAt == null).length;
+        final inProgressCount = sessions
+            .where((session) => session.completedAt == null)
+            .length;
         if (inProgressCount == 0) return null;
         return CupertinoButton(
           padding: EdgeInsets.zero,
@@ -135,8 +136,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     };
   }
 
-  Future<void> _cancelAllInProgress(
-      BuildContext context, int count) async {
+  Future<void> _cancelAllInProgress(BuildContext context, int count) async {
     final confirmed = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => CupertinoAlertDialog(
@@ -188,7 +188,8 @@ class ImportProgressBanner extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           _statusText(),
-          if (importProgress.inProgress && importProgress.totalWorkouts > 0) ...[
+          if (importProgress.inProgress &&
+              importProgress.totalWorkouts > 0) ...[
             const SizedBox(height: AppSpacing.sm),
             _progressBar(),
           ],
@@ -201,7 +202,7 @@ class ImportProgressBanner extends StatelessWidget {
     importProgress.status.isNotEmpty
         ? importProgress.status
         : 'Fetches recent cardio workouts with route and heart rate. '
-            'Only new workouts are added.',
+              'Only new workouts are added.',
     style: AppTypography.caption.copyWith(color: AppColors.textColor3),
   );
 

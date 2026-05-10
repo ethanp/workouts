@@ -32,11 +32,9 @@ class PolarizationWeek {
   double get aerobicFraction =>
       hasData ? aerobicBaseSeconds / totalZoneSeconds : 0;
 
-  double get grayFraction =>
-      hasData ? grayZoneSeconds / totalZoneSeconds : 0;
+  double get grayFraction => hasData ? grayZoneSeconds / totalZoneSeconds : 0;
 
-  double get vo2maxFraction =>
-      hasData ? vo2maxSeconds / totalZoneSeconds : 0;
+  double get vo2maxFraction => hasData ? vo2maxSeconds / totalZoneSeconds : 0;
 
   int get aerobicBaseMinutes => aerobicBaseSeconds ~/ 60;
   int get grayZoneMinutes => grayZoneSeconds ~/ 60;

@@ -74,7 +74,10 @@ TrendLine computeTrendLine(List<TrendPoint> points, DateTime origin) {
   var sumX2 = 0.0;
 
   for (final trendPoint in points) {
-    final elapsedSeconds = trendPoint.date.difference(origin).inSeconds.toDouble();
+    final elapsedSeconds = trendPoint.date
+        .difference(origin)
+        .inSeconds
+        .toDouble();
     final pointValue = trendPoint.value;
     sumX += elapsedSeconds;
     sumY += pointValue;

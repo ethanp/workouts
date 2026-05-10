@@ -11,7 +11,7 @@ enum WorkoutBlockType {
   mobility,
   core,
   conditioning,
-  cooldown
+  cooldown,
 }
 
 @freezed

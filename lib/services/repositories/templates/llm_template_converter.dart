@@ -37,26 +37,21 @@ WorkoutBlock _blockFromLlmBlock(LlmWorkoutBlock blockOption) {
 }
 
 WorkoutExercise _exerciseFromLlmExercise(LlmExercise llmExercise) {
-  final sets = int.tryParse(llmExercise.sets ?? '') ?? 1;
-  final parts = <String>[];
-  if (llmExercise.sets != null && llmExercise.sets!.isNotEmpty) {
-    parts.add('${llmExercise.sets} ×');
-  }
-  if (llmExercise.reps != null && llmExercise.reps!.isNotEmpty) {
-    parts.add(llmExercise.reps!);
-  } else if (llmExercise.duration != null && llmExercise.duration!.isNotEmpty) {
-    parts.add(llmExercise.duration!);
-  }
-  final prescription = parts.join(' ');
+  final plannedSets = llmExercise.plannedSets;
+  final prescription = plannedSets.isEmpty
+      ? '1 set'
+      : plannedSetsPrescriptionLabel(plannedSets);
 
   return WorkoutExercise(
     id: _uuid.v4(),
     name: llmExercise.name,
-    modality: llmExercise.duration != null
-        ? ExerciseModality.timed
-        : ExerciseModality.reps,
+    modality: llmExercise.modality,
     prescription: prescription,
-    targetSets: sets,
+    targetSets: plannedSets.isEmpty ? 1 : plannedSets.length,
+    restDuration: llmExercise.restSeconds == null
+        ? null
+        : Duration(seconds: llmExercise.restSeconds!),
     cues: llmExercise.notes != null ? [llmExercise.notes!] : const [],
+    plannedSets: plannedSets,
   );
 }

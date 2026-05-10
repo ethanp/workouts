@@ -6,8 +6,8 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/services/context_builder.dart';
-import 'package:workouts/services/llm_service.dart';
-import 'package:workouts/services/repositories/template_repository_powersync.dart';
+import 'package:workouts/services/llm/llm_service.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 
 part 'workout_generation_provider.g.dart';
 
@@ -36,8 +36,11 @@ class GenerationFollowup extends WorkoutGenerationState {
   final LlmWorkoutResponse response;
   final String partialAnswer;
   final bool answering;
-  GenerationFollowup(this.response, this.partialAnswer,
-      {this.answering = true});
+  GenerationFollowup(
+    this.response,
+    this.partialAnswer, {
+    this.answering = true,
+  });
 }
 
 @riverpod
@@ -75,7 +78,9 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
     state = GenerationFollowup(response, '', answering: true);
 
     try {
-      final tokenStream = ref.read(llmServiceProvider).streamFollowup(
+      final tokenStream = ref
+          .read(llmServiceProvider)
+          .streamFollowup(
             workoutResponse: response,
             question: question,
             httpClient: _activeClient!,
@@ -99,8 +104,11 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
 
       await tokenCompleter.future;
       _log.log('Followup answer complete');
-      state = GenerationFollowup(response, accumulated.toString(),
-          answering: false);
+      state = GenerationFollowup(
+        response,
+        accumulated.toString(),
+        answering: false,
+      );
     } on http.ClientException catch (clientException) {
       _log.log('Followup request cancelled: $clientException');
       state = GenerationComplete(response);

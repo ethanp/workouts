@@ -8,7 +8,7 @@ import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
-import 'package:workouts/features/active_session/session_detail_screen.dart';
+import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/features/history/activity_calendar.dart';
@@ -97,8 +97,10 @@ class DayDetailSheet extends ConsumerWidget {
             : ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
                 child: SingleChildScrollView(
-                  child:
-                      DayDetailItemList(items: items, unitSystem: unitSystem),
+                  child: DayDetailItemList(
+                    items: items,
+                    unitSystem: unitSystem,
+                  ),
                 ),
               ),
         loading: () => const CupertinoActivityIndicator(),
@@ -130,22 +132,21 @@ class DayDetailItemList extends StatelessWidget {
       children: items.map((item) {
         return switch (item) {
           ActivityCardio(:final workout) => CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push(CardioDetailScreen(workout: workout));
-              },
-              child: DayDetailCardioRow(
-                  workout: workout, unitSystem: unitSystem),
-            ),
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push(CardioDetailScreen(workout: workout));
+            },
+            child: DayDetailCardioRow(workout: workout, unitSystem: unitSystem),
+          ),
           ActivitySession(:final session) => CupertinoButton(
-              padding: EdgeInsets.zero,
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.push(SessionDetailScreen(session: session));
-              },
-              child: DayDetailSessionRow(session: session),
-            ),
+            padding: EdgeInsets.zero,
+            onPressed: () {
+              Navigator.of(context).pop();
+              context.push(SessionDetailScreen(session: session));
+            },
+            child: DayDetailSessionRow(session: session),
+          ),
         };
       }).toList(),
     );
@@ -173,10 +174,7 @@ class DayDetailCardioRow extends StatelessWidget {
             children: [
               const Icon(CupertinoIcons.flame, size: 20),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                _label(),
-                style: AppTypography.body,
-              ),
+              Text(_label(), style: AppTypography.body),
             ],
           ),
           Text(
@@ -225,8 +223,7 @@ class DayDetailSessionRow extends ConsumerWidget {
                     style: AppTypography.body,
                   );
                 },
-                loading: () =>
-                    const Text('…', style: AppTypography.body),
+                loading: () => const Text('…', style: AppTypography.body),
                 error: (_, __) =>
                     const Text('Session', style: AppTypography.body),
               ),

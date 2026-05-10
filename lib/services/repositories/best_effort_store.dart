@@ -44,7 +44,11 @@ class BestEffortStore {
     ''');
     if (pendingRows.isEmpty) return;
     _log.log('Backfilling best efforts for ${pendingRows.length} workouts.');
-    for (var workoutIndex = 0; workoutIndex < pendingRows.length; workoutIndex++) {
+    for (
+      var workoutIndex = 0;
+      workoutIndex < pendingRows.length;
+      workoutIndex++
+    ) {
       await computeAndStore(pendingRows[workoutIndex]['id'] as String);
       onProgress?.call(workoutIndex + 1, pendingRows.length);
     }

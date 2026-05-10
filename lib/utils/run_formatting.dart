@@ -48,7 +48,10 @@ class Format {
 
   /// "8:30 /mi" or "8:30 /km".
   static String pace(
-      int durationSeconds, double distanceMeters, UnitSystem unitSystem) {
+    int durationSeconds,
+    double distanceMeters,
+    UnitSystem unitSystem,
+  ) {
     if (distanceMeters <= 0) {
       return unitSystem == UnitSystem.imperial ? '--:-- /mi' : '--:-- /km';
     }
@@ -124,8 +127,18 @@ class Format {
   /// "March 4, 2026".
   static String dateFull(DateTime date) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }

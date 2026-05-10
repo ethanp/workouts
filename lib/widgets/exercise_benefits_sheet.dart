@@ -5,7 +5,7 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/exercise_benefits_provider.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
-import 'package:workouts/services/llm_service.dart';
+import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 /// Review sheet for AI-generated or manually edited exercise benefits.
@@ -25,8 +25,7 @@ class ExerciseBenefitsSheet extends ConsumerStatefulWidget {
       _ExerciseBenefitsSheetState();
 }
 
-class _ExerciseBenefitsSheetState
-    extends ConsumerState<ExerciseBenefitsSheet> {
+class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
   late List<ExerciseBenefit> _editableBenefits;
   bool _isGenerating = false;
   String? _generationError;
@@ -120,9 +119,7 @@ class _ExerciseBenefitsSheetState
   Widget _generateButton(List<FitnessGoal> activeGoals) {
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: _isGenerating
-          ? null
-          : () => _generate(activeGoals),
+      onPressed: _isGenerating ? null : () => _generate(activeGoals),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
@@ -242,11 +239,7 @@ class _ExerciseBenefitsSheetState
     );
   }
 
-  Widget _goalChip(
-    FitnessGoal goal,
-    bool isLinked,
-    VoidCallback onTap,
-  ) {
+  Widget _goalChip(FitnessGoal goal, bool isLinked, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -268,11 +261,8 @@ class _ExerciseBenefitsSheetState
         child: Text(
           goal.title,
           style: AppTypography.caption.copyWith(
-            color: isLinked
-                ? AppColors.accentPrimary
-                : AppColors.textColor3,
-            fontWeight:
-                isLinked ? FontWeight.w600 : FontWeight.normal,
+            color: isLinked ? AppColors.accentPrimary : AppColors.textColor3,
+            fontWeight: isLinked ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
       ),
@@ -304,9 +294,7 @@ class _ExerciseBenefitsSheetState
             const SizedBox(width: AppSpacing.sm),
             Text(
               'Add Benefit',
-              style: AppTypography.body.copyWith(
-                color: AppColors.textColor3,
-              ),
+              style: AppTypography.body.copyWith(color: AppColors.textColor3),
             ),
           ],
         ),
@@ -323,8 +311,9 @@ class _ExerciseBenefitsSheetState
       updatedGoalIds.add(goalId);
     }
     setState(() {
-      _editableBenefits[benefitIndex] =
-          benefit.copyWith(goalIds: updatedGoalIds);
+      _editableBenefits[benefitIndex] = benefit.copyWith(
+        goalIds: updatedGoalIds,
+      );
     });
   }
 
@@ -342,9 +331,7 @@ class _ExerciseBenefitsSheetState
       );
       setState(() => _editableBenefits = generatedBenefits);
     } catch (error) {
-      setState(
-        () => _generationError = 'Generation failed: $error',
-      );
+      setState(() => _generationError = 'Generation failed: $error');
     } finally {
       setState(() => _isGenerating = false);
     }
@@ -355,9 +342,7 @@ class _ExerciseBenefitsSheetState
       context: context,
       builder: (dialogContext) => _AddBenefitDialog(
         activeGoals: activeGoals,
-        onAdd: (benefit) => setState(
-          () => _editableBenefits.add(benefit),
-        ),
+        onAdd: (benefit) => setState(() => _editableBenefits.add(benefit)),
       ),
     );
   }
@@ -373,10 +358,7 @@ class _ExerciseBenefitsSheetState
 }
 
 class _AddBenefitDialog extends StatefulWidget {
-  const _AddBenefitDialog({
-    required this.activeGoals,
-    required this.onAdd,
-  });
+  const _AddBenefitDialog({required this.activeGoals, required this.onAdd});
 
   final List<FitnessGoal> activeGoals;
   final void Function(ExerciseBenefit) onAdd;
@@ -400,10 +382,7 @@ class _AddBenefitDialogState extends State<_AddBenefitDialog> {
     return CupertinoAlertDialog(
       title: const Text('Add Benefit'),
       content: _dialogContent(),
-      actions: [
-        _cancelAction(context),
-        _addAction(context),
-      ],
+      actions: [_cancelAction(context), _addAction(context)],
     );
   }
 

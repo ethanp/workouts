@@ -48,42 +48,41 @@ class SessionTimerDisplay extends StatelessWidget {
     String statusLabel,
     TextStyle timeStyle,
     TextStyle statusStyle,
-  ) =>
-      Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [AppColors.backgroundDepth5, AppColors.backgroundDepth3],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.borderDepth2),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.accentPrimary.withValues(alpha: 0.22),
-              blurRadius: 20,
-              offset: const Offset(0, 14),
-            ),
-          ],
+  ) => Container(
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(
+        colors: [AppColors.backgroundDepth5, AppColors.backgroundDepth3],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      border: Border.all(color: AppColors.borderDepth2),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.accentPrimary.withValues(alpha: 0.22),
+          blurRadius: 20,
+          offset: const Offset(0, 14),
         ),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xl,
-          vertical: AppSpacing.md,
+      ],
+    ),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.xl,
+      vertical: AppSpacing.md,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(timeLabel, style: timeStyle),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(timeLabel, style: timeStyle),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(statusLabel, style: statusStyle),
-          ],
-        ),
-      );
+        const SizedBox(height: AppSpacing.xs),
+        Text(statusLabel, style: statusStyle),
+      ],
+    ),
+  );
 }
 
 class BlockProgressIndicator extends StatelessWidget {

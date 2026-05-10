@@ -1,4 +1,5 @@
 import 'package:workouts/models/cardio_type.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 
 class CardioWorkout {
   const CardioWorkout({
@@ -12,6 +13,8 @@ class CardioWorkout {
     this.energyKcal,
     this.averageHeartRateBpm,
     this.maxHeartRateBpm,
+    this.zoneTime = HrZoneTime.zero,
+    this.hasHrSamples = false,
     required this.routeAvailable,
     required this.sourceName,
     this.sourceBundleId,
@@ -34,6 +37,8 @@ class CardioWorkout {
       energyKcal: _asDouble(workoutRow['energy_kcal']),
       averageHeartRateBpm: _asDouble(workoutRow['avg_heart_rate_bpm']),
       maxHeartRateBpm: _asDouble(workoutRow['max_heart_rate_bpm']),
+      zoneTime: HrZoneTime.fromRow(workoutRow, prefix: 'zone'),
+      hasHrSamples: (workoutRow['has_hr_samples'] as int?) == 1,
       routeAvailable: (workoutRow['route_available'] as int?) == 1,
       sourceName: (workoutRow['source_name'] as String?) ?? 'Apple Health',
       sourceBundleId: workoutRow['source_bundle_id'] as String?,
@@ -53,6 +58,8 @@ class CardioWorkout {
   final double? energyKcal;
   final double? averageHeartRateBpm;
   final double? maxHeartRateBpm;
+  final HrZoneTime zoneTime;
+  final bool hasHrSamples;
   final bool routeAvailable;
   final String sourceName;
   final String? sourceBundleId;

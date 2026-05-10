@@ -66,7 +66,9 @@ class GoalsRepositoryPowerSync {
   }
 
   Future<void> deleteGoal(String goalId) async {
-    await _powerSync.execute('DELETE FROM fitness_goals WHERE id = ?', [goalId]);
+    await _powerSync.execute('DELETE FROM fitness_goals WHERE id = ?', [
+      goalId,
+    ]);
   }
 }
 

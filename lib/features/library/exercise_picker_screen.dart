@@ -71,7 +71,9 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
   }
 
   Set<ExerciseModality> get availableModalities => widget.exercises
-      .where((workoutExercise) => !widget.excludeIds.contains(workoutExercise.id))
+      .where(
+        (workoutExercise) => !widget.excludeIds.contains(workoutExercise.id),
+      )
       .map((workoutExercise) => workoutExercise.modality)
       .toSet();
 
@@ -110,8 +112,10 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
         children: [
           filterChip(null, 'All'),
           ...modalities.map(
-            (exerciseModality) =>
-                filterChip(exerciseModality, exerciseModality.name.toUpperCase()),
+            (exerciseModality) => filterChip(
+              exerciseModality,
+              exerciseModality.name.toUpperCase(),
+            ),
           ),
         ],
       ),

@@ -6,7 +6,6 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 
-
 const _log = ELogger('TileProxy');
 
 /// A [TileProvider] that fetches tiles via HTTP and logs the

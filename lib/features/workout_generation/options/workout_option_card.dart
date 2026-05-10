@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/llm_workout_option.dart';
+import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutOptionCard extends StatelessWidget {
@@ -69,9 +70,9 @@ class WorkoutOptionCard extends StatelessWidget {
   }
 
   Widget _rationale() => Text(
-        option.rationale,
-        style: AppTypography.body.copyWith(color: AppColors.textColor2),
-      );
+    option.rationale,
+    style: AppTypography.body.copyWith(color: AppColors.textColor2),
+  );
 
   Widget _expandToggle() {
     return Row(
@@ -185,8 +186,9 @@ class _BlockSection extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Text(
                 '${block.estimatedMinutes}m',
-                style:
-                    AppTypography.caption.copyWith(color: AppColors.textColor3),
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor3,
+                ),
               ),
             ],
           ),
@@ -214,18 +216,11 @@ class _ExerciseRow extends StatelessWidget {
 
   final LlmExercise exercise;
 
-  static String _formatReps(String reps) {
-    if (int.tryParse(reps) != null) return '$reps reps';
-    return reps;
-  }
-
   @override
   Widget build(BuildContext context) {
-    final prescription = [
-      if (exercise.sets != null) '${exercise.sets} sets',
-      if (exercise.reps != null) _formatReps(exercise.reps!),
-      if (exercise.duration != null) exercise.duration,
-    ].join(' x ');
+    final prescription = exercise.plannedSets.isEmpty
+        ? exercise.modality.name
+        : plannedSetsPrescriptionLabel(exercise.plannedSets);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -235,8 +230,7 @@ class _ExerciseRow extends StatelessWidget {
           Expanded(child: Text(exercise.name, style: AppTypography.body)),
           Text(
             prescription,
-            style: AppTypography.caption
-                .copyWith(color: AppColors.textColor3),
+            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
           ),
         ],
       ),

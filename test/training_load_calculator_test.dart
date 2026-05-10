@@ -25,29 +25,20 @@ void main() {
 
   group('zone bucketing', () {
     test('below zone 1 contributes to no zone', () {
-      final samples = [
-        _hr(base, 80),
-        _hr(base.add(sec(10)), 80),
-      ];
+      final samples = [_hr(base, 80), _hr(base.add(sec(10)), 80)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.total, 0);
     });
 
     test('zone 1 BPM (93-114) lands in zone 1', () {
-      final samples = [
-        _hr(base, 100),
-        _hr(base.add(sec(10)), 100),
-      ];
+      final samples = [_hr(base, 100), _hr(base.add(sec(10)), 100)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone1, 10);
       expect(zone.zone2, 0);
     });
 
     test('zone 2 BPM (115-145) lands in zone 2', () {
-      final samples = [
-        _hr(base, 120),
-        _hr(base.add(sec(10)), 120),
-      ];
+      final samples = [_hr(base, 120), _hr(base.add(sec(10)), 120)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone1, 0);
       expect(zone.zone2, 10);
@@ -55,37 +46,25 @@ void main() {
     });
 
     test('zone 3 BPM (146-162) lands in zone 3', () {
-      final samples = [
-        _hr(base, 150),
-        _hr(base.add(sec(10)), 150),
-      ];
+      final samples = [_hr(base, 150), _hr(base.add(sec(10)), 150)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone3, 10);
     });
 
     test('zone 4 BPM (163-175) lands in zone 4', () {
-      final samples = [
-        _hr(base, 170),
-        _hr(base.add(sec(10)), 170),
-      ];
+      final samples = [_hr(base, 170), _hr(base.add(sec(10)), 170)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone4, 10);
     });
 
     test('zone 5 BPM (176+) lands in zone 5', () {
-      final samples = [
-        _hr(base, 180),
-        _hr(base.add(sec(10)), 180),
-      ];
+      final samples = [_hr(base, 180), _hr(base.add(sec(10)), 180)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone5, 10);
     });
 
     test('exactly at zone boundary lands in the higher zone', () {
-      final samples = [
-        _hr(base, 115),
-        _hr(base.add(sec(10)), 115),
-      ];
+      final samples = [_hr(base, 115), _hr(base.add(sec(10)), 115)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone2, 10);
       expect(zone.zone1, 0);
@@ -119,16 +98,12 @@ void main() {
         _hr(base.add(sec(40)), 180),
       ];
       final zone = calc.compute(samples).zoneTime;
-      expect(zone.gteZone2,
-          zone.zone2 + zone.zone3 + zone.zone4 + zone.zone5);
+      expect(zone.gteZone2, zone.zone2 + zone.zone3 + zone.zone4 + zone.zone5);
       expect(zone.gteZone2, 40);
     });
 
     test('excludes zone 1', () {
-      final samples = [
-        _hr(base, 100),
-        _hr(base.add(sec(10)), 100),
-      ];
+      final samples = [_hr(base, 100), _hr(base.add(sec(10)), 100)];
       final zone = calc.compute(samples).zoneTime;
       expect(zone.zone1, 10);
       expect(zone.gteZone2, 0);
@@ -142,18 +117,12 @@ void main() {
     });
 
     test('BPM at or below resting HR produces 0 TRIMP', () {
-      final samples = [
-        _hr(base, 60),
-        _hr(base.add(sec(60)), 55),
-      ];
+      final samples = [_hr(base, 60), _hr(base.add(sec(60)), 55)];
       expect(calc.compute(samples).trimp, 0.0);
     });
 
     test('single interval matches Banister formula', () {
-      final samples = [
-        _hr(base, 150),
-        _hr(base.add(sec(10)), 150),
-      ];
+      final samples = [_hr(base, 150), _hr(base.add(sec(10)), 150)];
       final result = calc.compute(samples);
 
       final hrRatio = (150 - 60) / (185 - 60);
@@ -163,15 +132,12 @@ void main() {
     });
 
     test('higher HR produces higher TRIMP for same duration', () {
-      final lowHR = [
-        _hr(base, 120),
-        _hr(base.add(sec(600)), 120),
-      ];
-      final highHR = [
-        _hr(base, 170),
-        _hr(base.add(sec(600)), 170),
-      ];
-      expect(calc.compute(highHR).trimp, greaterThan(calc.compute(lowHR).trimp));
+      final lowHR = [_hr(base, 120), _hr(base.add(sec(600)), 120)];
+      final highHR = [_hr(base, 170), _hr(base.add(sec(600)), 170)];
+      expect(
+        calc.compute(highHR).trimp,
+        greaterThan(calc.compute(lowHR).trimp),
+      );
     });
 
     test('longer duration produces higher TRIMP at same HR', () {
@@ -211,10 +177,7 @@ void main() {
         _hr(base, 150),
         _hr(base.add(const Duration(minutes: 5)), 150),
       ];
-      final capped = [
-        _hr(base, 150),
-        _hr(base.add(sec(30)), 150),
-      ];
+      final capped = [_hr(base, 150), _hr(base.add(sec(30)), 150)];
       expect(calc.compute(samples).trimp, calc.compute(capped).trimp);
     });
 
@@ -231,20 +194,14 @@ void main() {
 
   group('zone time and TRIMP computed together', () {
     test('zone 2 BPM contributes to both metrics', () {
-      final samples = [
-        _hr(base, 120),
-        _hr(base.add(sec(10)), 120),
-      ];
+      final samples = [_hr(base, 120), _hr(base.add(sec(10)), 120)];
       final result = calc.compute(samples);
       expect(result.zoneTime.zone2, 10);
       expect(result.trimp, greaterThan(0));
     });
 
     test('high-intensity intervals have TRIMP but land in zone 4/5', () {
-      final samples = [
-        _hr(base, 170),
-        _hr(base.add(sec(10)), 170),
-      ];
+      final samples = [_hr(base, 170), _hr(base.add(sec(10)), 170)];
       final result = calc.compute(samples);
       expect(result.zoneTime.zone2, 0);
       expect(result.zoneTime.zone4, 10);
@@ -254,13 +211,7 @@ void main() {
 
   group('HrZoneTime', () {
     test('index operator returns correct zone', () {
-      const zone = HrZoneTime(
-        zone1: 1,
-        zone2: 2,
-        zone3: 3,
-        zone4: 4,
-        zone5: 5,
-      );
+      const zone = HrZoneTime(zone1: 1, zone2: 2, zone3: 3, zone4: 4, zone5: 5);
       expect(zone[0], 1);
       expect(zone[1], 2);
       expect(zone[2], 3);

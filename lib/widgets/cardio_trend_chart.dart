@@ -200,7 +200,10 @@ class _CardioTrendChartState extends State<CardioTrendChart> {
       return const SizedBox(
         height: 180,
         child: Center(
-          child: Text('Need 2+ workouts for trends', style: AppTypography.caption),
+          child: Text(
+            'Need 2+ workouts for trends',
+            style: AppTypography.caption,
+          ),
         ),
       );
     }

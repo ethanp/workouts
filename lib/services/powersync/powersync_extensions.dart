@@ -17,12 +17,14 @@ extension PowerSyncUpsert on PowerSyncDatabase {
       [values[idColumn]],
     );
     if (existingRow != null) {
-      final updateColumns = values.keys.where((col) => col != idColumn).toList();
+      final updateColumns = values.keys
+          .where((col) => col != idColumn)
+          .toList();
       final setClause = updateColumns.map((col) => '$col = ?').join(', ');
-      await execute(
-        'UPDATE $table SET $setClause WHERE $idColumn = ?',
-        [...updateColumns.map((col) => values[col]), values[idColumn]],
-      );
+      await execute('UPDATE $table SET $setClause WHERE $idColumn = ?', [
+        ...updateColumns.map((col) => values[col]),
+        values[idColumn],
+      ]);
     } else {
       final columns = values.keys.toList();
       final placeholders = columns.map((_) => '?').join(', ');

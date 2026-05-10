@@ -64,8 +64,9 @@ class GoalsArchivedToggleRow extends StatelessWidget {
             const SizedBox(width: AppSpacing.sm),
             Text(
               isExpanded ? 'Hide Archived' : 'Show Archived ($count)',
-              style: AppTypography.caption
-                  .copyWith(color: AppColors.textColor4),
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor4,
+              ),
             ),
           ],
         ),

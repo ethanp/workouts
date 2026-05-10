@@ -11,10 +11,7 @@ class WorkoutGenerationPreparingView extends StatelessWidget {
 }
 
 class WorkoutGenerationStreamingView extends StatefulWidget {
-  const WorkoutGenerationStreamingView({
-    super.key,
-    required this.partialText,
-  });
+  const WorkoutGenerationStreamingView({super.key, required this.partialText});
 
   final String partialText;
 

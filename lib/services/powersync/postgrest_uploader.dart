@@ -114,13 +114,15 @@ class PostgRestUploader {
     final table = op.table;
 
     if (table == 'exercises') {
-      if (responseBody.contains(_pgUniqueViolation) || responseBody.contains(_pgFkViolation)) {
+      if (responseBody.contains(_pgUniqueViolation) ||
+          responseBody.contains(_pgFkViolation)) {
         await _patchExerciseByName(data, client);
         return false;
       }
     }
 
-    if (table == 'cardio_workouts' && responseBody.contains(_pgUniqueViolation)) {
+    if (table == 'cardio_workouts' &&
+        responseBody.contains(_pgUniqueViolation)) {
       await _retryCardioWorkoutAfterDuplicateId(op, data, client);
       return false;
     }

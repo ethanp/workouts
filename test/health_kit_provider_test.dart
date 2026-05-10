@@ -19,9 +19,7 @@ void main() {
         container.dispose();
       });
 
-      final status = await container.read(
-        healthKitPermissionProvider.future,
-      );
+      final status = await container.read(healthKitPermissionProvider.future);
       expect(status, HealthPermissionStatus.limited);
     });
 
@@ -57,9 +55,7 @@ void main() {
         container.dispose();
       });
 
-      final notifier = container.read(
-        heartRateTimelineProvider.notifier,
-      );
+      final notifier = container.read(heartRateTimelineProvider.notifier);
       notifier.clear();
 
       final timeline = container.read(heartRateTimelineProvider);
