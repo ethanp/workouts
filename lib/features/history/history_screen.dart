@@ -28,7 +28,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionHistory = ref.watch(sessionHistoryProvider);
     final importAsync = ref.watch(cardioImportControllerProvider);
     final importProgress =
         importAsync.value ?? const CardioImportProgress.idle();
@@ -47,7 +46,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ],
         ),
         middle: const Text('History'),
-        trailing: _trailing(sessionHistory, isImporting, dbReady),
+        trailing: _trailing(isImporting, dbReady),
       ),
       child: SafeArea(
         child: Column(
@@ -62,32 +61,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget? _trailing(
-    AsyncValue<List<Session>> sessionHistory,
-    bool isImporting,
-    bool dbReady,
-  ) {
-    final cancelAll = sessionHistory.maybeWhen(
-      data: (sessions) {
-        final inProgressCount = sessions
-            .where((session) => session.completedAt == null)
-            .length;
-        if (inProgressCount == 0) return null;
-        return CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () => _cancelAllInProgress(context, inProgressCount),
-          child: Text(
-            'Cancel All ($inProgressCount)',
-            style: AppTypography.body.copyWith(
-              color: CupertinoColors.destructiveRed,
-            ),
-          ),
-        );
-      },
-      orElse: () => null,
-    );
-    if (cancelAll != null) return cancelAll;
-
+  Widget? _trailing(bool isImporting, bool dbReady) {
     if (_selectedTab == HistoryTab.list && dbReady && !isImporting) {
       return CupertinoButton(
         padding: EdgeInsets.zero,
@@ -136,36 +110,6 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     };
   }
 
-  Future<void> _cancelAllInProgress(BuildContext context, int count) async {
-    final confirmed = await showCupertinoDialog<bool>(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Cancel All In-Progress Sessions'),
-        content: Text(
-          'Are you sure you want to cancel all $count in-progress '
-          'workout sessions? This action cannot be undone.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Cancel All'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      final sessionRepository = ref.read(sessionRepositoryPowerSyncProvider);
-      await sessionRepository.discardAllInProgressSessions();
-      ref.read(activeSessionProvider.notifier).discard();
-      ref.invalidate(sessionHistoryProvider);
-    }
-  }
 }
 
 class ImportProgressBanner extends StatelessWidget {

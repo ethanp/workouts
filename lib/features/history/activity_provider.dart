@@ -47,9 +47,7 @@ Stream<List<ActivityItem>> activityList(Ref ref) {
         ...lastCardioWorkouts!.map(
           (cardioWorkout) => ActivityCardio(cardioWorkout),
         ),
-        ...lastSessions!
-            .where((session) => session.completedAt != null)
-            .map((session) => ActivitySession(session)),
+        ...lastSessions!.map((session) => ActivitySession(session)),
       ];
       activityItems.sort(
         (newerActivity, olderActivity) =>

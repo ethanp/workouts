@@ -1,5 +1,8 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:powersync/powersync.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/weight.dart';
@@ -15,20 +18,53 @@ import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'active_session_provider.g.dart';
 
+const _log = ELogger('ActiveSession');
 const _uuid = Uuid();
 const _watchBridge = WatchConnectivityBridge();
 
 @riverpod
 class ActiveSessionNotifier extends _$ActiveSessionNotifier {
+  bool _resumeAttempted = false;
+
   @override
   Future<Session?> build() async {
+    _resumeAttempted = false;
+
     final commandStream = ref.watch(watchCommandStreamProvider);
     commandStream.whenData((command) {
       if (command == 'workoutStopped' && state.value != null) {
         complete();
       }
     });
+
+    // Use listen — not watch — so DB transitions don't cause build() to
+    // re-run and reset an already-active session.
+    ref.listen<AsyncValue<PowerSyncDatabase>>(
+      powerSyncDatabaseProvider,
+      (_, dbAsync) {
+        if (dbAsync.hasValue) _tryRestoreSession();
+      },
+    );
+
+    // Handle the case where the DB was already ready before build() ran.
+    if (ref.read(powerSyncDatabaseProvider).hasValue) _tryRestoreSession();
+
     return null;
+  }
+
+  Future<void> _tryRestoreSession() async {
+    if (_resumeAttempted || state.value != null) return;
+    _resumeAttempted = true;
+    try {
+      final repository = ref.read(sessionRepositoryPowerSyncProvider);
+      final resumableSession = await repository.fetchResumableSession();
+      if (resumableSession != null && ref.mounted && state.value == null) {
+        _log.log('Restored in-progress session ${resumableSession.id}.');
+        state = AsyncData(resumableSession);
+      }
+    } catch (error) {
+      _log.log('Failed to restore session: $error');
+    }
   }
 
   Future<void> _sendWatchCommand(Future<void> Function() command) async {

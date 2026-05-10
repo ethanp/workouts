@@ -292,7 +292,7 @@ class _ExerciseRow extends ConsumerWidget {
           _ModalityIcon(modality: exercise.modality),
           const SizedBox(width: AppSpacing.md),
           Expanded(child: _exerciseDetails()),
-          _sparkleButton(context),
+          if (exercise.benefits.isEmpty) _sparkleButton(context),
         ],
       ),
     );
@@ -338,7 +338,7 @@ class _ExerciseRow extends ConsumerWidget {
   Widget _sparkleButton(BuildContext context) {
     return CupertinoButton(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      onPressed: () => _openBenefitsSheet(context),
+      onPressed: () => _openBenefitsSheet(context, autoGenerate: true),
       child: const Icon(
         CupertinoIcons.sparkles,
         size: 18,
@@ -347,10 +347,13 @@ class _ExerciseRow extends ConsumerWidget {
     );
   }
 
-  void _openBenefitsSheet(BuildContext context) {
+  void _openBenefitsSheet(BuildContext context, {bool autoGenerate = false}) {
     Navigator.of(context).push(
       CupertinoPageRoute<void>(
-        builder: (_) => ExerciseBenefitsSheet(exercise: exercise),
+        builder: (_) => ExerciseBenefitsSheet(
+          exercise: exercise,
+          autoGenerate: autoGenerate,
+        ),
       ),
     );
   }

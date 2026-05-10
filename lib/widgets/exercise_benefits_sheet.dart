@@ -16,9 +16,14 @@ import 'package:workouts/theme/app_theme.dart';
 /// - Add a benefit manually
 /// - Tap "Apply" to persist or "Cancel" to discard
 class ExerciseBenefitsSheet extends ConsumerStatefulWidget {
-  const ExerciseBenefitsSheet({super.key, required this.exercise});
+  const ExerciseBenefitsSheet({
+    super.key,
+    required this.exercise,
+    this.autoGenerate = false,
+  });
 
   final WorkoutExercise exercise;
+  final bool autoGenerate;
 
   @override
   ConsumerState<ExerciseBenefitsSheet> createState() =>
@@ -28,6 +33,7 @@ class ExerciseBenefitsSheet extends ConsumerStatefulWidget {
 class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
   late List<ExerciseBenefit> _editableBenefits;
   bool _isGenerating = false;
+  bool _hasAutoTriggered = false;
   String? _generationError;
 
   @override
@@ -42,6 +48,13 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     final activeGoals = goalsAsync.value ?? [];
     final saveState = ref.watch(exerciseBenefitsControllerProvider);
     final isSaving = saveState is AsyncLoading;
+
+    if (widget.autoGenerate && !_hasAutoTriggered && goalsAsync.hasValue) {
+      _hasAutoTriggered = true;
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _generate(activeGoals),
+      );
+    }
 
     return CupertinoPageScaffold(
       backgroundColor: AppColors.backgroundDepth1,

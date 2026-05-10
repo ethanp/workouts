@@ -129,6 +129,48 @@ class SessionRepositoryPowerSync {
     await _powerSync.execute('DELETE FROM sessions WHERE completed_at IS NULL');
   }
 
+  /// Returns the most recent in-progress session if it is young enough to be
+  /// worth resuming (started within the last [_resumableWindowHours] hours).
+  ///
+  /// Any additional in-progress sessions beyond the most recent one are
+  /// discarded immediately — they are orphans from previous crashes or
+  /// incomplete syncs.  If the most recent in-progress session is too old it
+  /// is also discarded and null is returned.
+  static const int _resumableWindowHours = 12;
+
+  Future<Session?> fetchResumableSession() async {
+    final inProgressRows = await _powerSync.getAll(
+      'SELECT id, started_at FROM sessions WHERE completed_at IS NULL ORDER BY started_at DESC',
+    );
+    if (inProgressRows.isEmpty) return null;
+
+    final staleRows = inProgressRows.skip(1).toList();
+    for (final staleRow in staleRows) {
+      final staleId = staleRow['id'] as String;
+      await _powerSync.execute('DELETE FROM sessions WHERE id = ?', [staleId]);
+      _log.log('Discarded orphaned in-progress session $staleId.');
+    }
+
+    final mostRecentRow = inProgressRows.first;
+    final mostRecentId = mostRecentRow['id'] as String;
+    final startedAt = DateTime.parse(mostRecentRow['started_at'] as String);
+    final age = DateTime.now().difference(startedAt);
+
+    if (age > const Duration(hours: _resumableWindowHours)) {
+      await _powerSync.execute(
+        'DELETE FROM sessions WHERE id = ?',
+        [mostRecentId],
+      );
+      _log.log(
+        'Discarded stale in-progress session $mostRecentId (${age.inHours}h old).',
+      );
+      return null;
+    }
+
+    _log.log('Resuming in-progress session $mostRecentId.');
+    return _sessionHydrator.fetchSessionById(mostRecentId);
+  }
+
   Future<List<Session>> history() async {
     final sessions = await fetchSessions();
 

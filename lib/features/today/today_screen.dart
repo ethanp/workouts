@@ -86,22 +86,13 @@ class _SavedTemplatesSection extends StatelessWidget {
     ],
   );
 
-  Widget _sectionHeader() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Saved templates', style: AppTypography.subtitle),
-      const SizedBox(height: AppSpacing.xs),
-      Text(
-        'Reusable plans assigned to today.',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-      ),
-    ],
-  );
+  Widget _sectionHeader() =>
+      Text('Saved templates', style: AppTypography.subtitle);
 
   Widget _emptyState() => Padding(
     padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
     child: Text(
-      'No saved templates assigned for today.',
+      'No saved templates.',
       style: AppTypography.body.copyWith(color: AppColors.textColor4),
     ),
   );

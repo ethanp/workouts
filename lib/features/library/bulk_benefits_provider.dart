@@ -5,17 +5,31 @@ import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
+import 'package:workouts/utils/error_bus.dart';
 
 part 'bulk_benefits_provider.g.dart';
 
+const _log = ELogger('BulkBenefits');
+
 class BulkBenefitsProgress {
-  const BulkBenefitsProgress({required this.completed, required this.total});
+  const BulkBenefitsProgress({
+    required this.completed,
+    required this.total,
+    this.failed = 0,
+  });
 
   final int completed;
   final int total;
+  final int failed;
 
-  bool get isDone => completed >= total;
-  String get label => 'Generating $completed / $total…';
+  bool get isDone => completed + failed >= total;
+
+  String get label {
+    final done = completed + failed;
+    return failed > 0
+        ? 'Generating $done / $total ($failed failed)…'
+        : 'Generating $done / $total…';
+  }
 }
 
 @riverpod
@@ -43,21 +57,17 @@ class BulkBenefitsController extends _$BulkBenefitsController {
 
     if (exercisesNeedingBenefits.isEmpty) return;
 
-    state = BulkBenefitsProgress(
-      completed: 0,
-      total: exercisesNeedingBenefits.length,
-    );
+    final total = exercisesNeedingBenefits.length;
+    var completed = 0;
+    var failed = 0;
+
+    state = BulkBenefitsProgress(completed: 0, total: total);
 
     final llmService = ref.read(llmServiceProvider);
     final repository = ref.read(templateRepositoryPowerSyncProvider);
 
-    for (
-      var exerciseIndex = 0;
-      exerciseIndex < exercisesNeedingBenefits.length;
-      exerciseIndex++
-    ) {
+    for (final exercise in exercisesNeedingBenefits) {
       if (_cancelled) return;
-      final exercise = exercisesNeedingBenefits[exerciseIndex];
       try {
         final generatedBenefits = await llmService.generateExerciseBenefits(
           exerciseName: exercise.name,
@@ -65,14 +75,21 @@ class BulkBenefitsController extends _$BulkBenefitsController {
         );
         if (!ref.mounted || _cancelled) return;
         await repository.updateExerciseBenefits(exercise.id, generatedBenefits);
-      } catch (_) {
-        // Skip exercises that fail — don't abort the whole run.
+        completed++;
+      } catch (error) {
+        _log.log('Failed to generate/save benefits for "${exercise.name}": $error');
+        failed++;
       }
       if (!ref.mounted || _cancelled) return;
       state = BulkBenefitsProgress(
-        completed: exerciseIndex + 1,
-        total: exercisesNeedingBenefits.length,
+        completed: completed,
+        total: total,
+        failed: failed,
       );
+    }
+
+    if (failed > 0) {
+      errorBus.add('Benefits generation: $failed / $total exercises failed. Check logs for details.');
     }
 
     ref.invalidate(allExercisesProvider);
