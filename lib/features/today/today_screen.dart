@@ -24,9 +24,7 @@ class TodayScreen extends ConsumerWidget {
       ),
       child: SafeArea(
         child: templates.when(
-          data: (items) => items.isEmpty
-              ? const _EmptyTemplateView()
-              : templateList(items, ref, context),
+          data: (items) => todayContent(items, ref, context),
           loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (error, _) => Center(
             child: Text(
@@ -39,7 +37,7 @@ class TodayScreen extends ConsumerWidget {
     );
   }
 
-  Widget templateList(
+  Widget todayContent(
     List<WorkoutTemplate> items,
     WidgetRef ref,
     BuildContext context,
@@ -47,33 +45,72 @@ class TodayScreen extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        for (final template in items) ...[
-          TodayTemplateCard(
-            template: template,
-            onStart: () =>
-                ref.read(activeSessionProvider.notifier).start(template.id),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-        ],
         _GenerateWorkoutButton(
           onSelected: (option) =>
               ref.read(workoutGenerationProvider.notifier).select(option),
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+        _SavedTemplatesSection(
+          templates: items,
+          onStartTemplate: (template) =>
+              ref.read(activeSessionProvider.notifier).start(template.id),
         ),
       ],
     );
   }
 }
 
-class _EmptyTemplateView extends StatelessWidget {
-  const _EmptyTemplateView();
+class _SavedTemplatesSection extends StatelessWidget {
+  const _SavedTemplatesSection({
+    required this.templates,
+    required this.onStartTemplate,
+  });
+
+  final List<WorkoutTemplate> templates;
+  final ValueChanged<WorkoutTemplate> onStartTemplate;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(),
+        const SizedBox(height: AppSpacing.md),
+        if (templates.isEmpty)
+          _emptyState()
+        else
+          for (final template in templates) ...[
+            TodayTemplateCard(
+              template: template,
+              onStart: () => onStartTemplate(template),
+            ),
+            if (template != templates.last)
+              const SizedBox(height: AppSpacing.lg),
+          ],
+      ],
+    );
+  }
+
+  Widget _sectionHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Saved templates', style: AppTypography.subtitle),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Reusable plans assigned to today.',
+          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        ),
+      ],
+    );
+  }
+
+  Widget _emptyState() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Text(
-        'No template assigned for today. Create one to begin tracking.',
-        style: AppTypography.body,
-        textAlign: TextAlign.center,
+        'No saved templates assigned for today.',
+        style: AppTypography.body.copyWith(color: AppColors.textColor4),
       ),
     );
   }
@@ -86,55 +123,77 @@ class _GenerateWorkoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          headline(),
-          const SizedBox(height: AppSpacing.sm),
-          subtitle(),
-          const SizedBox(height: AppSpacing.md),
-          button(context),
-        ],
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () async {
+        final option = await WorkoutOptionsSheet.show(context);
+        if (option != null) onSelected(option);
+      },
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.accentSecondary.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: AppColors.accentSecondary.withValues(alpha: 0.30),
+          ),
+        ),
+        child: Row(
+          children: [
+            _leadingIcon(),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(child: _cardText()),
+            const SizedBox(width: AppSpacing.md),
+            Icon(
+              CupertinoIcons.chevron_forward,
+              color: AppColors.accentSecondary.withValues(alpha: 0.75),
+              size: 18,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget subtitle() {
     return Text(
-      'Generate personalized workout options based on your goals and recent training.',
+      'Create a workout for today based on your context and desires.',
       style: AppTypography.body.copyWith(color: AppColors.textColor2),
+    );
+  }
+
+  Widget _cardText() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        headline(),
+        const SizedBox(height: AppSpacing.xs),
+        subtitle(),
+      ],
+    );
+  }
+
+  Widget _leadingIcon() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: AppColors.accentSecondary.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+      ),
+      child: const Icon(
+        CupertinoIcons.add,
+        color: AppColors.accentSecondary,
+        size: 18,
+      ),
     );
   }
 
   Widget headline() {
     return Row(
       children: [
-        Icon(CupertinoIcons.sparkles, color: AppColors.textColor2, size: 20),
-        const SizedBox(width: AppSpacing.sm),
-        Text('Need inspiration?', style: AppTypography.subtitle),
+        Text('Design your own workout', style: AppTypography.subtitle),
       ],
-    );
-  }
-
-  Widget button(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: CupertinoButton(
-        color: AppColors.backgroundDepth3,
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        onPressed: () async {
-          final option = await WorkoutOptionsSheet.show(context);
-          if (option != null) onSelected(option);
-        },
-        child: const Text('Generate Workout'),
-      ),
     );
   }
 }

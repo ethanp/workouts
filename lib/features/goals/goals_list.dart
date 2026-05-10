@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/goals/background_note_row.dart';
+import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_card.dart';
 import 'package:workouts/features/goals/goals_list_chrome.dart';
 import 'package:workouts/models/background_note.dart';
@@ -63,9 +64,42 @@ class GoalsList extends StatelessWidget {
         ),
       ),
       const SizedBox(height: AppSpacing.sm),
-      ...activeGoals.map((goal) => GoalCard(goal: goal, allGoals: allGoals)),
+      ..._activeGoalCategorySections(),
       const SizedBox(height: AppSpacing.xl),
     ];
+  }
+
+  List<Widget> _activeGoalCategorySections() {
+    final goalCategoryWidgets = <Widget>[];
+    for (final goalCategory in _activeGoalCategories()) {
+      final categoryGoals = activeGoals
+          .where((fitnessGoal) => fitnessGoal.category == goalCategory)
+          .toList();
+      goalCategoryWidgets.add(
+        _GoalCategoryHeader(categoryStyle: GoalCategoryStyle(goalCategory)),
+      );
+      goalCategoryWidgets.add(const SizedBox(height: AppSpacing.xs));
+      goalCategoryWidgets.addAll(
+        categoryGoals.map(
+          (fitnessGoal) => GoalCard(
+            goal: fitnessGoal,
+            allGoals: allGoals,
+            showCategoryPill: false,
+          ),
+        ),
+      );
+      goalCategoryWidgets.add(const SizedBox(height: AppSpacing.sm));
+    }
+    return goalCategoryWidgets;
+  }
+
+  List<GoalCategory> _activeGoalCategories() {
+    final goalCategories = <GoalCategory>[];
+    for (final fitnessGoal in activeGoals) {
+      if (goalCategories.contains(fitnessGoal.category)) continue;
+      goalCategories.add(fitnessGoal.category);
+    }
+    return goalCategories;
   }
 
   List<Widget> _activeNotesSection() {
@@ -122,5 +156,46 @@ class GoalsList extends StatelessWidget {
         ),
       ],
     ];
+  }
+}
+
+class _GoalCategoryHeader extends StatelessWidget {
+  const _GoalCategoryHeader({required this.categoryStyle});
+
+  final GoalCategoryStyle categoryStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
+      child: Row(
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: categoryStyle.color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            categoryStyle.label.toUpperCase(),
+            style: AppTypography.caption.copyWith(
+              color: categoryStyle.color,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.8,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Container(
+              height: 1,
+              color: categoryStyle.color.withValues(alpha: 0.20),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

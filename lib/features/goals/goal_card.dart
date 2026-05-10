@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_form_sheet.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/models/fitness_goal.dart';
@@ -12,15 +13,17 @@ class GoalCard extends ConsumerWidget {
     required this.goal,
     required this.allGoals,
     this.isArchived = false,
+    this.showCategoryPill = true,
   });
 
   final FitnessGoal goal;
   final List<FitnessGoal> allGoals;
   final bool isArchived;
+  final bool showCategoryPill;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final categoryColor = _categoryColor(goal.category);
+    final categoryStyle = GoalCategoryStyle(goal.category);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
@@ -49,11 +52,11 @@ class GoalCard extends ConsumerWidget {
               children: [
                 _PriorityBadge(
                   priority: goal.priority,
-                  color: categoryColor,
+                  color: categoryStyle.color,
                   isArchived: isArchived,
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: _cardContent(categoryColor)),
+                Expanded(child: _cardContent(categoryStyle)),
                 const Icon(
                   CupertinoIcons.chevron_right,
                   size: 14,
@@ -87,7 +90,7 @@ class GoalCard extends ConsumerWidget {
     ),
   );
 
-  Widget _cardContent(Color categoryColor) {
+  Widget _cardContent(GoalCategoryStyle categoryStyle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -97,8 +100,10 @@ class GoalCard extends ConsumerWidget {
             color: isArchived ? AppColors.textColor3 : AppColors.textColor1,
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
-        _statusRow(categoryColor),
+        if (_showsStatusRow) ...[
+          const SizedBox(height: AppSpacing.xs),
+          _statusRow(categoryStyle),
+        ],
         if (goal.description.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           _descriptionText(),
@@ -107,14 +112,19 @@ class GoalCard extends ConsumerWidget {
     );
   }
 
-  Widget _statusRow(Color categoryColor) {
+  bool get _showsStatusRow {
+    return showCategoryPill || goal.status != GoalStatus.active;
+  }
+
+  Widget _statusRow(GoalCategoryStyle categoryStyle) {
     return Row(
       children: [
-        _CategoryPill(
-          label: _categoryLabel(goal.category),
-          color: categoryColor,
-          isArchived: isArchived,
-        ),
+        if (showCategoryPill)
+          _CategoryPill(
+            label: categoryStyle.label,
+            color: categoryStyle.color,
+            isArchived: isArchived,
+          ),
         if (goal.status == GoalStatus.achieved) ..._achievedBadge(),
         if (goal.status == GoalStatus.paused) ..._pausedBadge(),
       ],
@@ -246,29 +256,6 @@ class GoalCard extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  String _categoryLabel(GoalCategory category) {
-    return category.name
-        .replaceAllMapped(
-          RegExp(r'([a-z])([A-Z])'),
-          (match) => '${match[1]} ${match[2]}',
-        )
-        .toLowerCase();
-  }
-
-  Color _categoryColor(GoalCategory category) {
-    return switch (category) {
-      GoalCategory.strength || GoalCategory.power => AppColors.error,
-      GoalCategory.endurance || GoalCategory.quickness => AppColors.warning,
-      GoalCategory.mobility ||
-      GoalCategory.balance ||
-      GoalCategory.coordination => AppColors.accentSecondary,
-      GoalCategory.physique || GoalCategory.posture => AppColors.accentPrimary,
-      GoalCategory.rehabilitation ||
-      GoalCategory.longevity => AppColors.success,
-      GoalCategory.skill => AppColors.textColor2,
-    };
   }
 }
 
