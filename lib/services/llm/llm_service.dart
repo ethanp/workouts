@@ -7,12 +7,16 @@ import 'package:http/http.dart' as http;
 import 'package:workouts/services/sse_content_transformer.dart';
 
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:workouts/models/chat_message.dart';
 import 'package:workouts/models/exercise_benefit.dart';
+import 'package:workouts/models/exercise_replacement_suggestion.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/models/training_influence.dart';
+import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/context_builder.dart';
 import 'package:workouts/services/llm/llm_errors.dart';
+import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/llm/llm_followup_prompt.dart';
 import 'package:workouts/services/llm/llm_response_parser.dart';
 import 'package:workouts/services/llm/llm_workout_prompt.dart';
@@ -160,6 +164,47 @@ class LlmService {
     });
 
     return (tokens: broadcastTokens, parsed: completer.future);
+  }
+
+  /// Streams a chat completion against an arbitrary [systemPrompt] and
+  /// running [history] of user/assistant turns. Caller owns the message list;
+  /// each call sends `[system, ...history]` and yields token deltas as they
+  /// arrive. Generic — the caller decides what the conversation is _about_.
+  Stream<String> streamChat({
+    required String systemPrompt,
+    required List<ChatMessage> history,
+    required http.Client httpClient,
+    int maxTokens = 800,
+  }) {
+    final request =
+        http.Request('POST', Uri.parse('$proxyUrl/v1/chat/completions'))
+          ..headers.addAll({
+            'Content-Type': 'application/json',
+            'X-App-Name': appName,
+            'X-App-Token': appSecret,
+            'X-Client-ID': clientId,
+          })
+          ..body = jsonEncode({
+            'model': 'gpt-4o-mini',
+            'messages': [
+              {'role': 'system', 'content': systemPrompt},
+              ...history.map((message) => message.toOpenAiJson()),
+            ],
+            'max_tokens': maxTokens,
+            'stream': true,
+          });
+
+    return httpClient.send(request).asStream().asyncExpand((streamedResponse) {
+      if (streamedResponse.statusCode == 429) {
+        throw RateLimitedException();
+      }
+      if (streamedResponse.statusCode != 200) {
+        throw LlmException(
+          'Chat streaming failed: ${streamedResponse.statusCode}',
+        );
+      }
+      return streamedResponse.stream.transform(SseContentTransformer());
+    });
   }
 
   Stream<String> streamFollowup({
@@ -424,23 +469,180 @@ Respond with valid JSON only, no markdown. Structure:
       response.body,
     );
   }
+
+  /// Suggests up to 5 in-context substitutes for [originalExercise] when the
+  /// user wants to swap it mid-session — typical reason: equipment is taken
+  /// or the body part is fatigued.
+  ///
+  /// Suggestions may reference an existing library entry by id, or propose a
+  /// brand-new movement that the caller will upsert into the library on
+  /// confirm. The returned list never includes [originalExercise] itself or
+  /// any exercise whose id appears in [excludeIds].
+  Future<List<ExerciseReplacementSuggestion>> suggestExerciseReplacements({
+    required WorkoutExercise originalExercise,
+    String? availableEquipment,
+    required List<FitnessGoal> activeGoals,
+    required List<WorkoutExercise> libraryExercises,
+    Set<String> excludeIds = const {},
+  }) async {
+    _log.log(
+      'Suggesting replacements for "${originalExercise.name}"...',
+    );
+
+    final libraryById = {
+      for (final exercise in libraryExercises) exercise.id: exercise,
+    };
+    final selectableLibrary = libraryExercises
+        .where(
+          (exercise) =>
+              exercise.id != originalExercise.id &&
+              !excludeIds.contains(exercise.id),
+        )
+        .toList();
+
+    final systemPrompt = _replacementSuggestionsSystemPrompt();
+    final userPrompt = _replacementSuggestionsUserPrompt(
+      originalExercise: originalExercise,
+      availableEquipment: availableEquipment,
+      activeGoals: activeGoals,
+      selectableLibrary: selectableLibrary,
+    );
+
+    final response = await _feedToLlm([
+      {'role': 'system', 'content': systemPrompt},
+      {'role': 'user', 'content': userPrompt},
+    ], client);
+
+    if (response.statusCode == 429) throw RateLimitedException();
+    if (response.statusCode != 200) {
+      throw LlmException(
+        'Replacement suggestions failed: ${response.statusCode} ${response.body}',
+      );
+    }
+
+    return const LlmResponseParser().parseReplacementSuggestionsResponse(
+      response.body,
+      libraryById: libraryById,
+    );
+  }
+
+  String _replacementSuggestionsSystemPrompt() {
+    return '''You are an expert strength and conditioning coach helping a user swap an exercise mid-workout.
+
+The user is in an active session and wants a substitute for one specific exercise — usually because the equipment is taken, an injury flared up, or they want a similar movement with what they have on hand.
+
+Suggest up to 5 alternatives that:
+- Train similar movement patterns and target similar benefits to the original
+- Fit the available equipment when provided
+- Stay aligned with the user's active goals
+- Are reasonable swaps for the same slot in a session (similar effort cost / similar movement category)
+
+Prefer existing library exercises whenever a suitable match exists — reference them by their library id. Only propose a brand-new exercise when nothing in the library is a good fit.
+
+Respond with valid JSON only, no markdown. Structure:
+{
+  "suggestions": [
+    {
+      "library_exercise_id": "<existing library id or null>",
+      "reason": "one short sentence on why this is a good substitute",
+      "name": "<required when library_exercise_id is null>",
+      "modality": "reps|timed|hold|mobility|breath",
+      "equipment": "string or null",
+      "prescription": "e.g. '3 x 10' or '3 x 30s'",
+      "set_metrics_style": "repsOnly|repsAndWeight|durationOnly|repsAndDuration",
+      "target_sets": 3,
+      "cues": ["short coaching cue", ...],
+      "benefits": [
+        { "name": "benefit label", "goalIds": ["goal_id", ...] }
+      ]
+    }
+  ]
+}
+
+When `library_exercise_id` is non-null, the other fields can be omitted — the existing row will be used.''';
+  }
+
+  String _replacementSuggestionsUserPrompt({
+    required WorkoutExercise originalExercise,
+    required String? availableEquipment,
+    required List<FitnessGoal> activeGoals,
+    required List<WorkoutExercise> selectableLibrary,
+  }) {
+    final goalsJson = activeGoals
+        .map(
+          (goal) => {
+            'id': goal.id,
+            'title': goal.title,
+            'category': goal.category.name,
+            if (goal.description.isNotEmpty) 'description': goal.description,
+          },
+        )
+        .toList();
+
+    final libraryJson = selectableLibrary
+        .map(
+          (exercise) => {
+            'id': exercise.id,
+            'name': exercise.name,
+            'modality': exercise.modality.name,
+            if (exercise.equipment != null && exercise.equipment!.isNotEmpty)
+              'equipment': exercise.equipment,
+            if (exercise.benefits.isNotEmpty)
+              'benefits': exercise.benefits
+                  .map((benefit) => benefit.name)
+                  .toList(),
+          },
+        )
+        .toList();
+
+    final original = {
+      'name': originalExercise.name,
+      'modality': originalExercise.modality.name,
+      'prescription': originalExercise.prescription,
+      'set_metrics_style': originalExercise.setMetricsStyle.name,
+      if (originalExercise.equipment != null &&
+          originalExercise.equipment!.isNotEmpty)
+        'equipment': originalExercise.equipment,
+      if (originalExercise.benefits.isNotEmpty)
+        'benefits': originalExercise.benefits
+            .map((benefit) => benefit.name)
+            .toList(),
+      if (originalExercise.cues.isNotEmpty) 'cues': originalExercise.cues,
+    };
+
+    final buffer = StringBuffer()
+      ..writeln('Original exercise to replace:')
+      ..writeln(jsonEncode(original))
+      ..writeln();
+    if (availableEquipment != null && availableEquipment.trim().isNotEmpty) {
+      buffer
+        ..writeln('Available equipment in current location:')
+        ..writeln(availableEquipment)
+        ..writeln();
+    }
+    buffer
+      ..writeln('Active user goals:')
+      ..writeln(jsonEncode(goalsJson))
+      ..writeln()
+      ..writeln(
+        'Existing library exercises (prefer these when a good match exists):',
+      )
+      ..writeln(jsonEncode(libraryJson));
+
+    return buffer.toString();
+  }
 }
 
 @riverpod
 LlmService llmService(Ref ref) {
-  final proxyUrl = dotenv.env['LLM_PROXY_URL'];
+  final proxyUrl = ref.watch(llmProxyUrlProvider);
   final appName = dotenv.env['LLM_APP_NAME'] ?? 'workouts';
   final appSecret = dotenv.env['LLM_APP_SECRET'];
 
-  if (proxyUrl == null || proxyUrl.isEmpty) {
-    throw StateError('LLM_PROXY_URL not configured in .env');
-  }
   if (appSecret == null || appSecret.isEmpty) {
     throw StateError('LLM_APP_SECRET not configured in .env');
   }
 
-  // Use a stable client ID - for now just use a fixed ID per app
-  // In production, you might want to use device_info or stored UUID
   final clientId = 'workouts-ios-client';
 
   return LlmService(

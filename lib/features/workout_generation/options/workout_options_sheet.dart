@@ -10,6 +10,7 @@ import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/services/context_builder.dart';
 import 'package:workouts/services/llm/llm_errors.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 
 class WorkoutOptionsSheet extends ConsumerStatefulWidget {
   const WorkoutOptionsSheet({super.key});
@@ -133,10 +134,12 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.lg),
-            CupertinoButton.filled(
-              onPressed: () =>
-                  ref.read(workoutGenerationProvider.notifier).generate(),
-              child: const Text('Try Again'),
+            ConnectionGatedWidget(
+              child: CupertinoButton.filled(
+                onPressed: () =>
+                    ref.read(workoutGenerationProvider.notifier).generate(),
+                child: const Text('Try Again'),
+              ),
             ),
           ],
         ),

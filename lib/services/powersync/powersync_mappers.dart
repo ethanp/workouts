@@ -114,6 +114,9 @@ WorkoutExercise _exerciseFromJoinRow({
     benefits: ExerciseBenefit.listFromJsonString(
       row[_prefixed(exercisePrefix, 'benefits')] as String?,
     ),
+    isUnilateral: _boolFromInt(
+      row[_prefixed(exercisePrefix, 'is_unilateral')],
+    ),
     setupDuration: _durationFromSeconds(
       row[_prefixed(linkPrefix, 'setup_duration_seconds')],
     ),
@@ -125,6 +128,12 @@ WorkoutExercise _exerciseFromJoinRow({
     ),
     plannedSets: plannedSets,
   );
+}
+
+bool _boolFromInt(Object? value) {
+  if (value is int) return value != 0;
+  if (value is bool) return value;
+  return false;
 }
 
 /// Map normalized exercise row to WorkoutExercise model.

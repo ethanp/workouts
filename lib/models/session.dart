@@ -58,7 +58,7 @@ abstract class SessionBlock with _$SessionBlock {
       counts.update(log.exerciseId, (value) => value + 1, ifAbsent: () => 1);
     }
     for (final exercise in exercises) {
-      final targetSets = exercise.targetSets;
+      final targetSets = exercise.effectiveTargetSets;
       if (targetSets <= 0) {
         continue;
       }
@@ -108,4 +108,44 @@ extension SessionComposition on Session {
       .toSet();
 
   bool coversGoal(String goalId) => coveredGoalIds.contains(goalId);
+}
+
+/// Helpers for reasoning about exercise placement across multi-round sibling
+/// blocks (blocks of the same `type` and `totalRounds`). Mid-session
+/// add/remove/replace mutations propagate across these siblings; UIs that
+/// confirm such mutations need the same view of "how much would change?".
+extension SessionExerciseImpact on Session {
+  /// IDs of every block that mirrors changes made to [target]: the target
+  /// itself when not part of a multi-round set, otherwise every block
+  /// sharing its `type` and `totalRounds`.
+  Set<String> siblingBlockIdsOf(SessionBlock target) {
+    if (target.totalRounds == null) return {target.id};
+    return blocks
+        .where(
+          (block) =>
+              block.type == target.type &&
+              block.totalRounds == target.totalRounds,
+        )
+        .map((block) => block.id)
+        .toSet();
+  }
+
+  /// Number of blocks that would be affected by mutating [target] — i.e. the
+  /// size of the sibling set, including [target] itself.
+  int siblingBlockCountOf(SessionBlock target) =>
+      siblingBlockIdsOf(target).length;
+
+  /// Total logged sets attributed to [exerciseId] across [target] and all of
+  /// its sibling blocks.
+  int loggedSetCountForExerciseAcrossSiblings({
+    required SessionBlock target,
+    required String exerciseId,
+  }) {
+    final siblingIds = siblingBlockIdsOf(target);
+    return blocks
+        .where((block) => siblingIds.contains(block.id))
+        .expand((block) => block.logs)
+        .where((log) => log.exerciseId == exerciseId)
+        .length;
+  }
 }

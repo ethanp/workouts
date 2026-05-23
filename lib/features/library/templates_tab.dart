@@ -66,7 +66,7 @@ class _TemplateCard extends ConsumerWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
         CupertinoPageRoute<void>(
-          builder: (_) => TemplateDetailScreen(template: template),
+          builder: (_) => TemplateDetailScreen(templateId: template.id),
         ),
       ),
       child: Dismissible(

@@ -52,6 +52,7 @@ class SessionHydrator {
         e.set_metrics_style as e_set_metrics_style,
         e.cues as e_cues,
         e.benefits as e_benefits,
+        e.is_unilateral as e_is_unilateral,
         sbe.prescription as sbe_prescription,
         sbe.planned_sets as sbe_planned_sets,
         sbe.setup_duration_seconds as sbe_setup_duration_seconds,

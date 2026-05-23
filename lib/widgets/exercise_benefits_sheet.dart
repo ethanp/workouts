@@ -5,8 +5,10 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/exercise_benefits_provider.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
+import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 
 /// Review sheet for AI-generated or manually edited exercise benefits.
 ///
@@ -48,8 +50,12 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     final activeGoals = goalsAsync.value ?? [];
     final saveState = ref.watch(exerciseBenefitsControllerProvider);
     final isSaving = saveState is AsyncLoading;
+    final bool isOffline = ref.watch(isOfflineProvider);
 
-    if (widget.autoGenerate && !_hasAutoTriggered && goalsAsync.hasValue) {
+    if (widget.autoGenerate &&
+        !_hasAutoTriggered &&
+        goalsAsync.hasValue &&
+        !isOffline) {
       _hasAutoTriggered = true;
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _generate(activeGoals),
@@ -59,7 +65,7 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     return CupertinoPageScaffold(
       backgroundColor: AppColors.backgroundDepth1,
       navigationBar: _navigationBar(activeGoals, isSaving, context),
-      child: SafeArea(child: _body(activeGoals)),
+      child: SafeArea(child: _body(activeGoals, isOffline)),
     );
   }
 
@@ -98,24 +104,32 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     );
   }
 
-  Widget _body(List<FitnessGoal> activeGoals) {
+  Widget _body(List<FitnessGoal> activeGoals, bool isOffline) {
     return Column(
       children: [
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              _generateButton(activeGoals),
-              if (_generationError != null) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  _generationError!,
-                  style: AppTypography.caption.copyWith(color: AppColors.error),
+              ConnectionGatedWidget(
+                child: Column(
+                  children: [
+                    _generateButton(activeGoals),
+                    if (_generationError != null) ...[
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        _generationError!,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                 ),
-              ],
-              const SizedBox(height: AppSpacing.lg),
+              ),
               if (_editableBenefits.isEmpty)
-                _emptyState()
+                _emptyState(isOffline)
               else
                 ..._editableBenefits.asMap().entries.map(
                   (entry) => _benefitTile(entry.value, entry.key, activeGoals),
@@ -171,12 +185,15 @@ class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
     );
   }
 
-  Widget _emptyState() {
+  Widget _emptyState(bool isOffline) {
+    final String message = isOffline
+        ? 'No benefits yet. Add manually.'
+        : 'No benefits yet. Generate with AI or add manually.';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
       child: Center(
         child: Text(
-          'No benefits yet. Generate with AI or add manually.',
+          message,
           style: AppTypography.caption.copyWith(color: AppColors.textColor4),
           textAlign: TextAlign.center,
         ),

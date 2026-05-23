@@ -15,12 +15,18 @@ class CurrentSetEditor extends StatefulWidget {
     required this.plannedSet,
     required this.initialInput,
     required this.onChanged,
+    this.currentSide = 1,
   });
 
   final WorkoutExercise exercise;
   final PlannedSet? plannedSet;
   final SetLogInput initialInput;
   final ValueChanged<SetLogInput> onChanged;
+
+  /// 1-based index of the side currently being prepared for unilateral
+  /// exercises. Drives the "Side N of 2" header annotation. Ignored when
+  /// `exercise.isUnilateral` is false.
+  final int currentSide;
 
   @override
   State<CurrentSetEditor> createState() => _CurrentSetEditorState();
@@ -117,7 +123,7 @@ class _CurrentSetEditorState extends State<CurrentSetEditor> {
       children: [
         Expanded(
           child: Text(
-            'Current set',
+            _currentSetHeaderText,
             style: AppTypography.caption.copyWith(
               color: AppColors.textColor2,
               fontWeight: FontWeight.w600,
@@ -261,5 +267,11 @@ class _CurrentSetEditorState extends State<CurrentSetEditor> {
       plannedSet: widget.plannedSet,
       exercise: widget.exercise,
     ).text;
+  }
+
+  String get _currentSetHeaderText {
+    if (!widget.exercise.isUnilateral) return 'Current set';
+    return 'Current set · Side ${widget.currentSide} of '
+        '${widget.exercise.sidesPerSet}';
   }
 }

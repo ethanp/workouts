@@ -44,6 +44,7 @@ abstract class LlmExercise with _$LlmExercise {
     @Default([]) List<PlannedSet> plannedSets,
     int? restSeconds,
     String? notes,
+    @Default(false) bool isUnilateral,
   }) = _LlmExercise;
 
   factory LlmExercise.fromJson(Map<String, dynamic> json) =>

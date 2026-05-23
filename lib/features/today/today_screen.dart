@@ -8,6 +8,7 @@ import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/today/today_template_provider.dart';
 import 'package:workouts/features/workout_generation/workout_generation_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/features/today/today_template_card.dart';
 import 'package:workouts/features/workout_generation/options/workout_options_sheet.dart';
@@ -59,11 +60,17 @@ class TodayScreen extends ConsumerWidget {
         _ResumeWorkoutCard(session: inProgressSession),
         const SizedBox(height: AppSpacing.xxl),
       ],
-      _GenerateWorkoutButton(
-        onSelected: (option) =>
-            ref.read(workoutGenerationProvider.notifier).select(option),
+      ConnectionGatedWidget(
+        child: Column(
+          children: [
+            _GenerateWorkoutButton(
+              onSelected: (option) =>
+                  ref.read(workoutGenerationProvider.notifier).select(option),
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+        ),
       ),
-      const SizedBox(height: AppSpacing.xxl),
       _SavedTemplatesSection(
         templates: templates,
         onStartTemplate: (template) =>

@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
 import 'package:workouts/features/settings/unit_system_provider.dart';
+import 'package:workouts/services/backend/backend_host_probe_scheduler.dart';
+import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/utils/error_bus.dart';
 
 const _log = ELogger('Main');
@@ -31,12 +33,25 @@ Future<void> _bootstrap() async {
 
   final prefs = await SharedPreferences.getInstance();
 
+  final container = ProviderContainer(
+    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+  );
+
+  // Probe before runApp so the very first PowerSync connector targets a
+  // reachable host — no transient bad-host attempt before the after-first-
+  // frame re-probe lands.
+  await container.read(hostnameProvider.notifier).refineByTcpProbe();
+
   runApp(
-    ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    UncontrolledProviderScope(
+      container: container,
       child: const WorkoutsApp(),
     ),
   );
+
+  // Re-probe after first frame to catch e.g. networking that took a moment
+  // to come up (Tailscale just-launched, Wi-Fi association still settling).
+  BackendHostProbeScheduler(container).scheduleAfterFirstFrame();
 }
 
 void _installGlobalErrorHandlers() {

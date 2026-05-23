@@ -235,6 +235,72 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     );
   }
 
+  Future<void> replaceExercise(
+    SessionBlock block,
+    String oldExerciseId,
+    WorkoutExercise newExercise,
+  ) async {
+    final activeSession = state.value;
+    if (activeSession == null) return;
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.replaceExercise(
+        activeSession,
+        block.id,
+        oldExerciseId,
+        newExercise,
+      ),
+    );
+  }
+
+  Future<void> addWarmupSet(
+    SessionBlock block,
+    WorkoutExercise exercise,
+  ) async {
+    final activeSession = state.value;
+    if (activeSession == null) return;
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.addWarmupSet(
+        session: activeSession,
+        block: block,
+        exercise: exercise,
+      ),
+    );
+  }
+
+  Future<void> removeWarmupSet(
+    SessionBlock block,
+    WorkoutExercise exercise,
+  ) async {
+    final activeSession = state.value;
+    if (activeSession == null) return;
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.removeWarmupSet(
+        session: activeSession,
+        block: block,
+        exercise: exercise,
+      ),
+    );
+  }
+
+  Future<void> reorderExercises(
+    SessionBlock block,
+    List<String> orderedExerciseIds,
+  ) async {
+    final activeSession = state.value;
+    if (activeSession == null) return;
+    final repository = ref.read(sessionRepositoryPowerSyncProvider);
+    state = AsyncValue.data(
+      await repository.reorderExercises(
+        activeSession,
+        block.id,
+        orderedExerciseIds,
+      ),
+    );
+  }
+
   Future<void> refreshFromDatabase() async {
     final activeSession = state.value;
     if (activeSession == null) return;

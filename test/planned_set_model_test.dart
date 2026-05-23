@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'dart:convert';
 
+import 'package:workouts/features/active_session/exercise/current_set_planned_label.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
@@ -56,6 +57,20 @@ void main() {
         PlannedSet.listFromJsonString(doubleEncodedPlannedSets),
         plannedSets,
       );
+    });
+
+    test('roundtrips targetIntensity through JSON storage', () {
+      const plannedSets = [
+        PlannedSet(
+          reps: 5,
+          weight: Weight.kilograms(60),
+          targetIntensity: 'RIR 2',
+        ),
+        PlannedSet(reps: 5, weight: Weight.kilograms(60)),
+      ];
+
+      final encoded = PlannedSet.listToJsonString(plannedSets);
+      expect(PlannedSet.listFromJsonString(encoded), plannedSets);
     });
 
     test('throws for malformed planned set JSON instead of inventing sets', () {
@@ -118,6 +133,102 @@ void main() {
       );
 
       expect(exercise.prescriptionLabel, '2 x 10 @ 20kg');
+    });
+
+    test('appends targetIntensity suffix when working sets share it', () {
+      final exercise = WorkoutExercise(
+        id: 'swing',
+        name: 'Kettlebell Swing',
+        modality: ExerciseModality.reps,
+        prescription: 'legacy',
+        plannedSets: const [
+          PlannedSet(
+            reps: 10,
+            weight: Weight.kilograms(20),
+            targetIntensity: 'RIR 2',
+          ),
+          PlannedSet(
+            reps: 10,
+            weight: Weight.kilograms(20),
+            targetIntensity: 'RIR 2',
+          ),
+        ],
+      );
+
+      expect(exercise.prescriptionLabel, '2 x 10 @ 20kg, RIR 2');
+    });
+
+    test('falls back to "N working" when targetIntensity differs across sets', () {
+      final exercise = WorkoutExercise(
+        id: 'swing',
+        name: 'Kettlebell Swing',
+        modality: ExerciseModality.reps,
+        prescription: 'legacy',
+        plannedSets: const [
+          PlannedSet(
+            reps: 10,
+            weight: Weight.kilograms(20),
+            targetIntensity: 'RIR 3',
+          ),
+          PlannedSet(
+            reps: 10,
+            weight: Weight.kilograms(20),
+            targetIntensity: 'RIR 2',
+          ),
+          PlannedSet(
+            reps: 10,
+            weight: Weight.kilograms(20),
+            targetIntensity: 'RIR 1',
+          ),
+        ],
+      );
+
+      expect(exercise.prescriptionLabel, '3 working');
+    });
+  });
+
+  group('CurrentSetPlannedLabel targetIntensity', () {
+    final exercise = WorkoutExercise(
+      id: 'swing',
+      name: 'Kettlebell Swing',
+      modality: ExerciseModality.reps,
+      prescription: 'legacy',
+      plannedSets: const [PlannedSet(reps: 10, weight: Weight.kilograms(20))],
+    );
+
+    test('appends targetIntensity to the planned line when present', () {
+      const plannedSet = PlannedSet(
+        reps: 10,
+        weight: Weight.kilograms(20),
+        targetIntensity: 'RIR 2',
+      );
+
+      final label = CurrentSetPlannedLabel(
+        plannedSet: plannedSet,
+        exercise: exercise,
+      ).text;
+
+      expect(label, 'Planned 10 reps @ 20kg, RIR 2');
+    });
+
+    test('omits the suffix when targetIntensity is null or empty', () {
+      const plannedSet = PlannedSet(reps: 10, weight: Weight.kilograms(20));
+      final nullLabel = CurrentSetPlannedLabel(
+        plannedSet: plannedSet,
+        exercise: exercise,
+      ).text;
+      expect(nullLabel, 'Planned 10 reps @ 20kg');
+
+      const emptyIntensitySet = PlannedSet(
+        reps: 10,
+        weight: Weight.kilograms(20),
+        targetIntensity: '',
+      );
+      final emptyLabel = CurrentSetPlannedLabel(
+        plannedSet: emptyIntensitySet,
+        exercise: exercise,
+      ).text;
+      expect(emptyLabel, 'Planned 10 reps @ 20kg');
     });
   });
 }

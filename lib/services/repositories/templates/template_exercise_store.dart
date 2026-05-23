@@ -1,17 +1,17 @@
-import 'dart:convert';
-
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/services/powersync/powersync_extensions.dart';
+import 'package:workouts/services/repositories/library_exercise_store.dart';
 
 const _uuid = Uuid();
 
 class TemplateExerciseStore {
-  TemplateExerciseStore(this._powerSync);
+  TemplateExerciseStore(this._powerSync)
+    : _libraryExerciseStore = LibraryExerciseStore(_powerSync);
 
   final PowerSyncDatabase _powerSync;
+  final LibraryExerciseStore _libraryExerciseStore;
 
   Future<void> insertBlockExercises(
     String blockId,
@@ -24,23 +24,10 @@ class TemplateExerciseStore {
       exerciseIndex++
     ) {
       final exercise = exercises[exerciseIndex];
-      final existingRow = await _powerSync.getOptional(
-        'SELECT id FROM exercises WHERE name = ?',
-        [exercise.name],
+      final canonicalExerciseId = await _libraryExerciseStore.upsert(
+        exercise,
+        now: now,
       );
-      final exerciseId = existingRow?['id'] as String? ?? exercise.id;
-
-      await _powerSync.upsert('exercises', {
-        'id': exerciseId,
-        'name': exercise.name,
-        'modality': exercise.modality.name,
-        'equipment': exercise.equipment ?? '',
-        'set_metrics_style': exercise.setMetricsStyle.name,
-        'cues': jsonEncode(exercise.cues),
-        'benefits': ExerciseBenefit.listToJsonString(exercise.benefits),
-        'created_at': now,
-        'updated_at': now,
-      });
 
       await _powerSync.execute(
         '''
@@ -52,7 +39,7 @@ class TemplateExerciseStore {
         [
           _uuid.v4(),
           blockId,
-          exerciseId,
+          canonicalExerciseId,
           exerciseIndex,
           exercise.prescription,
           PlannedSet.listToJsonString(exercise.plannedSets),
@@ -62,6 +49,30 @@ class TemplateExerciseStore {
         ],
       );
     }
+  }
+
+  /// Overwrites the planned-set list for one exercise within one template
+  /// block, and bumps the parent template's `updated_at` so any active
+  /// `watchTemplates()` subscription re-emits with the change.
+  Future<void> updatePlannedSets({
+    required String templateId,
+    required String blockId,
+    required String exerciseId,
+    required List<PlannedSet> plannedSets,
+  }) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _powerSync.execute(
+      '''
+      UPDATE workout_block_exercises
+      SET planned_sets = ?
+      WHERE block_id = ? AND exercise_id = ?
+      ''',
+      [PlannedSet.listToJsonString(plannedSets), blockId, exerciseId],
+    );
+    await _powerSync.execute(
+      'UPDATE workout_templates SET updated_at = ? WHERE id = ?',
+      [now, templateId],
+    );
   }
 
   Future<void> updateExerciseBenefits(

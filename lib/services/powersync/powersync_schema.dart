@@ -11,6 +11,7 @@ const schema = Schema([
     Column.text('set_metrics_style'),
     Column.text('cues'),
     Column.text('benefits'),
+    Column.integer('is_unilateral'),
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),

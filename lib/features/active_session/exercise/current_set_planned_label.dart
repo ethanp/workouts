@@ -25,6 +25,9 @@ class CurrentSetPlannedLabel {
       plannedSetDetails.add('${currentPlannedSet.duration!.inSeconds}s');
     }
     if (plannedSetDetails.isEmpty) return null;
-    return 'Planned ${plannedSetDetails.join(' @ ')}';
+    final base = 'Planned ${plannedSetDetails.join(' @ ')}';
+    final intensity = currentPlannedSet.targetIntensity;
+    if (intensity == null || intensity.isEmpty) return base;
+    return '$base, $intensity';
   }
 }

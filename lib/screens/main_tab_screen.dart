@@ -94,7 +94,7 @@ class _ActiveSessionWrapper extends ConsumerWidget {
     return Column(
       children: [
         if (showBanner)
-          _activeSessionBanner(ref, session!)
+          _activeSessionBanner(ref, session)
         else
           const SizedBox.shrink(),
         Expanded(child: child),

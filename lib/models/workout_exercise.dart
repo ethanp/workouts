@@ -28,6 +28,7 @@ abstract class PlannedSet with _$PlannedSet {
     @NullableDurationSecondsConverter()
     Duration? duration,
     int? unitRemaining,
+    String? targetIntensity,
     String? note,
   }) = _PlannedSet;
 
@@ -35,6 +36,41 @@ abstract class PlannedSet with _$PlannedSet {
 
   factory PlannedSet.fromJson(Map<String, dynamic> json) =>
       _$PlannedSetFromJson(json);
+
+  /// Builds a fresh warmup-typed planned set, suitable for inserting at the
+  /// head of an exercise's unlogged tail.
+  ///
+  /// Priority: copy [sibling] when given (so a 2nd/3rd warmup mirrors the
+  /// first); else inherit cadence (reps/duration/unitRemaining) from the
+  /// first working set in [exercise] but leave weight + targetIntensity
+  /// null (warmups stay unprescribed for load and effort); else fall back
+  /// to a modality-appropriate default.
+  factory PlannedSet.newWarmup({
+    required WorkoutExercise exercise,
+    PlannedSet? sibling,
+  }) {
+    if (sibling != null) {
+      return sibling.copyWith(type: PlannedSetType.warmup);
+    }
+    final firstWorkingSet = exercise.plannedSets
+        .where((plannedSet) => plannedSet.type == PlannedSetType.working)
+        .firstOrNull;
+    if (firstWorkingSet != null) {
+      return PlannedSet(
+        type: PlannedSetType.warmup,
+        reps: firstWorkingSet.reps,
+        duration: firstWorkingSet.duration,
+        unitRemaining: firstWorkingSet.unitRemaining,
+      );
+    }
+    return PlannedSet(
+      type: PlannedSetType.warmup,
+      reps: exercise.setMetrics.tracksReps ? 8 : null,
+      duration: exercise.setMetrics.tracksDuration
+          ? (exercise.workDuration ?? const Duration(seconds: 30))
+          : null,
+    );
+  }
 
   static List<PlannedSet> listFromJsonString(String? plannedSetsJson) {
     if (plannedSetsJson == null || plannedSetsJson.isEmpty) {
@@ -93,6 +129,7 @@ abstract class WorkoutExercise with _$WorkoutExercise {
     @Default([]) List<PlannedSet> plannedSets,
     @Default(ExerciseSetMetricsStyle.repsOnly)
     ExerciseSetMetricsStyle setMetricsStyle,
+    @Default(false) bool isUnilateral,
   }) = _WorkoutExercise;
 
   const WorkoutExercise._();
@@ -100,8 +137,16 @@ abstract class WorkoutExercise with _$WorkoutExercise {
   factory WorkoutExercise.fromJson(Map<String, dynamic> json) =>
       _$WorkoutExerciseFromJson(json);
 
-  int get effectiveTargetSets =>
-      plannedSets.isNotEmpty ? plannedSets.length : targetSets;
+  /// Number of times each planned set is performed before advancing to the
+  /// next planned set definition. Bilateral exercises perform a planned set
+  /// once; unilateral exercises (split squat, single-leg work, single-arm
+  /// rows) perform it twice — once per side. Side identity isn't tracked.
+  int get sidesPerSet => isUnilateral ? 2 : 1;
+
+  int get effectiveTargetSets {
+    final base = plannedSets.isNotEmpty ? plannedSets.length : targetSets;
+    return base * sidesPerSet;
+  }
 
   int get warmupSetCount => plannedSets
       .where((plannedSet) => plannedSet.type == PlannedSetType.warmup)
@@ -223,6 +268,12 @@ class _PlannedSetLabelFormatter {
   final WorkoutExercise exercise;
 
   String get label {
+    final base = _baseLabel();
+    if (exercise.isUnilateral) return '$base each side';
+    return base;
+  }
+
+  String _baseLabel() {
     final groupedLabels = <String>[];
     final warmupCount = plannedSets
         .where((plannedSet) => plannedSet.type == PlannedSetType.warmup)
@@ -246,7 +297,8 @@ class _PlannedSetLabelFormatter {
       (plannedSet) =>
           plannedSet.reps == firstWorkingSet.reps &&
           plannedSet.weight == firstWorkingSet.weight &&
-          plannedSet.duration == firstWorkingSet.duration,
+          plannedSet.duration == firstWorkingSet.duration &&
+          plannedSet.targetIntensity == firstWorkingSet.targetIntensity,
     );
     if (!allSame) return '${workingSets.length} working';
 
@@ -256,6 +308,14 @@ class _PlannedSetLabelFormatter {
   }
 
   String _targetLabel(PlannedSet plannedSet) {
+    final base = _baseTargetLabel(plannedSet);
+    if (base.isEmpty) return '';
+    final intensity = plannedSet.targetIntensity;
+    if (intensity == null || intensity.isEmpty) return base;
+    return '$base, $intensity';
+  }
+
+  String _baseTargetLabel(PlannedSet plannedSet) {
     if (plannedSet.reps != null && plannedSet.weight != null) {
       return '${plannedSet.reps} @ ${plannedSet.weight!.formatFor(exercise)}';
     }

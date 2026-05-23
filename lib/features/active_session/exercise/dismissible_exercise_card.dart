@@ -13,12 +13,21 @@ class DismissibleExerciseCard extends ConsumerWidget {
     required this.exercise,
     required this.isNextRecommended,
     required this.onSetLogged,
+    this.dragHandle,
+    this.wrapperKey,
   });
 
   final SessionBlock block;
   final WorkoutExercise exercise;
   final bool isNextRecommended;
   final VoidCallback onSetLogged;
+  final Widget? dragHandle;
+
+  /// Key attached to an inner subtree (not to the widget itself). The host
+  /// list owns the outer `key:` (e.g. ReorderableListView's required item
+  /// key); `wrapperKey` lets `Scrollable.ensureVisible` still target the
+  /// card via a stable per-exercise GlobalKey.
+  final Key? wrapperKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -40,11 +49,15 @@ class DismissibleExerciseCard extends ConsumerWidget {
         ),
         child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white),
       ),
-      child: ExerciseCard(
-        block: block,
-        exercise: exercise,
-        isNextRecommended: isNextRecommended,
-        onSetLogged: onSetLogged,
+      child: KeyedSubtree(
+        key: wrapperKey,
+        child: ExerciseCard(
+          block: block,
+          exercise: exercise,
+          isNextRecommended: isNextRecommended,
+          onSetLogged: onSetLogged,
+          dragHandle: dragHandle,
+        ),
       ),
     );
   }

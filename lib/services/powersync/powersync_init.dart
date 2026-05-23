@@ -14,19 +14,17 @@ import 'powersync_schema.dart';
 const _log = ELogger('PowerSyncInit');
 const _powerSyncDatabasePathPreferenceKey = 'powersync_database_path';
 
-String get _powersyncUrl => dotenv.env['POWERSYNC_URL'] ?? '';
-String get _postgrestUrl => dotenv.env['POSTGREST_URL'] ?? '';
 String get _jwtSecret => dotenv.env['POWERSYNC_JWT_SECRET'] ?? '';
 
+/// Open and initialize the local PowerSync database. Host-agnostic — the
+/// connector and its URLs are applied separately by [connectPowerSync] so
+/// callers can react to URL changes without tearing down the DB.
 Future<PowerSyncDatabase> initPowerSync({
   required SharedPreferences sharedPreferences,
 }) async {
-  if (_powersyncUrl.isEmpty || _postgrestUrl.isEmpty || _jwtSecret.isEmpty) {
+  if (_jwtSecret.isEmpty) {
     final errorMessage =
-        'Missing required .env configuration. '
-        'POWERSYNC_URL=${_powersyncUrl.isEmpty ? "MISSING" : "OK"}, '
-        'POSTGREST_URL=${_postgrestUrl.isEmpty ? "MISSING" : "OK"}, '
-        'POWERSYNC_JWT_SECRET=${_jwtSecret.isEmpty ? "MISSING" : "OK"}';
+        'Missing POWERSYNC_JWT_SECRET in .env';
     _log.error(errorMessage);
     throw StateError(errorMessage);
   }
@@ -39,8 +37,6 @@ Future<PowerSyncDatabase> initPowerSync({
     dbDir.createSync(recursive: true);
   }
 
-  // Detached logger for PowerSync's internal messages — must remain a
-  // logging.Logger since it's passed to PowerSyncDatabase.
   final powerSyncInternalLog = ELogger('PowerSync');
   final powerSyncLogger = Logger.detached('PowerSync');
   powerSyncLogger.level = kDebugMode ? Level.INFO : Level.WARNING;
@@ -69,8 +65,6 @@ Future<PowerSyncDatabase> initPowerSync({
 
     await _purgeOrphanedCardioChildCrudEntries(powerSyncDatabase);
 
-    await reconnectPowerSync(powerSyncDatabase);
-
     if (kDebugMode) _subscribeDownloadTableLogs(powerSyncDatabase);
 
     return powerSyncDatabase;
@@ -80,9 +74,16 @@ Future<PowerSyncDatabase> initPowerSync({
   }
 }
 
-Future<void> reconnectPowerSync(PowerSyncDatabase powerSyncDatabase) async {
+/// (Re)apply a backend connector against [powerSyncDatabase] using the given
+/// URLs. Calling this with new URLs swaps the connector — PowerSync's own
+/// retry timer then targets the new host.
+Future<void> connectPowerSync(
+  PowerSyncDatabase powerSyncDatabase, {
+  required String powersyncUrl,
+  required String postgrestUrl,
+}) async {
   await powerSyncDatabase.connect(
-    connector: WorkoutsBackendConnector(_powersyncUrl, _postgrestUrl),
+    connector: WorkoutsBackendConnector(powersyncUrl, postgrestUrl),
   );
 }
 

@@ -55,5 +55,6 @@ WorkoutExercise _exerciseFromLlmExercise(LlmExercise llmExercise) {
         : Duration(seconds: llmExercise.restSeconds!),
     cues: llmExercise.notes != null ? [llmExercise.notes!] : const [],
     plannedSets: plannedSets,
+    isUnilateral: llmExercise.isUnilateral,
   );
 }

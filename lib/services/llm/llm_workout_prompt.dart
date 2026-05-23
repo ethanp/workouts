@@ -56,9 +56,10 @@ Respond in JSON format with this exact structure:
               "prescription": "2 warmup sets + 3 x 5 @ 60 kg",
               "modality": "reps",
               "setMetricsStyle": "repsAndWeight",
+              "isUnilateral": false,
               "plannedSets": [
                 { "type": "warmup", "reps": 8, "weightKg": 20.0 },
-                { "type": "working", "reps": 5, "weightKg": 60.0 }
+                { "type": "working", "reps": 5, "weightKg": 60.0, "targetIntensity": "RIR 2" }
               ],
               "restSeconds": 120,
               "notes": "Form cues"
@@ -85,7 +86,10 @@ Exercise rules:
 - Use `weightKg` only when external load is relevant. Store all load in kilograms.
 - Use `reps` for rep-based work.
 - Use `durationSeconds` for timed, hold, mobility, or breath work.
-- Include warmup sets when they matter for loaded strength work. Do not bury warmups in notes.''';
+- Include warmup sets when they matter for loaded strength work. Do not bury warmups in notes.
+- Optional `targetIntensity` per planned set: a short coach-style label like "RIR 2", "RPE 8", or "70% 1RM". Use it to convey the expected effort on working sets when meaningful.
+- Prefer RIR (reps in reserve) for hypertrophy/strength reps work, RPE for timed/hold or finisher work, and %1RM only when the user has indicated max-strength training. Leave it null for warmups, mobility, and breath work.
+- Set `isUnilateral: true` for any exercise performed one side at a time: split squats, lunges, single-leg deadlifts/squats/glute bridges, pistol squats, single-arm presses/rows/curls, single-arm carries, side planks, etc. Bilateral exercises (regular squats, deadlifts, push-ups, double-arm work, planks) get `isUnilateral: false`. The runtime fans every planned set into per-side logged sets, so do NOT double the planned-set count yourself for unilateral exercises — keep `plannedSets` describing one round and let the runtime handle the per-side fanning.''';
   }
 
   String buildUserPrompt(WorkoutContext context, String? feedback) {

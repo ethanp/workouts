@@ -11,6 +11,7 @@ import 'package:workouts/features/active_session/session_resume/session_resume_m
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
+import 'package:workouts/theme/app_theme.dart';
 
 class SessionResumeBody extends ConsumerStatefulWidget {
   const SessionResumeBody({super.key, required this.session});
@@ -51,7 +52,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
     final bool keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
 
     return CupertinoPageScaffold(
-      navigationBar: _navigationBar(context),
+      navigationBar: _navigationBar(context, session),
       child: SafeArea(
         child: Stack(
           children: [
@@ -62,8 +63,6 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
                   SessionResumeMetricsPanel(
                     session: session,
                     heartRateSamples: heartRateSamples,
-                    elapsedDuration: _elapsedDuration(session),
-                    currentBlockIndex: _currentBlockIndex,
                     watchConnected: watchConnected,
                     onPreviousBlock: _canGoPrevious ? _goToPreviousBlock : null,
                     onNextBlock: _canGoNext(session) ? _goToNextBlock : null,
@@ -86,20 +85,61 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
     return _currentBlockIndex < session.blocks.length - 1;
   }
 
-  CupertinoNavigationBar _navigationBar(BuildContext context) {
+  CupertinoNavigationBar _navigationBar(BuildContext context, Session session) {
     return CupertinoNavigationBar(
       leading: CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: () => ref.read(sessionUIVisibilityProvider.notifier).hide(),
         child: const Icon(CupertinoIcons.chevron_down),
       ),
-      middle: const Text('Active Session'),
+      middle: _navigationBarMiddle(session),
       trailing: CupertinoButton(
         padding: EdgeInsets.zero,
         onPressed: () => _completeSession(context),
         child: const Text('Finish'),
       ),
     );
+  }
+
+  Widget _navigationBarMiddle(Session session) {
+    final timeColor = session.isPaused
+        ? AppColors.warning
+        : AppColors.textColor1;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          _formatElapsed(_elapsedDuration(session)),
+          style: AppTypography.body.copyWith(
+            fontWeight: FontWeight.w600,
+            color: timeColor,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        if (session.blocks.isNotEmpty)
+          Text(
+            session.isPaused
+                ? 'Paused · Block ${_currentBlockIndex + 1} of ${session.blocks.length}'
+                : 'Block ${_currentBlockIndex + 1} of ${session.blocks.length}',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textColor3,
+              fontSize: 11,
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _formatElapsed(Duration elapsed) {
+    final totalSeconds = elapsed.inSeconds;
+    final hours = totalSeconds ~/ 3600;
+    final minutes = (totalSeconds % 3600) ~/ 60;
+    final seconds = totalSeconds % 60;
+    final mm = minutes.toString().padLeft(2, '0');
+    final ss = seconds.toString().padLeft(2, '0');
+    if (hours > 0) return '${hours.toString().padLeft(2, '0')}:$mm:$ss';
+    return '$mm:$ss';
   }
 
   Widget _blockPager(Session session) {

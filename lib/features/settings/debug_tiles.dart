@@ -1,11 +1,11 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
+import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
 import 'package:workouts/theme/app_theme.dart';
@@ -248,7 +248,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
       int serverWorkouts = -1;
       try {
-        final postgrestUrl = dotenv.env['POSTGREST_URL'] ?? '';
+        final postgrestUrl = ref.read(postgrestUrlProvider);
         if (postgrestUrl.isNotEmpty) {
           final response = await http
               .get(
@@ -283,7 +283,11 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       final powerSyncDatabase = await ref.read(
         powerSyncDatabaseProvider.future,
       );
-      await reconnectPowerSync(powerSyncDatabase);
+      await connectPowerSync(
+        powerSyncDatabase,
+        powersyncUrl: ref.read(powersyncUrlProvider),
+        postgrestUrl: ref.read(postgrestUrlProvider),
+      );
     } finally {
       if (mounted) setState(() => _reconnecting = false);
     }
@@ -296,7 +300,11 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
         powerSyncDatabaseProvider.future,
       );
       await powerSyncDatabase.disconnectAndClear();
-      await reconnectPowerSync(powerSyncDatabase);
+      await connectPowerSync(
+        powerSyncDatabase,
+        powersyncUrl: ref.read(powersyncUrlProvider),
+        postgrestUrl: ref.read(postgrestUrlProvider),
+      );
       if (mounted) _refreshCrud();
     } finally {
       if (mounted) setState(() => _resettingSync = false);

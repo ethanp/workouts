@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/workout_generation/options/workout_followup_answer.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 
 enum RefinementMode { refine, ask }
 
@@ -26,6 +27,10 @@ class WorkoutRefinementPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ConnectionGatedWidget(child: _panel());
+  }
+
+  Widget _panel() {
     final isAskMode = mode == RefinementMode.ask;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
 class ExercisePickerScreen extends ConsumerWidget {
@@ -259,16 +260,18 @@ class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
               ),
             ),
           ),
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            onPressed: () => _openBenefitsSheet(exercise),
-            child: const Icon(
-              CupertinoIcons.sparkles,
-              size: 18,
-              color: AppColors.textColor4,
+          ConnectionGatedWidget(
+            child: CupertinoButton(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.md,
+              ),
+              onPressed: () => _openBenefitsSheet(exercise),
+              child: const Icon(
+                CupertinoIcons.sparkles,
+                size: 18,
+                color: AppColors.textColor4,
+              ),
             ),
           ),
         ],

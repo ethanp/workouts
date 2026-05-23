@@ -1,17 +1,13 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/models/session.dart';
-import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
-import 'package:workouts/features/history/history_provider.dart';
-import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
 import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
+import 'package:workouts/providers/sync_provider.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 enum HistoryTab { charts, list, calendar }

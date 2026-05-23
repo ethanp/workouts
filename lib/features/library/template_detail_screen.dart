@@ -1,64 +1,85 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/features/library/templates_provider.dart';
+import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
+import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class TemplateDetailScreen extends StatefulWidget {
-  const TemplateDetailScreen({super.key, required this.template});
+class TemplateDetailScreen extends ConsumerStatefulWidget {
+  const TemplateDetailScreen({super.key, required this.templateId});
 
-  final WorkoutTemplate template;
+  final String templateId;
 
   @override
-  State<TemplateDetailScreen> createState() => _TemplateDetailScreenState();
+  ConsumerState<TemplateDetailScreen> createState() =>
+      _TemplateDetailScreenState();
 }
 
-class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
+class _TemplateDetailScreenState extends ConsumerState<TemplateDetailScreen> {
   final Set<String> _expandedBlockIds = {};
-
-  @override
-  void initState() {
-    super.initState();
-    // Expand the first block by default.
-    if (widget.template.blocks.isNotEmpty) {
-      _expandedBlockIds.add(widget.template.blocks.first.id);
-    }
-  }
+  bool _initializedExpanded = false;
 
   @override
   Widget build(BuildContext context) {
+    final WorkoutTemplate? template = ref.watch(
+      templateByIdProvider(widget.templateId),
+    );
+    if (template == null) return _missingTemplateScaffold();
+    _ensureFirstBlockExpanded(template);
+    return _scaffold(template);
+  }
+
+  void _ensureFirstBlockExpanded(WorkoutTemplate template) {
+    if (_initializedExpanded || template.blocks.isEmpty) return;
+    _expandedBlockIds.add(template.blocks.first.id);
+    _initializedExpanded = true;
+  }
+
+  Widget _missingTemplateScaffold() => CupertinoPageScaffold(
+    backgroundColor: AppColors.backgroundDepth1,
+    navigationBar: CupertinoNavigationBar(
+      backgroundColor: AppColors.backgroundDepth1,
+      border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
+    ),
+    child: const Center(child: CupertinoActivityIndicator()),
+  );
+
+  Widget _scaffold(WorkoutTemplate template) {
     return CupertinoPageScaffold(
       backgroundColor: AppColors.backgroundDepth1,
       navigationBar: CupertinoNavigationBar(
         backgroundColor: AppColors.backgroundDepth1,
         border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
         middle: Text(
-          widget.template.name,
+          template.name,
           style: AppTypography.subtitle,
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      child: SafeArea(child: _body()),
+      child: SafeArea(child: _body(template)),
     );
   }
 
-  Widget _body() {
+  Widget _body(WorkoutTemplate template) {
     return ListView(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
         vertical: AppSpacing.md,
       ),
       children: [
-        _templateHeader(),
+        _templateHeader(template),
         const SizedBox(height: AppSpacing.lg),
-        _blocksSection(),
+        _blocksSection(template),
         const SizedBox(height: AppSpacing.xxl),
       ],
     );
   }
 
-  Widget _templateHeader() {
+  Widget _templateHeader(WorkoutTemplate template) {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -66,36 +87,35 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
         borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.borderDepth1),
       ),
-      child: _headerContent(),
+      child: _headerContent(template),
     );
   }
 
-  Widget _headerContent() {
+  Widget _headerContent(WorkoutTemplate template) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(widget.template.name, style: AppTypography.title),
-        if (widget.template.goal.isNotEmpty) ...[
+        Text(template.name, style: AppTypography.title),
+        if (template.goal.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
-            widget.template.goal,
+            template.goal,
             style: AppTypography.body.copyWith(color: AppColors.textColor3),
           ),
         ],
         const SizedBox(height: AppSpacing.md),
-        _headerStatsRow(),
-        if (widget.template.notes != null &&
-            widget.template.notes!.isNotEmpty) ...[
+        _headerStatsRow(template),
+        if (template.notes != null && template.notes!.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.md),
-          _headerNotesBox(),
+          _headerNotesBox(template),
         ],
       ],
     );
   }
 
-  Widget _headerStatsRow() {
-    final totalBlocks = widget.template.blocks.length;
-    final totalExercises = widget.template.blocks
+  Widget _headerStatsRow(WorkoutTemplate template) {
+    final totalBlocks = template.blocks.length;
+    final totalExercises = template.blocks
         .expand((block) => block.exercises)
         .length;
     return Row(
@@ -114,7 +134,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     );
   }
 
-  Widget _headerNotesBox() {
+  Widget _headerNotesBox(WorkoutTemplate template) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -123,7 +143,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
-        widget.template.notes!,
+        template.notes!,
         style: AppTypography.caption.copyWith(color: AppColors.textColor3),
       ),
     );
@@ -143,7 +163,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     );
   }
 
-  Widget _blocksSection() {
+  Widget _blocksSection(WorkoutTemplate template) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -166,7 +186,7 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
           ],
         ),
         const SizedBox(height: AppSpacing.sm),
-        ...widget.template.blocks.map(_blockCard),
+        ...template.blocks.map(_blockCard),
       ],
     );
   }
@@ -193,7 +213,9 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 color: AppColors.borderDepth1,
               ),
-              ...block.exercises.map((exercise) => _exerciseRow(exercise)),
+              ...block.exercises.map(
+                (exercise) => _exerciseRow(block, exercise),
+              ),
               const SizedBox(height: AppSpacing.xs),
             ],
           ],
@@ -294,7 +316,12 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
     ),
   );
 
-  Widget _exerciseRow(WorkoutExercise exercise) {
+  Widget _exerciseRow(WorkoutBlock block, WorkoutExercise exercise) {
+    final warmupSets = WarmupSets(
+      plannedSets: exercise.plannedSets,
+      exercise: exercise,
+      loggedSetCount: 0,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -321,15 +348,52 @@ class _TemplateDetailScreenState extends State<TemplateDetailScreen> {
             ),
           ),
           if (exercise.prescriptionLabel.isNotEmpty)
-            Text(
-              exercise.prescriptionLabel,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
-                fontWeight: FontWeight.w500,
+            Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              child: Text(
+                exercise.prescriptionLabel,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textColor4,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
+            ),
+          if (warmupSets.canRemove)
+            _warmupChip(
+              icon: CupertinoIcons.minus_circle,
+              onTap: () => _removeWarmupSet(block.id, exercise),
+            ),
+          if (warmupSets.canAdd)
+            _warmupChip(
+              icon: CupertinoIcons.plus_circle,
+              onTap: () => _addWarmupSet(block.id, exercise),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _warmupChip({required IconData icon, required VoidCallback onTap}) =>
+      CupertinoButton(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+        minimumSize: const Size(28, 28),
+        onPressed: onTap,
+        child: Icon(icon, size: 18, color: AppColors.textColor3),
+      );
+
+  Future<void> _addWarmupSet(String blockId, WorkoutExercise exercise) {
+    return ref.read(templateRepositoryPowerSyncProvider).addWarmupSet(
+      templateId: widget.templateId,
+      blockId: blockId,
+      exercise: exercise,
+    );
+  }
+
+  Future<void> _removeWarmupSet(String blockId, WorkoutExercise exercise) {
+    return ref.read(templateRepositoryPowerSyncProvider).removeWarmupSet(
+      templateId: widget.templateId,
+      blockId: blockId,
+      exercise: exercise,
     );
   }
 }

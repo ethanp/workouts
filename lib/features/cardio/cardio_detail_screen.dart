@@ -1,17 +1,17 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/workout_polarization_card.dart';
+import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
+import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
+import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/features/cardio/workout_polarization_card.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
@@ -146,13 +146,13 @@ class _WorkoutSummaryCard extends StatelessWidget {
   }
 }
 
-class _RouteCard extends StatelessWidget {
+class _RouteCard extends ConsumerWidget {
   const _RouteCard({required this.routePoints});
 
   final List<CardioRoutePoint> routePoints;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (routePoints.length < 2) {
       return _noRouteCard();
     }
@@ -161,7 +161,7 @@ class _RouteCard extends StatelessWidget {
         .map((routePoint) => LatLng(routePoint.latitude, routePoint.longitude))
         .toList();
 
-    return _routeMapCard(routeLatLngPoints);
+    return _routeMapCard(routeLatLngPoints, ref.watch(tileProxyUrlProvider));
   }
 
   Widget _noRouteCard() => Container(
@@ -177,7 +177,8 @@ class _RouteCard extends StatelessWidget {
     ),
   );
 
-  Widget _routeMapCard(List<LatLng> routeLatLngPoints) => Container(
+  Widget _routeMapCard(List<LatLng> routeLatLngPoints, String tileProxyUrl) =>
+      Container(
     decoration: BoxDecoration(
       color: AppColors.backgroundDepth2,
       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -196,12 +197,8 @@ class _RouteCard extends StatelessWidget {
           ),
           children: [
             TileLayer(
-              urlTemplate:
-                  '${dotenv.env['TILE_PROXY_URL'] ?? 'https://tile.openstreetmap.org'}/tiles/{z}/{x}/{y}.png',
-              tileProvider: LoggingCacheTileProvider(
-                dotenv.env['TILE_PROXY_URL'] ??
-                    'https://tile.openstreetmap.org',
-              ),
+              urlTemplate: '$tileProxyUrl/tiles/{z}/{x}/{y}.png',
+              tileProvider: LoggingCacheTileProvider(tileProxyUrl),
             ),
             PolylineLayer(
               polylines: [

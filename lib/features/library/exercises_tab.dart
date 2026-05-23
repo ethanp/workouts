@@ -3,7 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
+import 'package:workouts/providers/sync_provider.dart';
+import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/repositories/library_exercise_store.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
 class ExercisesTab extends ConsumerStatefulWidget {
@@ -54,13 +58,14 @@ class _ExercisesBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CustomScrollView(slivers: _slivers(context));
+    final bool isOffline = ref.watch(isOfflineProvider);
+    return CustomScrollView(slivers: _slivers(context, isOffline));
   }
 
-  List<Widget> _slivers(BuildContext context) {
+  List<Widget> _slivers(BuildContext context, bool isOffline) {
     return [
       _headerSliver(),
-      ..._bannerSlivers(),
+      ..._bannerSlivers(isOffline),
       if (exercises.isEmpty) _emptySliver() else _exerciseListSliver(exercises),
       const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
     ];
@@ -83,7 +88,7 @@ class _ExercisesBody extends ConsumerWidget {
     );
   }
 
-  List<Widget> _bannerSlivers() {
+  List<Widget> _bannerSlivers(bool isOffline) {
     if (bulkProgress != null) {
       return [
         SliverToBoxAdapter(
@@ -91,7 +96,7 @@ class _ExercisesBody extends ConsumerWidget {
         ),
       ];
     }
-    if (_hasMissingBenefits) {
+    if (_hasMissingBenefits && !isOffline) {
       return [
         SliverToBoxAdapter(child: _GenerateAllBanner(onTap: onGenerateAll)),
       ];
@@ -279,11 +284,11 @@ class _ExerciseRow extends ConsumerWidget {
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: () => _openBenefitsSheet(context),
-      child: _rowContent(context),
+      child: _rowContent(context, ref),
     );
   }
 
-  Widget _rowContent(BuildContext context) {
+  Widget _rowContent(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       color: CupertinoColors.transparent,
@@ -292,7 +297,9 @@ class _ExerciseRow extends ConsumerWidget {
           _ModalityIcon(modality: exercise.modality),
           const SizedBox(width: AppSpacing.md),
           Expanded(child: _exerciseDetails()),
-          if (exercise.benefits.isEmpty) _sparkleButton(context),
+          _UnilateralToggle(exercise: exercise),
+          if (exercise.benefits.isEmpty)
+            ConnectionGatedWidget(child: _sparkleButton(context)),
         ],
       ),
     );
@@ -356,6 +363,51 @@ class _ExerciseRow extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+/// Inline switch on the library tile that flips an exercise between bilateral
+/// and unilateral. Persists immediately via [LibraryExerciseStore] so the
+/// next session honors the change. Kept compact — label + small switch — so
+/// it doesn't dominate the row, but still recognizable so users can fix
+/// catalog rows without an extra "edit exercise" sheet.
+class _UnilateralToggle extends ConsumerWidget {
+  const _UnilateralToggle({required this.exercise});
+
+  final WorkoutExercise exercise;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.xs),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Unilateral',
+            style: AppTypography.caption.copyWith(
+              fontSize: 11,
+              color: AppColors.textColor3,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Transform.scale(
+            scale: 0.7,
+            child: CupertinoSwitch(
+              value: exercise.isUnilateral,
+              onChanged: (next) => _toggle(ref, next),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggle(WidgetRef ref, bool next) async {
+    final powerSync = await ref.read(powerSyncDatabaseProvider.future);
+    final store = LibraryExerciseStore(powerSync);
+    await store.upsert(exercise.copyWith(isUnilateral: next));
+    ref.invalidate(allExercisesProvider);
   }
 }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-enum TimerPhase { idle, setup, work, complete }
+enum TimerPhase { idle, setup, work, rest, complete }
 
 class ExerciseTimerPanel extends StatelessWidget {
   const ExerciseTimerPanel({
@@ -13,16 +13,15 @@ class ExerciseTimerPanel extends StatelessWidget {
     required this.onPause,
     required this.onResume,
     required this.onReset,
-    required this.onSkipToComplete,
     required this.onAdjustTime,
     required this.canPause,
     required this.canResume,
     required this.canStart,
     required this.canReset,
     required this.canAdjust,
-    required this.canSkip,
     required this.hasSetupPhase,
     required this.hasWorkPhase,
+    required this.hasRestPhase,
   });
 
   final TimerPhase phase;
@@ -32,22 +31,23 @@ class ExerciseTimerPanel extends StatelessWidget {
   final VoidCallback onPause;
   final VoidCallback onResume;
   final VoidCallback onReset;
-  final VoidCallback onSkipToComplete;
   final void Function(int seconds) onAdjustTime;
   final bool canPause;
   final bool canResume;
   final bool canStart;
   final bool canReset;
   final bool canAdjust;
-  final bool canSkip;
   final bool hasSetupPhase;
   final bool hasWorkPhase;
+  final bool hasRestPhase;
 
   String get _phaseLabel => switch (phase) {
     TimerPhase.setup => 'Setup',
     TimerPhase.work => 'Work',
+    TimerPhase.rest => 'Rest',
     TimerPhase.complete => 'Complete',
-    TimerPhase.idle => hasSetupPhase || hasWorkPhase ? 'Ready' : 'Timer',
+    TimerPhase.idle =>
+      hasSetupPhase || hasWorkPhase || hasRestPhase ? 'Ready' : 'Timer',
   };
 
   String get _timeDisplay {
@@ -85,9 +85,7 @@ class ExerciseTimerPanel extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          _primaryControls(),
-          const SizedBox(height: AppSpacing.xs),
-          _secondaryControls(),
+          _controlsRow(),
         ],
       ),
     );
@@ -109,7 +107,7 @@ class ExerciseTimerPanel extends StatelessWidget {
     );
   }
 
-  Widget _primaryControls() {
+  Widget _controlsRow() {
     return Row(
       children: [
         if (canAdjust) ...[
@@ -118,84 +116,57 @@ class ExerciseTimerPanel extends StatelessWidget {
           _timerButton('+10s', () => onAdjustTime(10)),
           const SizedBox(width: AppSpacing.sm),
         ],
-        Expanded(
-          child: CupertinoButton.filled(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
-            ),
-            onPressed: canPause
-                ? onPause
-                : canResume
-                ? onResume
-                : canStart
-                ? onStart
-                : null,
-            child: Text(
-              canPause
-                  ? 'Pause'
-                  : canResume
-                  ? 'Resume'
-                  : 'Start',
-              style: const TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
+        Expanded(child: _primaryButton()),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: _resetButton()),
       ],
     );
   }
 
-  Widget _secondaryControls() {
-    return Row(
-      children: [
-        Expanded(
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            color: AppColors.backgroundDepth4,
-            disabledColor: AppColors.backgroundDepth4.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            onPressed: canReset ? onReset : null,
-            child: const Text(
-              'Reset',
-              style: TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Expanded(
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
-            ),
-            color: AppColors.success,
-            disabledColor: AppColors.backgroundDepth4.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            onPressed: canSkip ? onSkipToComplete : null,
-            child: const Text(
-              'Mark Complete',
-              style: TextStyle(
-                color: CupertinoColors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  Widget _primaryButton() => CupertinoButton.filled(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.sm,
+    ),
+    onPressed: canPause
+        ? onPause
+        : canResume
+        ? onResume
+        : canStart
+        ? onStart
+        : null,
+    child: Text(
+      canPause
+          ? 'Pause'
+          : canResume
+          ? 'Resume'
+          : 'Start',
+      style: const TextStyle(
+        color: CupertinoColors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
+
+  Widget _resetButton() => CupertinoButton(
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    ),
+    color: AppColors.backgroundDepth4,
+    disabledColor: AppColors.backgroundDepth4.withValues(alpha: 0.5),
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    onPressed: canReset ? onReset : null,
+    child: const Text(
+      'Reset',
+      style: TextStyle(
+        color: CupertinoColors.white,
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
 
   Widget _timerButton(String label, VoidCallback onPressed) {
     return CupertinoButton(

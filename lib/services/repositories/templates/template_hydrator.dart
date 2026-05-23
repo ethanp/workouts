@@ -46,6 +46,7 @@ class TemplateHydrator {
         benefits: ExerciseBenefit.listFromJsonString(
           exerciseRow['benefits'] as String?,
         ),
+        isUnilateral: (exerciseRow['is_unilateral'] as int? ?? 0) != 0,
       );
     });
     return exercises;
@@ -88,6 +89,7 @@ class TemplateHydrator {
         e.set_metrics_style as e_set_metrics_style,
         e.cues as e_cues,
         e.benefits as e_benefits,
+        e.is_unilateral as e_is_unilateral,
         wbe.prescription as wbe_prescription,
         wbe.planned_sets as wbe_planned_sets,
         wbe.setup_duration_seconds as wbe_setup_duration_seconds,

@@ -4,6 +4,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/llm_workout_option.dart';
+import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
@@ -135,6 +136,47 @@ class TemplateRepositoryPowerSync {
     String exerciseId,
     List<ExerciseBenefit> benefits,
   ) => _exerciseStore.updateExerciseBenefits(exerciseId, benefits);
+
+  Future<void> addWarmupSet({
+    required String templateId,
+    required String blockId,
+    required WorkoutExercise exercise,
+  }) => _applyWarmupChange(
+    templateId: templateId,
+    blockId: blockId,
+    exercise: exercise,
+    mutate: (warmupSets) => warmupSets.withOneAdded(),
+  );
+
+  Future<void> removeWarmupSet({
+    required String templateId,
+    required String blockId,
+    required WorkoutExercise exercise,
+  }) => _applyWarmupChange(
+    templateId: templateId,
+    blockId: blockId,
+    exercise: exercise,
+    mutate: (warmupSets) => warmupSets.withOneRemoved(),
+  );
+
+  Future<void> _applyWarmupChange({
+    required String templateId,
+    required String blockId,
+    required WorkoutExercise exercise,
+    required List<PlannedSet> Function(WarmupSets) mutate,
+  }) {
+    final warmupSets = WarmupSets(
+      plannedSets: exercise.plannedSets,
+      exercise: exercise,
+      loggedSetCount: 0,
+    );
+    return _exerciseStore.updatePlannedSets(
+      templateId: templateId,
+      blockId: blockId,
+      exerciseId: exercise.id,
+      plannedSets: mutate(warmupSets),
+    );
+  }
 
   Future<List<WorkoutTemplate>> _reseedTemplates() async {
     final templates = seeds.buildSeedTemplates();

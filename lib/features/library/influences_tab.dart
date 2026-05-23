@@ -7,6 +7,7 @@ import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class InfluencesTab extends ConsumerWidget {
@@ -602,27 +603,29 @@ class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
             ),
           ),
         if (_hasFields) const SizedBox(height: AppSpacing.sm),
-        CupertinoButton(
-          color: _hasFields ? null : AppColors.accentPrimary,
-          onPressed: canGenerate ? _generate : null,
-          child: _generating
-              ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(CupertinoIcons.sparkles, size: 16),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      _hasFields ? 'Revise with AI' : 'Generate with AI',
-                      style: TextStyle(
-                        color: _hasFields
-                            ? AppColors.accentPrimary
-                            : CupertinoColors.white,
-                        fontWeight: FontWeight.w600,
+        ConnectionGatedWidget(
+          child: CupertinoButton(
+            color: _hasFields ? null : AppColors.accentPrimary,
+            onPressed: canGenerate ? _generate : null,
+            child: _generating
+                ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(CupertinoIcons.sparkles, size: 16),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        _hasFields ? 'Revise with AI' : 'Generate with AI',
+                        style: TextStyle(
+                          color: _hasFields
+                              ? AppColors.accentPrimary
+                              : CupertinoColors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+          ),
         ),
       ],
     );

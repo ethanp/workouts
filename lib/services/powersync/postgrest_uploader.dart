@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:http/http.dart' as http;
@@ -58,11 +60,36 @@ class PostgRestUploader {
           await _delete(op, client);
       }
       return false;
-    } catch (e, st) {
-      _log.error('Upload error for ${op.table} ${op.id}', e, st);
-      errorBus.add('Upload ${op.table} ${op.op.name}: $e');
+    } catch (error, stackTrace) {
+      if (_isTransientNetworkError(error)) {
+        // Offline / flaky network. PowerSync will retry on its own when
+        // connectivity returns; surfacing a modal would just nag the user.
+        // Logged at warn so it still shows up in diagnostics.
+        _log.warn(
+          'Upload deferred (offline) for ${op.table} ${op.id}: $error',
+        );
+      } else {
+        _log.error('Upload error for ${op.table} ${op.id}', error, stackTrace);
+        errorBus.add('Upload ${op.table} ${op.op.name}: $error');
+      }
       rethrow;
     }
+  }
+
+  /// True for errors that mean "we couldn't reach the server" rather than
+  /// "the server rejected our request". These are transient by nature — the
+  /// upload will succeed on a later retry once connectivity is restored — so
+  /// they shouldn't surface a user-visible error toast.
+  ///
+  /// `http.ClientException` is included because `package:http`'s IOClient
+  /// wraps every underlying SocketException/HttpException in one. Real
+  /// PostgREST validation/auth failures come back as 4xx responses and are
+  /// rethrown by [_requireOk] as plain `Exception`, so they don't match here.
+  static bool _isTransientNetworkError(Object error) {
+    return error is SocketException ||
+        error is TimeoutException ||
+        error is HttpException ||
+        error is http.ClientException;
   }
 
   /// Upserts a row via PostgREST POST with `Prefer: resolution=merge-duplicates`,

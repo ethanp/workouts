@@ -1,12 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
+import 'package:workouts/features/active_session/early_stopped_notifier.dart';
 import 'package:workouts/features/active_session/exercise/current_set_draft_controller.dart';
 import 'package:workouts/features/active_session/exercise/exercise_card_content.dart';
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
+import 'package:workouts/features/active_session/exercise_chat/exercise_chat_screen.dart';
+import 'package:workouts/features/active_session/exercise_history/exercise_history_screen.dart';
+import 'package:workouts/features/active_session/replace_exercise/replace_exercise_picker_screen.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
+import 'package:workouts/widgets/replace_confirmation_dialog.dart';
 
 class ExerciseCard extends ConsumerStatefulWidget {
   const ExerciseCard({
@@ -15,12 +20,14 @@ class ExerciseCard extends ConsumerStatefulWidget {
     required this.exercise,
     required this.isNextRecommended,
     required this.onSetLogged,
+    this.dragHandle,
   });
 
   final SessionBlock block;
   final WorkoutExercise exercise;
   final bool isNextRecommended;
   final VoidCallback onSetLogged;
+  final Widget? dragHandle;
 
   @override
   ConsumerState<ExerciseCard> createState() => _ExerciseCardState();
@@ -51,6 +58,10 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   @override
   Widget build(BuildContext context) {
     final ExerciseSetPlanContext planContext = _syncedPlanContext();
+    final Set<String> earlyStopped = ref.watch(earlyStoppedProvider);
+    final bool isStoppedEarly = earlyStopped.contains(
+      earlyStoppedKey(blockId: block.id, exerciseId: exercise.id),
+    );
     return ExerciseCardContent(
       planContext: planContext,
       isNextRecommended: widget.isNextRecommended,
@@ -59,6 +70,44 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       onLogSet: _logSet,
       onUnlogSet: planContext.loggedSetCount == 0 ? null : _unlogSet,
       onTimerCompleted: _logSetAndAdvance,
+      onReplacePressed: _runReplaceFlow,
+      onHistoryPressed: _openHistory,
+      onAskAiPressed: _openAskAi,
+      onAddWarmupSet: _addWarmupSet,
+      onRemoveWarmupSet: _removeWarmupSet,
+      isStoppedEarly: isStoppedEarly,
+      onToggleStoppedEarly: _toggleStoppedEarly,
+      dragHandle: widget.dragHandle,
+    );
+  }
+
+  Future<void> _addWarmupSet() => ref
+      .read(activeSessionProvider.notifier)
+      .addWarmupSet(block, exercise);
+
+  Future<void> _removeWarmupSet() => ref
+      .read(activeSessionProvider.notifier)
+      .removeWarmupSet(block, exercise);
+
+  void _toggleStoppedEarly() {
+    ref
+        .read(earlyStoppedProvider.notifier)
+        .toggle(blockId: block.id, exerciseId: exercise.id);
+  }
+
+  void _openHistory() {
+    Navigator.of(context).push<void>(
+      CupertinoPageRoute(
+        builder: (_) => ExerciseHistoryScreen(exercise: exercise),
+      ),
+    );
+  }
+
+  void _openAskAi() {
+    Navigator.of(context).push<void>(
+      CupertinoPageRoute(
+        builder: (_) => ExerciseChatScreen(exercise: exercise),
+      ),
     );
   }
 
@@ -100,5 +149,47 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   Future<void> _logSetAndAdvance() async {
     await _logSet();
     widget.onSetLogged();
+  }
+
+  Future<void> _runReplaceFlow() async {
+    final NavigatorState navigator = Navigator.of(context);
+    final ActiveSessionNotifier activeSessionNotifier = ref.read(
+      activeSessionProvider.notifier,
+    );
+    final excludeIds = block.exercises.map((blockExercise) => blockExercise.id).toSet();
+
+    final WorkoutExercise? replacement = await navigator.push<WorkoutExercise>(
+      CupertinoPageRoute(
+        builder: (_) => ReplaceExercisePickerScreen(
+          originalExercise: exercise,
+          excludeIds: excludeIds,
+        ),
+      ),
+    );
+    if (replacement == null || !mounted) return;
+
+    final Session? activeSession = ref.read(activeSessionProvider).value;
+    if (activeSession == null) return;
+
+    final int discardedLogCount = activeSession
+        .loggedSetCountForExerciseAcrossSiblings(
+          target: block,
+          exerciseId: exercise.id,
+        );
+    if (discardedLogCount > 0) {
+      final int affectedBlockCount = activeSession.siblingBlockCountOf(block);
+      final bool confirmed = await confirmReplaceWithLogs(
+        context,
+        loggedSetCount: discardedLogCount,
+        affectedBlockCount: affectedBlockCount,
+      );
+      if (!confirmed || !mounted) return;
+    }
+
+    await activeSessionNotifier.replaceExercise(
+      block,
+      exercise.id,
+      replacement,
+    );
   }
 }

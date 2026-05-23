@@ -25,31 +25,65 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
   Duration? _remaining;
   TimerPhase _phase = TimerPhase.idle;
   bool _isPaused = false;
+  int _lastObservedLoggedSetCount = 0;
 
   Duration get _setupDuration => widget.planContext.setupDuration;
 
   Duration get _workDuration => widget.planContext.workDuration;
 
-  bool get _isRunningPhase =>
-      _phase == TimerPhase.setup || _phase == TimerPhase.work;
+  Duration get _restDuration => widget.planContext.restDuration;
 
-  bool get _shouldAutoStart =>
-      widget.isNextRecommended && widget.planContext.hasTiming;
+  bool get _isRunningPhase =>
+      _phase == TimerPhase.setup ||
+      _phase == TimerPhase.work ||
+      _phase == TimerPhase.rest;
+
+  bool get _shouldAutoStartSetupOrWork =>
+      widget.isNextRecommended && widget.planContext.hasSetupOrWorkTiming;
+
+  bool get _isLastPlannedSet {
+    final plannedSetCount = widget.planContext.plannedSetCount;
+    if (plannedSetCount <= 0) return false;
+    return widget.planContext.loggedSetCount >= plannedSetCount;
+  }
 
   @override
   void initState() {
     super.initState();
-    if (_shouldAutoStart) _startInitialPhase();
+    _lastObservedLoggedSetCount = widget.planContext.loggedSetCount;
+    if (_shouldAutoStartSetupOrWork) _startInitialPhase();
   }
 
   @override
   void didUpdateWidget(covariant ExerciseIntervalTimer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_shouldAutoStart && !_isRunningPhase) {
-      _startInitialPhase();
-    } else if (!_shouldAutoStart && _phase != TimerPhase.idle) {
-      _resetTimer();
-    }
+    _startRestIfWarranted();
+    _autoStartIfNewlyRecommended(oldWidget);
+  }
+
+  void _startRestIfWarranted() {
+    final newLoggedSetCount = widget.planContext.loggedSetCount;
+    final didLogSet = newLoggedSetCount > _lastObservedLoggedSetCount;
+    _lastObservedLoggedSetCount = newLoggedSetCount;
+    if (!didLogSet) return;
+    if (_restDuration <= Duration.zero) return;
+    if (_isLastPlannedSet) return;
+    _startPhase(TimerPhase.rest);
+  }
+
+  /// Auto-start only when this card *transitions* into being the next
+  /// recommended exercise (and the timer is sitting idle). Re-running on
+  /// every parent rebuild is dangerous: the parent's elapsed-clock ticker
+  /// fires `setState` once a second, and a blanket "if recommended, start"
+  /// would clobber a manually-running timer. It would also re-start a
+  /// timer the user just tapped Reset on, which is hostile.
+  void _autoStartIfNewlyRecommended(ExerciseIntervalTimer oldWidget) {
+    final bool wasRecommended =
+        oldWidget.isNextRecommended && oldWidget.planContext.hasSetupOrWorkTiming;
+    if (wasRecommended) return;
+    if (!_shouldAutoStartSetupOrWork) return;
+    if (_phase != TimerPhase.idle) return;
+    _startInitialPhase();
   }
 
   @override
@@ -68,16 +102,15 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
       onPause: _pauseTimer,
       onResume: _resumeTimer,
       onReset: _resetTimer,
-      onSkipToComplete: _skipToComplete,
       onAdjustTime: _adjustTime,
       canPause: _isRunningPhase && !_isPaused,
       canResume: _isRunningPhase && _isPaused,
       canStart: !_isRunningPhase,
       canReset: _phase != TimerPhase.idle,
       canAdjust: _isRunningPhase,
-      canSkip: _phase != TimerPhase.idle && _phase != TimerPhase.complete,
       hasSetupPhase: _setupDuration > Duration.zero,
       hasWorkPhase: _workDuration > Duration.zero,
+      hasRestPhase: _restDuration > Duration.zero,
     );
   }
 
@@ -124,6 +157,10 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
       _startPhase(TimerPhase.work);
       return;
     }
+    if (phase == TimerPhase.rest) {
+      _endRestPhase();
+      return;
+    }
     _completeTimer();
   }
 
@@ -135,6 +172,18 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
       _remaining = Duration.zero;
     });
     unawaited(widget.onCompleted());
+  }
+
+  /// Ends a rest phase without logging another set. The set was already
+  /// logged before rest started; rest is a recovery interval, not a
+  /// completion event.
+  void _endRestPhase() {
+    _timer?.cancel();
+    setState(() {
+      _phase = TimerPhase.complete;
+      _isPaused = false;
+      _remaining = Duration.zero;
+    });
   }
 
   void _pauseTimer() {
@@ -158,16 +207,6 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
     });
   }
 
-  void _skipToComplete() {
-    _timer?.cancel();
-    setState(() {
-      _phase = TimerPhase.complete;
-      _isPaused = false;
-      _remaining = Duration.zero;
-    });
-    unawaited(widget.onCompleted());
-  }
-
   void _adjustTime(int seconds) {
     if (!_isRunningPhase || _remaining == null) return;
     setState(() {
@@ -183,6 +222,7 @@ class _ExerciseIntervalTimerState extends State<ExerciseIntervalTimer> {
   Duration _durationForPhase(TimerPhase phase) => switch (phase) {
     TimerPhase.setup => _setupDuration,
     TimerPhase.work => _workDuration,
+    TimerPhase.rest => _restDuration,
     TimerPhase.idle || TimerPhase.complete => Duration.zero,
   };
 }

@@ -7,6 +7,7 @@ import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/locations_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class LocationsTab extends ConsumerWidget {
@@ -409,31 +410,37 @@ class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        CupertinoButton(
-          onPressed: canGenerate ? _generate : null,
-          child: _generating
-              ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      CupertinoIcons.sparkles,
-                      size: 16,
-                      color: AppColors.accentPrimary,
+        ConnectionGatedWidget(
+          child: Padding(
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
+            child: CupertinoButton(
+              onPressed: canGenerate ? _generate : null,
+              child: _generating
+                  ? const CupertinoActivityIndicator(
+                      color: CupertinoColors.white,
+                    )
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          CupertinoIcons.sparkles,
+                          size: 16,
+                          color: AppColors.accentPrimary,
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Text(
+                          _equipmentController.text.trim().isNotEmpty
+                              ? 'Revise with AI'
+                              : 'Generate with AI',
+                          style: const TextStyle(
+                            color: AppColors.accentPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Text(
-                      _equipmentController.text.trim().isNotEmpty
-                          ? 'Revise with AI'
-                          : 'Generate with AI',
-                      style: const TextStyle(
-                        color: AppColors.accentPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+            ),
+          ),
         ),
       ],
     );

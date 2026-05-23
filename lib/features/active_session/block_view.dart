@@ -1,9 +1,12 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart'
+    show ReorderableListView, ReorderableDragStartListener;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
+import 'package:workouts/features/active_session/early_stopped_notifier.dart';
 import 'package:workouts/features/library/exercise_picker_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
@@ -50,11 +53,23 @@ class _BlockViewState extends ConsumerState<BlockView> {
     final roundLabel = hasRoundInfo
         ? 'Round ${widget.block.roundIndex} of ${widget.block.totalRounds}'
         : null;
-    final nextExerciseId = widget.block.nextIncompleteExercise?.id;
+    final nextExerciseId = _nextRecommendedExerciseId();
 
-    return ListView(
-      controller: _scrollController,
+    return ReorderableListView.builder(
+      scrollController: _scrollController,
       padding: const EdgeInsets.all(AppSpacing.lg),
+      buildDefaultDragHandles: false,
+      header: _stickyHeader(context, roundLabel: roundLabel),
+      itemCount: widget.block.exercises.length,
+      itemBuilder: (context, index) =>
+          _exerciseItem(index, nextExerciseId: nextExerciseId),
+      onReorder: _onReorder,
+    );
+  }
+
+  Widget _stickyHeader(BuildContext context, {required String? roundLabel}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _blockHeader(context),
         if (roundLabel != null) ...[
@@ -63,17 +78,67 @@ class _BlockViewState extends ConsumerState<BlockView> {
           const SizedBox(height: AppSpacing.md),
         ] else
           const SizedBox(height: AppSpacing.sm),
-        ...widget.block.exercises.map(
-          (exercise) => DismissibleExerciseCard(
-            key: _exerciseKeys[exercise.id],
-            block: widget.block,
-            exercise: exercise,
-            isNextRecommended: exercise.id == nextExerciseId,
-            onSetLogged: () => _scrollToNext(exercise.id),
-          ),
-        ),
       ],
     );
+  }
+
+  Widget _exerciseItem(int index, {required String? nextExerciseId}) {
+    final exercise = widget.block.exercises[index];
+    return KeyedSubtree(
+      key: ValueKey('reorder-${exercise.id}'),
+      child: DismissibleExerciseCard(
+        wrapperKey: _exerciseKeys[exercise.id],
+        block: widget.block,
+        exercise: exercise,
+        isNextRecommended: exercise.id == nextExerciseId,
+        onSetLogged: () => _scrollToNext(exercise.id),
+        dragHandle: ReorderableDragStartListener(
+          index: index,
+          child: const _ExerciseDragHandle(),
+        ),
+      ),
+    );
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    final reordered = [...widget.block.exercises];
+    final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
+    final moved = reordered.removeAt(oldIndex);
+    reordered.insert(adjustedNewIndex, moved);
+    ref
+        .read(activeSessionProvider.notifier)
+        .reorderExercises(
+          widget.block,
+          reordered.map((exercise) => exercise.id).toList(),
+        );
+  }
+
+  /// Pick the first exercise in this block that has unfinished sets and the
+  /// user hasn't manually marked done. Mirrors `SessionBlock.nextIncompleteExercise`
+  /// but layered with the ephemeral early-stopped flag so the timer
+  /// auto-flow respects "I'm done with this one".
+  String? _nextRecommendedExerciseId() {
+    final Set<String> earlyStopped = ref.watch(earlyStoppedProvider);
+    final logCounts = <String, int>{};
+    for (final log in widget.block.logs) {
+      logCounts.update(
+        log.exerciseId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    for (final exercise in widget.block.exercises) {
+      final targetSets = exercise.effectiveTargetSets;
+      if (targetSets <= 0) continue;
+      final completed = logCounts[exercise.id] ?? 0;
+      if (completed >= targetSets) continue;
+      final isStoppedEarly = earlyStopped.contains(
+        earlyStoppedKey(blockId: widget.block.id, exerciseId: exercise.id),
+      );
+      if (isStoppedEarly) continue;
+      return exercise.id;
+    }
+    return null;
   }
 
   Widget _blockHeader(BuildContext context) {
@@ -169,4 +234,18 @@ class _BlockViewState extends ConsumerState<BlockView> {
           .addExercise(widget.block, exercise);
     }
   }
+}
+
+class _ExerciseDragHandle extends StatelessWidget {
+  const _ExerciseDragHandle();
+
+  @override
+  Widget build(BuildContext context) => const Padding(
+    padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    child: Icon(
+      CupertinoIcons.line_horizontal_3,
+      size: 20,
+      color: AppColors.textColor3,
+    ),
+  );
 }

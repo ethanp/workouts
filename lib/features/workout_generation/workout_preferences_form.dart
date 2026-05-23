@@ -5,6 +5,7 @@ import 'package:workouts/models/training_location.dart';
 import 'package:workouts/features/library/locations_provider.dart';
 import 'package:workouts/services/context_builder.dart';
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 
 const _durationPresets = [5, 10, 15, 30, 45, 60];
 
@@ -278,23 +279,25 @@ class _WorkoutPreferencesFormState
   }
 
   Widget _generateButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: CupertinoButton.filled(
-        onPressed: _submit,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(CupertinoIcons.sparkles, size: 18),
-            SizedBox(width: AppSpacing.sm),
-            Text(
-              'Generate',
-              style: TextStyle(
-                color: CupertinoColors.white,
-                fontWeight: FontWeight.w600,
+    return ConnectionGatedWidget(
+      child: SizedBox(
+        width: double.infinity,
+        child: CupertinoButton.filled(
+          onPressed: _submit,
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(CupertinoIcons.sparkles, size: 18),
+              SizedBox(width: AppSpacing.sm),
+              Text(
+                'Generate',
+                style: TextStyle(
+                  color: CupertinoColors.white,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

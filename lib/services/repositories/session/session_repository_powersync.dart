@@ -2,10 +2,13 @@ import 'package:ethan_utils/ethan_utils.dart';
 
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:workouts/models/exercise_history_entry.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
+import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/repositories/session/exercise_history_store.dart';
 import 'package:workouts/services/repositories/session/session_exercise_store.dart';
 import 'package:workouts/services/repositories/session/session_hydrator.dart';
 import 'package:workouts/services/repositories/session/session_materializer.dart';
@@ -39,6 +42,8 @@ class SessionRepositoryPowerSync {
   late final SessionMetricsStore _metricsStore = SessionMetricsStore(
     _powerSync,
   );
+  late final ExerciseHistoryStore _exerciseHistoryStore =
+      ExerciseHistoryStore(_powerSync);
 
   Future<Session> startSession(String templateId) =>
       _materializer.startSession(templateId);
@@ -226,6 +231,74 @@ class SessionRepositoryPowerSync {
     String blockId,
     String exerciseId,
   ) => _exerciseStore.removeExercise(session, blockId, exerciseId);
+
+  Future<Session> replaceExercise(
+    Session session,
+    String blockId,
+    String oldExerciseId,
+    WorkoutExercise newExercise,
+  ) => _exerciseStore.replaceExercise(
+    session,
+    blockId,
+    oldExerciseId,
+    newExercise,
+  );
+
+  Future<Session> reorderExercises(
+    Session session,
+    String blockId,
+    List<String> orderedExerciseIds,
+  ) => _exerciseStore.reorderExercises(session, blockId, orderedExerciseIds);
+
+  Future<Session> addWarmupSet({
+    required Session session,
+    required SessionBlock block,
+    required WorkoutExercise exercise,
+  }) => _applyWarmupChange(
+    session: session,
+    block: block,
+    exercise: exercise,
+    mutate: (warmupSets) => warmupSets.withOneAdded(),
+  );
+
+  Future<Session> removeWarmupSet({
+    required Session session,
+    required SessionBlock block,
+    required WorkoutExercise exercise,
+  }) => _applyWarmupChange(
+    session: session,
+    block: block,
+    exercise: exercise,
+    mutate: (warmupSets) => warmupSets.withOneRemoved(),
+  );
+
+  Future<Session> _applyWarmupChange({
+    required Session session,
+    required SessionBlock block,
+    required WorkoutExercise exercise,
+    required List<PlannedSet> Function(WarmupSets) mutate,
+  }) async {
+    final loggedSetCount = block.logs
+        .where((log) => log.exerciseId == exercise.id)
+        .length;
+    final warmupSets = WarmupSets(
+      plannedSets: exercise.plannedSets,
+      exercise: exercise,
+      loggedSetCount: loggedSetCount,
+    );
+    await _exerciseStore.updatePlannedSets(
+      sessionId: session.id,
+      sessionBlockId: block.id,
+      exerciseId: exercise.id,
+      plannedSets: mutate(warmupSets),
+    );
+    return _sessionHydrator.fetchSessionById(session.id);
+  }
+
+  Future<List<ExerciseHistoryEntry>> fetchExerciseHistory({
+    required String exerciseId,
+    int limit = 10,
+  }) => _exerciseHistoryStore.fetch(exerciseId: exerciseId, limit: limit);
 
   Future<void> recomputeZones({
     required TrainingLoadCalculator trainingLoad,
