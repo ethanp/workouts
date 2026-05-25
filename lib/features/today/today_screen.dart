@@ -5,6 +5,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
+import 'package:workouts/features/today/hr_zones_reference_tile.dart';
 import 'package:workouts/features/today/today_template_provider.dart';
 import 'package:workouts/features/workout_generation/workout_generation_provider.dart';
 import 'package:flutter/material.dart' show SelectableText;
@@ -85,6 +86,8 @@ class TodayScreen extends ConsumerWidget {
         onStartTemplate: (template) =>
             ref.read(activeSessionProvider.notifier).start(template.id),
       ),
+      const SizedBox(height: AppSpacing.xxl),
+      const HrZonesReferenceTile(),
     ],
   );
 }

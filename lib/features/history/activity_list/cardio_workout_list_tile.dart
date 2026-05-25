@@ -2,7 +2,6 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/cardio_type_palette.dart';
@@ -16,15 +15,14 @@ class CardioWorkoutListTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unitSystem = ref.watch(unitSystemProvider);
     return CupertinoButton(
       padding: EdgeInsets.zero,
       onPressed: () => context.push(CardioDetailScreen(workout: workout)),
-      child: _tileCard(unitSystem),
+      child: _tileCard(),
     );
   }
 
-  Widget _tileCard(UnitSystem unitSystem) => Container(
+  Widget _tileCard() => Container(
     padding: const EdgeInsets.symmetric(
       horizontal: AppSpacing.md,
       vertical: AppSpacing.sm,
@@ -38,7 +36,7 @@ class CardioWorkoutListTile extends ConsumerWidget {
       children: [
         _typeStripe(),
         const SizedBox(width: AppSpacing.sm),
-        Expanded(child: _workoutInfo(unitSystem)),
+        Expanded(child: _workoutInfo()),
         ..._trailingIcons(),
       ],
     ),
@@ -53,12 +51,12 @@ class CardioWorkoutListTile extends ConsumerWidget {
     ),
   );
 
-  Widget _workoutInfo(UnitSystem unitSystem) => Column(
+  Widget _workoutInfo() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _activityHeader(),
       const SizedBox(height: 2),
-      _summaryLine(unitSystem),
+      _summaryLine(),
       if (_showsZoneBreakdown()) ...[
         const SizedBox(height: AppSpacing.xs),
         _zoneBreakdown(),
@@ -82,8 +80,8 @@ class CardioWorkoutListTile extends ConsumerWidget {
     ],
   );
 
-  Widget _summaryLine(UnitSystem unitSystem) => Text(
-    _summaryText(unitSystem),
+  Widget _summaryLine() => Text(
+    _summaryText(),
     style: AppTypography.body.copyWith(color: AppColors.textColor1),
   );
 
@@ -101,14 +99,14 @@ class CardioWorkoutListTile extends ConsumerWidget {
     ),
   ];
 
-  String _summaryText(UnitSystem unitSystem) {
+  String _summaryText() {
     final duration = Format.duration(workout.durationSeconds);
     if (!workout.activityType.hasDistance || workout.distanceMeters <= 0) {
       return duration;
     }
-    return '${Format.distance(workout.distanceMeters, unitSystem)}  ·  '
+    return '${Format.distance(workout.distanceMeters)}  ·  '
         '$duration  ·  '
-        '${Format.pace(workout.durationSeconds, workout.distanceMeters, unitSystem)}';
+        '${Format.pace(workout.durationSeconds, workout.distanceMeters)}';
   }
 
   Color _typeColor() => CardioTypePalette.colorFor(workout.activityType);

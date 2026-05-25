@@ -156,6 +156,22 @@ class CardioImportController extends _$CardioImportController {
             totalWorkouts: 0,
             processedWorkouts: 0,
             inProgress: true,
+            status: 'Requesting Apple Health access…',
+          ),
+        );
+      }
+      // Trigger the OS permission prompt on first run; a no-op once granted.
+      // Routed through the notifier so the AsyncValue stays in sync for any
+      // observer of healthKitPermissionProvider.
+      await ref
+          .read(healthKitPermissionProvider.notifier)
+          .requestAuthorization();
+      if (ref.mounted) {
+        state = AsyncValue.data(
+          CardioImportProgress(
+            totalWorkouts: 0,
+            processedWorkouts: 0,
+            inProgress: true,
             status: 'Fetching last $maxWorkouts workouts from Apple Health…',
           ),
         );

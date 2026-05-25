@@ -1,6 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
@@ -14,14 +13,11 @@ class CardioTrendSeriesFactory {
   List<TrendSeries> build({
     required List<CardioWorkout> workouts,
     required List<CardioBestEffort> bestEfforts,
-    required UnitSystem unitSystem,
   }) {
     final chronologicalWorkouts = _chronologicalWorkouts(workouts);
-    final metersPerUnit = _metersPerUnit(unitSystem);
-    final distanceUnit = _distanceUnitLabel(unitSystem);
     return [
-      ..._bestEffortSeries(bestEfforts, metersPerUnit),
-      _distanceSeries(chronologicalWorkouts, metersPerUnit, distanceUnit),
+      ..._bestEffortSeries(bestEfforts),
+      _distanceSeries(chronologicalWorkouts),
       _avgHrSeries(chronologicalWorkouts),
       _maxHrSeries(chronologicalWorkouts),
       _caloriesSeries(chronologicalWorkouts),
@@ -39,12 +35,6 @@ class CardioTrendSeriesFactory {
         .sortedOn((workout) => workout.startedAt);
   }
 
-  double _metersPerUnit(UnitSystem unitSystem) =>
-      unitSystem == UnitSystem.imperial ? metersPerMile : 1000.0;
-
-  String _distanceUnitLabel(UnitSystem unitSystem) =>
-      unitSystem == UnitSystem.imperial ? 'mi' : 'km';
-
   static const _bucketColors = <DistanceBucket, Color>{
     DistanceBucket.fourHundredMeters: Color(0xFFFF9F0A),
     DistanceBucket.halfMile: Color(0xFFFF6482),
@@ -53,10 +43,7 @@ class CardioTrendSeriesFactory {
     DistanceBucket.fiveMiles: Color(0xFF64D2FF),
   };
 
-  List<TrendSeries> _bestEffortSeries(
-    List<CardioBestEffort> bestEfforts,
-    double metersPerUnit,
-  ) {
+  List<TrendSeries> _bestEffortSeries(List<CardioBestEffort> bestEfforts) {
     final byBucket = <DistanceBucket, List<CardioBestEffort>>{};
     for (final effort in bestEfforts) {
       (byBucket[effort.bucket] ??= []).add(effort);
@@ -74,7 +61,7 @@ class CardioTrendSeriesFactory {
                 .map(
                   (bestEffort) => TrendPoint(
                     date: bestEffort.workoutStartedAt!,
-                    value: bestEffort.paceSecondsPerUnit(metersPerUnit),
+                    value: bestEffort.paceSecondsPerUnit(metersPerMile),
                   ),
                 )
                 .toList(),
@@ -83,11 +70,7 @@ class CardioTrendSeriesFactory {
     ];
   }
 
-  TrendSeries _distanceSeries(
-    List<CardioWorkout> workouts,
-    double metersPerUnit,
-    String unitLabel,
-  ) {
+  TrendSeries _distanceSeries(List<CardioWorkout> workouts) {
     return TrendSeries(
       label: 'Distance',
       color: const Color(0xFF30D158),
@@ -95,12 +78,11 @@ class CardioTrendSeriesFactory {
           .map(
             (workout) => TrendPoint(
               date: workout.startedAt,
-              value: workout.distanceMeters / metersPerUnit,
+              value: workout.distanceMeters / metersPerMile,
             ),
           )
           .toList(),
-      formatValue: (distanceValue) =>
-          '${distanceValue.toStringAsFixed(1)}$unitLabel',
+      formatValue: (distanceValue) => '${distanceValue.toStringAsFixed(1)}mi',
     );
   }
 

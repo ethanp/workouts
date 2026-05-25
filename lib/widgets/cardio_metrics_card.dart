@@ -5,7 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
@@ -23,7 +22,6 @@ class CardioMetricsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unitSystem = ref.watch(unitSystemProvider);
     final speedSamples = _computeSpeedSamples(routePoints);
 
     return Container(
@@ -37,11 +35,7 @@ class CardioMetricsCard extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _MetricsHeader(
-            samples: samples,
-            speedSamples: speedSamples,
-            unitSystem: unitSystem,
-          ),
+          _MetricsHeader(samples: samples, speedSamples: speedSamples),
           const SizedBox(height: AppSpacing.md),
           _TimelinePreview(samples: samples, speedSamples: speedSamples),
         ],
@@ -51,15 +45,10 @@ class CardioMetricsCard extends ConsumerWidget {
 }
 
 class _MetricsHeader extends StatelessWidget {
-  const _MetricsHeader({
-    required this.samples,
-    required this.speedSamples,
-    required this.unitSystem,
-  });
+  const _MetricsHeader({required this.samples, required this.speedSamples});
 
   final List<HeartRateSample> samples;
   final List<SpeedSample> speedSamples;
-  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +100,7 @@ class _MetricsHeader extends StatelessWidget {
         _LegendDot(color: _speedColor),
         const SizedBox(width: AppSpacing.xs),
         Text(
-          'Avg ${Format.speed(avgKmh, unitSystem)} · Max ${Format.speed(maxKmh, unitSystem)}',
+          'Avg ${Format.speed(avgKmh)} · Max ${Format.speed(maxKmh)}',
           style: AppTypography.caption.copyWith(color: AppColors.textColor3),
         ),
       ],

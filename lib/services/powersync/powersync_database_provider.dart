@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
+import 'package:workouts/services/preferences_provider.dart';
 
 /// Owns the PowerSync database lifecycle and keeps its connector in sync with
 /// the current backend URLs.

@@ -1,5 +1,4 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 
 const metersPerMile = 1609.344;
 const _kmhToMph = 0.621371;
@@ -26,57 +25,30 @@ enum DistanceBucket {
 class Format {
   Format._();
 
-  /// "3.21 mi" or "3.21 km".
-  static String distance(double meters, UnitSystem unitSystem) {
-    if (unitSystem == UnitSystem.imperial) {
-      return '${(meters / metersPerMile).toStringAsFixed(2)} mi';
-    }
-    return '${(meters / 1000).toStringAsFixed(2)} km';
+  /// "3.21 mi".
+  static String distance(double meters) =>
+      '${(meters / metersPerMile).toStringAsFixed(2)} mi';
+
+  /// "3.2mi" — no space, fewer decimals.
+  static String distanceCompact(double meters) {
+    final miles = meters / metersPerMile;
+    if (miles >= 10) return '${miles.round()}mi';
+    return '${miles.toStringAsFixed(1)}mi';
   }
 
-  /// "3.2mi" or "3.2km" — no space, fewer decimals.
-  static String distanceCompact(double meters, UnitSystem unitSystem) {
-    if (unitSystem == UnitSystem.imperial) {
-      final miles = meters / metersPerMile;
-      if (miles >= 10) return '${miles.round()}mi';
-      return '${miles.toStringAsFixed(1)}mi';
-    }
-    final km = meters / 1000;
-    if (km >= 10) return '${km.round()}km';
-    return '${km.toStringAsFixed(1)}km';
-  }
-
-  /// "8:30 /mi" or "8:30 /km".
-  static String pace(
-    int durationSeconds,
-    double distanceMeters,
-    UnitSystem unitSystem,
-  ) {
-    if (distanceMeters <= 0) {
-      return unitSystem == UnitSystem.imperial ? '--:-- /mi' : '--:-- /km';
-    }
-    final double paceSeconds;
-    final String label;
-    if (unitSystem == UnitSystem.imperial) {
-      paceSeconds = durationSeconds / (distanceMeters / metersPerMile);
-      label = '/mi';
-    } else {
-      paceSeconds = durationSeconds / (distanceMeters / 1000);
-      label = '/km';
-    }
-    return '${minSec(paceSeconds.round())} $label';
+  /// "8:30 /mi".
+  static String pace(int durationSeconds, double distanceMeters) {
+    if (distanceMeters <= 0) return '--:-- /mi';
+    final paceSeconds = durationSeconds / (distanceMeters / metersPerMile);
+    return '${minSec(paceSeconds.round())} /mi';
   }
 
   /// Bare pace value: "8:30".
   static String paceValue(double paceSeconds) => minSec(paceSeconds.round());
 
-  /// "8.5 mph" or "8.5 km/h".
-  static String speed(double speedKmh, UnitSystem unitSystem) {
-    if (unitSystem == UnitSystem.imperial) {
-      return '${(speedKmh * _kmhToMph).toStringAsFixed(1)} mph';
-    }
-    return '${speedKmh.toStringAsFixed(1)} km/h';
-  }
+  /// "8.5 mph".
+  static String speed(double speedKmh) =>
+      '${(speedKmh * _kmhToMph).toStringAsFixed(1)} mph';
 
   /// "1h 02m 30s" or "5m 30s".
   static String duration(int durationSeconds) {

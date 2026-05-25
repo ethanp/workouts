@@ -7,7 +7,6 @@ import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/cardio_type_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -28,7 +27,6 @@ class HistoryChartsTab extends ConsumerWidget {
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
     final cardioWorkoutsAsync = ref.watch(cardioWorkoutsProvider);
     final bestEffortsAsync = ref.watch(cardioBestEffortsProvider);
-    final unitSystem = ref.watch(unitSystemProvider);
     final fullRange = ref.watch(chartDateRangeProvider);
     final visibleRange = ref.watch(chartZoomProvider) ?? fullRange;
 
@@ -38,7 +36,6 @@ class HistoryChartsTab extends ConsumerWidget {
           days,
           cardioWorkoutsAsync.value ?? [],
           bestEffortsAsync.value ?? [],
-          unitSystem,
           visibleRange,
         );
         if (fullRange == null) return chartList;
@@ -65,17 +62,12 @@ class HistoryChartsTab extends ConsumerWidget {
     List<ActivityCalendarDay> days,
     List<CardioWorkout> workouts,
     List<CardioBestEffort> bestEfforts,
-    UnitSystem unitSystem,
     DateTimeRange? visibleRange,
   ) {
     final weeklyAggregates = WeeklyActivityAggregator().aggregate(
       days,
       workouts,
     );
-    final distanceUnit = unitSystem == UnitSystem.imperial ? 'mi' : 'km';
-    final metersPerUnit = unitSystem == UnitSystem.imperial
-        ? metersPerMile
-        : 1000.0;
     final visibleWeeks = visibleRange != null
         ? _filterWeeksToRange(weeklyAggregates, visibleRange)
         : weeklyAggregates;
@@ -110,17 +102,15 @@ class HistoryChartsTab extends ConsumerWidget {
           title: 'Weekly Run Distance',
           weeks: _weekDataList(
             visibleWeeks,
-            valueFor: (week) => week.outdoorRunMeters / metersPerUnit,
+            valueFor: (week) => week.outdoorRunMeters / metersPerMile,
           ),
           barColor: AppColors.accentPrimary,
-          goalLine: ChartGoalLine(
-            target: 0.5 * metersPerMile / metersPerUnit,
-            label: unitSystem == UnitSystem.imperial
-                ? '0.5mi/wk goal'
-                : '0.8km/wk goal',
+          goalLine: const ChartGoalLine(
+            target: 0.5,
+            label: '0.5mi/wk goal',
             color: AppColors.accentPrimary,
           ),
-          formatValue: (value) => '${value.toStringAsFixed(1)}$distanceUnit',
+          formatValue: (value) => '${value.toStringAsFixed(1)}mi',
         ),
         const SizedBox(height: AppSpacing.lg),
         CardioTrendChart(
@@ -128,7 +118,6 @@ class HistoryChartsTab extends ConsumerWidget {
           series: const CardioTrendSeriesFactory().build(
             workouts: workouts,
             bestEfforts: bestEfforts,
-            unitSystem: unitSystem,
           ),
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,

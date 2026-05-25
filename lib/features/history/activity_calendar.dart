@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/features/history/calendar_week_row.dart';
@@ -11,12 +10,10 @@ class ActivityCalendar extends StatelessWidget {
   const ActivityCalendar({
     super.key,
     required this.activityData,
-    required this.unitSystem,
     required this.onDateTap,
   });
 
   final Map<DateTime, ActivityCalendarDay> activityData;
-  final UnitSystem unitSystem;
   final void Function(DateTime date) onDateTap;
 
   @override
@@ -55,10 +52,7 @@ class ActivityCalendar extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         const Text('More', style: AppTypography.caption),
         const Spacer(),
-        Text(
-          unitSystem == UnitSystem.imperial ? 'mi · min' : 'km · min',
-          style: AppTypography.caption,
-        ),
+        const Text('mi · min', style: AppTypography.caption),
       ],
     );
   }
@@ -228,7 +222,6 @@ class ActivityCalendar extends StatelessWidget {
         firstWeekday: firstWeekday,
         globalMax: globalMax,
         activityData: activityData,
-        unitSystem: unitSystem,
         onDateTap: onDateTap,
       );
     });

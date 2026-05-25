@@ -7,11 +7,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/backend/backend_host_probe_scheduler.dart';
 import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/services/preferences_provider.dart';
 import 'package:workouts/utils/error_bus.dart';
 
 const _log = ELogger('Main');

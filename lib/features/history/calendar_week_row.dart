@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -16,7 +15,6 @@ class CalendarWeekRow extends StatelessWidget {
     required this.firstWeekday,
     required this.globalMax,
     required this.activityData,
-    required this.unitSystem,
     required this.onDateTap,
   });
 
@@ -26,7 +24,6 @@ class CalendarWeekRow extends StatelessWidget {
   final int firstWeekday;
   final WeekMax globalMax;
   final Map<DateTime, ActivityCalendarDay> activityData;
-  final UnitSystem unitSystem;
   final void Function(DateTime date) onDateTap;
 
   @override
@@ -46,7 +43,6 @@ class CalendarWeekRow extends StatelessWidget {
             monthDate: monthDate,
             activityData: activityData,
             globalMax: globalMax,
-            unitSystem: unitSystem,
           ),
         ],
       ),
@@ -69,7 +65,6 @@ class CalendarWeekRow extends StatelessWidget {
             date: date,
             entry: activityData[date],
             globalMax: globalMax,
-            unitSystem: unitSystem,
             onTap: () => onDateTap(date),
           ),
         );
@@ -93,7 +88,6 @@ class _WeekSummary extends StatelessWidget {
     required this.monthDate,
     required this.activityData,
     required this.globalMax,
-    required this.unitSystem,
   });
 
   final bool ownsWeek;
@@ -102,7 +96,6 @@ class _WeekSummary extends StatelessWidget {
   final DateTime monthDate;
   final Map<DateTime, ActivityCalendarDay> activityData;
   final WeekMax globalMax;
-  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +175,7 @@ class _WeekSummary extends StatelessWidget {
   Widget _activityLabel(_WeekStats stats, double intensity) {
     final parts = <String>[];
     if (stats.cardioMeters > 0) {
-      parts.add(Format.distanceCompact(stats.cardioMeters, unitSystem));
+      parts.add(Format.distanceCompact(stats.cardioMeters));
     }
     if (stats.totalMinutes > 0) parts.add('${stats.totalMinutes}m');
 

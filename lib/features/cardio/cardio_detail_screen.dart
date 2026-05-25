@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/features/cardio/workout_polarization_card.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
@@ -26,7 +25,6 @@ class CardioDetailScreen extends ConsumerWidget {
     final heartRateSamplesAsync = ref.watch(
       cardioHeartRateSamplesProvider(workout.id),
     );
-    final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -36,7 +34,7 @@ class CardioDetailScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            _WorkoutSummaryCard(workout: workout, unitSystem: unitSystem),
+            _WorkoutSummaryCard(workout: workout),
             if (workout.activityType.hasRoute) ...[
               const SizedBox(height: AppSpacing.md),
               routePointsAsync.when(
@@ -95,10 +93,9 @@ class CardioDetailScreen extends ConsumerWidget {
 }
 
 class _WorkoutSummaryCard extends StatelessWidget {
-  const _WorkoutSummaryCard({required this.workout, required this.unitSystem});
+  const _WorkoutSummaryCard({required this.workout});
 
   final CardioWorkout workout;
-  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +113,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
           if (_hasRecordedDistance) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
-              Format.distance(workout.distanceMeters, unitSystem),
+              Format.distance(workout.distanceMeters),
               style: AppTypography.title,
             ),
           ],
@@ -138,7 +135,7 @@ class _WorkoutSummaryCard extends StatelessWidget {
     if (!_hasRecordedDistance) {
       return duration;
     }
-    return '$duration  ·  ${Format.pace(workout.durationSeconds, workout.distanceMeters, unitSystem)}';
+    return '$duration  ·  ${Format.pace(workout.durationSeconds, workout.distanceMeters)}';
   }
 }
 

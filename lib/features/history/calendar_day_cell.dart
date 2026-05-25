@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
@@ -47,14 +46,12 @@ class CalendarDayCell extends StatelessWidget {
     required this.date,
     required this.entry,
     required this.globalMax,
-    required this.unitSystem,
     required this.onTap,
   });
 
   final DateTime date;
   final ActivityCalendarDay? entry;
   final WeekMax globalMax;
-  final UnitSystem unitSystem;
   final VoidCallback onTap;
 
   @override
@@ -146,9 +143,7 @@ class CalendarDayCell extends StatelessWidget {
   Widget _activityLabel(Color textColor) {
     final parts = <String>[];
     if (entry!.outdoorRunDistanceMeters > 0) {
-      parts.add(
-        Format.distanceCompact(entry!.outdoorRunDistanceMeters, unitSystem),
-      );
+      parts.add(Format.distanceCompact(entry!.outdoorRunDistanceMeters));
     }
     if (entry!.totalCardioDurationSeconds > 0 &&
         entry!.outdoorRunDistanceMeters <= 0) {

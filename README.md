@@ -12,12 +12,8 @@ Personal workout tracker with local-first sync.
 
 ## Setup
 
-1. Copy `.env.example` to `.env` and configure:
-   ```
-   POWERSYNC_URL=http://<server>:8081
-   POSTGREST_URL=http://<server>:3001
-   POWERSYNC_JWT_SECRET=<secret>
-   ```
+1. Copy `.env.example` to `.env` and fill in real values. Only `.env`
+   is loaded at startup (see `main.dart`) and bundled as a Flutter asset.
 
 2. Run `flutter pub get`
 

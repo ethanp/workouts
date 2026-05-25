@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show SelectionArea;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -465,15 +466,17 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   }
 
   Widget _body() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _networkSection(),
-        const SizedBox(height: AppSpacing.md),
-        _rowCountSection(),
-        const SizedBox(height: AppSpacing.md),
-        _actionButtons(),
-      ],
+    return SelectionArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _networkSection(),
+          const SizedBox(height: AppSpacing.md),
+          _rowCountSection(),
+          const SizedBox(height: AppSpacing.md),
+          _actionButtons(),
+        ],
+      ),
     );
   }
 
@@ -648,6 +651,7 @@ class DebugRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Text(
@@ -657,9 +661,15 @@ class DebugRow extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            value,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor1),
+          const SizedBox(width: AppSpacing.sm),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor1,
+              ),
+            ),
           ),
         ],
       ),

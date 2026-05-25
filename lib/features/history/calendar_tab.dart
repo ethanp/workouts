@@ -6,7 +6,6 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
 import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
@@ -43,7 +42,6 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
   @override
   Widget build(BuildContext context) {
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
-    final unitSystem = ref.watch(unitSystemProvider);
 
     return calendarAsync.when(
       data: (days) {
@@ -55,7 +53,6 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
           children: [
             ActivityCalendar(
               activityData: activityData,
-              unitSystem: unitSystem,
               onDateTap: (date) => _showDayDetail(context, date),
             ),
           ],
@@ -87,7 +84,6 @@ class DayDetailSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(activityForDateProvider(date));
-    final unitSystem = ref.watch(unitSystemProvider);
 
     return CupertinoActionSheet(
       title: Text(Format.dateFull(date)),
@@ -97,10 +93,7 @@ class DayDetailSheet extends ConsumerWidget {
             : ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
                 child: SingleChildScrollView(
-                  child: DayDetailItemList(
-                    items: items,
-                    unitSystem: unitSystem,
-                  ),
+                  child: DayDetailItemList(items: items),
                 ),
               ),
         loading: () => const CupertinoActivityIndicator(),
@@ -115,14 +108,9 @@ class DayDetailSheet extends ConsumerWidget {
 }
 
 class DayDetailItemList extends StatelessWidget {
-  const DayDetailItemList({
-    super.key,
-    required this.items,
-    required this.unitSystem,
-  });
+  const DayDetailItemList({super.key, required this.items});
 
   final List<ActivityItem> items;
-  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +125,7 @@ class DayDetailItemList extends StatelessWidget {
               Navigator.of(context).pop();
               context.push(CardioDetailScreen(workout: workout));
             },
-            child: DayDetailCardioRow(workout: workout, unitSystem: unitSystem),
+            child: DayDetailCardioRow(workout: workout),
           ),
           ActivitySession(:final session) => CupertinoButton(
             padding: EdgeInsets.zero,
@@ -154,14 +142,9 @@ class DayDetailItemList extends StatelessWidget {
 }
 
 class DayDetailCardioRow extends StatelessWidget {
-  const DayDetailCardioRow({
-    super.key,
-    required this.workout,
-    required this.unitSystem,
-  });
+  const DayDetailCardioRow({super.key, required this.workout});
 
   final CardioWorkout workout;
-  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +171,7 @@ class DayDetailCardioRow extends StatelessWidget {
 
   String _label() {
     if (workout.activityType.hasDistance && workout.distanceMeters > 0) {
-      return '${workout.activityType.displayName} · ${Format.distance(workout.distanceMeters, unitSystem)}';
+      return '${workout.activityType.displayName} · ${Format.distance(workout.distanceMeters)}';
     }
     return workout.activityType.displayName;
   }

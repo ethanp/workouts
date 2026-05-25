@@ -59,8 +59,7 @@ class AppleHealthSyncTile extends ConsumerWidget {
               style: AppTypography.caption.copyWith(color: AppColors.error),
             ),
           ],
-          const SizedBox(height: AppSpacing.md),
-          _backfillSection(missingCount, backfillStatus, ref),
+          ..._backfillSection(missingCount, backfillStatus, ref),
         ],
       ),
     );
@@ -109,60 +108,58 @@ class AppleHealthSyncTile extends ConsumerWidget {
     ],
   );
 
-  Widget _backfillSection(
+  /// Returns the backfill section as a list so the parent can splat it
+  /// without leaving a dangling spacer when there's nothing to show.
+  List<Widget> _backfillSection(
     int missingCount,
     MetricsBackfillStatus backfillStatus,
     WidgetRef ref,
   ) {
     final hasMissing = missingCount > 0;
     final isBackfilling = backfillStatus.inProgress;
-    final canRun = hasMissing && !isBackfilling;
+    final hasStatusLabel = backfillStatus.label.isNotEmpty;
+    if (!hasMissing && !isBackfilling && !hasStatusLabel) return const [];
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return [
+      const SizedBox(height: AppSpacing.md),
+      if (hasMissing)
         Text(
-          hasMissing
-              ? '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data'
-              : 'All zones up to date',
-          style: AppTypography.caption.copyWith(
-            color: hasMissing ? AppColors.warning : AppColors.textColor4,
-          ),
+          '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data',
+          style: AppTypography.caption.copyWith(color: AppColors.warning),
         ),
-        const SizedBox(height: AppSpacing.sm),
+      if (hasMissing || isBackfilling) ...[
+        if (hasMissing) const SizedBox(height: AppSpacing.sm),
         SizedBox(
           width: double.infinity,
           child: CupertinoButton(
             color: AppColors.backgroundDepth3,
             disabledColor: AppColors.backgroundDepth3,
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            onPressed: canRun
-                ? () => ref
+            onPressed: isBackfilling
+                ? null
+                : () => ref
                       .read(metricsBackfillControllerProvider.notifier)
-                      .runBackfill()
-                : null,
+                      .runBackfill(),
             child: isBackfilling
                 ? const CupertinoActivityIndicator()
                 : Text(
                     'Compute missing zones',
                     style: AppTypography.body.copyWith(
-                      color: canRun
-                          ? AppColors.textColor1
-                          : AppColors.textColor4,
+                      color: AppColors.textColor1,
                     ),
                   ),
           ),
         ),
-        if (backfillStatus.label.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            backfillStatus.label,
-            style: AppTypography.caption.copyWith(
-              color: isBackfilling ? AppColors.textColor3 : AppColors.success,
-            ),
-          ),
-        ],
       ],
-    );
+      if (hasStatusLabel) ...[
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          backfillStatus.label,
+          style: AppTypography.caption.copyWith(
+            color: isBackfilling ? AppColors.textColor3 : AppColors.success,
+          ),
+        ),
+      ],
+    ];
   }
 }
