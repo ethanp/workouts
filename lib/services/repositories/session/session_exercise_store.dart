@@ -1,6 +1,7 @@
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/session_rounds.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/repositories/library_exercise_store.dart';
 import 'package:workouts/services/repositories/session/session_hydrator.dart';
@@ -25,52 +26,17 @@ class SessionExerciseStore {
     String blockId,
     WorkoutExercise exercise,
   ) async {
-    final targetBlock = session.blocks.firstWhere(
-      (block) => block.id == blockId,
+    final newIndex = await _nextExerciseIndexIn(blockId);
+    await _propagateAcrossRoundsOf(
+      session,
+      blockId,
+      (roundBlockId) => _insertExerciseRow(
+        blockId: roundBlockId,
+        exercise: exercise,
+        index: newIndex,
+      ),
     );
-    final siblingBlockIds = _findSiblingBlockIds(session, targetBlock);
-
-    final indexRows = await _powerSync.getAll(
-      '''
-      SELECT exercise_index FROM session_block_exercises
-      WHERE block_id = ?
-      ORDER BY exercise_index DESC
-      LIMIT 1
-      ''',
-      [blockId],
-    );
-
-    final nextExerciseIndex = indexRows.isEmpty
-        ? 0
-        : (indexRows.first['exercise_index'] as int) + 1;
-
-    for (final siblingBlockId in siblingBlockIds) {
-      await _powerSync.execute(
-        '''
-        INSERT INTO session_block_exercises (
-          id, block_id, exercise_id, exercise_index, prescription, planned_sets,
-          setup_duration_seconds, work_duration_seconds, rest_duration_seconds
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''',
-        [
-          _uuid.v4(),
-          siblingBlockId,
-          exercise.id,
-          nextExerciseIndex,
-          exercise.prescription,
-          PlannedSet.listToJsonString(exercise.plannedSets),
-          exercise.setupDuration?.inSeconds,
-          exercise.workDuration?.inSeconds,
-          exercise.restDuration?.inSeconds,
-        ],
-      );
-    }
-
-    await _setLogStore.touchSessionUpdatedAt(
-      session.id,
-      DateTime.now().toUtc().toIso8601String(),
-    );
-    return _sessionHydrator.fetchSessionById(session.id);
+    return _finalizeMutation(session.id);
   }
 
   Future<Session> removeExercise(
@@ -78,35 +44,18 @@ class SessionExerciseStore {
     String blockId,
     String exerciseId,
   ) async {
-    final targetBlock = session.blocks.firstWhere(
-      (block) => block.id == blockId,
-    );
-    final siblingBlockIds = _findSiblingBlockIds(session, targetBlock);
-
-    for (final siblingBlockId in siblingBlockIds) {
-      await _powerSync.execute(
-        'DELETE FROM session_set_logs WHERE block_id = ? AND exercise_id = ?',
-        [siblingBlockId, exerciseId],
-      );
-      await _powerSync.execute(
-        'DELETE FROM session_block_exercises'
-        ' WHERE block_id = ? AND exercise_id = ?',
-        [siblingBlockId, exerciseId],
-      );
-    }
-
-    await _setLogStore.touchSessionUpdatedAt(
-      session.id,
-      DateTime.now().toUtc().toIso8601String(),
-    );
-    return _sessionHydrator.fetchSessionById(session.id);
+    await _propagateAcrossRoundsOf(session, blockId, (roundBlockId) async {
+      await _deleteSetLogsFor(blockId: roundBlockId, exerciseId: exerciseId);
+      await _deleteExerciseRow(blockId: roundBlockId, exerciseId: exerciseId);
+    });
+    return _finalizeMutation(session.id);
   }
 
-  /// Replaces [oldExerciseId] with [newExercise] in the target block and all
-  /// sibling round blocks. Discards any logged sets attributed to the old
-  /// exercise (the new movement is different — preserving its sets would
-  /// misattribute work). If [newExercise] is not yet in the library, it is
-  /// upserted first.
+  /// Replaces [oldExerciseId] with [newExercise] in every round of the
+  /// target block. Discards any logged sets attributed to the old exercise
+  /// (the new movement is different — preserving its sets would misattribute
+  /// work). If [newExercise] is not yet in the library, it is upserted
+  /// first.
   Future<Session> replaceExercise(
     Session session,
     String blockId,
@@ -116,60 +65,40 @@ class SessionExerciseStore {
     final canonicalNewExerciseId = await _libraryExerciseStore.upsert(
       newExercise,
     );
-
-    final targetBlock = session.blocks.firstWhere(
-      (block) => block.id == blockId,
-    );
-    final siblingBlockIds = _findSiblingBlockIds(session, targetBlock);
-
-    for (final siblingBlockId in siblingBlockIds) {
-      await _powerSync.execute(
-        'DELETE FROM session_set_logs WHERE block_id = ? AND exercise_id = ?',
-        [siblingBlockId, oldExerciseId],
+    await _propagateAcrossRoundsOf(session, blockId, (roundBlockId) async {
+      await _deleteSetLogsFor(
+        blockId: roundBlockId,
+        exerciseId: oldExerciseId,
       );
-      await _powerSync.execute(
-        '''
-        UPDATE session_block_exercises
-        SET exercise_id = ?
-        WHERE block_id = ? AND exercise_id = ?
-        ''',
-        [canonicalNewExerciseId, siblingBlockId, oldExerciseId],
+      await _swapExerciseId(
+        blockId: roundBlockId,
+        oldExerciseId: oldExerciseId,
+        newExerciseId: canonicalNewExerciseId,
       );
-    }
-
-    await _setLogStore.touchSessionUpdatedAt(
-      session.id,
-      DateTime.now().toUtc().toIso8601String(),
-    );
-    return _sessionHydrator.fetchSessionById(session.id);
+    });
+    return _finalizeMutation(session.id);
   }
 
   /// Overwrites the planned-set list for one exercise within one block.
   /// Single block only — warmup adjustments are per-block, not propagated
-  /// across sibling rounds (each round's warmup count is independent).
+  /// across other rounds (each round's warmup count is independent).
   Future<void> updatePlannedSets({
     required String sessionId,
     required String sessionBlockId,
     required String exerciseId,
     required List<PlannedSet> plannedSets,
   }) async {
-    await _powerSync.execute(
-      '''
-      UPDATE session_block_exercises
-      SET planned_sets = ?
-      WHERE block_id = ? AND exercise_id = ?
-      ''',
-      [PlannedSet.listToJsonString(plannedSets), sessionBlockId, exerciseId],
+    await _writePlannedSets(
+      blockId: sessionBlockId,
+      exerciseId: exerciseId,
+      plannedSets: plannedSets,
     );
-    await _setLogStore.touchSessionUpdatedAt(
-      sessionId,
-      DateTime.now().toUtc().toIso8601String(),
-    );
+    await _markSessionDirty(sessionId);
   }
 
   /// Rewrites `exercise_index` for every exercise in [orderedExerciseIds]
-  /// across the target block and all sibling round blocks, so all rounds
-  /// stay in lock-step with the new ordering.
+  /// across every round of the target block, so all rounds stay in
+  /// lock-step with the new ordering.
   ///
   /// The unique constraint `(block_id, exercise_id, exercise_index)` cannot
   /// collide during shuffling because `exercise_id` is already unique per
@@ -179,40 +108,137 @@ class SessionExerciseStore {
     String blockId,
     List<String> orderedExerciseIds,
   ) async {
-    final targetBlock = session.blocks.firstWhere(
-      (block) => block.id == blockId,
+    await _propagateAcrossRoundsOf(
+      session,
+      blockId,
+      (roundBlockId) => _writeExerciseOrder(
+        blockId: roundBlockId,
+        orderedExerciseIds: orderedExerciseIds,
+      ),
     );
-    final siblingBlockIds = _findSiblingBlockIds(session, targetBlock);
+    return _finalizeMutation(session.id);
+  }
 
-    for (final siblingBlockId in siblingBlockIds) {
-      for (var newIndex = 0; newIndex < orderedExerciseIds.length; newIndex++) {
-        await _powerSync.execute(
-          '''
-          UPDATE session_block_exercises
-          SET exercise_index = ?
-          WHERE block_id = ? AND exercise_id = ?
-          ''',
-          [newIndex, siblingBlockId, orderedExerciseIds[newIndex]],
-        );
-      }
+  /// Runs [work] for every round of [blockId] in declared order. The
+  /// multi-round propagation rule lives here exactly once: every public
+  /// mutation method that needs to apply across rounds calls this with its
+  /// per-round work as a closure.
+  Future<void> _propagateAcrossRoundsOf(
+    Session session,
+    String blockId,
+    Future<void> Function(String roundBlockId) work,
+  ) async {
+    for (final roundBlockId in session.allRoundsOfBlock(blockId)) {
+      await work(roundBlockId);
     }
+  }
 
-    await _setLogStore.touchSessionUpdatedAt(
-      session.id,
-      DateTime.now().toUtc().toIso8601String(),
+  Future<int> _nextExerciseIndexIn(String blockId) async {
+    final rows = await _powerSync.getAll(
+      '''
+      SELECT exercise_index FROM session_block_exercises
+      WHERE block_id = ?
+      ORDER BY exercise_index DESC
+      LIMIT 1
+      ''',
+      [blockId],
     );
-    return _sessionHydrator.fetchSessionById(session.id);
+    return rows.isEmpty ? 0 : (rows.first['exercise_index'] as int) + 1;
   }
 
-  Set<String> _findSiblingBlockIds(Session session, SessionBlock target) {
-    if (target.totalRounds == null) return {target.id};
-    return session.blocks
-        .where(
-          (block) =>
-              block.type == target.type &&
-              block.totalRounds == target.totalRounds,
-        )
-        .map((block) => block.id)
-        .toSet();
+  Future<void> _insertExerciseRow({
+    required String blockId,
+    required WorkoutExercise exercise,
+    required int index,
+  }) => _powerSync.execute(
+    '''
+    INSERT INTO session_block_exercises (
+      id, block_id, exercise_id, exercise_index, prescription, planned_sets,
+      setup_duration_seconds, work_duration_seconds, rest_duration_seconds
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''',
+    [
+      _uuid.v4(),
+      blockId,
+      exercise.id,
+      index,
+      exercise.prescription,
+      PlannedSet.listToJsonString(exercise.plannedSets),
+      exercise.setupDuration?.inSeconds,
+      exercise.workDuration?.inSeconds,
+      exercise.restDuration?.inSeconds,
+    ],
+  );
+
+  Future<void> _deleteExerciseRow({
+    required String blockId,
+    required String exerciseId,
+  }) => _powerSync.execute(
+    'DELETE FROM session_block_exercises'
+    ' WHERE block_id = ? AND exercise_id = ?',
+    [blockId, exerciseId],
+  );
+
+  Future<void> _deleteSetLogsFor({
+    required String blockId,
+    required String exerciseId,
+  }) => _powerSync.execute(
+    'DELETE FROM session_set_logs WHERE block_id = ? AND exercise_id = ?',
+    [blockId, exerciseId],
+  );
+
+  Future<void> _swapExerciseId({
+    required String blockId,
+    required String oldExerciseId,
+    required String newExerciseId,
+  }) => _powerSync.execute(
+    '''
+    UPDATE session_block_exercises
+    SET exercise_id = ?
+    WHERE block_id = ? AND exercise_id = ?
+    ''',
+    [newExerciseId, blockId, oldExerciseId],
+  );
+
+  Future<void> _writePlannedSets({
+    required String blockId,
+    required String exerciseId,
+    required List<PlannedSet> plannedSets,
+  }) => _powerSync.execute(
+    '''
+    UPDATE session_block_exercises
+    SET planned_sets = ?
+    WHERE block_id = ? AND exercise_id = ?
+    ''',
+    [PlannedSet.listToJsonString(plannedSets), blockId, exerciseId],
+  );
+
+  Future<void> _writeExerciseOrder({
+    required String blockId,
+    required List<String> orderedExerciseIds,
+  }) async {
+    for (var newIndex = 0; newIndex < orderedExerciseIds.length; newIndex++) {
+      await _powerSync.execute(
+        '''
+        UPDATE session_block_exercises
+        SET exercise_index = ?
+        WHERE block_id = ? AND exercise_id = ?
+        ''',
+        [newIndex, blockId, orderedExerciseIds[newIndex]],
+      );
+    }
   }
+
+  /// Marks the session row dirty so PowerSync uploads it, then re-hydrates
+  /// the session so the caller sees the post-mutation state.
+  Future<Session> _finalizeMutation(String sessionId) async {
+    await _markSessionDirty(sessionId);
+    return _sessionHydrator.fetchSessionById(sessionId);
+  }
+
+  Future<void> _markSessionDirty(String sessionId) =>
+      _setLogStore.touchSessionUpdatedAt(
+        sessionId,
+        DateTime.now().toUtc().toIso8601String(),
+      );
 }

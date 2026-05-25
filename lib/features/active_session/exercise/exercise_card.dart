@@ -11,6 +11,7 @@ import 'package:workouts/features/active_session/exercise_chat/exercise_chat_scr
 import 'package:workouts/features/active_session/exercise_history/exercise_history_screen.dart';
 import 'package:workouts/features/active_session/replace_exercise/replace_exercise_picker_screen.dart';
 import 'package:workouts/models/session.dart';
+import 'package:workouts/models/session_rounds.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/widgets/replace_confirmation_dialog.dart';
 
@@ -59,10 +60,9 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   @override
   Widget build(BuildContext context) {
     final ExerciseSetPlanContext planContext = _syncedPlanContext();
-    final Set<String> earlyStopped = ref.watch(earlyStoppedProvider);
-    final bool isStoppedEarly = earlyStopped.contains(
-      earlyStoppedKey(blockId: block.id, exerciseId: exercise.id),
-    );
+    final isStoppedEarly = ref
+        .watch(earlyStoppedProvider)
+        .includes(blockId: block.id, exerciseId: exercise.id);
     return ExerciseCardContent(
       timerIdentity: _timerIdentity(),
       planContext: planContext,
@@ -188,12 +188,13 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     if (activeSession == null) return;
 
     final int discardedLogCount = activeSession
-        .loggedSetCountForExerciseAcrossSiblings(
-          target: block,
+        .loggedSetCountAcrossRoundsOf(
+          blockId: block.id,
           exerciseId: exercise.id,
         );
     if (discardedLogCount > 0) {
-      final int affectedBlockCount = activeSession.siblingBlockCountOf(block);
+      final int affectedBlockCount =
+          activeSession.allRoundsOfBlock(block.id).length;
       final bool confirmed = await confirmReplaceWithLogs(
         context,
         loggedSetCount: discardedLogCount,

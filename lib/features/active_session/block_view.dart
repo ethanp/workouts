@@ -113,10 +113,9 @@ class _BlockViewState extends ConsumerState<BlockView> {
         );
   }
 
-  /// Pick the first exercise in this block that has unfinished sets and the
-  /// user hasn't manually marked done. Mirrors `SessionBlock.nextIncompleteExercise`
-  /// but layered with the ephemeral early-stopped flag so the timer
-  /// auto-flow respects "I'm done with this one".
+  /// Pick the first exercise in this block with unfinished sets that the
+  /// user hasn't flagged early-stopped, so the timer auto-flow respects
+  /// "I'm done with this one".
   String? _nextRecommendedExerciseId() {
     return ref
         .watch(blockProgressProvider(widget.block))
@@ -205,11 +204,8 @@ class _BlockViewState extends ConsumerState<BlockView> {
   }
 
   Future<void> _showExercisePicker(BuildContext context) async {
-    final existingExerciseIds = widget.block.exercises
-        .map((workoutExercise) => workoutExercise.id)
-        .toSet();
     final exercise = await context.push<WorkoutExercise>(
-      ExercisePickerScreen(excludeIds: existingExerciseIds),
+      ExercisePickerScreen(excludeIds: widget.block.exerciseIds),
     );
     if (mounted && exercise != null) {
       ref

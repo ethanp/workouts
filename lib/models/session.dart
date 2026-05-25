@@ -52,23 +52,9 @@ abstract class SessionBlock with _$SessionBlock {
   factory SessionBlock.fromJson(Map<String, dynamic> json) =>
       _$SessionBlockFromJson(json);
 
-  WorkoutExercise? get nextIncompleteExercise {
-    final counts = <String, int>{};
-    for (final log in logs) {
-      counts.update(log.exerciseId, (value) => value + 1, ifAbsent: () => 1);
-    }
-    for (final exercise in exercises) {
-      final targetSets = exercise.effectiveTargetSets;
-      if (targetSets <= 0) {
-        continue;
-      }
-      final completed = counts[exercise.id] ?? 0;
-      if (completed < targetSets) {
-        return exercise;
-      }
-    }
-    return null;
-  }
+  /// Identity-only projection of `exercises` for filtering by id.
+  Set<String> get exerciseIds =>
+      exercises.map((exercise) => exercise.id).toSet();
 }
 
 @freezed
@@ -96,6 +82,16 @@ abstract class Session with _$Session {
 
   factory Session.fromJson(Map<String, dynamic> json) =>
       _$SessionFromJson(json);
+
+  /// Looks up a block by id. Throws when not found rather than returning
+  /// null because every existing caller depends on the block being present
+  /// (the id came from this session in the first place); a missing block is
+  /// a programmer error worth surfacing loudly.
+  SessionBlock blockById(String blockId) => blocks.firstWhere(
+    (block) => block.id == blockId,
+    orElse: () =>
+        throw StateError('Block $blockId not found in session $id'),
+  );
 }
 
 /// Derives which fitness goals a session covers based on the benefits
@@ -108,44 +104,4 @@ extension SessionComposition on Session {
       .toSet();
 
   bool coversGoal(String goalId) => coveredGoalIds.contains(goalId);
-}
-
-/// Helpers for reasoning about exercise placement across multi-round sibling
-/// blocks (blocks of the same `type` and `totalRounds`). Mid-session
-/// add/remove/replace mutations propagate across these siblings; UIs that
-/// confirm such mutations need the same view of "how much would change?".
-extension SessionExerciseImpact on Session {
-  /// IDs of every block that mirrors changes made to [target]: the target
-  /// itself when not part of a multi-round set, otherwise every block
-  /// sharing its `type` and `totalRounds`.
-  Set<String> siblingBlockIdsOf(SessionBlock target) {
-    if (target.totalRounds == null) return {target.id};
-    return blocks
-        .where(
-          (block) =>
-              block.type == target.type &&
-              block.totalRounds == target.totalRounds,
-        )
-        .map((block) => block.id)
-        .toSet();
-  }
-
-  /// Number of blocks that would be affected by mutating [target] — i.e. the
-  /// size of the sibling set, including [target] itself.
-  int siblingBlockCountOf(SessionBlock target) =>
-      siblingBlockIdsOf(target).length;
-
-  /// Total logged sets attributed to [exerciseId] across [target] and all of
-  /// its sibling blocks.
-  int loggedSetCountForExerciseAcrossSiblings({
-    required SessionBlock target,
-    required String exerciseId,
-  }) {
-    final siblingIds = siblingBlockIdsOf(target);
-    return blocks
-        .where((block) => siblingIds.contains(block.id))
-        .expand((block) => block.logs)
-        .where((log) => log.exerciseId == exerciseId)
-        .length;
-  }
 }

@@ -62,7 +62,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
 
   /// Returns the index of the first block in [session] that has at least one
   /// exercise that is neither fully logged nor flagged as early-stopped.
-  /// Falls back to 0 when all blocks are accounted for — the all-done auto
+  /// Falls back to 0 when every block is complete — the all-done auto
   /// prompt handles the next-step UX from there.
   int _firstBlockWithWork(Session session) {
     for (var blockIndex = 0; blockIndex < session.blocks.length; blockIndex++) {
@@ -229,7 +229,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
     if (_currentBlockIndex >= session.blocks.length - 1) return;
     if (_autoAdvancedFromBlocks.contains(_currentBlockIndex)) return;
     final block = session.blocks[_currentBlockIndex];
-    if (!ref.watch(blockProgressProvider(block)).isComplete) return;
+    if (!ref.watch(blockProgressProvider(block)).allComplete) return;
 
     final triggeredFromBlock = _currentBlockIndex;
     _autoAdvancedFromBlocks.add(triggeredFromBlock);
