@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
-import 'package:workouts/features/active_session/early_stopped_notifier.dart';
+import 'package:workouts/features/active_session/block_progress.dart';
 import 'package:workouts/features/library/exercise_picker_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
@@ -118,27 +118,10 @@ class _BlockViewState extends ConsumerState<BlockView> {
   /// but layered with the ephemeral early-stopped flag so the timer
   /// auto-flow respects "I'm done with this one".
   String? _nextRecommendedExerciseId() {
-    final Set<String> earlyStopped = ref.watch(earlyStoppedProvider);
-    final logCounts = <String, int>{};
-    for (final log in widget.block.logs) {
-      logCounts.update(
-        log.exerciseId,
-        (count) => count + 1,
-        ifAbsent: () => 1,
-      );
-    }
-    for (final exercise in widget.block.exercises) {
-      final targetSets = exercise.effectiveTargetSets;
-      if (targetSets <= 0) continue;
-      final completed = logCounts[exercise.id] ?? 0;
-      if (completed >= targetSets) continue;
-      final isStoppedEarly = earlyStopped.contains(
-        earlyStoppedKey(blockId: widget.block.id, exerciseId: exercise.id),
-      );
-      if (isStoppedEarly) continue;
-      return exercise.id;
-    }
-    return null;
+    return ref
+        .watch(blockProgressProvider(widget.block))
+        .firstUnfinishedExercise()
+        ?.id;
   }
 
   Widget _blockHeader(BuildContext context) {

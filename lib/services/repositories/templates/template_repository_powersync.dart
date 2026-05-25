@@ -34,8 +34,6 @@ class TemplateRepositoryPowerSync {
   late final TemplateExerciseStore _exerciseStore;
   Future<List<WorkoutTemplate>>? _seedRefresh;
 
-  static const int currentTemplateVersion = 9;
-
   Future<List<String>> fetchExerciseNames() => _hydrator.fetchExerciseNames();
 
   Future<List<WorkoutExercise>> fetchExercises() => _hydrator.fetchExercises();

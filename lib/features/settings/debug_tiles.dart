@@ -1,13 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show SelectionArea;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
@@ -215,119 +211,17 @@ class SyncDebugTile extends ConsumerStatefulWidget {
   ConsumerState<SyncDebugTile> createState() => _SyncDebugTileState();
 }
 
-class _HostProbe {
-  const _HostProbe({
-    required this.label,
-    required this.host,
-    required this.reachable,
-    required this.latency,
-    required this.httpStatus,
-    required this.error,
-  });
-
-  final String label;
-  final String host;
-  final bool reachable;
-  final Duration? latency;
-  final int? httpStatus;
-  final String? error;
-
-  String get summary {
-    if (host.isEmpty) return 'not configured';
-    if (reachable) {
-      final ms = latency?.inMilliseconds ?? -1;
-      final http = httpStatus != null ? ' • HTTP $httpStatus' : '';
-      return 'OK ${ms}ms$http';
-    }
-    return error ?? 'unreachable';
-  }
-}
-
 class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   bool _expanded = false;
   bool _reconnecting = false;
   bool _resettingSync = false;
-  bool _probing = false;
   int _localWorkouts = 0;
   int _serverWorkouts = -1;
   DateTime? _countsFetchedAt;
-  List<_HostProbe> _probes = const [];
-  DateTime? _probedAt;
 
   void _toggle() {
     setState(() => _expanded = !_expanded);
-    if (_expanded) {
-      if (_countsFetchedAt == null) _refreshCounts();
-      if (_probedAt == null) _probeHosts();
-    }
-  }
-
-  Future<void> _probeHosts() async {
-    setState(() => _probing = true);
-    final lan = dotenv.env['SERVER_HOST_LAN'] ?? '';
-    final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'] ?? '';
-    const postgrestPort = 3001;
-    final probes = await Future.wait([
-      _probeOne('LAN', lan, postgrestPort),
-      _probeOne('Tailscale', tailscale, postgrestPort),
-    ]);
-    if (!mounted) return;
-    setState(() {
-      _probes = probes;
-      _probedAt = DateTime.now();
-      _probing = false;
-    });
-    await ref.read(hostnameProvider.notifier).refineByTcpProbe();
-  }
-
-  Future<_HostProbe> _probeOne(String label, String host, int port) async {
-    if (host.isEmpty) {
-      return _HostProbe(
-        label: label,
-        host: host,
-        reachable: false,
-        latency: null,
-        httpStatus: null,
-        error: 'env var empty',
-      );
-    }
-    final stopwatch = Stopwatch()..start();
-    try {
-      final socket = await Socket.connect(
-        host,
-        port,
-        timeout: const Duration(seconds: 2),
-      );
-      socket.destroy();
-      final tcpLatency = stopwatch.elapsed;
-      int? httpStatus;
-      String? httpError;
-      try {
-        final response = await http
-            .get(Uri.parse('http://$host:$port/'))
-            .timeout(const Duration(seconds: 3));
-        httpStatus = response.statusCode;
-      } catch (error) {
-        httpError = error.toString();
-      }
-      return _HostProbe(
-        label: label,
-        host: host,
-        reachable: true,
-        latency: tcpLatency,
-        httpStatus: httpStatus,
-        error: httpError,
-      );
-    } catch (error) {
-      return _HostProbe(
-        label: label,
-        host: host,
-        reachable: false,
-        latency: null,
-        httpStatus: null,
-        error: error.toString(),
-      );
-    }
+    if (_expanded && _countsFetchedAt == null) _refreshCounts();
   }
 
   Future<void> _refreshCounts() async {
@@ -470,74 +364,11 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _networkSection(),
-          const SizedBox(height: AppSpacing.md),
           _rowCountSection(),
           const SizedBox(height: AppSpacing.md),
           _actionButtons(),
         ],
       ),
-    );
-  }
-
-  Widget _networkSection() {
-    final activeHost = ref.watch(hostnameProvider);
-    final postgrestUrl = ref.watch(postgrestUrlProvider);
-    final powersyncUrl = ref.watch(powersyncUrlProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Network',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        DebugRow('Active host', activeHost),
-        DebugRow('PostgREST', postgrestUrl),
-        DebugRow('PowerSync', powersyncUrl),
-        const SizedBox(height: AppSpacing.xs),
-        if (_probing)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Row(
-              children: [
-                CupertinoActivityIndicator(radius: 8),
-                SizedBox(width: AppSpacing.sm),
-                Text(
-                  'Probing both candidates...',
-                  style: TextStyle(
-                    color: AppColors.textColor3,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          )
-        else if (_probes.isEmpty)
-          Text(
-            'Not probed yet',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
-            ),
-          )
-        else ...[
-          for (final probe in _probes)
-            DebugRow(
-              '${probe.label} ${probe.host.isEmpty ? "" : "(${probe.host})"}',
-              probe.summary,
-            ),
-          if (_probedAt != null)
-            Text(
-              'Probed ${formatDebugTime(_probedAt!)}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
-              ),
-            ),
-        ],
-      ],
     );
   }
 
@@ -569,69 +400,79 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
   Widget _actionButtons() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                color: AppColors.backgroundDepth3,
-                onPressed: _probing ? null : _probeHosts,
-                child: _probing
-                    ? const CupertinoActivityIndicator()
-                    : Text(
-                        'Probe Hosts',
-                        style: AppTypography.body.copyWith(
-                          color: AppColors.textColor1,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: CupertinoButton(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                color: AppColors.backgroundDepth3,
-                onPressed: _refreshCounts,
-                child: Text(
-                  'Refresh Counts',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor1,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        _DebugAction(
+          title: 'Refresh counts',
+          description:
+              'Re-query the local SQLite and Postgres counts shown above. '
+              'Use to check whether sync is making progress.',
+          onPressed: _refreshCounts,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
+        _DebugAction(
+          title: 'Reconnect to backend',
+          description:
+              'Drop the current PowerSync session and re-handshake. '
+              'Use after switching networks (Wi-Fi <-> cellular, Tailscale '
+              'on/off) or if the Connection panel still says offline.',
+          onPressed: _reconnecting ? null : _forceReconnect,
+          inProgress: _reconnecting,
+          accent: AppColors.accentPrimary,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _DebugAction(
+          title: 'Reset local sync data',
+          description:
+              'Wipe the local SQLite cache and re-download everything from '
+              'the server. Use only if local data looks stuck or corrupted. '
+              'Pending offline edits will be lost. Destructive.',
+          onPressed: _resettingSync ? null : _resetSyncData,
+          inProgress: _resettingSync,
+          accent: AppColors.error,
+        ),
+      ],
+    );
+  }
+}
+
+class _DebugAction extends StatelessWidget {
+  const _DebugAction({
+    required this.title,
+    required this.description,
+    required this.onPressed,
+    this.inProgress = false,
+    this.accent,
+  });
+
+  final String title;
+  final String description;
+  final VoidCallback? onPressed;
+  final bool inProgress;
+  final Color? accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final buttonColor = accent ?? AppColors.textColor1;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          description,
+          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         SizedBox(
           width: double.infinity,
           child: CupertinoButton(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             color: AppColors.backgroundDepth3,
-            onPressed: _reconnecting ? null : _forceReconnect,
-            child: _reconnecting
+            onPressed: onPressed,
+            child: inProgress
                 ? const CupertinoActivityIndicator()
                 : Text(
-                    'Force Re-sync',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.accentPrimary,
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        SizedBox(
-          width: double.infinity,
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            color: AppColors.backgroundDepth3,
-            onPressed: _resettingSync ? null : _resetSyncData,
-            child: _resettingSync
-                ? const CupertinoActivityIndicator()
-                : Text(
-                    'Reset Sync Data',
-                    style: AppTypography.body.copyWith(color: AppColors.error),
+                    title,
+                    style: AppTypography.body.copyWith(color: buttonColor),
                   ),
           ),
         ),

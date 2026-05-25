@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/add_note_sheet.dart';
+import 'package:workouts/features/active_session/block_progress.dart';
 import 'package:workouts/features/active_session/block_view.dart';
 import 'package:workouts/features/active_session/early_stopped_notifier.dart';
 import 'package:workouts/features/active_session/session_resume/keyboard_enter_accessory.dart';
@@ -34,6 +35,17 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
   /// because they unlogged a set and then re-logged it).
   String? _autoPromptedSessionId;
 
+  /// Block indices we have already auto-scrolled away from after they
+  /// became done. Tracking the set (rather than just "last index") means
+  /// a manual back-swipe to a completed earlier block doesn't re-trigger
+  /// the auto-advance.
+  final Set<int> _autoAdvancedFromBlocks = {};
+
+  /// How long to leave the just-completed block on screen before sliding
+  /// to the next one. Long enough for the green-tinted "all done" cards
+  /// to register visually; short enough to not feel sluggish.
+  static const _autoAdvanceDelay = Duration(milliseconds: 700);
+
   @override
   void initState() {
     super.initState();
@@ -41,10 +53,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
     // exercises aren't all either fully logged or marked stopped-early.
     // Otherwise opening a part-finished session always lands on block 1
     // even if the user is on block 4.
-    _currentBlockIndex = _firstBlockWithWork(
-      widget.session,
-      ref.read(earlyStoppedProvider),
-    );
+    _currentBlockIndex = _firstBlockWithWork(widget.session);
     _pageController = PageController(initialPage: _currentBlockIndex);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
@@ -55,29 +64,12 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
   /// exercise that is neither fully logged nor flagged as early-stopped.
   /// Falls back to 0 when all blocks are accounted for — the all-done auto
   /// prompt handles the next-step UX from there.
-  static int _firstBlockWithWork(Session session, Set<String> earlyStopped) {
+  int _firstBlockWithWork(Session session) {
     for (var blockIndex = 0; blockIndex < session.blocks.length; blockIndex++) {
-      final block = session.blocks[blockIndex];
-      final logCounts = <String, int>{};
-      for (final log in block.logs) {
-        logCounts.update(
-          log.exerciseId,
-          (count) => count + 1,
-          ifAbsent: () => 1,
-        );
-      }
-      for (final exercise in block.exercises) {
-        final targetSets = exercise.effectiveTargetSets;
-        if (targetSets <= 0) continue;
-        final completed = logCounts[exercise.id] ?? 0;
-        if (completed >= targetSets) continue;
-        final stoppedKey = earlyStoppedKey(
-          blockId: block.id,
-          exerciseId: exercise.id,
-        );
-        if (earlyStopped.contains(stoppedKey)) continue;
-        return blockIndex;
-      }
+      final progress = ref.read(
+        blockProgressProvider(session.blocks[blockIndex]),
+      );
+      if (progress.firstUnfinishedExercise() != null) return blockIndex;
     }
     return 0;
   }
@@ -107,6 +99,8 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
         _completeSession(context);
       });
     });
+
+    _maybeAutoAdvanceBlock(session);
 
     return CupertinoPageScaffold(
       navigationBar: _navigationBar(context, session),
@@ -224,6 +218,29 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
     }
 
     return elapsed.isNegative ? Duration.zero : elapsed;
+  }
+
+  /// When the current block's exercises are all logged or stopped-early,
+  /// slide to the next block. Skips when this is the last block (the
+  /// session-all-done listener handles the finish prompt instead) or when
+  /// we've already auto-advanced from this block in this session.
+  void _maybeAutoAdvanceBlock(Session session) {
+    if (session.blocks.isEmpty) return;
+    if (_currentBlockIndex >= session.blocks.length - 1) return;
+    if (_autoAdvancedFromBlocks.contains(_currentBlockIndex)) return;
+    final block = session.blocks[_currentBlockIndex];
+    if (!ref.watch(blockProgressProvider(block)).isComplete) return;
+
+    final triggeredFromBlock = _currentBlockIndex;
+    _autoAdvancedFromBlocks.add(triggeredFromBlock);
+    Future.delayed(_autoAdvanceDelay, () {
+      if (!mounted) return;
+      // Don't fight a manual page change that landed during the delay,
+      // and don't loop past the end of the session.
+      if (_currentBlockIndex != triggeredFromBlock) return;
+      if (_currentBlockIndex >= session.blocks.length - 1) return;
+      _goToBlock(_currentBlockIndex + 1);
+    });
   }
 
   void _goToPreviousBlock() => _goToBlock(_currentBlockIndex - 1);

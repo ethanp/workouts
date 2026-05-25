@@ -22,6 +22,16 @@ class HostnameNotifier extends Notifier<String> {
   @override
   String build() => _candidatesFromEnv().first;
 
+  /// Manual override for the active host (e.g. from the Connection tile's
+  /// per-route "Use" button). No-op when [host] already matches state.
+  /// Subsequent auto-probes are not re-run; the user's choice sticks for
+  /// the rest of this app session.
+  void setHost(String host) {
+    if (host == state) return;
+    _log.log('Manual host override: $state -> $host');
+    state = host;
+  }
+
   /// Returns true if the hostname changed.
   Future<bool> refineByTcpProbe() async {
     final hostBefore = state;

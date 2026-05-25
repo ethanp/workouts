@@ -58,24 +58,21 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Widget? _trailing(bool isImporting, bool dbReady) {
-    if (_selectedTab == HistoryTab.list && dbReady && !isImporting) {
-      return CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => ref
-            .read(cardioImportControllerProvider.notifier)
-            .importRecentWorkouts(),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(CupertinoIcons.arrow_down_circle, size: 22),
-            const SizedBox(width: 4),
-            Text('Import', style: AppTypography.caption),
-          ],
-        ),
-      );
-    }
-
-    return null;
+    if (!dbReady || isImporting) return null;
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () => ref
+          .read(cardioImportControllerProvider.notifier)
+          .importRecentWorkouts(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(CupertinoIcons.arrow_down_circle, size: 22),
+          const SizedBox(width: 4),
+          Text('Import', style: AppTypography.caption),
+        ],
+      ),
+    );
   }
 
   Widget _segmentedControl() {
