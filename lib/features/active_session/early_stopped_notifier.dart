@@ -40,3 +40,47 @@ final earlyStoppedProvider =
     NotifierProvider<EarlyStoppedNotifier, Set<String>>(
       EarlyStoppedNotifier.new,
     );
+
+/// True when every exercise across every block in the active session is
+/// either fully logged (loggedCount >= effectiveTargetSets) or explicitly
+/// marked early-stopped via [earlyStoppedProvider]. Used by the session
+/// resume screen to auto-prompt the user to finish.
+///
+/// Mirrors the per-block "next incomplete exercise" walk used elsewhere so
+/// the auto-finish trigger and the in-block recommendation stay in sync.
+final sessionAllExercisesDoneProvider = Provider<bool>((ref) {
+  final session = ref.watch(activeSessionProvider).value;
+  if (session == null) return false;
+  final earlyStopped = ref.watch(earlyStoppedProvider);
+  return _allExercisesAccountedFor(session, earlyStopped);
+});
+
+bool _allExercisesAccountedFor(Session session, Set<String> earlyStopped) {
+  if (session.blocks.isEmpty) return false;
+  bool seenExercise = false;
+  for (final block in session.blocks) {
+    if (block.exercises.isEmpty) continue;
+    final logCounts = <String, int>{};
+    for (final log in block.logs) {
+      logCounts.update(
+        log.exerciseId,
+        (count) => count + 1,
+        ifAbsent: () => 1,
+      );
+    }
+    for (final exercise in block.exercises) {
+      final targetSets = exercise.effectiveTargetSets;
+      if (targetSets <= 0) continue;
+      seenExercise = true;
+      final completed = logCounts[exercise.id] ?? 0;
+      if (completed >= targetSets) continue;
+      final stoppedKey = earlyStoppedKey(
+        blockId: block.id,
+        exerciseId: exercise.id,
+      );
+      if (earlyStopped.contains(stoppedKey)) continue;
+      return false;
+    }
+  }
+  return seenExercise;
+}

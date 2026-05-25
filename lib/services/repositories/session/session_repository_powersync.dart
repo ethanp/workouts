@@ -15,7 +15,6 @@ import 'package:workouts/services/repositories/session/session_materializer.dart
 import 'package:workouts/services/repositories/session/session_set_log_store.dart';
 import 'package:workouts/services/repositories/session_metrics_store.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'session_repository_powersync.g.dart';
 
@@ -77,7 +76,6 @@ class SessionRepositoryPowerSync {
     Session session, {
     String? notes,
     String? feeling,
-    TrainingLoadCalculator? trainingLoad,
   }) async {
     final completedAt = DateTime.now();
     final completedAtUtcText = completedAt.toUtc().toIso8601String();
@@ -117,12 +115,7 @@ class SessionRepositoryPowerSync {
       ],
     );
 
-    if (trainingLoad != null) {
-      await _metricsStore.computeAndStore(
-        session.id,
-        trainingLoad: trainingLoad,
-      );
-    }
+    await _metricsStore.computeAndStore(session.id);
   }
 
   Future<void> discardSession(String sessionId) async {
@@ -301,16 +294,10 @@ class SessionRepositoryPowerSync {
   }) => _exerciseHistoryStore.fetch(exerciseId: exerciseId, limit: limit);
 
   Future<void> recomputeZones({
-    required TrainingLoadCalculator trainingLoad,
     void Function(int done, int total)? onProgress,
-  }) => _metricsStore.recomputeAllZones(
-    trainingLoad: trainingLoad,
-    onProgress: onProgress,
-  );
+  }) => _metricsStore.recomputeAllZones(onProgress: onProgress);
 
-  Future<void> backfillMissingMetrics({
-    required TrainingLoadCalculator trainingLoad,
-  }) => _metricsStore.backfillMissing(trainingLoad: trainingLoad);
+  Future<void> backfillMissingMetrics() => _metricsStore.backfillMissing();
 }
 
 @riverpod

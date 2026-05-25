@@ -89,6 +89,16 @@ List<String> _initialSyncChanges(SyncStatus status, SyncStatus? previous) {
   return [];
 }
 
+/// Number of CRUD ops queued for upload to the server. Streamed so UI can
+/// react when uploads drain or new local writes pile up.
+@riverpod
+Stream<int> pendingUploadCount(Ref ref) async* {
+  final powerSyncDatabase = await ref.watch(powerSyncDatabaseProvider.future);
+  yield* powerSyncDatabase
+      .watch('SELECT COUNT(*) AS cnt FROM ps_crud')
+      .map((rows) => (rows.first['cnt'] as int?) ?? 0);
+}
+
 @riverpod
 bool isOffline(Ref ref) {
   final statusAsync = ref.watch(powerSyncStatusProvider);

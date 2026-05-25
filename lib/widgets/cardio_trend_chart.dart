@@ -13,12 +13,18 @@ class CardioTrendChart extends StatefulWidget {
     required this.series,
     this.displayStart,
     this.displayEnd,
+    this.highlightDate,
   });
 
   final String title;
   final List<TrendSeries> series;
   final DateTime? displayStart;
   final DateTime? displayEnd;
+
+  /// If non-null, points whose date falls on the same day get a ring
+  /// drawn around them so the user can spot a specific session in a
+  /// trend line.
+  final DateTime? highlightDate;
 
   @override
   State<CardioTrendChart> createState() => _CardioTrendChartState();
@@ -228,6 +234,7 @@ class _CardioTrendChartState extends State<CardioTrendChart> {
                   displayStart: widget.displayStart,
                   displayEnd: widget.displayEnd,
                   hoverPosition: _hoverPosition,
+                  highlightDate: widget.highlightDate,
                 ),
               ),
             ),

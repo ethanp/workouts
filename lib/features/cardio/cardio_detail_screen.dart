@@ -27,7 +27,6 @@ class CardioDetailScreen extends ConsumerWidget {
       cardioHeartRateSamplesProvider(workout.id),
     );
     final unitSystem = ref.watch(unitSystemProvider);
-    final restingHeartRate = ref.watch(restingHeartRateProvider);
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -60,10 +59,7 @@ class CardioDetailScreen extends ConsumerWidget {
                   ),
                   if (cardioHeartRateSamples.isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.md),
-                    WorkoutPolarizationCard(
-                      samples: cardioHeartRateSamples,
-                      restingHeartRate: restingHeartRate,
-                    ),
+                    WorkoutPolarizationCard(samples: cardioHeartRateSamples),
                   ],
                 ],
               ),

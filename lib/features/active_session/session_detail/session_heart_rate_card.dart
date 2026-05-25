@@ -9,13 +9,11 @@ class SessionHeartRateCard extends StatelessWidget {
     required this.samples,
     required this.averageHeartRate,
     required this.maxHeartRate,
-    required this.restingHrSetting,
   });
 
   final List<HeartRateSample> samples;
   final int? averageHeartRate;
   final int? maxHeartRate;
-  final int restingHrSetting;
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +50,7 @@ class SessionHeartRateCard extends StatelessWidget {
           MetricsMiniChart(samples: samples),
           if (samples.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
-            ZoneDistributionSection(
-              samples: samples,
-              restingHrSetting: restingHrSetting,
-            ),
+            ZoneDistributionSection(samples: samples),
           ],
         ],
       ),

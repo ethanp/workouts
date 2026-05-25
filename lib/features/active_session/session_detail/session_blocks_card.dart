@@ -1,15 +1,19 @@
 import 'package:flutter/cupertino.dart';
-import 'package:workouts/features/active_session/session_detail/session_set_log_row.dart';
+import 'package:workouts/features/active_session/session_detail/exercise_progress_card.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/expandable_cues.dart';
 
 class SessionDetailBlockCard extends StatelessWidget {
-  const SessionDetailBlockCard({required this.block, required this.index});
+  const SessionDetailBlockCard({
+    required this.block,
+    required this.index,
+    required this.sessionDate,
+  });
 
   final SessionBlock block;
   final int index;
+  final DateTime sessionDate;
 
   @override
   Widget build(BuildContext context) {
@@ -23,92 +27,52 @@ class SessionDetailBlockCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Block ${index + 1}: ${titleCase(block.type.name)}',
-                style: AppTypography.title,
-              ),
-              if (block.totalRounds != null)
-                Text(
-                  'Round ${block.roundIndex}/${block.totalRounds}',
-                  style: AppTypography.caption,
-                ),
-            ],
-          ),
+          _blockHeader(),
           const SizedBox(height: AppSpacing.md),
-          ...block.exercises.map((exercise) => _buildExercise(exercise)),
+          for (var exerciseIndex = 0;
+              exerciseIndex < block.exercises.length;
+              exerciseIndex++) ...[
+            _exerciseCard(block.exercises[exerciseIndex]),
+            if (exerciseIndex < block.exercises.length - 1)
+              const SizedBox(height: AppSpacing.sm),
+          ],
         ],
       ),
     );
   }
 
-  String titleCase(String name) {
+  Widget _blockHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Block ${index + 1}: ${_titleCase(block.type.name)}',
+          style: AppTypography.title,
+        ),
+        if (block.totalRounds != null)
+          Text(
+            'Round ${block.roundIndex}/${block.totalRounds}',
+            style: AppTypography.caption,
+          ),
+      ],
+    );
+  }
+
+  Widget _exerciseCard(WorkoutExercise exercise) {
+    final exerciseLogs = block.logs
+        .where((log) => log.exerciseId == exercise.id)
+        .toList();
+    return ExerciseProgressCard(
+      exercise: exercise,
+      exerciseLogs: exerciseLogs,
+      sessionDate: sessionDate,
+    );
+  }
+
+  String _titleCase(String name) {
     final spacesAdded = name
         .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')
         .trim();
     return '${spacesAdded[0].toUpperCase()}${spacesAdded.substring(1)}';
-  }
-
-  Widget _buildExercise(WorkoutExercise exercise) {
-    final exerciseLogs = block.logs
-        .where((log) => log.exerciseId == exercise.id)
-        .toList();
-    final completedSets = exerciseLogs.length;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(exercise.name, style: AppTypography.subtitle),
-              ),
-              Text(
-                '$completedSets/${exercise.effectiveTargetSets} sets',
-                style: AppTypography.caption.copyWith(
-                  color: completedSets >= exercise.effectiveTargetSets
-                      ? AppColors.success
-                      : AppColors.textColor3,
-                ),
-              ),
-            ],
-          ),
-          if (exercise.restDuration != null) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Rest: ${_getDurationText(exercise.restDuration)}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
-              ),
-            ),
-          ],
-          if (exercise.cues.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ExpandableCues(cues: exercise.cues),
-          ],
-          if (exerciseLogs.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
-            ...exerciseLogs.map(
-              (log) => SessionSetLogRow(log: log, exercise: exercise),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _getDurationText(Duration? duration) {
-    if (duration == null) return 'N/A';
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    if (minutes > 0) {
-      return '${minutes}m ${seconds}s';
-    }
-    return '${seconds}s';
   }
 }

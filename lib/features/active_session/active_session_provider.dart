@@ -1,6 +1,8 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:workouts/features/active_session/exercise/active_timer_store_provider.dart';
+import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
@@ -8,12 +10,10 @@ import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/features/history/history_provider.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
 import 'package:workouts/utils/error_bus.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'active_session_provider.g.dart';
 
@@ -157,16 +157,12 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
-    final restingHeartRate = ref.read(restingHeartRateProvider);
-    final trainingLoad = TrainingLoadCalculator(
-      restingHeartRate: restingHeartRate,
-    );
     await repository.completeSession(
       activeSession,
       notes: notes,
       feeling: feeling,
-      trainingLoad: trainingLoad,
     );
+    await _clearActiveIntervalTimer();
     if (ref.mounted) {
       state = const AsyncValue.data(null);
       _invalidateSessionStreamsIfMounted();
@@ -209,12 +205,22 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
       final repository = ref.read(sessionRepositoryPowerSyncProvider);
       await repository.discardSession(activeSession.id);
     }
+    await _clearActiveIntervalTimer();
     if (ref.mounted) {
       state = const AsyncValue.data(null);
       _invalidateSessionStreamsIfMounted();
       ref.read(sessionUIVisibilityProvider.notifier).hide();
       _sendWatchCommand(_watchBridge.stopWatchWorkout);
     }
+  }
+
+  /// Removes any persisted interval-timer record and cancels its
+  /// scheduled notification. Called when the session ends so a stale
+  /// quit-survival alert from mid-rest can't fire after the user has
+  /// already finished or thrown away the workout.
+  Future<void> _clearActiveIntervalTimer() async {
+    await ref.read(activeTimerStoreProvider).clear();
+    await ref.read(timerNotificationServiceProvider).cancel();
   }
 
   Future<void> addExercise(SessionBlock block, WorkoutExercise exercise) async {

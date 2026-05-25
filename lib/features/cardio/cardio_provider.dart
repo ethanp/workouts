@@ -9,10 +9,8 @@ import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'cardio_provider.g.dart';
 
@@ -92,6 +90,14 @@ Stream<List<CardioHeartRateSample>> cardioHeartRateSamples(
 Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
     _watchRepo(ref, (cardioRepository) => cardioRepository.watchBestEfforts());
 
+/// Number of cardio workouts that haven't had heart rate zones computed yet.
+/// Drives the "compute missing zones" UI affordance in settings.
+@riverpod
+Stream<int> workoutsMissingMetricsCount(Ref ref) => _watchRepo(
+  ref,
+  (cardioRepository) => cardioRepository.watchWorkoutsMissingMetricsCount(),
+);
+
 /// Backfills metrics for workouts missing computed zone data.
 /// Gated on sync status: only runs after initial sync is complete
 /// and connected, to avoid backfilling before data arrives.
@@ -116,13 +122,7 @@ Future<void> cardioMetricsBackfill(Ref ref) async {
   final computedMetricsCount = countRow['computed_metrics_count'] as int? ?? 0;
   if (workoutCount == 0 || computedMetricsCount >= workoutCount) return;
 
-  final restingHeartRate = ref.watch(restingHeartRateProvider);
-  final trainingLoad = TrainingLoadCalculator(
-    restingHeartRate: restingHeartRate,
-  );
-  await CardioRepositoryPowerSync(
-    powerSyncDatabase,
-  ).backfillMissingMetrics(trainingLoad: trainingLoad);
+  await CardioRepositoryPowerSync(powerSyncDatabase).backfillMissingMetrics();
 }
 
 @riverpod
@@ -177,13 +177,8 @@ class CardioImportController extends _$CardioImportController {
         );
       }
 
-      final restingHeartRate = ref.read(restingHeartRateProvider);
-      final trainingLoad = TrainingLoadCalculator(
-        restingHeartRate: restingHeartRate,
-      );
       final newCount = await cardioRepository.upsertImportedWorkouts(
         importedWorkouts,
-        trainingLoad: trainingLoad,
         onProgress: (processedWorkouts, totalWorkouts) {
           if (ref.mounted) {
             state = AsyncValue.data(

@@ -10,12 +10,10 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
-import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'activity_provider.g.dart';
 
@@ -95,12 +93,10 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
         outdoorRunDistanceMeters: cardioDay.outdoorRunDistanceMeters,
         totalCardioDurationSeconds: cardioDay.totalDurationSeconds,
         cardioZoneTime: cardioDay.zoneTime,
-        cardioTrimp: cardioDay.trimp,
         cardioHasHrData: cardioDay.hasHrData,
         cardioCount: cardioDay.workoutCount,
         totalSessionDurationSeconds: 0,
         sessionZoneTime: HrZoneTime.zero,
-        sessionTrimp: 0,
         sessionCount: 0,
       );
 
@@ -112,12 +108,10 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
     outdoorRunDistanceMeters: existingActivityDay.outdoorRunDistanceMeters,
     totalCardioDurationSeconds: existingActivityDay.totalCardioDurationSeconds,
     cardioZoneTime: existingActivityDay.cardioZoneTime,
-    cardioTrimp: existingActivityDay.cardioTrimp,
     cardioHasHrData: existingActivityDay.cardioHasHrData,
     cardioCount: existingActivityDay.cardioCount,
     totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
     sessionZoneTime: sessionDay.zoneTime,
-    sessionTrimp: sessionDay.trimp,
     sessionCount: sessionDay.sessionCount,
   );
 
@@ -127,12 +121,10 @@ Stream<List<ActivityCalendarDay>> activityCalendarDays(Ref ref) {
         outdoorRunDistanceMeters: 0,
         totalCardioDurationSeconds: 0,
         cardioZoneTime: HrZoneTime.zero,
-        cardioTrimp: 0,
         cardioHasHrData: false,
         cardioCount: 0,
         totalSessionDurationSeconds: sessionDay.totalDurationSeconds,
         sessionZoneTime: sessionDay.zoneTime,
-        sessionTrimp: sessionDay.trimp,
         sessionCount: sessionDay.sessionCount,
       );
 
@@ -237,12 +229,8 @@ class MetricsBackfillController extends _$MetricsBackfillController {
       inProgress: true,
       label: 'Backfilling zone metrics...',
     );
-    final restingHeartRate = ref.read(restingHeartRateProvider);
-    final trainingLoad = TrainingLoadCalculator(
-      restingHeartRate: restingHeartRate,
-    );
     final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
-    await cardioRepository.backfillMissingMetrics(trainingLoad: trainingLoad);
+    await cardioRepository.backfillMissingMetrics();
 
     state = const MetricsBackfillStatus(
       inProgress: true,
@@ -258,7 +246,7 @@ class MetricsBackfillController extends _$MetricsBackfillController {
     await SessionRepositoryPowerSync(
       powerSyncDatabase,
       templateRepo,
-    ).backfillMissingMetrics(trainingLoad: trainingLoad);
+    ).backfillMissingMetrics();
 
     state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
     Future.delayed(const Duration(seconds: 3), () {

@@ -4,13 +4,11 @@ import 'package:workouts/models/hr_zone_time.dart';
 
 ActivityCalendarDay _day({
   HrZoneTime cardioZoneTime = HrZoneTime.zero,
-  double cardioTrimp = 0,
   bool cardioHasHrData = false,
   int cardioCount = 0,
   double cardioDistance = 0,
   int cardioDuration = 0,
   HrZoneTime sessionZoneTime = HrZoneTime.zero,
-  double sessionTrimp = 0,
   int sessionCount = 0,
   int sessionDuration = 0,
 }) => ActivityCalendarDay(
@@ -18,12 +16,10 @@ ActivityCalendarDay _day({
   outdoorRunDistanceMeters: cardioDistance,
   totalCardioDurationSeconds: cardioDuration,
   cardioZoneTime: cardioZoneTime,
-  cardioTrimp: cardioTrimp,
   cardioHasHrData: cardioHasHrData,
   cardioCount: cardioCount,
   totalSessionDurationSeconds: sessionDuration,
   sessionZoneTime: sessionZoneTime,
-  sessionTrimp: sessionTrimp,
   sessionCount: sessionCount,
 );
 
@@ -34,7 +30,6 @@ void main() {
         cardioDistance: 5000,
         cardioDuration: 1800,
         cardioZoneTime: const HrZoneTime(zone2: 600),
-        cardioTrimp: 30.0,
         cardioHasHrData: true,
         cardioCount: 1,
       );
@@ -45,7 +40,6 @@ void main() {
       final day = _day(
         sessionDuration: 2700,
         sessionZoneTime: const HrZoneTime(zone2: 300),
-        sessionTrimp: 15.0,
         sessionCount: 1,
       );
       expect(day.hasActivity, isTrue);
@@ -68,7 +62,6 @@ void main() {
       );
       expect(day.totalZoneTime.gteZone2Minutes, 22);
       expect(day.totalZoneTime.zone2Minutes, 14);
-      expect(day.totalTrimp, 0.0);
     });
 
     test('hasActivity is false when no cardio workouts or sessions', () {

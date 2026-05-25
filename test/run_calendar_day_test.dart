@@ -4,7 +4,6 @@ import 'package:workouts/models/hr_zone_time.dart';
 
 CardioCalendarDay _day({
   HrZoneTime zoneTime = HrZoneTime.zero,
-  double trimp = 0,
   bool hasHrData = false,
   int workoutCount = 0,
   double distance = 0,
@@ -14,7 +13,6 @@ CardioCalendarDay _day({
   outdoorRunDistanceMeters: distance,
   totalDurationSeconds: duration,
   zoneTime: zoneTime,
-  trimp: trimp,
   hasHrData: hasHrData,
   workoutCount: workoutCount,
 );
@@ -26,7 +24,6 @@ void main() {
         distance: 8045,
         duration: 2400,
         zoneTime: const HrZoneTime(zone2: 1080),
-        trimp: 45.0,
         hasHrData: true,
         workoutCount: 1,
       );
@@ -67,7 +64,6 @@ void main() {
         distance: 16090,
         duration: 5400,
         zoneTime: const HrZoneTime(zone1: 1200),
-        trimp: 20.0,
         hasHrData: true,
         workoutCount: 1,
       );

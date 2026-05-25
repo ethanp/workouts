@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/add_note_sheet.dart';
 import 'package:workouts/features/active_session/block_view.dart';
+import 'package:workouts/features/active_session/early_stopped_notifier.dart';
 import 'package:workouts/features/active_session/session_resume/keyboard_enter_accessory.dart';
 import 'package:workouts/features/active_session/session_resume/session_finish_sheet.dart';
 import 'package:workouts/features/active_session/session_resume/session_resume_metrics_panel.dart';
@@ -23,16 +24,62 @@ class SessionResumeBody extends ConsumerStatefulWidget {
 }
 
 class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
-  final _pageController = PageController();
+  late final PageController _pageController;
   Timer? _timer;
-  int _currentBlockIndex = 0;
+  late int _currentBlockIndex;
+
+  /// Session id we've already auto-shown the finish sheet for. Prevents
+  /// the prompt from re-appearing if the user dismisses it and then keeps
+  /// poking around (or if the all-done signal flickers off and back on
+  /// because they unlogged a set and then re-logged it).
+  String? _autoPromptedSessionId;
 
   @override
   void initState() {
     super.initState();
+    // Resume on the block that still has work — i.e. the first block whose
+    // exercises aren't all either fully logged or marked stopped-early.
+    // Otherwise opening a part-finished session always lands on block 1
+    // even if the user is on block 4.
+    _currentBlockIndex = _firstBlockWithWork(
+      widget.session,
+      ref.read(earlyStoppedProvider),
+    );
+    _pageController = PageController(initialPage: _currentBlockIndex);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  /// Returns the index of the first block in [session] that has at least one
+  /// exercise that is neither fully logged nor flagged as early-stopped.
+  /// Falls back to 0 when all blocks are accounted for — the all-done auto
+  /// prompt handles the next-step UX from there.
+  static int _firstBlockWithWork(Session session, Set<String> earlyStopped) {
+    for (var blockIndex = 0; blockIndex < session.blocks.length; blockIndex++) {
+      final block = session.blocks[blockIndex];
+      final logCounts = <String, int>{};
+      for (final log in block.logs) {
+        logCounts.update(
+          log.exerciseId,
+          (count) => count + 1,
+          ifAbsent: () => 1,
+        );
+      }
+      for (final exercise in block.exercises) {
+        final targetSets = exercise.effectiveTargetSets;
+        if (targetSets <= 0) continue;
+        final completed = logCounts[exercise.id] ?? 0;
+        if (completed >= targetSets) continue;
+        final stoppedKey = earlyStoppedKey(
+          blockId: block.id,
+          exerciseId: exercise.id,
+        );
+        if (earlyStopped.contains(stoppedKey)) continue;
+        return blockIndex;
+      }
+    }
+    return 0;
   }
 
   @override
@@ -50,6 +97,16 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
         ref.watch(watchConnectionStatusProvider).value ?? false;
     final Session session = activeSession ?? widget.session;
     final bool keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+
+    ref.listen<bool>(sessionAllExercisesDoneProvider, (previous, next) {
+      if (!next) return;
+      if (_autoPromptedSessionId == session.id) return;
+      _autoPromptedSessionId = session.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _completeSession(context);
+      });
+    });
 
     return CupertinoPageScaffold(
       navigationBar: _navigationBar(context, session),

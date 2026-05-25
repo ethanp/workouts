@@ -8,7 +8,6 @@ class CardioCalendarDay {
     required this.outdoorRunDistanceMeters,
     required this.totalDurationSeconds,
     required this.zoneTime,
-    required this.trimp,
     required this.hasHrData,
     required this.workoutCount,
   });
@@ -26,7 +25,6 @@ class CardioCalendarDay {
           _asDouble(dayRow['outdoor_run_distance_meters']) ?? 0,
       totalDurationSeconds: (dayRow['total_duration_seconds'] as int?) ?? 0,
       zoneTime: HrZoneTime.fromRow(dayRow),
-      trimp: _asDouble(dayRow['total_trimp']) ?? 0,
       hasHrData: (dayRow['has_hr_data'] as int? ?? 0) == 1,
       workoutCount: (dayRow['workout_count'] as int?) ?? 0,
     );
@@ -37,9 +35,6 @@ class CardioCalendarDay {
   final int totalDurationSeconds;
 
   final HrZoneTime zoneTime;
-
-  /// Sum of Banister TRIMP across all cardio workouts that day.
-  final double trimp;
 
   /// True if at least one workout that day has heart rate samples stored.
   final bool hasHrData;

@@ -183,9 +183,7 @@ const schema = Schema([
     Column.integer('zone3_seconds'),
     Column.integer('zone4_seconds'),
     Column.integer('zone5_seconds'),
-    Column.real('trimp'),
     Column.integer('has_hr_samples'),
-    Column.integer('resting_hr'),
     Column.text('computed_at'),
   ]),
 
@@ -195,9 +193,7 @@ const schema = Schema([
     Column.integer('zone3_seconds'),
     Column.integer('zone4_seconds'),
     Column.integer('zone5_seconds'),
-    Column.real('trimp'),
     Column.integer('has_hr_samples'),
-    Column.integer('resting_hr'),
     Column.text('computed_at'),
   ]),
 ]);

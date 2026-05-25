@@ -2,31 +2,32 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/services/powersync/powersync_extensions.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
+import 'package:workouts/utils/hr_zone_classifier.dart';
 
 const _log = ELogger('SessionMetricsStore');
 
-/// Manages the `session_computed_metrics` local-only table: computing, storing,
-/// backfilling, and recomputing zone times and TRIMP for individual sessions.
+/// Manages the `session_computed_metrics` local-only table: computing,
+/// storing, backfilling, and recomputing zone times for individual sessions.
 class SessionMetricsStore {
   SessionMetricsStore(this._powerSync);
 
   final PowerSyncDatabase _powerSync;
 
-  Future<void> computeAndStore(
-    String sessionId, {
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
-    final result = await _loadAndCompute(sessionId, trainingLoad: trainingLoad);
-    await _persistMetrics(
-      sessionId,
-      result,
-      restingHr: trainingLoad.restingHeartRate,
-    );
+  Future<void> computeAndStore(String sessionId) async {
+    final hrSamples = await loadHrSamples(sessionId);
+    final HrZoneTime zone;
+    final bool hasHrSamples;
+    if (hrSamples.isEmpty) {
+      zone = HrZoneTime.zero;
+      hasHrSamples = false;
+    } else {
+      zone = HrZoneClassifier.compute(hrSamples);
+      hasHrSamples = true;
+    }
+    await _persist(sessionId, zone, hasHrSamples: hasHrSamples);
   }
 
   Future<void> recomputeAllZones({
-    required TrainingLoadCalculator trainingLoad,
     void Function(int done, int total)? onProgress,
   }) async {
     final List<Map<String, dynamic>> sessionRows = await _powerSync.execute(
@@ -39,18 +40,13 @@ class SessionMetricsStore {
       sessionIndex < sessionRows.length;
       sessionIndex++
     ) {
-      await _recomputeZones(
-        sessionRows[sessionIndex]['id'] as String,
-        trainingLoad: trainingLoad,
-      );
+      await computeAndStore(sessionRows[sessionIndex]['id'] as String);
       onProgress?.call(sessionIndex + 1, sessionRows.length);
     }
     _log.log('Session zone recompute complete.');
   }
 
-  Future<void> backfillMissing({
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
+  Future<void> backfillMissing() async {
     final List<Map<String, dynamic>> pendingRows = await _powerSync.execute('''
       SELECT s.id FROM sessions s
       LEFT JOIN session_computed_metrics m ON m.id = s.id
@@ -60,10 +56,7 @@ class SessionMetricsStore {
     if (pendingRows.isEmpty) return;
     _log.log('Backfilling session metrics for ${pendingRows.length} sessions.');
     for (final pendingRow in pendingRows) {
-      await computeAndStore(
-        pendingRow['id'] as String,
-        trainingLoad: trainingLoad,
-      );
+      await computeAndStore(pendingRow['id'] as String);
     }
     _log.log('Session metrics backfill complete.');
   }
@@ -84,72 +77,17 @@ class SessionMetricsStore {
         .toList();
   }
 
-  Future<_ComputedMetrics> _loadAndCompute(
-    String sessionId, {
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
-    final hrSamples = await loadHrSamples(sessionId);
-    if (hrSamples.isEmpty) {
-      return const _ComputedMetrics(
-        result: TrainingLoadResult(),
-        hasHrSamples: false,
-      );
-    }
-    return _ComputedMetrics(
-      result: trainingLoad.compute(hrSamples),
-      hasHrSamples: true,
-    );
-  }
-
-  Future<void> _persistMetrics(
+  Future<void> _persist(
     String sessionId,
-    _ComputedMetrics metrics, {
-    required int restingHr,
+    HrZoneTime zone, {
+    required bool hasHrSamples,
   }) async {
-    final zone = metrics.result.zoneTime;
-    final computedAt = DateTime.now().toUtc().toIso8601String();
-    final hasHr = metrics.hasHrSamples ? 1 : 0;
-
-    await _powerSync.upsert('session_computed_metrics', {
-      'id': sessionId,
-      ...zone.toRow(),
-      'trimp': metrics.result.trimp,
-      'has_hr_samples': hasHr,
-      'resting_hr': restingHr,
-      'computed_at': computedAt,
-    });
-  }
-
-  /// Recomputes only zone times for a single session, preserving existing TRIMP.
-  Future<void> _recomputeZones(
-    String sessionId, {
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
-    final hrSamples = await loadHrSamples(sessionId);
-
-    final HrZoneTime zone;
-    final int hasHr;
-    if (hrSamples.isEmpty) {
-      zone = HrZoneTime.zero;
-      hasHr = 0;
-    } else {
-      zone = trainingLoad.compute(hrSamples).zoneTime;
-      hasHr = 1;
-    }
-
     final computedAt = DateTime.now().toUtc().toIso8601String();
     await _powerSync.upsert('session_computed_metrics', {
       'id': sessionId,
       ...zone.toRow(),
-      'has_hr_samples': hasHr,
+      'has_hr_samples': hasHrSamples ? 1 : 0,
       'computed_at': computedAt,
     });
   }
-}
-
-class _ComputedMetrics {
-  const _ComputedMetrics({required this.result, required this.hasHrSamples});
-
-  final TrainingLoadResult result;
-  final bool hasHrSamples;
 }

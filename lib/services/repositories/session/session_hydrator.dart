@@ -121,7 +121,6 @@ class SessionHydrator {
           COALESCE(SUM(m.zone3_seconds), 0) AS total_zone3_seconds,
           COALESCE(SUM(m.zone4_seconds), 0) AS total_zone4_seconds,
           COALESCE(SUM(m.zone5_seconds), 0) AS total_zone5_seconds,
-          COALESCE(SUM(m.trimp), 0.0)       AS total_trimp,
           COUNT(s.id)                       AS session_count
         FROM sessions s
         LEFT JOIN session_computed_metrics m ON m.id = s.id

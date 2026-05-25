@@ -7,7 +7,9 @@ import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/today/today_template_provider.dart';
 import 'package:workouts/features/workout_generation/workout_generation_provider.dart';
+import 'package:flutter/material.dart' show SelectableText;
 import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/features/today/today_template_card.dart';
@@ -18,6 +20,13 @@ class TodayScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<List<WorkoutTemplate>>>(todayTemplatesProvider, (
+      _,
+      next,
+    ) {
+      final error = next.error;
+      if (error != null) errorBus.add('Today templates: $error');
+    });
     final templates = ref.watch(todayTemplatesProvider);
     final activeSession = ref.watch(activeSessionProvider).value;
     final inProgressSession =
@@ -38,7 +47,7 @@ class TodayScreen extends ConsumerWidget {
           ),
           loading: () => const Center(child: CupertinoActivityIndicator()),
           error: (error, _) => Center(
-            child: Text(
+            child: SelectableText(
               'Unable to load template: $error',
               style: AppTypography.body,
             ),

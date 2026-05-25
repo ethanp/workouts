@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
+import 'package:workouts/features/active_session/exercise/active_timer_store.dart';
 import 'package:workouts/features/active_session/exercise/current_set_editor.dart';
 import 'package:workouts/features/active_session/exercise/exercise_card_actions.dart';
 import 'package:workouts/features/active_session/exercise/exercise_card_menu_button.dart';
 import 'package:workouts/features/active_session/exercise/exercise_interval_timer.dart';
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
+import 'package:workouts/features/active_session/session_detail/session_set_log_row.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -13,6 +15,7 @@ import 'package:workouts/widgets/expandable_cues.dart';
 class ExerciseCardContent extends StatelessWidget {
   const ExerciseCardContent({
     super.key,
+    required this.timerIdentity,
     required this.planContext,
     required this.isNextRecommended,
     required this.currentSetInput,
@@ -30,6 +33,8 @@ class ExerciseCardContent extends StatelessWidget {
     this.dragHandle,
   });
 
+  /// Stable identity for the embedded interval timer's persisted record.
+  final TimerIdentity timerIdentity;
   final ExerciseSetPlanContext planContext;
   final bool isNextRecommended;
   final SetLogInput currentSetInput;
@@ -63,6 +68,7 @@ class ExerciseCardContent extends StatelessWidget {
       children: [
         _exerciseHeader(),
         ..._exerciseDetails(),
+        ..._completedSetsSection(),
         ..._currentSetEditorSection(),
         const SizedBox(height: AppSpacing.sm),
         _actionRow(),
@@ -108,6 +114,20 @@ class ExerciseCardContent extends StatelessWidget {
     ],
   ];
 
+  List<Widget> _completedSetsSection() {
+    final logs = planContext.exerciseLogs;
+    if (logs.isEmpty) return const [];
+    return [
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        'Completed',
+        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      for (final log in logs) SessionSetLogRow(log: log, exercise: exercise),
+    ];
+  }
+
   List<Widget> _currentSetEditorSection() {
     if (!planContext.showsCurrentSetEditor) return const [];
     return [
@@ -128,6 +148,7 @@ class ExerciseCardContent extends StatelessWidget {
     return [
       const SizedBox(height: AppSpacing.md),
       ExerciseIntervalTimer(
+        identity: timerIdentity,
         planContext: planContext,
         isNextRecommended: isNextRecommended,
         onCompleted: onTimerCompleted,

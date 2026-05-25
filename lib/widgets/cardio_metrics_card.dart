@@ -8,8 +8,8 @@ import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/features/settings/unit_system_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
+import 'package:workouts/utils/hr_zone_classifier.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 class CardioMetricsCard extends ConsumerWidget {
   const CardioMetricsCard({
@@ -663,10 +663,10 @@ class _HeartRateScale {
   }
 
   _VisibleHeartRateZoneBand? visibleZoneBand(int zoneIndex) {
-    final rawLowerBpm = TrainingLoadCalculator.zoneBoundaries[zoneIndex];
+    final rawLowerBpm = HrZoneClassifier.zoneBoundaries[zoneIndex];
     final rawUpperBpm = zoneIndex == HrZonePalette.zoneColors.length - 1
-        ? math.max(maxBpm, TrainingLoadCalculator.zoneUpperBounds[zoneIndex])
-        : TrainingLoadCalculator.zoneUpperBounds[zoneIndex];
+        ? math.max(maxBpm, HrZoneClassifier.zoneUpperBounds[zoneIndex])
+        : HrZoneClassifier.zoneUpperBounds[zoneIndex];
 
     final visibleLowerBpm = math.max(minBpm, rawLowerBpm);
     final visibleUpperBpm = math.min(maxBpm, rawUpperBpm);

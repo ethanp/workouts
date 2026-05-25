@@ -13,7 +13,6 @@ import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_import.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 part 'cardio_repository_powersync.g.dart';
 
@@ -103,7 +102,6 @@ class CardioRepositoryPowerSync {
           COALESCE(SUM(m.zone3_seconds), 0) AS total_zone3_seconds,
           COALESCE(SUM(m.zone4_seconds), 0) AS total_zone4_seconds,
           COALESCE(SUM(m.zone5_seconds), 0) AS total_zone5_seconds,
-          COALESCE(SUM(m.trimp), 0.0)       AS total_trimp,
           MAX(COALESCE(m.has_hr_samples, 0)) AS has_hr_data,
           COUNT(w.id)                       AS workout_count
         FROM cardio_workouts w
@@ -166,24 +164,16 @@ class CardioRepositoryPowerSync {
   Future<int> upsertImportedWorkouts(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
-    required TrainingLoadCalculator trainingLoad,
-  }) => _importer.upsertAll(
-    payloads,
-    onProgress: onProgress,
-    trainingLoad: trainingLoad,
-  );
+  }) => _importer.upsertAll(payloads, onProgress: onProgress);
 
   Future<void> recomputeZones({
-    required TrainingLoadCalculator trainingLoad,
     void Function(int done, int total)? onProgress,
-  }) => _metricsStore.recomputeAllZones(
-    trainingLoad: trainingLoad,
-    onProgress: onProgress,
-  );
+  }) => _metricsStore.recomputeAllZones(onProgress: onProgress);
 
-  Future<void> backfillMissingMetrics({
-    required TrainingLoadCalculator trainingLoad,
-  }) => _metricsStore.backfillMissing(trainingLoad: trainingLoad);
+  Future<void> backfillMissingMetrics() => _metricsStore.backfillMissing();
+
+  Stream<int> watchWorkoutsMissingMetricsCount() =>
+      _metricsStore.watchMissingCount();
 
   Future<void> backfillMissingBestEfforts({
     void Function(int done, int total)? onProgress,

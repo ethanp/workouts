@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_import_payload.dart';
 import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
 
 const _log = ELogger('CardioImporter');
 const _uuid = Uuid();
@@ -21,7 +20,6 @@ class CardioImporter {
   Future<int> upsertAll(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
-    required TrainingLoadCalculator trainingLoad,
   }) async {
     _log.log('Starting import of ${payloads.length} cardio workouts.');
     var inserted = 0;
@@ -30,7 +28,7 @@ class CardioImporter {
         payloads[payloadIndex],
       );
       if (workout != null) {
-        final bool wasNew = await _upsert(workout, trainingLoad: trainingLoad);
+        final bool wasNew = await _upsert(workout);
         if (wasNew) inserted++;
       } else {
         _log.warn(
@@ -45,10 +43,7 @@ class CardioImporter {
     return inserted;
   }
 
-  Future<bool> _upsert(
-    CardioImportPayload workout, {
-    required TrainingLoadCalculator trainingLoad,
-  }) async {
+  Future<bool> _upsert(CardioImportPayload workout) async {
     final String workoutId = await _resolveWorkoutId(workout.externalWorkoutId);
     if (await _existingCreatedAt(workoutId) != null) {
       _log.fine(
@@ -64,7 +59,7 @@ class CardioImporter {
     await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
     await _saveRoutePoints(workoutId, workout.routePoints, now: now);
     await _saveHeartRateSamples(workoutId, workout.heartRateSamples, now: now);
-    await _metricsStore.computeAndStore(workoutId, trainingLoad: trainingLoad);
+    await _metricsStore.computeAndStore(workoutId);
     await _bestEffortStore.computeAndStore(workoutId);
     return true;
   }

@@ -70,4 +70,16 @@ class HrZoneTime {
     zone4: zone4 + other.zone4,
     zone5: zone5 + other.zone5,
   );
+
+  @override
+  bool operator ==(Object other) =>
+      other is HrZoneTime &&
+      other.zone1 == zone1 &&
+      other.zone2 == zone2 &&
+      other.zone3 == zone3 &&
+      other.zone4 == zone4 &&
+      other.zone5 == zone5;
+
+  @override
+  int get hashCode => Object.hash(zone1, zone2, zone3, zone4, zone5);
 }

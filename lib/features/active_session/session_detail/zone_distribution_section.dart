@@ -2,16 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/polarization_week.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/utils/training_load_calculator.dart';
+import 'package:workouts/utils/hr_zone_classifier.dart';
 
 class ZoneDistributionSection extends StatefulWidget {
-  const ZoneDistributionSection({
-    required this.samples,
-    required this.restingHrSetting,
-  });
+  const ZoneDistributionSection({required this.samples});
 
   final List<HeartRateSample> samples;
-  final int restingHrSetting;
 
   @override
   State<ZoneDistributionSection> createState() =>
@@ -51,10 +47,7 @@ class ZoneDistributionSectionState extends State<ZoneDistributionSection> {
         ),
         if (_expanded) ...[
           const SizedBox(height: AppSpacing.sm),
-          ZoneBreakdown(
-            samples: widget.samples,
-            restingHrSetting: widget.restingHrSetting,
-          ),
+          ZoneBreakdown(samples: widget.samples),
         ],
       ],
     );
@@ -62,10 +55,9 @@ class ZoneDistributionSectionState extends State<ZoneDistributionSection> {
 }
 
 class ZoneBreakdown extends StatelessWidget {
-  const ZoneBreakdown({required this.samples, required this.restingHrSetting});
+  const ZoneBreakdown({required this.samples});
 
   final List<HeartRateSample> samples;
-  final int restingHrSetting;
 
   static const _aerobicColor = Color(0xFF3FB37F);
   static const _grayZoneColor = Color(0xFFF0B347);
@@ -149,10 +141,6 @@ class ZoneBreakdown extends StatelessWidget {
   }
 
   PolarizationWeek _compute() {
-    final calculator = TrainingLoadCalculator(
-      restingHeartRate: restingHrSetting,
-    );
-
     final timestamped =
         samples
             .map(
@@ -167,8 +155,7 @@ class ZoneBreakdown extends StatelessWidget {
                 firstSample.timestamp.compareTo(secondSample.timestamp),
           );
 
-    final result = calculator.compute(timestamped);
-    return PolarizationWeek.fromHrZoneTime(result.zoneTime);
+    return PolarizationWeek.fromHrZoneTime(HrZoneClassifier.compute(timestamped));
   }
 }
 

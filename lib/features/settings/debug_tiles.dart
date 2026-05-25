@@ -1,10 +1,12 @@
-import 'package:ethan_utils/ethan_utils.dart';
+import 'dart:io';
+
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/providers/sync_provider.dart';
+import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/powersync/powersync_init.dart';
@@ -212,34 +214,126 @@ class SyncDebugTile extends ConsumerStatefulWidget {
   ConsumerState<SyncDebugTile> createState() => _SyncDebugTileState();
 }
 
+class _HostProbe {
+  const _HostProbe({
+    required this.label,
+    required this.host,
+    required this.reachable,
+    required this.latency,
+    required this.httpStatus,
+    required this.error,
+  });
+
+  final String label;
+  final String host;
+  final bool reachable;
+  final Duration? latency;
+  final int? httpStatus;
+  final String? error;
+
+  String get summary {
+    if (host.isEmpty) return 'not configured';
+    if (reachable) {
+      final ms = latency?.inMilliseconds ?? -1;
+      final http = httpStatus != null ? ' • HTTP $httpStatus' : '';
+      return 'OK ${ms}ms$http';
+    }
+    return error ?? 'unreachable';
+  }
+}
+
 class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   bool _expanded = false;
   bool _reconnecting = false;
   bool _resettingSync = false;
-  Map<String, int> _crudQueue = {};
+  bool _probing = false;
   int _localWorkouts = 0;
   int _serverWorkouts = -1;
-  DateTime? _crudFetchedAt;
+  DateTime? _countsFetchedAt;
+  List<_HostProbe> _probes = const [];
+  DateTime? _probedAt;
 
   void _toggle() {
     setState(() => _expanded = !_expanded);
-    if (_expanded && _crudFetchedAt == null) _refreshCrud();
+    if (_expanded) {
+      if (_countsFetchedAt == null) _refreshCounts();
+      if (_probedAt == null) _probeHosts();
+    }
   }
 
-  Future<void> _refreshCrud() async {
+  Future<void> _probeHosts() async {
+    setState(() => _probing = true);
+    final lan = dotenv.env['SERVER_HOST_LAN'] ?? '';
+    final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'] ?? '';
+    const postgrestPort = 3001;
+    final probes = await Future.wait([
+      _probeOne('LAN', lan, postgrestPort),
+      _probeOne('Tailscale', tailscale, postgrestPort),
+    ]);
+    if (!mounted) return;
+    setState(() {
+      _probes = probes;
+      _probedAt = DateTime.now();
+      _probing = false;
+    });
+    await ref.read(hostnameProvider.notifier).refineByTcpProbe();
+  }
+
+  Future<_HostProbe> _probeOne(String label, String host, int port) async {
+    if (host.isEmpty) {
+      return _HostProbe(
+        label: label,
+        host: host,
+        reachable: false,
+        latency: null,
+        httpStatus: null,
+        error: 'env var empty',
+      );
+    }
+    final stopwatch = Stopwatch()..start();
+    try {
+      final socket = await Socket.connect(
+        host,
+        port,
+        timeout: const Duration(seconds: 2),
+      );
+      socket.destroy();
+      final tcpLatency = stopwatch.elapsed;
+      int? httpStatus;
+      String? httpError;
+      try {
+        final response = await http
+            .get(Uri.parse('http://$host:$port/'))
+            .timeout(const Duration(seconds: 3));
+        httpStatus = response.statusCode;
+      } catch (error) {
+        httpError = error.toString();
+      }
+      return _HostProbe(
+        label: label,
+        host: host,
+        reachable: true,
+        latency: tcpLatency,
+        httpStatus: httpStatus,
+        error: httpError,
+      );
+    } catch (error) {
+      return _HostProbe(
+        label: label,
+        host: host,
+        reachable: false,
+        latency: null,
+        httpStatus: null,
+        error: error.toString(),
+      );
+    }
+  }
+
+  Future<void> _refreshCounts() async {
     try {
       final powerSyncDatabase = await ref.read(
         powerSyncDatabaseProvider.future,
       );
-
-      final crudRows = await powerSyncDatabase.execute(
-        "SELECT json_extract(data, '\$.type') AS tbl, COUNT(*) AS cnt "
-        'FROM ps_crud GROUP BY tbl',
-      );
-      final crudQueue = {
-        for (final row in crudRows)
-          (row['tbl'] as String? ?? 'unknown'): row['cnt'] as int? ?? 0,
-      };
 
       final workoutRows = await powerSyncDatabase.execute(
         'SELECT COUNT(*) AS cnt FROM cardio_workouts',
@@ -268,10 +362,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
       if (mounted) {
         setState(() {
-          _crudQueue = crudQueue;
           _localWorkouts = localWorkouts;
           _serverWorkouts = serverWorkouts;
-          _crudFetchedAt = DateTime.now();
+          _countsFetchedAt = DateTime.now();
         });
       }
     } catch (_) {}
@@ -305,7 +398,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
         powersyncUrl: ref.read(powersyncUrlProvider),
         postgrestUrl: ref.read(postgrestUrlProvider),
       );
-      if (mounted) _refreshCrud();
+      if (mounted) _refreshCounts();
     } finally {
       if (mounted) setState(() => _resettingSync = false);
     }
@@ -313,8 +406,6 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
 
   @override
   Widget build(BuildContext context) {
-    final syncStatus = ref.watch(powerSyncStatusProvider);
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.backgroundDepth2,
@@ -329,7 +420,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
             Container(height: 1, color: AppColors.borderDepth1),
             Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: _body(syncStatus),
+              child: _body(),
             ),
           ],
         ],
@@ -373,13 +464,11 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     );
   }
 
-  Widget _body(AsyncValue<SyncStatus> syncStatus) {
+  Widget _body() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _connectionSection(syncStatus),
-        const SizedBox(height: AppSpacing.md),
-        _crudQueueSection(),
+        _networkSection(),
         const SizedBox(height: AppSpacing.md),
         _rowCountSection(),
         const SizedBox(height: AppSpacing.md),
@@ -388,61 +477,63 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     );
   }
 
-  Widget _connectionSection(AsyncValue<SyncStatus> syncStatus) {
-    return syncStatus.when(
-      data: (status) {
-        final connectionLabel = status.connected
-            ? '🟢 Connected'
-            : '🔴 Disconnected';
-
-        String? activityLabel;
-        if (status.downloading) {
-          final progress = status.downloadProgress;
-          activityLabel = progress != null
-              ? '⬇️ Downloading ${progress.downloadedOperations}/${progress.totalOperations}'
-              : '⬇️ Downloading...';
-        } else if (status.uploading) {
-          activityLabel = '⬆️ Uploading...';
-        }
-
-        final lastSynced = status.lastSyncedAt;
-        final lastSyncLabel = lastSynced != null
-            ? formatDebugTime(lastSynced)
-            : 'Never';
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DebugRow('Connection', connectionLabel),
-            if (activityLabel != null) DebugRow('Activity', activityLabel),
-            DebugRow('Initial sync done', '${status.hasSynced ?? false}'),
-            DebugRow('Last synced', lastSyncLabel),
-          ],
-        );
-      },
-      loading: () => const DebugRow('Connection', 'Loading...'),
-      error: (error, _) => DebugRow('Connection', 'Error: $error'),
-    );
-  }
-
-  Widget _crudQueueSection() {
-    final totalQueued = _crudQueue.values.sum.round();
+  Widget _networkSection() {
+    final activeHost = ref.watch(hostnameProvider);
+    final postgrestUrl = ref.watch(postgrestUrlProvider);
+    final powersyncUrl = ref.watch(powersyncUrlProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        DebugRow('Pending uploads', totalQueued > 0 ? '$totalQueued ops' : '0'),
-        if (_crudQueue.isNotEmpty)
-          ..._crudQueue.entries.map(
-            (entry) => Padding(
-              padding: const EdgeInsets.only(left: AppSpacing.md),
-              child: DebugRow(entry.key, '${entry.value}'),
+        Text(
+          'Network',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textColor3,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        DebugRow('Active host', activeHost),
+        DebugRow('PostgREST', postgrestUrl),
+        DebugRow('PowerSync', powersyncUrl),
+        const SizedBox(height: AppSpacing.xs),
+        if (_probing)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              children: [
+                CupertinoActivityIndicator(radius: 8),
+                SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Probing both candidates...',
+                  style: TextStyle(
+                    color: AppColors.textColor3,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
-          ),
-        if (_crudFetchedAt != null)
+          )
+        else if (_probes.isEmpty)
           Text(
-            'Queue checked ${formatDebugTime(_crudFetchedAt!)}',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-          ),
+            'Not probed yet',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textColor4,
+            ),
+          )
+        else ...[
+          for (final probe in _probes)
+            DebugRow(
+              '${probe.label} ${probe.host.isEmpty ? "" : "(${probe.host})"}',
+              probe.summary,
+            ),
+          if (_probedAt != null)
+            Text(
+              'Probed ${formatDebugTime(_probedAt!)}',
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textColor4,
+              ),
+            ),
+        ],
       ],
     );
   }
@@ -451,11 +542,24 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'Row counts',
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textColor3,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         DebugRow('Local workouts', '$_localWorkouts'),
         DebugRow(
           'Postgres workouts (direct)',
           _serverWorkouts >= 0 ? '$_serverWorkouts' : 'Unavailable',
         ),
+        if (_countsFetchedAt != null)
+          Text(
+            'Checked ${formatDebugTime(_countsFetchedAt!)}',
+            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          ),
       ],
     );
   }
@@ -469,13 +573,15 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 color: AppColors.backgroundDepth3,
-                onPressed: _refreshCrud,
-                child: Text(
-                  'Refresh Queue',
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor1,
-                  ),
-                ),
+                onPressed: _probing ? null : _probeHosts,
+                child: _probing
+                    ? const CupertinoActivityIndicator()
+                    : Text(
+                        'Probe Hosts',
+                        style: AppTypography.body.copyWith(
+                          color: AppColors.textColor1,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -483,18 +589,33 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
               child: CupertinoButton(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
                 color: AppColors.backgroundDepth3,
-                onPressed: _reconnecting ? null : _forceReconnect,
-                child: _reconnecting
-                    ? const CupertinoActivityIndicator()
-                    : Text(
-                        'Force Re-sync',
-                        style: AppTypography.body.copyWith(
-                          color: AppColors.accentPrimary,
-                        ),
-                      ),
+                onPressed: _refreshCounts,
+                child: Text(
+                  'Refresh Counts',
+                  style: AppTypography.body.copyWith(
+                    color: AppColors.textColor1,
+                  ),
+                ),
               ),
             ),
           ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          width: double.infinity,
+          child: CupertinoButton(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            color: AppColors.backgroundDepth3,
+            onPressed: _reconnecting ? null : _forceReconnect,
+            child: _reconnecting
+                ? const CupertinoActivityIndicator()
+                : Text(
+                    'Force Re-sync',
+                    style: AppTypography.body.copyWith(
+                      color: AppColors.accentPrimary,
+                    ),
+                  ),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         SizedBox(

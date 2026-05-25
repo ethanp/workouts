@@ -1,5 +1,6 @@
 import Flutter
 import UIKit
+import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -12,6 +13,12 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
+    // Required by flutter_local_notifications so the foreground app can
+    // receive UNNotificationCenter callbacks (interval-timer alerts when
+    // the screen is locked but the app technically still active).
+    if #available(iOS 10.0, *) {
+      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
+    }
     GeneratedPluginRegistrant.register(with: self)
     let didFinish = super.application(application, didFinishLaunchingWithOptions: launchOptions)
 
@@ -98,14 +105,6 @@ import UIKit
             return
           }
           result(count as NSNumber)
-        }
-      }
-    case "fetchRestingHeartRate":
-      let isoDate = (call.arguments as? [String: Any])?["date"] as? String
-      let targetDate = isoDate.flatMap { ISO8601DateFormatter().date(from: $0) }
-      healthKitBridge.fetchRestingHeartRate(nearDate: targetDate) { bpm in
-        DispatchQueue.main.async {
-          result(bpm.map { $0 as NSNumber })
         }
       }
     default:

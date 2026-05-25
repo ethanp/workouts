@@ -95,23 +95,6 @@ class HealthKitBridge {
     }
   }
 
-  Future<int?> fetchRestingHeartRate({DateTime? nearDate}) async {
-    try {
-      final arguments = nearDate != null
-          ? {'date': nearDate.toUtc().toIso8601String()}
-          : null;
-      final bpm = await _methodChannel.invokeMethod<int>(
-        'fetchRestingHeartRate',
-        arguments,
-      );
-      return bpm;
-    } on MissingPluginException {
-      return null;
-    } on PlatformException {
-      return null;
-    }
-  }
-
   HealthPermissionStatus _mapStatus(String? status) {
     if (status == null) return HealthPermissionStatus.unknown;
     return HealthPermissionStatus.values.firstWhere(

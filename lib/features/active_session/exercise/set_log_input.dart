@@ -12,12 +12,12 @@ class SetLogInput {
 
   /// Default editor values for the *next* set on an exercise.
   ///
-  /// Strength fields (weight, reps) carry forward from [priorLog] when the
-  /// user has already logged a set this block — once they've dialed in a
-  /// real working weight or rep count, the next set should keep it instead
-  /// of snapping back to the plan. Timing fields ([duration],
-  /// [unitRemaining]) stay plan-driven: the user wants the next interval to
-  /// start at the prescribed target, not "what was left when I stopped".
+  /// Once the user has dialed in real values for a set, the next set
+  /// defaults to those rather than snapping back to the plan — applies to
+  /// every numeric field the editor exposes (weight, reps, duration). The
+  /// only field that stays plan-driven is [unitRemaining], which is a
+  /// rep-style countdown read off the prescription, not something the user
+  /// adjusts per-set.
   factory SetLogInput.forNextSet({
     required WorkoutExercise exercise,
     PlannedSet? plannedSet,
@@ -31,7 +31,9 @@ class SetLogInput {
           plannedSet?.reps ??
           (exercise.setMetrics.tracksReps ? 1 : null),
       duration: exercise.setMetrics.tracksDuration
-          ? plannedSet?.duration ?? exercise.workDuration
+          ? priorLog?.duration ??
+              plannedSet?.duration ??
+              exercise.workDuration
           : null,
       unitRemaining: plannedSet?.unitRemaining,
     );

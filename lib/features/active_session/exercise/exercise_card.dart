@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/early_stopped_notifier.dart';
+import 'package:workouts/features/active_session/exercise/active_timer_store.dart';
 import 'package:workouts/features/active_session/exercise/current_set_draft_controller.dart';
 import 'package:workouts/features/active_session/exercise/exercise_card_content.dart';
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
@@ -63,6 +64,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       earlyStoppedKey(blockId: block.id, exerciseId: exercise.id),
     );
     return ExerciseCardContent(
+      timerIdentity: _timerIdentity(),
       planContext: planContext,
       isNextRecommended: widget.isNextRecommended,
       currentSetInput: _currentSetDraftController.currentInput(planContext),
@@ -78,6 +80,20 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       isStoppedEarly: isStoppedEarly,
       onToggleStoppedEarly: _toggleStoppedEarly,
       dragHandle: widget.dragHandle,
+    );
+  }
+
+  /// The card only renders inside an active session, so the session id is
+  /// always available — empty-string fallback exists purely to keep the
+  /// type non-nullable down through `ExerciseIntervalTimer`; a missing
+  /// session would also fail every other code path on this card.
+  TimerIdentity _timerIdentity() {
+    final String sessionId =
+        ref.read(activeSessionProvider).value?.id ?? '';
+    return TimerIdentity(
+      sessionId: sessionId,
+      blockId: block.id,
+      exerciseId: exercise.id,
     );
   }
 
