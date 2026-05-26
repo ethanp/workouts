@@ -1,6 +1,7 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
+import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
@@ -11,6 +12,7 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
+import 'package:workouts/utils/error_bus.dart';
 
 part 'cardio_provider.g.dart';
 
@@ -141,6 +143,10 @@ class CardioImportController extends _$CardioImportController {
     super.state = newState;
   }
 
+  static const _addingStatus =
+      'Adding new workouts (skips ones already stored)…';
+  static const _idleResetDelay = Duration(seconds: 3);
+
   Future<void> importRecentWorkouts({
     int maxWorkouts = 30,
     int maxRoutePoints = 1500,
@@ -148,92 +154,129 @@ class CardioImportController extends _$CardioImportController {
     final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
     if (powerSyncDatabase == null) return;
     try {
-      final healthKitBridge = ref.read(healthKitBridgeProvider);
-      final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
-      if (ref.mounted) {
-        state = AsyncValue.data(
-          CardioImportProgress(
-            totalWorkouts: 0,
-            processedWorkouts: 0,
-            inProgress: true,
-            status: 'Requesting Apple Health access…',
-          ),
-        );
-      }
-      // Trigger the OS permission prompt on first run; a no-op once granted.
-      // Routed through the notifier so the AsyncValue stays in sync for any
-      // observer of healthKitPermissionProvider.
-      await ref
-          .read(healthKitPermissionProvider.notifier)
-          .requestAuthorization();
-      if (ref.mounted) {
-        state = AsyncValue.data(
-          CardioImportProgress(
-            totalWorkouts: 0,
-            processedWorkouts: 0,
-            inProgress: true,
-            status: 'Fetching last $maxWorkouts workouts from Apple Health…',
-          ),
-        );
-      }
-      final importedWorkouts = await healthKitBridge.fetchRecentCardioWorkouts(
+      await _requestHealthKitAuthorization();
+      final importedWorkouts = await _fetchRecentCardioWorkouts(
         maxWorkouts: maxWorkouts,
-        includeRoute: true,
         maxRoutePoints: maxRoutePoints,
-        includeHeartRateSeries: true,
       );
-      if (ref.mounted) {
-        state = AsyncValue.data(
-          CardioImportProgress(
-            totalWorkouts: importedWorkouts.length,
-            processedWorkouts: 0,
-            inProgress: true,
-            status: 'Adding new workouts (skips ones already stored)…',
-          ),
-        );
-      }
-
-      final newCount = await cardioRepository.upsertImportedWorkouts(
-        importedWorkouts,
-        onProgress: (processedWorkouts, totalWorkouts) {
-          if (ref.mounted) {
-            state = AsyncValue.data(
-              CardioImportProgress(
-                totalWorkouts: totalWorkouts,
-                processedWorkouts: processedWorkouts,
-                inProgress: true,
-                status: 'Adding new workouts (skips ones already stored)…',
-              ),
-            );
-          }
-        },
-      );
-
-      if (ref.mounted) {
-        ref.invalidate(cardioWorkoutsProvider);
-        final doneStatus = importedWorkouts.isEmpty
-            ? 'No workouts found. Check Apple Health permissions in Settings.'
-            : 'Done. Found ${importedWorkouts.length} workouts, $newCount new.';
-        state = AsyncValue.data(
-          CardioImportProgress(
-            totalWorkouts: importedWorkouts.length,
-            processedWorkouts: importedWorkouts.length,
-            newWorkouts: newCount,
-            inProgress: false,
-            completedAt: DateTime.now(),
-            status: doneStatus,
-          ),
-        );
-        Future.delayed(const Duration(seconds: 3), () {
-          if (ref.mounted) {
-            state = const AsyncValue.data(CardioImportProgress.idle());
-          }
-        });
-      }
+      await _upsertImportedWorkouts(powerSyncDatabase, importedWorkouts);
     } catch (error, stackTrace) {
-      if (ref.mounted) {
-        state = AsyncValue.error(error, stackTrace);
-      }
+      _reportImportFailure(error, stackTrace);
     }
+  }
+
+  void _publishProgress({
+    required String status,
+    int totalWorkouts = 0,
+    int processedWorkouts = 0,
+  }) {
+    if (!ref.mounted) return;
+    state = AsyncValue.data(
+      CardioImportProgress(
+        totalWorkouts: totalWorkouts,
+        processedWorkouts: processedWorkouts,
+        inProgress: true,
+        status: status,
+      ),
+    );
+  }
+
+  /// Triggers the OS permission prompt (no-op once granted). Routed through
+  /// the notifier so any future observer of [healthKitPermissionProvider]
+  /// sees the updated status; the notifier self-pins via `ref.keepAlive()`
+  /// during the dialog await, so this `ref.read(...).method()` pattern is
+  /// safe despite auto-dispose.
+  Future<void> _requestHealthKitAuthorization() {
+    _publishProgress(status: 'Requesting Apple Health access…');
+    return ref
+        .read(healthKitPermissionProvider.notifier)
+        .requestAuthorization();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRecentCardioWorkouts({
+    required int maxWorkouts,
+    required int maxRoutePoints,
+  }) {
+    _publishProgress(
+      status: 'Fetching last $maxWorkouts workouts from Apple Health…',
+    );
+    return ref
+        .read(healthKitBridgeProvider)
+        .fetchRecentCardioWorkouts(
+          maxWorkouts: maxWorkouts,
+          includeRoute: true,
+          maxRoutePoints: maxRoutePoints,
+          includeHeartRateSeries: true,
+        );
+  }
+
+  Future<void> _upsertImportedWorkouts(
+    PowerSyncDatabase database,
+    List<Map<String, dynamic>> importedWorkouts,
+  ) async {
+    _publishProgress(
+      status: _addingStatus,
+      totalWorkouts: importedWorkouts.length,
+    );
+    final newCount = await CardioRepositoryPowerSync(
+      database,
+    ).upsertImportedWorkouts(
+      importedWorkouts,
+      onProgress: (processedWorkouts, totalWorkouts) => _publishProgress(
+        status: _addingStatus,
+        totalWorkouts: totalWorkouts,
+        processedWorkouts: processedWorkouts,
+      ),
+    );
+    _publishCompletion(
+      importedCount: importedWorkouts.length,
+      newCount: newCount,
+    );
+  }
+
+  void _publishCompletion({
+    required int importedCount,
+    required int newCount,
+  }) {
+    if (!ref.mounted) return;
+    ref.invalidate(cardioWorkoutsProvider);
+    state = AsyncValue.data(
+      CardioImportProgress(
+        totalWorkouts: importedCount,
+        processedWorkouts: importedCount,
+        newWorkouts: newCount,
+        inProgress: false,
+        completedAt: DateTime.now(),
+        status: _completionStatus(
+          importedCount: importedCount,
+          newCount: newCount,
+        ),
+      ),
+    );
+    _scheduleResetToIdle();
+  }
+
+  String _completionStatus({
+    required int importedCount,
+    required int newCount,
+  }) {
+    if (importedCount == 0) {
+      return 'No workouts found. Check Apple Health permissions in Settings.';
+    }
+    return 'Done. Found $importedCount workouts, $newCount new.';
+  }
+
+  void _scheduleResetToIdle() {
+    Future.delayed(_idleResetDelay, () {
+      if (!ref.mounted) return;
+      state = const AsyncValue.data(CardioImportProgress.idle());
+    });
+  }
+
+  void _reportImportFailure(Object error, StackTrace stackTrace) {
+    _log.error('importRecentWorkouts failed', error, stackTrace);
+    errorBus.add('Apple Health import: $error');
+    if (!ref.mounted) return;
+    state = AsyncValue.error(error, stackTrace);
   }
 }

@@ -4,9 +4,14 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class SessionSummaryCard extends StatelessWidget {
-  const SessionSummaryCard({super.key, required this.session});
+  const SessionSummaryCard({
+    super.key,
+    required this.session,
+    this.onEditDuration,
+  });
 
   final Session session;
+  final VoidCallback? onEditDuration;
 
   @override
   Widget build(BuildContext context) {
@@ -28,11 +33,7 @@ class SessionSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          _summaryRow(
-            icon: CupertinoIcons.time,
-            label: 'Duration',
-            value: _durationText(session.duration),
-          ),
+          _durationRow(),
           const SizedBox(height: AppSpacing.sm),
           _summaryRow(
             icon: CupertinoIcons.calendar,
@@ -58,6 +59,52 @@ class SessionSummaryCard extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget _durationRow() {
+    return Row(
+      children: [
+        Icon(CupertinoIcons.time, size: 20, color: AppColors.textColor3),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          'Duration: ',
+          style: AppTypography.body.copyWith(color: AppColors.textColor3),
+        ),
+        Text(_durationText(session.duration), style: AppTypography.body),
+        if (onEditDuration != null) ...[
+          const SizedBox(width: AppSpacing.md),
+          CupertinoButton(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
+            minimumSize: const Size(0, 0),
+            color: AppColors.accentPrimary.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(999),
+            onPressed: onEditDuration,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  CupertinoIcons.pencil,
+                  size: 14,
+                  color: AppColors.accentPrimary,
+                ),
+                SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Edit',
+                  style: TextStyle(
+                    color: AppColors.accentPrimary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 

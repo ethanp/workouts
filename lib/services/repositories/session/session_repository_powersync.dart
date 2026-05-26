@@ -62,6 +62,9 @@ class SessionRepositoryPowerSync {
   Future<Session> fetchSessionById(String sessionId) =>
       _sessionHydrator.fetchSessionById(sessionId);
 
+  Stream<Session> watchSessionById(String sessionId) =>
+      _sessionHydrator.watchSessionById(sessionId);
+
   Future<List<Session>> fetchSessions() => _sessionHydrator.fetchSessions();
 
   Stream<List<Session>> watchSessions() => _sessionHydrator.watchSessions();
@@ -193,6 +196,14 @@ class SessionRepositoryPowerSync {
     await _powerSync.execute(
       'UPDATE sessions SET paused_at = ?, updated_at = ? WHERE id = ?',
       [now, now, session.id],
+    );
+  }
+
+  Future<void> updateSessionDuration(String sessionId, Duration duration) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    await _powerSync.execute(
+      'UPDATE sessions SET duration_seconds = ?, updated_at = ? WHERE id = ?',
+      [duration.inSeconds, now, sessionId],
     );
   }
 

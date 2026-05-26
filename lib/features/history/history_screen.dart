@@ -25,8 +25,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final importAsync = ref.watch(cardioImportControllerProvider);
-    final importProgress =
-        importAsync.value ?? const CardioImportProgress.idle();
+    // Riverpod 3.x's state-error transition auto-applies copyWithPrevious,
+    // so `importAsync.value` returns the prior loading data after a failure.
+    // Drop back to idle on error so this banner doesn't stay stuck on
+    // "Requesting Apple Health access…" forever — the global error banner
+    // and the Settings Apple Health card surface the actual failure.
+    final importProgress = (importAsync.hasError ? null : importAsync.value) ??
+        const CardioImportProgress.idle();
     final isImporting = importProgress.inProgress;
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
     final syncState = ref.watch(syncStateProvider);

@@ -22,10 +22,23 @@ class HealthKitPermissionNotifier extends _$HealthKitPermissionNotifier {
     return bridge.getAuthorizationStatus();
   }
 
+  /// Triggers the OS permission prompt and updates [state] to reflect the
+  /// resulting authorization status.
+  ///
+  /// Pins the provider alive for the duration of the request so the
+  /// surrounding `ref` survives the OS-dialog await even when no consumer
+  /// is currently watching us. Without the pin, the auto-dispose default
+  /// of `@riverpod` lets the provider be torn down between "set loading"
+  /// and "set result" — `state =` then throws because its `Ref` is gone.
   Future<void> requestAuthorization() async {
-    final bridge = ref.read(healthKitBridgeProvider);
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(bridge.requestAuthorization);
+    final keepAliveLink = ref.keepAlive();
+    try {
+      final bridge = ref.read(healthKitBridgeProvider);
+      state = const AsyncValue.loading();
+      state = await AsyncValue.guard(bridge.requestAuthorization);
+    } finally {
+      keepAliveLink.close();
+    }
   }
 }
 

@@ -41,6 +41,19 @@ class SessionHydrator {
     return mappers.sessionFromRow(sessionRow, blocks);
   }
 
+  /// Re-hydrates whenever the session row changes. PowerSync's
+  /// [_markSessionDirty] touches `updated_at` on every mutation that should
+  /// be observed, so a watch on the session row picks up exercise/log/notes
+  /// edits without having to multiplex watches over child tables.
+  Stream<Session> watchSessionById(String sessionId) async* {
+    await for (final _ in _powerSync.watch(
+      'SELECT id FROM sessions WHERE id = ? LIMIT 1',
+      parameters: [sessionId],
+    )) {
+      yield await fetchSessionById(sessionId);
+    }
+  }
+
   Future<List<WorkoutExercise>> _hydrateExercises(String blockId) async {
     final exerciseRows = await _powerSync.getAll(
       '''

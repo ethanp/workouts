@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/features/active_session/session_detail/edit_session_duration_sheet.dart';
 import 'package:workouts/features/active_session/session_detail/session_blocks_card.dart';
 import 'package:workouts/features/active_session/session_detail/session_heart_rate_card.dart';
 import 'package:workouts/features/active_session/session_detail/session_notes_card.dart';
 import 'package:workouts/features/active_session/session_detail/session_summary_card.dart';
 import 'package:workouts/features/active_session/session_notes_provider.dart';
+import 'package:workouts/features/history/history_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/session.dart';
@@ -25,12 +27,14 @@ class SessionDetailScreen extends ConsumerWidget {
         .watch(heartRateSamplesStreamProvider(session.id))
         .value;
     final notes = notesAsync.value ?? const <SessionNote>[];
+    final liveSession =
+        ref.watch(sessionByIdProvider(session.id)).value ?? session;
 
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: templatesMapAsync.when(
           data: (templatesMap) {
-            final template = templatesMap[session.templateId];
+            final template = templatesMap[liveSession.templateId];
             return Text(template?.name ?? 'Session Details');
           },
           loading: () => const Text('Loading...'),
@@ -41,21 +45,30 @@ class SessionDetailScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            SessionSummaryCard(session: session),
+            SessionSummaryCard(
+              session: liveSession,
+              onEditDuration: () => showCupertinoModalPopup<void>(
+                context: context,
+                builder: (_) => EditSessionDurationSheet(session: liveSession),
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
-            ..._heartRateSlot(heartRateSamples ?? const <HeartRateSample>[]),
+            ..._heartRateSlot(
+              liveSession,
+              heartRateSamples ?? const <HeartRateSample>[],
+            ),
             ..._notesSlot(notes),
             for (
               var blockIndex = 0;
-              blockIndex < session.blocks.length;
+              blockIndex < liveSession.blocks.length;
               blockIndex++
             ) ...[
               SessionDetailBlockCard(
-                block: session.blocks[blockIndex],
+                block: liveSession.blocks[blockIndex],
                 index: blockIndex,
-                sessionDate: session.completedAt ?? session.startedAt,
+                sessionDate: liveSession.completedAt ?? liveSession.startedAt,
               ),
-              if (blockIndex < session.blocks.length - 1)
+              if (blockIndex < liveSession.blocks.length - 1)
                 const SizedBox(height: AppSpacing.md),
             ],
           ],
@@ -64,7 +77,7 @@ class SessionDetailScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _heartRateSlot(List<HeartRateSample> samples) {
+  List<Widget> _heartRateSlot(Session session, List<HeartRateSample> samples) {
     final hasHeartRate = samples.isNotEmpty ||
         session.averageHeartRate != null ||
         session.maxHeartRate != null;
