@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/providers/sync_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 
 /// Hides [child] whenever the PowerSync backend is not connected.
 ///

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/providers/sync_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/theme/app_theme.dart';
 
 /// A single ellipsis button on an exercise card header that opens an action

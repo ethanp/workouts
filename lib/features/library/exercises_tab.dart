@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/providers/sync_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/library_exercise_store.dart';
 import 'package:workouts/theme/app_theme.dart';

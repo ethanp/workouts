@@ -8,6 +8,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_trend_chart.dart';
+import 'package:workouts/widgets/trend_series.dart';
 
 /// Per-exercise card on the session detail screen. The chart of recent
 /// sessions is the focal element; this session's point is ringed via

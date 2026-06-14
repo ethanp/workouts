@@ -2,23 +2,15 @@ import 'package:ethan_sync/ethan_sync.dart' as sync;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
 
-export 'package:powersync/powersync.dart' show SyncStatus;
-
-/// Live PowerSync status, pending-upload count, and offline flag are sourced
-/// directly from ethan_sync. The workouts-specific [SyncState] and description
-/// providers below adapt that status into the shapes the UI renders.
-
-final powerSyncStatusProvider = sync.syncStatusProvider;
-
-final pendingUploadCountProvider = sync.pendingUploadCountProvider;
-
-final isOfflineProvider = sync.isOfflineProvider;
+/// Live PowerSync status, pending-upload count, and offline flag come from
+/// ethan_sync. The workouts-specific [SyncState] and description providers
+/// below adapt that status into the shapes the UI renders.
 
 /// Detailed sync state for UI display.
 enum SyncState { connecting, downloading, uploading, synced, offline, error }
 
 final syncStateProvider = Provider<SyncState>((ref) {
-  return ref.watch(powerSyncStatusProvider).when(
+  return ref.watch(sync.syncStatusProvider).when(
         data: (status) {
           if (!status.connected) return SyncState.offline;
           if (status.downloading) return SyncState.downloading;
@@ -33,7 +25,7 @@ final syncStateProvider = Provider<SyncState>((ref) {
 
 /// Human-readable sync status description.
 final syncStatusDescriptionProvider = Provider<String>((ref) {
-  return ref.watch(powerSyncStatusProvider).when(
+  return ref.watch(sync.syncStatusProvider).when(
         data: _describeStatus,
         loading: () => 'Connecting...',
         error: (error, _) => 'Error: $error',

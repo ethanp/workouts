@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 
 /// Rich diagnostic snapshot of one backend host candidate (LAN or Tailscale).
 ///
-/// Sister to [HostnameNotifier], which only cares about which candidate to
+/// Sister to [HostResolverController], which only cares about which candidate to
 /// route traffic to. This carries the per-candidate latency / HTTP status /
 /// error string surfaced to the user on the Connection tile.
 class HostProbe {
@@ -63,7 +63,7 @@ class HostProbesState {
 
 /// Probes the LAN and Tailscale candidates for diagnostic display. Read by
 /// the Connection tile on settings; results are independent of the active
-/// host selection done by [HostnameNotifier].
+/// host selection done by [HostResolverController].
 class HostProbesNotifier extends Notifier<HostProbesState> {
   static const _postgrestPort = 3001;
   static const _tcpTimeout = Duration(seconds: 2);

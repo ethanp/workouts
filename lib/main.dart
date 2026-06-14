@@ -9,7 +9,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
 import 'package:workouts/services/backend/backend_host_probe_scheduler.dart';
-import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/services/backend/sync_config.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
@@ -47,7 +46,7 @@ Future<void> _bootstrap() async {
   // Probe before runApp so the very first PowerSync connector targets a
   // reachable host — no transient bad-host attempt before the after-first-
   // frame re-probe lands.
-  await container.read(hostnameProvider.notifier).refineByTcpProbe();
+  await container.read(hostResolverProvider.notifier).refineByTcpProbe();
 
   // Warm up the local-notification plugin (timezone DB + plugin init) so
   // the first interval-timer start doesn't pay that cost. Permission is

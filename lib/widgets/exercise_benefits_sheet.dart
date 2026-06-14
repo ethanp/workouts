@@ -5,7 +5,7 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/exercise_benefits_provider.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
-import 'package:workouts/providers/sync_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';

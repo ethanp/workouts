@@ -1,3 +1,4 @@
+import 'package:ethan_sync/ethan_sync.dart' show syncStatusProvider;
 import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 
@@ -9,7 +10,6 @@ import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
-import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/utils/error_bus.dart';
@@ -107,7 +107,7 @@ Stream<int> workoutsMissingMetricsCount(Ref ref) => _watchRepo(
 Future<void> cardioMetricsBackfill(Ref ref) async {
   final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
   if (powerSyncDatabase == null) return;
-  final syncStatus = ref.watch(powerSyncStatusProvider).asData?.value;
+  final syncStatus = ref.watch(syncStatusProvider).asData?.value;
   if (syncStatus == null ||
       syncStatus.hasSynced != true ||
       syncStatus.connected != true ||

@@ -4,8 +4,6 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_trend_painter.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-export 'package:workouts/widgets/trend_series.dart';
-
 class CardioTrendChart extends StatefulWidget {
   const CardioTrendChart({
     super.key,

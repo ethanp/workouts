@@ -1,9 +1,9 @@
+import 'package:ethan_sync/ethan_sync.dart' show hostResolverProvider, pendingUploadCountProvider, syncStatusProvider;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/backend/host_probes_notifier.dart';
-import 'package:workouts/services/backend/hostname_notifier.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 /// Single tile that surfaces all user-relevant connection state: status,
@@ -27,10 +27,10 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
 
   @override
   Widget build(BuildContext context) {
-    final syncStatus = ref.watch(powerSyncStatusProvider);
+    final syncStatus = ref.watch(syncStatusProvider);
     final description = ref.watch(syncStatusDescriptionProvider);
     final pendingAsync = ref.watch(pendingUploadCountProvider);
-    final activeHost = ref.watch(hostnameProvider);
+    final activeHost = ref.watch(hostResolverProvider);
     final probes = ref.watch(hostProbesProvider);
     final isConnected = syncStatus.value?.connected ?? false;
 
@@ -239,7 +239,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           color: AppColors.backgroundDepth3,
           onPressed: () =>
-              ref.read(hostnameProvider.notifier).setHost(other.host),
+              ref.read(hostResolverProvider.notifier).setHost(other.host),
           child: Text(
             'Switch to ${other.label}',
             style: AppTypography.body.copyWith(
