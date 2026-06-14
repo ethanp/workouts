@@ -8,13 +8,16 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/theme/cardio_type_palette.dart';
+import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/cardio_trend_chart.dart';
 import 'package:workouts/features/history/charts/cardio_trend_series_factory.dart';
 import 'package:workouts/features/history/charts/polarization_chart.dart';
+import 'package:workouts/features/history/charts/rolling_daily_chart.dart';
+import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
+import 'package:workouts/features/history/charts/rolling_daily_point.dart';
+import 'package:workouts/features/history/charts/rolling_daily_series_factory.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
-import 'package:workouts/features/history/training_balance_strip.dart';
 import 'package:workouts/features/history/charts/weekly_activity_aggregator.dart';
 import 'package:workouts/features/history/charts/weekly_bar_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
@@ -28,7 +31,12 @@ class HistoryChartsTab extends ConsumerWidget {
     final cardioWorkoutsAsync = ref.watch(cardioWorkoutsProvider);
     final bestEffortsAsync = ref.watch(cardioBestEffortsProvider);
     final fullRange = ref.watch(chartDateRangeProvider);
-    final visibleRange = ref.watch(chartZoomProvider) ?? fullRange;
+    final zoomRange = ref.watch(chartZoomProvider);
+    final visibleRange =
+        zoomRange ??
+        (fullRange != null
+            ? ChartZoomNotifier.defaultVisibleRange(fullRange)
+            : null);
 
     return calendarAsync.when(
       data: (days) {
@@ -40,7 +48,7 @@ class HistoryChartsTab extends ConsumerWidget {
         );
         if (fullRange == null) return chartList;
 
-        final isZoomed = visibleRange != null && visibleRange != fullRange;
+        final isZoomed = zoomRange != null;
         return ZoomableChartArea(
           fullRange: fullRange,
           child: Stack(
@@ -71,29 +79,66 @@ class HistoryChartsTab extends ConsumerWidget {
     final visibleWeeks = visibleRange != null
         ? _filterWeeksToRange(weeklyAggregates, visibleRange)
         : weeklyAggregates;
+    final now = DateTime.now();
+    final List<RollingDailyPoint> rollingZ2LoadPoints =
+        const RollingDailySeriesFactory().build(
+          days: days,
+          endDate: now,
+          dailyValue: (day) => day.totalZoneTime.gteZone2 / 60,
+        );
+    final List<RollingDailyPoint> rollingActiveDaysPoints =
+        const RollingDailySeriesFactory().build(
+          days: days,
+          endDate: now,
+          dailyValue: (day) => day.hasActivity ? 1.0 : 0.0,
+        );
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
+        RollingDailyChart(
+          title: 'Z2-5 Rolling Load',
+          points: rollingZ2LoadPoints,
+          lineColor: HrZonePalette.zone2,
+          formatValue: (value) => '${value.round()}m',
+          summarySuffix: ' / 7d',
+          inspectHint: 'Drag to inspect the trailing 7-day Z2-5 load',
+          emptySummaryLabel: 'No HR load yet',
+          goals: const [
+            RollingDailyGoal(
+              value: 90,
+              label: '90m priority 1',
+              color: HrZonePalette.zone2,
+            ),
+            RollingDailyGoal(
+              value: 150,
+              label: '150m priority 2',
+              color: AppColors.accentSecondary,
+            ),
+          ],
+          displayStart: visibleRange?.start,
+          displayEnd: visibleRange?.end,
+        ),
+        const SizedBox(height: AppSpacing.lg),
         PolarizationChart(weeks: _weekZoneDataList(visibleWeeks)),
         const SizedBox(height: AppSpacing.lg),
-        const TrainingBalanceStrip(),
-        const SizedBox(height: AppSpacing.lg),
-        WeeklyBarChart(
-          title: 'Weekly Activity Days',
-          weeks: _weekDataList(
-            visibleWeeks,
-            valueFor: (week) => week.activeDays.toDouble(),
-            accentColorsFor: (week) =>
-                week.cardioWorkoutTypes.mapL(CardioTypePalette.colorFor),
-          ),
-          barColor: const Color(0xFF64D2FF),
-          goalLine: const ChartGoalLine(
-            target: 4,
-            label: '4d/wk goal',
-            color: Color(0xFF64D2FF),
-          ),
-          formatValue: (value) => '${value.round()}d',
+        RollingDailyChart(
+          title: 'Activity (7-day)',
+          points: rollingActiveDaysPoints,
+          lineColor: const Color(0xFF64D2FF),
+          formatValue: (value) => '${value.toStringAsFixed(1)}d',
+          summarySuffix: ' / 7d',
+          inspectHint: 'Drag to inspect the trailing 7-day active days',
+          emptySummaryLabel: 'No activity yet',
+          goals: const [
+            RollingDailyGoal(
+              value: 4,
+              label: '4d/wk goal',
+              color: Color(0xFF64D2FF),
+            ),
+          ],
+          displayStart: visibleRange?.start,
+          displayEnd: visibleRange?.end,
         ),
         const SizedBox(height: AppSpacing.xxl),
         _sectionHeader('Outdoor Running'),
@@ -192,7 +237,7 @@ class HistoryChartsTab extends ConsumerWidget {
     List<WeekAggregate> aggregates,
     DateTimeRange range,
   ) {
-    final rangeEnd = range.end.add(const Duration(days: 7));
+    final rangeEnd = range.end.shiftedByDays(7);
     return aggregates
         .where(
           (week) =>
@@ -205,7 +250,6 @@ class HistoryChartsTab extends ConsumerWidget {
   List<WeekData> _weekDataList(
     List<WeekAggregate> aggregates, {
     required double Function(WeekAggregate) valueFor,
-    List<Color> Function(WeekAggregate)? accentColorsFor,
   }) {
     return aggregates
         .map(
@@ -213,7 +257,6 @@ class HistoryChartsTab extends ConsumerWidget {
             label: aggregate.label,
             value: valueFor(aggregate),
             weekStart: aggregate.weekStart,
-            accentColors: accentColorsFor?.call(aggregate) ?? const [],
             isCurrent: aggregate.isCurrent,
             includeInAverage: !aggregate.beforeData,
           ),

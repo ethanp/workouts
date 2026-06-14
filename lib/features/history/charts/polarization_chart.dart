@@ -9,6 +9,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 const _kAerobicBaseTargetSeconds = 90 * 60; // 90 min/week aerobic base target
+const _kPriorityTwoTargetSeconds = 150 * 60; // 150 min/week priority 2 target
 
 /// Stacked weekly bar chart showing time in each of the 5 HR zones.
 ///
@@ -154,7 +155,8 @@ class _PolarizationChartState extends State<PolarizationChart> {
     );
     final effectiveMax = maxTotal > 0 ? maxTotal : 1;
     final barSpacing = _barSpacing();
-    final referenceFraction = _kAerobicBaseTargetSeconds / effectiveMax;
+    final aerobicBaseFraction = _kAerobicBaseTargetSeconds / effectiveMax;
+    final priorityTwoFraction = _kPriorityTwoTargetSeconds / effectiveMax;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -180,11 +182,19 @@ class _PolarizationChartState extends State<PolarizationChart> {
           child: Stack(
             children: [
               _barsRow(zoneTimes, effectiveMax, barSpacing),
-              if (referenceFraction <= 1.0)
+              if (aerobicBaseFraction <= 1.0)
                 _referenceLine(
-                  referenceFraction,
+                  aerobicBaseFraction,
                   constraints.maxHeight,
                   '90m aerobic base',
+                  HrZonePalette.zone2,
+                ),
+              if (priorityTwoFraction <= 1.0)
+                _referenceLine(
+                  priorityTwoFraction,
+                  constraints.maxHeight,
+                  '150m priority 2',
+                  AppColors.accentSecondary,
                 ),
               if (_scrubIndex != null) _scrubCursor(barWidth, barSpacing),
             ],
@@ -216,6 +226,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
     double referenceFraction,
     double chartHeight,
     String label,
+    Color color,
   ) {
     return Positioned(
       left: 0,
@@ -227,15 +238,9 @@ class _PolarizationChartState extends State<PolarizationChart> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 8,
-              color: HrZonePalette.zone2.withValues(alpha: 0.6),
-            ),
+            style: TextStyle(fontSize: 8, color: color.withValues(alpha: 0.6)),
           ),
-          Container(
-            height: 1,
-            color: HrZonePalette.zone2.withValues(alpha: 0.35),
-          ),
+          Container(height: 1, color: color.withValues(alpha: 0.35)),
         ],
       ),
     );

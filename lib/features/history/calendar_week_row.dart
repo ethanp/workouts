@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/theme/app_theme.dart';
@@ -113,7 +114,7 @@ class _WeekSummary extends StatelessWidget {
   _WeekStats _aggregate() {
     final sundayOffset = week * DateTime.daysPerWeek + 6 - (firstWeekday - 1);
     final sunday = DateTime(monthDate.year, monthDate.month, sundayOffset + 1);
-    final monday = sunday.subtract(const Duration(days: 6));
+    final monday = sunday.shiftedByDays(-6);
 
     var activeDays = 0;
     var cardioMeters = 0.0;
@@ -122,7 +123,7 @@ class _WeekSummary extends StatelessWidget {
     var hasHrData = false;
 
     for (var dayOffset = 0; dayOffset < DateTime.daysPerWeek; dayOffset++) {
-      final date = monday.add(Duration(days: dayOffset));
+      final date = monday.shiftedByDays(dayOffset);
       final entry = activityData[date];
       if (entry != null && entry.hasActivity) {
         activeDays++;

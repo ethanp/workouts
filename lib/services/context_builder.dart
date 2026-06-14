@@ -84,7 +84,7 @@ class ContextBuilder {
 
     // Fetch recent sessions (last 7 days, completed only)
     final sessions = await sessionRepo.fetchSessions();
-    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final cutoff = DateTime.now().shiftedByDays(-7);
     final recentSessions = sessions
         .where(
           (session) =>

@@ -10,15 +10,32 @@ part 'zoomable_chart_area.g.dart';
 @riverpod
 class ChartZoomNotifier extends _$ChartZoomNotifier {
   static const _minVisibleDays = 14;
+  static const _defaultVisibleMonths = 3;
 
+  /// A `null` state means "default view": the most recent
+  /// [_defaultVisibleMonths] months of the available data.
   @override
   DateTimeRange? build() => null;
+
+  /// The window shown before the user has zoomed or panned: the most recent
+  /// [_defaultVisibleMonths] months, clamped to the available data. Falls back
+  /// to the full range when less data than that exists.
+  static DateTimeRange defaultVisibleRange(DateTimeRange fullRange) {
+    final end = fullRange.end;
+    final defaultStart = DateTime(
+      end.year,
+      end.month - _defaultVisibleMonths,
+      end.day,
+    );
+    if (!defaultStart.isAfter(fullRange.start)) return fullRange;
+    return DateTimeRange(start: defaultStart, end: end);
+  }
 
   /// Scales the visible window by [scaleFactor] around a horizontal
   /// [focalRatio] (0 = left edge, 1 = right edge), clamped to
   /// [_minVisibleDays] and the full data range.
   void zoom(DateTimeRange fullRange, double scaleFactor, double focalRatio) {
-    final visibleRange = state ?? fullRange;
+    final visibleRange = state ?? defaultVisibleRange(fullRange);
     final visibleDuration = visibleRange.duration;
     final newDuration = Duration(
       milliseconds: (visibleDuration.inMilliseconds / scaleFactor).round(),
@@ -33,7 +50,7 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
     );
 
     if (clampedDuration >= fullDuration) {
-      state = null;
+      state = fullRange;
       return;
     }
 
@@ -69,7 +86,7 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
   /// Shifts the visible window by [delta], clamped so it stays
   /// within [fullRange].
   void pan(DateTimeRange fullRange, Duration delta) {
-    final visibleRange = state ?? fullRange;
+    final visibleRange = state ?? defaultVisibleRange(fullRange);
     var newStart = visibleRange.start.add(delta);
     var newEnd = visibleRange.end.add(delta);
 
@@ -149,7 +166,9 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     } else {
       final dx = details.localFocalPoint.dx - _lastFocalPoint.dx;
       if (dx.abs() > 0.5) {
-        final visibleRange = ref.read(chartZoomProvider) ?? fullRange;
+        final visibleRange =
+            ref.read(chartZoomProvider) ??
+            ChartZoomNotifier.defaultVisibleRange(fullRange);
         final visibleMilliseconds = visibleRange.duration.inMilliseconds;
         final panRatio = -dx / constraints.maxWidth;
         final panMilliseconds = (visibleMilliseconds * panRatio).round();

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/painting.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -75,13 +76,11 @@ class ChartDateLayout {
 
     final stepDays = math.max(1, (spanDays / targetCount).round());
     final ticks = <DateTime>[minDate];
-    var cursor = DateTime(minDate.year, minDate.month, minDate.day + stepDays);
+    var cursor = minDate.shiftedByDays(stepDays);
     final minGap = stepDays ~/ 2;
-    while (cursor.isBefore(
-      DateTime(maxDate.year, maxDate.month, maxDate.day - minGap),
-    )) {
+    while (cursor.isBefore(maxDate.shiftedByDays(-minGap))) {
       ticks.add(cursor);
-      cursor = DateTime(cursor.year, cursor.month, cursor.day + stepDays);
+      cursor = cursor.shiftedByDays(stepDays);
     }
     ticks.add(maxDate);
     return ticks;

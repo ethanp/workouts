@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   ethan_utils:
     path: ../ethan_utils
+  ethan_sync:
+    path: ../ethan_sync
 
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^3.0.0
@@ -47,7 +49,7 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.19.0
   collection: ^1.18.0
-  flutter_dotenv: ^5.2.1
+  flutter_dotenv: ^6.0.0
   flutter_map: ^8.3.0
   latlong2: ^0.9.1
   shared_preferences: ^2.5.4

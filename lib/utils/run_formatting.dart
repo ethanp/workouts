@@ -122,7 +122,7 @@ class Format {
     final dateOnly = local.startOfDay;
 
     if (dateOnly.sameDayAs(today)) return 'Today';
-    if (dateOnly.sameDayAs(today.subtract(const Duration(days: 1)))) {
+    if (dateOnly.sameDayAs(today.shiftedByDays(-1))) {
       return 'Yesterday';
     }
     return '${local.month.pad(2)}/${local.day.pad(2)}/${local.year}';

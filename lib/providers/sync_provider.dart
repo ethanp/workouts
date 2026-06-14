@@ -1,165 +1,66 @@
-import 'package:ethan_utils/ethan_utils.dart';
+import 'package:ethan_sync/ethan_sync.dart' as sync;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 export 'package:powersync/powersync.dart' show SyncStatus;
 
-part 'sync_provider.g.dart';
+/// Live PowerSync status, pending-upload count, and offline flag are sourced
+/// directly from ethan_sync. The workouts-specific [SyncState] and description
+/// providers below adapt that status into the shapes the UI renders.
 
-const _log = ELogger('Sync');
+final powerSyncStatusProvider = sync.syncStatusProvider;
 
-@riverpod
-Stream<SyncStatus> powerSyncStatus(Ref ref) async* {
-  final powerSyncDatabase = await ref.watch(powerSyncDatabaseProvider.future);
+final pendingUploadCountProvider = sync.pendingUploadCountProvider;
 
-  SyncStatus? lastStatus;
+final isOfflineProvider = sync.isOfflineProvider;
 
-  final initialStatus = powerSyncDatabase.currentStatus;
-  _logSyncStatus(initialStatus, lastStatus);
-  lastStatus = initialStatus;
-  yield initialStatus;
+/// Detailed sync state for UI display.
+enum SyncState { connecting, downloading, uploading, synced, offline, error }
 
-  await for (final status in powerSyncDatabase.statusStream) {
-    _logSyncStatus(status, lastStatus);
-    lastStatus = status;
-    yield status;
-  }
-}
+final syncStateProvider = Provider<SyncState>((ref) {
+  return ref.watch(powerSyncStatusProvider).when(
+        data: (status) {
+          if (!status.connected) return SyncState.offline;
+          if (status.downloading) return SyncState.downloading;
+          if (status.uploading) return SyncState.uploading;
+          if (status.hasSynced == true) return SyncState.synced;
+          return SyncState.connecting;
+        },
+        loading: () => SyncState.connecting,
+        error: (_, __) => SyncState.error,
+      );
+});
 
-void _logSyncStatus(SyncStatus status, SyncStatus? previous) {
-  final changes = <String>[
-    ..._connectionChanges(status, previous),
-    ..._downloadStateChanges(status, previous),
-    ..._uploadStateChanges(status, previous),
-    ..._initialSyncChanges(status, previous),
-  ];
+/// Human-readable sync status description.
+final syncStatusDescriptionProvider = Provider<String>((ref) {
+  return ref.watch(powerSyncStatusProvider).when(
+        data: _describeStatus,
+        loading: () => 'Connecting...',
+        error: (error, _) => 'Error: $error',
+      );
+});
 
-  if (changes.isNotEmpty) {
-    _log.log(changes.join(' | '));
-  }
-}
-
-List<String> _connectionChanges(SyncStatus status, SyncStatus? previous) {
-  if (previous == null) return [];
-  if (previous.connected != status.connected) {
-    return [status.connected ? '🟢 Connected' : '🔴 Disconnected'];
-  }
-  return [];
-}
-
-List<String> _downloadStateChanges(SyncStatus status, SyncStatus? previous) {
-  if (previous?.downloading == status.downloading) return [];
-
+String _describeStatus(SyncStatus status) {
+  if (!status.connected) return 'Offline';
   if (status.downloading) {
     final progress = status.downloadProgress;
     if (progress != null) {
-      return [
-        '⬇️ Downloading: ${progress.downloadedOperations}/${progress.totalOperations} ops',
-      ];
+      return 'Downloading ${progress.downloadedOperations}/${progress.totalOperations}';
     }
-    return ['⬇️ Downloading...'];
+    return 'Downloading...';
   }
-
-  if (previous?.downloading == true) {
-    return ['⬇️ Download complete'];
+  if (status.uploading) return 'Uploading changes...';
+  if (status.hasSynced == true) {
+    final lastSyncedAt = status.lastSyncedAt;
+    return lastSyncedAt != null ? 'Synced ${_relativeTime(lastSyncedAt)}' : 'Synced';
   }
-
-  return [];
+  return 'Connecting...';
 }
 
-List<String> _uploadStateChanges(SyncStatus status, SyncStatus? previous) {
-  if (previous?.uploading == status.uploading) return [];
-
-  if (status.uploading) {
-    return ['⬆️ Uploading local changes...'];
-  }
-
-  if (previous?.uploading == true) {
-    return ['⬆️ Upload complete'];
-  }
-
-  return [];
-}
-
-List<String> _initialSyncChanges(SyncStatus status, SyncStatus? previous) {
-  if (previous?.hasSynced != true && status.hasSynced == true) {
-    return ['✅ Initial sync complete'];
-  }
-  return [];
-}
-
-/// Number of CRUD ops queued for upload to the server. Streamed so UI can
-/// react when uploads drain or new local writes pile up.
-@riverpod
-Stream<int> pendingUploadCount(Ref ref) async* {
-  final powerSyncDatabase = await ref.watch(powerSyncDatabaseProvider.future);
-  yield* powerSyncDatabase
-      .watch('SELECT COUNT(*) AS cnt FROM ps_crud')
-      .map((rows) => (rows.first['cnt'] as int?) ?? 0);
-}
-
-@riverpod
-bool isOffline(Ref ref) {
-  final statusAsync = ref.watch(powerSyncStatusProvider);
-  return statusAsync.maybeWhen(
-    data: (status) => !status.connected,
-    orElse: () => true,
-  );
-}
-
-/// Detailed sync state for UI display
-enum SyncState { connecting, downloading, uploading, synced, offline, error }
-
-@riverpod
-SyncState syncState(Ref ref) {
-  final statusAsync = ref.watch(powerSyncStatusProvider);
-  return statusAsync.when(
-    data: (status) {
-      if (!status.connected) return SyncState.offline;
-      if (status.downloading) return SyncState.downloading;
-      if (status.uploading) return SyncState.uploading;
-      if (status.hasSynced == true) return SyncState.synced;
-      return SyncState.connecting;
-    },
-    loading: () => SyncState.connecting,
-    error: (_, __) => SyncState.error,
-  );
-}
-
-/// Human-readable sync status description
-@riverpod
-String syncStatusDescription(Ref ref) {
-  final statusAsync = ref.watch(powerSyncStatusProvider);
-  return statusAsync.when(
-    data: (status) {
-      if (!status.connected) return 'Offline';
-      if (status.downloading) {
-        final progress = status.downloadProgress;
-        if (progress != null) {
-          return 'Downloading ${progress.downloadedOperations}/${progress.totalOperations}';
-        }
-        return 'Downloading...';
-      }
-      if (status.uploading) return 'Uploading changes...';
-      if (status.hasSynced == true) {
-        final lastSync = status.lastSyncedAt;
-        if (lastSync != null) {
-          return 'Synced ${_formatRelativeTime(lastSync)}';
-        }
-        return 'Synced';
-      }
-      return 'Connecting...';
-    },
-    loading: () => 'Connecting...',
-    error: (error, _) => 'Error: $error',
-  );
-}
-
-String _formatRelativeTime(DateTime time) {
-  final diff = DateTime.now().difference(time);
-  if (diff.inSeconds < 60) return 'just now';
-  if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
-  if (diff.inHours < 24) return '${diff.inHours}h ago';
-  return '${diff.inDays}d ago';
+String _relativeTime(DateTime time) {
+  final difference = DateTime.now().difference(time);
+  if (difference.inSeconds < 60) return 'just now';
+  if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
+  if (difference.inHours < 24) return '${difference.inHours}h ago';
+  return '${difference.inDays}d ago';
 }

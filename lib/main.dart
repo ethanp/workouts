@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -9,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
 import 'package:workouts/services/backend/backend_host_probe_scheduler.dart';
 import 'package:workouts/services/backend/hostname_notifier.dart';
+import 'package:workouts/services/backend/sync_config.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/preferences_provider.dart';
@@ -36,7 +38,10 @@ Future<void> _bootstrap() async {
   final prefs = await SharedPreferences.getInstance();
 
   final container = ProviderContainer(
-    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      syncConfigProvider.overrideWith((ref) => buildWorkoutsSyncConfig(prefs)),
+    ],
   );
 
   // Probe before runApp so the very first PowerSync connector targets a

@@ -1,31 +1,15 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
-import 'package:workouts/services/backend/service_urls.dart';
-import 'package:workouts/services/powersync/powersync_init.dart';
-import 'package:workouts/services/preferences_provider.dart';
 
-/// Owns the PowerSync database lifecycle and keeps its connector in sync with
-/// the current backend URLs.
+/// The open, connected local PowerSync database that repositories query.
 ///
-/// The local database is built once. Whenever [powersyncUrlProvider] or
-/// [postgrestUrlProvider] emit a new value (because the hostname notifier
-/// was refined to a different candidate, e.g. LAN → Tailscale), we re-apply
-/// the connector against the same database — no teardown.
+/// Watching it activates ethan_sync's [syncConnectionProvider] (open + initial
+/// connect + reconnect when the host changes) and returns the underlying
+/// [PowerSyncDatabase]. The DB is opened once; connection is managed by the
+/// shared connection controller.
 final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>((ref) async {
-  final sharedPreferences = ref.watch(sharedPreferencesProvider);
-  final powerSyncDatabase = await initPowerSync(
-    sharedPreferences: sharedPreferences,
-  );
-
-  Future<void> applyCurrentUrls() => connectPowerSync(
-    powerSyncDatabase,
-    powersyncUrl: ref.read(powersyncUrlProvider),
-    postgrestUrl: ref.read(postgrestUrlProvider),
-  );
-
-  await applyCurrentUrls();
-  ref.listen(powersyncUrlProvider, (_, __) => applyCurrentUrls());
-  ref.listen(postgrestUrlProvider, (_, __) => applyCurrentUrls());
-
-  return powerSyncDatabase;
+  await ref.watch(syncConnectionProvider.future);
+  final manager = await ref.watch(powerSyncDatabaseManagerProvider.future);
+  return manager.database;
 });

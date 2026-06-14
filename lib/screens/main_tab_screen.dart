@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
@@ -8,6 +9,48 @@ import 'package:workouts/features/active_session/session_resume_screen.dart';
 import 'package:workouts/features/settings/settings_screen.dart';
 import 'package:workouts/features/today/today_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
+
+/// A single bottom-bar destination: its icon, label, and the screen it shows.
+///
+/// The ordered list of these is the one source of truth for the tab bar, so
+/// the navigation item and its screen can never drift out of order.
+class MainTab {
+  const MainTab({
+    required this.icon,
+    required this.label,
+    required this.screen,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget screen;
+
+  BottomNavigationBarItem get navigationItem =>
+      BottomNavigationBarItem(icon: Icon(icon), label: label);
+}
+
+const _mainTabs = <MainTab>[
+  MainTab(
+    icon: CupertinoIcons.clock,
+    label: 'History',
+    screen: HistoryScreen(),
+  ),
+  MainTab(
+    icon: CupertinoIcons.play_circle,
+    label: 'Start Workout',
+    screen: TodayScreen(),
+  ),
+  MainTab(
+    icon: CupertinoIcons.book,
+    label: 'Library',
+    screen: LibraryScreen(),
+  ),
+  MainTab(
+    icon: CupertinoIcons.gear,
+    label: 'Settings',
+    screen: SettingsScreen(),
+  ),
+];
 
 class MainTabScreen extends ConsumerStatefulWidget {
   const MainTabScreen({super.key});
@@ -44,37 +87,13 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
   }
 
   CupertinoTabBar _tabBar() => CupertinoTabBar(
-    items: const [
-      BottomNavigationBarItem(
-        icon: Icon(CupertinoIcons.house_alt),
-        label: 'Today',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(CupertinoIcons.book),
-        label: 'Library',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(CupertinoIcons.clock),
-        label: 'History',
-      ),
-      BottomNavigationBarItem(
-        icon: Icon(CupertinoIcons.gear),
-        label: 'Settings',
-      ),
-    ],
+    items: _mainTabs.mapL((tab) => tab.navigationItem),
     currentIndex: index,
     onTap: (value) => setState(() => index = value),
   );
 
-  Widget _tabContent(int selectedIndex) {
-    final screen = switch (selectedIndex) {
-      0 => const TodayScreen(),
-      1 => const LibraryScreen(),
-      2 => const HistoryScreen(),
-      _ => const SettingsScreen(),
-    };
-    return _ActiveSessionWrapper(child: screen);
-  }
+  Widget _tabContent(int selectedIndex) =>
+      _ActiveSessionWrapper(child: _mainTabs[selectedIndex].screen);
 }
 
 class _ActiveSessionWrapper extends ConsumerWidget {

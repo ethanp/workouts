@@ -5,8 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/powersync/powersync_init.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class CardioImportSnapshot {
@@ -268,14 +268,8 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _forceReconnect() async {
     setState(() => _reconnecting = true);
     try {
-      final powerSyncDatabase = await ref.read(
-        powerSyncDatabaseProvider.future,
-      );
-      await connectPowerSync(
-        powerSyncDatabase,
-        powersyncUrl: ref.read(powersyncUrlProvider),
-        postgrestUrl: ref.read(postgrestUrlProvider),
-      );
+      final controller = await ref.read(syncConnectionProvider.future);
+      await controller.connect('manual reconnect');
     } finally {
       if (mounted) setState(() => _reconnecting = false);
     }
@@ -284,15 +278,10 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _resetSyncData() async {
     setState(() => _resettingSync = true);
     try {
-      final powerSyncDatabase = await ref.read(
-        powerSyncDatabaseProvider.future,
-      );
+      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
       await powerSyncDatabase.disconnectAndClear();
-      await connectPowerSync(
-        powerSyncDatabase,
-        powersyncUrl: ref.read(powersyncUrlProvider),
-        postgrestUrl: ref.read(postgrestUrlProvider),
-      );
+      final controller = await ref.read(syncConnectionProvider.future);
+      await controller.connect('after reset');
       if (mounted) _refreshCounts();
     } finally {
       if (mounted) setState(() => _resettingSync = false);
