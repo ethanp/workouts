@@ -17,6 +17,7 @@ class RollingDailyChart extends StatefulWidget {
     this.summarySuffix = '',
     this.inspectHint = 'Drag to inspect the trailing 7-day total',
     this.emptySummaryLabel = 'No data yet',
+    this.showMinutesNeededToday = false,
     this.displayStart,
     this.displayEnd,
   });
@@ -29,6 +30,7 @@ class RollingDailyChart extends StatefulWidget {
   final String summarySuffix;
   final String inspectHint;
   final String emptySummaryLabel;
+  final bool showMinutesNeededToday;
   final DateTime? displayStart;
   final DateTime? displayEnd;
 
@@ -101,11 +103,21 @@ class _RollingDailyChartState extends State<RollingDailyChart> {
   }
 
   Widget _goalLegend() {
+    final latestPoint = widget.showMinutesNeededToday
+        ? _latestVisiblePoint()
+        : null;
     return Wrap(
       spacing: AppSpacing.md,
       runSpacing: AppSpacing.xs,
       children: widget.goals
-          .map((goal) => _GoalChip(label: goal.label, color: goal.color))
+          .map(
+            (goal) => _GoalChip(
+              label: latestPoint != null
+                  ? goal.legendWithTodayGap(latestPoint.rollingValue)
+                  : goal.label,
+              color: goal.color,
+            ),
+          )
           .toList(),
     );
   }

@@ -42,6 +42,22 @@ void main() {
       expect(payload.heartRateSamples.single.bpm, 125);
     });
 
+    test('maps the indoor walk activity type with distance and no route', () {
+      final indoorWalk = CardioImportPayload.tryParse({
+        'externalWorkoutId': 'walk-indoor',
+        'activityType': 'indoorWalk',
+        'startDate': '2026-05-09T10:00:00Z',
+        'endDate': '2026-05-09T10:30:00Z',
+        'durationSeconds': 1800,
+        'distanceMeters': 1600,
+      });
+
+      expect(indoorWalk!.activityType, CardioType.indoorWalk);
+      expect(indoorWalk.activityType.hasDistance, isTrue);
+      expect(indoorWalk.activityType.hasRoute, isFalse);
+      expect(indoorWalk.distanceMeters, 1600);
+    });
+
     test('returns null when required identifiers are missing', () {
       expect(CardioImportPayload.tryParse({'startDate': 'x'}), isNull);
     });

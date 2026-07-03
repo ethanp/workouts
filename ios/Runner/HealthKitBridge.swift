@@ -52,8 +52,20 @@ final class HealthKitBridge {
   }
 
   private static let cardioActivityTypes: [HKWorkoutActivityType] = [
-    .running, .elliptical, .stairClimbing, .rowing
+    .running, .walking, .elliptical, .stairClimbing, .rowing
   ]
+
+  private static func isIndoorWorkout(_ workout: HKWorkout) -> Bool {
+    (workout.metadata?[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false
+  }
+
+  /// Outdoor walks are intentionally excluded from import: they tend to be
+  /// casual movement rather than deliberate workouts. Only indoor walks
+  /// (treadmill / walking pad) are imported.
+  private static func isImportableCardio(_ workout: HKWorkout) -> Bool {
+    if workout.workoutActivityType == .walking { return isIndoorWorkout(workout) }
+    return true
+  }
 
   func countCardioWorkouts(completion: @escaping (Int, Error?) -> Void) {
     guard HKHealthStore.isHealthDataAvailable() else {
@@ -74,7 +86,8 @@ final class HealthKitBridge {
         completion(0, error)
         return
       }
-      completion(samples?.count ?? 0, nil)
+      let workouts = (samples as? [HKWorkout]) ?? []
+      completion(workouts.filter { Self.isImportableCardio($0) }.count, nil)
     }
     healthStore.execute(query)
   }
@@ -111,7 +124,8 @@ final class HealthKitBridge {
         completion(nil, error)
         return
       }
-      let workouts = (samples as? [HKWorkout]) ?? []
+      let workouts = ((samples as? [HKWorkout]) ?? [])
+        .filter { Self.isImportableCardio($0) }
       if workouts.isEmpty {
         completion([], nil)
         return
@@ -146,6 +160,9 @@ final class HealthKitBridge {
     let isIndoor = (workout.metadata?[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false
     switch workout.workoutActivityType {
     case .running: return isIndoor ? "indoorRun" : "outdoorRun"
+    // Outdoor walks are already excluded by isImportableCardio, so any walk
+    // reaching this mapping is indoor.
+    case .walking: return "indoorWalk"
     case .elliptical: return "elliptical"
     case .stairClimbing: return "stairClimbing"
     case .rowing: return "rowing"

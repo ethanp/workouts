@@ -55,4 +55,5 @@ ios/build/
 *.freezed.dart
 
 # Deployment tracking
+.deploy_hash
 .deploy_ios_hash

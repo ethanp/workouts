@@ -15,6 +15,14 @@ class RollingDailyGoal {
   final double value;
   final String label;
   final Color color;
+
+  /// Legend text including how many more minutes are needed today to reach
+  /// this goal, given the current trailing 7-day total.
+  String legendWithTodayGap(double currentRollingMinutes) {
+    final minutesStillNeeded = value - currentRollingMinutes;
+    if (minutesStillNeeded <= 0) return '$label · met';
+    return '$label (deficit ${minutesStillNeeded.round()}m)';
+  }
 }
 
 class RollingDailyPainter extends CustomPainter {

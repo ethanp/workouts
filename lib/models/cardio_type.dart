@@ -3,6 +3,7 @@ import 'package:ethan_utils/ethan_utils.dart';
 enum CardioType {
   outdoorRun,
   indoorRun,
+  indoorWalk,
   elliptical,
   stairClimbing,
   rowing;
@@ -11,8 +12,10 @@ enum CardioType {
 
   bool get hasRoute => this == outdoorRun;
 
-  bool get hasDistance =>
-      this == outdoorRun || this == indoorRun || this == elliptical;
+  bool get hasDistance => switch (this) {
+    outdoorRun || indoorRun || indoorWalk || elliptical => true,
+    stairClimbing || rowing => false,
+  };
 
   String get dbKey => name;
 
