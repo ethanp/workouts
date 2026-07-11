@@ -235,6 +235,7 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
     return ExerciseTimerPanel(
       phase: _phase,
       remaining: _liveRemaining(),
+      phaseLength: _durationForPhase(_phase),
       isPaused: _isPaused,
       onStart: _startInitialPhase,
       onPause: _pauseTimer,

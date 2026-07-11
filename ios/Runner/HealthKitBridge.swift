@@ -55,18 +55,6 @@ final class HealthKitBridge {
     .running, .walking, .elliptical, .stairClimbing, .rowing
   ]
 
-  private static func isIndoorWorkout(_ workout: HKWorkout) -> Bool {
-    (workout.metadata?[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false
-  }
-
-  /// Outdoor walks are intentionally excluded from import: they tend to be
-  /// casual movement rather than deliberate workouts. Only indoor walks
-  /// (treadmill / walking pad) are imported.
-  private static func isImportableCardio(_ workout: HKWorkout) -> Bool {
-    if workout.workoutActivityType == .walking { return isIndoorWorkout(workout) }
-    return true
-  }
-
   func countCardioWorkouts(completion: @escaping (Int, Error?) -> Void) {
     guard HKHealthStore.isHealthDataAvailable() else {
       completion(0, nil)
@@ -87,7 +75,7 @@ final class HealthKitBridge {
         return
       }
       let workouts = (samples as? [HKWorkout]) ?? []
-      completion(workouts.filter { Self.isImportableCardio($0) }.count, nil)
+      completion(workouts.count, nil)
     }
     healthStore.execute(query)
   }
@@ -124,8 +112,7 @@ final class HealthKitBridge {
         completion(nil, error)
         return
       }
-      let workouts = ((samples as? [HKWorkout]) ?? [])
-        .filter { Self.isImportableCardio($0) }
+      let workouts = (samples as? [HKWorkout]) ?? []
       if workouts.isEmpty {
         completion([], nil)
         return
@@ -160,9 +147,7 @@ final class HealthKitBridge {
     let isIndoor = (workout.metadata?[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false
     switch workout.workoutActivityType {
     case .running: return isIndoor ? "indoorRun" : "outdoorRun"
-    // Outdoor walks are already excluded by isImportableCardio, so any walk
-    // reaching this mapping is indoor.
-    case .walking: return "indoorWalk"
+    case .walking: return isIndoor ? "indoorWalk" : "outdoorWalk"
     case .elliptical: return "elliptical"
     case .stairClimbing: return "stairClimbing"
     case .rowing: return "rowing"

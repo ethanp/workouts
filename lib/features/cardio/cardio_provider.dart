@@ -115,14 +115,21 @@ Future<void> cardioMetricsBackfill(Ref ref) async {
     return;
   }
   final countRows = await powerSyncDatabase.execute('''
-    SELECT
-      (SELECT COUNT(*) FROM cardio_workouts) AS workout_count,
-      (SELECT COUNT(*) FROM cardio_computed_metrics) AS computed_metrics_count
+    SELECT COUNT(*) AS cnt FROM cardio_workouts w
+    LEFT JOIN cardio_computed_metrics m ON m.id = w.id
+    WHERE m.id IS NULL
+      OR m.zone1_seconds IS NULL
+      OR (
+        COALESCE(m.has_hr_samples, 0) = 0
+        AND EXISTS (
+          SELECT 1 FROM cardio_heart_rate_samples sample
+          WHERE sample.workout_id = w.id
+          LIMIT 1
+        )
+      )
   ''');
-  final countRow = countRows.first;
-  final workoutCount = countRow['workout_count'] as int? ?? 0;
-  final computedMetricsCount = countRow['computed_metrics_count'] as int? ?? 0;
-  if (workoutCount == 0 || computedMetricsCount >= workoutCount) return;
+  final pendingCount = countRows.first['cnt'] as int? ?? 0;
+  if (pendingCount == 0) return;
 
   await CardioRepositoryPowerSync(powerSyncDatabase).backfillMissingMetrics();
 }

@@ -6,6 +6,9 @@ PODS:
     - Flutter
   - flutter_timezone (0.0.1):
     - Flutter
+  - path_provider_foundation (0.0.1):
+    - Flutter
+    - FlutterMacOS
   - powersync-sqlite-core (0.4.11)
   - powersync_flutter_libs (0.0.1):
     - Flutter
@@ -47,6 +50,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_local_notifications (from `.symlinks/plugins/flutter_local_notifications/ios`)
   - flutter_timezone (from `.symlinks/plugins/flutter_timezone/ios`)
+  - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - powersync-sqlite-core (= 0.4.11)
   - powersync_flutter_libs (from `.symlinks/plugins/powersync_flutter_libs/darwin`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
@@ -68,6 +72,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/flutter_local_notifications/ios"
   flutter_timezone:
     :path: ".symlinks/plugins/flutter_timezone/ios"
+  path_provider_foundation:
+    :path: ".symlinks/plugins/path_provider_foundation/darwin"
   powersync_flutter_libs:
     :path: ".symlinks/plugins/powersync_flutter_libs/darwin"
   shared_preferences_foundation:
@@ -82,6 +88,7 @@ SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
   flutter_local_notifications: 643a3eda1ce1c0599413ca31672536d423dee214
   flutter_timezone: 7c838e17ffd4645d261e87037e5bebf6d38fe544
+  path_provider_foundation: bb55f6dbba17d0dccd6737fe6f7f34fbd0376880
   powersync-sqlite-core: aae0128de5f062c8e5a6bc450090ebba0b398222
   powersync_flutter_libs: 3d0b1e35e7d97679a48bf54a582c0c5771f9c7e1
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb

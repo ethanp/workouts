@@ -76,6 +76,7 @@ Respond in JSON format with this exact structure:
 Exercise rules:
 - `modality` must be one of: reps, timed, hold, mobility, breath.
 - `setMetricsStyle` must be one of: repsOnly, repsAndWeight, durationOnly, repsAndDuration.
+- `modality` and `setMetricsStyle` are distinct fields with distinct value sets. Never put a setMetricsStyle value (e.g. `durationOnly`) into `modality`, and never put a modality value into `setMetricsStyle`.
 - Use `repsAndWeight` for externally loaded exercises such as barbell, dumbbell, kettlebell, cable, machine, sled, or weighted bodyweight work.
 - Use `repsOnly` for bodyweight or unloaded rep work such as pushups, bird dogs, dead bugs, squats, hinges, or crawls.
 - Use `durationOnly` for timed holds, breathing, carries, rests, or intervals where the completed set is recorded only by time.

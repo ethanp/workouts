@@ -8,6 +8,7 @@ class ExerciseTimerPanel extends StatelessWidget {
     super.key,
     required this.phase,
     required this.remaining,
+    this.phaseLength,
     required this.isPaused,
     required this.onStart,
     required this.onPause,
@@ -26,6 +27,10 @@ class ExerciseTimerPanel extends StatelessWidget {
 
   final TimerPhase phase;
   final Duration? remaining;
+
+  /// The current phase's configured full length. Shown alongside the live
+  /// countdown so the target duration stays visible while it ticks down.
+  final Duration? phaseLength;
   final bool isPaused;
   final VoidCallback onStart;
   final VoidCallback onPause;
@@ -50,11 +55,18 @@ class ExerciseTimerPanel extends StatelessWidget {
       hasSetupPhase || hasWorkPhase || hasRestPhase ? 'Ready' : 'Timer',
   };
 
-  String get _timeDisplay {
-    if (remaining == null) return '--:--';
-    final minutes = remaining!.inMinutes.remainder(60).abs();
-    final seconds = remaining!.inSeconds.remainder(60).abs();
-    final hours = remaining!.inHours;
+  String get _timeDisplay =>
+      remaining == null ? '--:--' : _formatDuration(remaining!);
+
+  /// True while a timed phase is running/paused and has a configured length,
+  /// so the countdown can display its target duration.
+  bool get _showsPhaseLength =>
+      remaining != null && phaseLength != null && phaseLength! > Duration.zero;
+
+  String _formatDuration(Duration duration) {
+    final minutes = duration.inMinutes.remainder(60).abs();
+    final seconds = duration.inSeconds.remainder(60).abs();
+    final hours = duration.inHours;
     if (hours > 0) {
       final mins = minutes.toString().padLeft(2, '0');
       final secs = seconds.toString().padLeft(2, '0');
@@ -77,17 +89,37 @@ class ExerciseTimerPanel extends StatelessWidget {
         children: [
           _headerRow(),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            _timeDisplay,
-            style: AppTypography.title.copyWith(
-              letterSpacing: 1.2,
-              fontFeatures: const [FontFeature.tabularFigures()],
-            ),
-          ),
+          _countdownRow(),
           const SizedBox(height: AppSpacing.sm),
           _controlsRow(),
         ],
       ),
+    );
+  }
+
+  Widget _countdownRow() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          _timeDisplay,
+          style: AppTypography.title.copyWith(
+            letterSpacing: 1.2,
+            fontFeatures: const [FontFeature.tabularFigures()],
+          ),
+        ),
+        if (_showsPhaseLength) ...[
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            '/ ${_formatDuration(phaseLength!)}',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textColor4,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
+          ),
+        ],
+      ],
     );
   }
 

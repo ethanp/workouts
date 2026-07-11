@@ -58,6 +58,23 @@ void main() {
       expect(indoorWalk.distanceMeters, 1600);
     });
 
+    test('maps the outdoor walk activity type with distance and route', () {
+      final outdoorWalk = CardioImportPayload.tryParse({
+        'externalWorkoutId': 'walk-outdoor',
+        'activityType': 'outdoorWalk',
+        'startDate': '2026-05-09T10:00:00Z',
+        'endDate': '2026-05-09T10:45:00Z',
+        'durationSeconds': 2700,
+        'distanceMeters': 3200,
+        'routeAvailable': true,
+      });
+
+      expect(outdoorWalk!.activityType, CardioType.outdoorWalk);
+      expect(outdoorWalk.activityType.hasDistance, isTrue);
+      expect(outdoorWalk.activityType.hasRoute, isTrue);
+      expect(outdoorWalk.distanceMeters, 3200);
+    });
+
     test('returns null when required identifiers are missing', () {
       expect(CardioImportPayload.tryParse({'startDate': 'x'}), isNull);
     });

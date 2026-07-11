@@ -42,6 +42,7 @@ WorkoutBlock _warmupActivationBlock() {
         setCount: 2,
         duration: const Duration(seconds: 20),
         modality: ExerciseModality.hold,
+        isUnilateral: true,
         cues: ['Work one side at a time', 'Keep toes relaxed'],
       ),
       _durationExercise(
@@ -76,6 +77,7 @@ WorkoutBlock _warmupActivationBlock() {
         prescription: '2 x 6 per side',
         setCount: 2,
         reps: 6,
+        isUnilateral: true,
         cues: ['Keep pelvis level', 'Reach long instead of high'],
       ),
       _repsExercise(
@@ -84,6 +86,7 @@ WorkoutBlock _warmupActivationBlock() {
         prescription: '2 x 6 per side',
         setCount: 2,
         reps: 6,
+        isUnilateral: true,
         cues: ['Full exhale', 'Keep low back quiet'],
       ),
       _durationExercise(
@@ -93,6 +96,7 @@ WorkoutBlock _warmupActivationBlock() {
         setCount: 1,
         duration: const Duration(seconds: 20),
         modality: ExerciseModality.hold,
+        isUnilateral: true,
         cues: ['Stay tall', 'Keep front foot grounded'],
       ),
     ],
@@ -229,6 +233,7 @@ WorkoutBlock _cooldownBlock() {
         setCount: 1,
         duration: const Duration(seconds: 30),
         modality: ExerciseModality.hold,
+        isUnilateral: true,
         cues: ['Posterior tilt', 'Reach tall'],
       ),
       _durationExercise(
@@ -238,6 +243,7 @@ WorkoutBlock _cooldownBlock() {
         setCount: 2,
         duration: const Duration(seconds: 20),
         modality: ExerciseModality.hold,
+        restDuration: const Duration(seconds: 30),
         cues: ['Only if available', 'Gentle decompression only'],
       ),
     ],
@@ -277,6 +283,7 @@ WorkoutExercise _repsExercise({
   required int reps,
   Weight? weight,
   Duration? restDuration,
+  bool isUnilateral = false,
   required List<String> cues,
 }) {
   return WorkoutExercise(
@@ -286,6 +293,7 @@ WorkoutExercise _repsExercise({
     prescription: prescription,
     targetSets: setCount,
     restDuration: restDuration,
+    isUnilateral: isUnilateral,
     cues: cues,
     plannedSets: [
       for (var setIndex = 0; setIndex < setCount; setIndex++)
@@ -302,6 +310,8 @@ WorkoutExercise _durationExercise({
   required Duration duration,
   required ExerciseModality modality,
   required List<String> cues,
+  Duration? restDuration,
+  bool isUnilateral = false,
 }) {
   return WorkoutExercise(
     id: id,
@@ -309,6 +319,8 @@ WorkoutExercise _durationExercise({
     modality: modality,
     prescription: prescription,
     targetSets: setCount,
+    restDuration: restDuration,
+    isUnilateral: isUnilateral,
     cues: cues,
     workDuration: duration,
     plannedSets: [

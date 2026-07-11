@@ -76,14 +76,9 @@ class GoalsArchivedToggleRow extends StatelessWidget {
 }
 
 class GoalsQuickAddRow extends StatelessWidget {
-  const GoalsQuickAddRow({
-    super.key,
-    required this.onAddGoal,
-    required this.onAddNote,
-  });
+  const GoalsQuickAddRow({super.key, required this.onAddGoal});
 
   final VoidCallback onAddGoal;
-  final VoidCallback onAddNote;
 
   @override
   Widget build(BuildContext context) {
@@ -98,13 +93,6 @@ class GoalsQuickAddRow extends StatelessWidget {
               color: CupertinoColors.white,
               fontWeight: FontWeight.w600,
             ),
-          ),
-        ),
-        CupertinoButton(
-          onPressed: onAddNote,
-          child: Text(
-            'Or add a background note',
-            style: TextStyle(color: AppColors.accentPrimary),
           ),
         ),
       ],

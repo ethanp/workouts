@@ -1,9 +1,7 @@
 import 'package:flutter/cupertino.dart';
-import 'package:workouts/features/goals/background_note_row.dart';
 import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_card.dart';
 import 'package:workouts/features/goals/goals_list_chrome.dart';
-import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -12,24 +10,18 @@ class GoalsList extends StatelessWidget {
     super.key,
     required this.activeGoals,
     required this.archivedGoals,
-    required this.activeNotes,
-    required this.archivedNotes,
     required this.allGoals,
     required this.showArchived,
     required this.onToggleArchived,
     required this.onAddGoal,
-    required this.onAddNote,
   });
 
   final List<FitnessGoal> activeGoals;
   final List<FitnessGoal> archivedGoals;
-  final List<BackgroundNote> activeNotes;
-  final List<BackgroundNote> archivedNotes;
   final List<FitnessGoal> allGoals;
   final bool showArchived;
   final VoidCallback onToggleArchived;
   final VoidCallback onAddGoal;
-  final VoidCallback onAddNote;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -39,7 +31,6 @@ class GoalsList extends StatelessWidget {
     ),
     children: [
       ..._activeGoalsSection(),
-      ..._activeNotesSection(),
       ..._emptySection(),
       ..._archivedSection(),
       const SizedBox(height: AppSpacing.xxl),
@@ -149,43 +140,19 @@ class GoalsList extends StatelessWidget {
     return categoryGoals;
   }
 
-  List<Widget> _activeNotesSection() {
-    if (activeNotes.isEmpty) return [];
-    return [
-      GoalsSectionHeader(
-        icon: CupertinoIcons.doc_text_fill,
-        title: 'BACKGROUND',
-        action: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: onAddNote,
-          child: const Text(
-            'Add',
-            style: TextStyle(fontSize: 14, color: AppColors.accentPrimary),
-          ),
-        ),
-      ),
-      const SizedBox(height: AppSpacing.sm),
-      ...activeNotes.map(
-        (note) => BackgroundNoteRow(note: note, allGoals: allGoals),
-      ),
-      const SizedBox(height: AppSpacing.xl),
-    ];
-  }
-
   List<Widget> _emptySection() {
-    if (activeGoals.isNotEmpty || activeNotes.isNotEmpty) return [];
+    if (activeGoals.isNotEmpty) return [];
     return [
-      GoalsQuickAddRow(onAddGoal: onAddGoal, onAddNote: onAddNote),
+      GoalsQuickAddRow(onAddGoal: onAddGoal),
       const SizedBox(height: AppSpacing.xl),
     ];
   }
 
   List<Widget> _archivedSection() {
-    final archivedCount = archivedGoals.length + archivedNotes.length;
-    if (archivedCount == 0) return [];
+    if (archivedGoals.isEmpty) return [];
     return [
       GoalsArchivedToggleRow(
-        count: archivedCount,
+        count: archivedGoals.length,
         isExpanded: showArchived,
         onTap: onToggleArchived,
       ),
@@ -193,13 +160,6 @@ class GoalsList extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         ...archivedGoals.map(
           (goal) => GoalCard(goal: goal, allGoals: allGoals, isArchived: true),
-        ),
-        ...archivedNotes.map(
-          (note) => BackgroundNoteRow(
-            note: note,
-            allGoals: allGoals,
-            isArchived: true,
-          ),
         ),
       ],
     ];

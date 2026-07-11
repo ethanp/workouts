@@ -6,6 +6,21 @@ import 'package:workouts/utils/hr_zone_classifier.dart';
 
 const _log = ELogger('CardioMetricsStore');
 
+/// Workouts that still need zone metrics: no row yet, an incomplete row, or a
+/// stale empty row written before HR samples landed (import/backfill race).
+const _needsMetricsSql = '''
+  m.id IS NULL
+  OR m.zone1_seconds IS NULL
+  OR (
+    COALESCE(m.has_hr_samples, 0) = 0
+    AND EXISTS (
+      SELECT 1 FROM cardio_heart_rate_samples sample
+      WHERE sample.workout_id = w.id
+      LIMIT 1
+    )
+  )
+''';
+
 /// Manages the `cardio_computed_metrics` local-only table: computing,
 /// storing, backfilling, and recomputing zone times for individual workouts.
 class CardioMetricsStore {
@@ -15,16 +30,18 @@ class CardioMetricsStore {
 
   Future<void> computeAndStore(String workoutId) async {
     final hrSamples = await loadHrSamples(workoutId);
-    final HrZoneTime zone;
-    final bool hasHrSamples;
     if (hrSamples.isEmpty) {
-      zone = HrZoneTime.zero;
-      hasHrSamples = false;
-    } else {
-      zone = HrZoneClassifier.compute(hrSamples);
-      hasHrSamples = true;
+      // Don't clobber a good metrics row with an empty one — import can race
+      // with backfill, which may load samples before they've been written.
+      if (await _hasComputedHrSamples(workoutId)) return;
+      await _persist(workoutId, HrZoneTime.zero, hasHrSamples: false);
+      return;
     }
-    await _persist(workoutId, zone, hasHrSamples: hasHrSamples);
+    await _persist(
+      workoutId,
+      HrZoneClassifier.compute(hrSamples),
+      hasHrSamples: true,
+    );
   }
 
   Future<void> recomputeAllZones({
@@ -56,17 +73,27 @@ class CardioMetricsStore {
 
   /// Streams the number of cardio workouts that have no computed zone metrics
   /// yet. Drives the "compute missing zones" UI affordance.
-  Stream<int> watchMissingCount() => _powerSync.watch('''
+  Stream<int> watchMissingCount() => _powerSync
+      .watch('''
         SELECT COUNT(*) AS cnt FROM cardio_workouts w
         LEFT JOIN cardio_computed_metrics m ON m.id = w.id
-        WHERE m.id IS NULL OR m.zone1_seconds IS NULL
-      ''').map((rows) => (rows.first['cnt'] as int?) ?? 0);
+        WHERE $_needsMetricsSql
+      ''')
+      .map((rows) => (rows.first['cnt'] as int?) ?? 0);
 
   Future<List<Map<String, dynamic>>> _missingRows() => _powerSync.execute('''
         SELECT w.id FROM cardio_workouts w
         LEFT JOIN cardio_computed_metrics m ON m.id = w.id
-        WHERE m.id IS NULL OR m.zone1_seconds IS NULL
+        WHERE $_needsMetricsSql
       ''');
+
+  Future<bool> _hasComputedHrSamples(String workoutId) async {
+    final Map<String, dynamic>? metricsRow = await _powerSync.getOptional(
+      'SELECT has_hr_samples FROM cardio_computed_metrics WHERE id = ?',
+      [workoutId],
+    );
+    return (metricsRow?['has_hr_samples'] as int?) == 1;
+  }
 
   Future<List<TimestampedHeartRate>> loadHrSamples(String workoutId) async {
     final List<Map<String, dynamic>> sampleRows = await _powerSync.execute(

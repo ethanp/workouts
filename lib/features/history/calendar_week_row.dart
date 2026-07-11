@@ -192,7 +192,7 @@ class _WeekSummary extends StatelessWidget {
 
   Widget _zoneLabel(int gteZone2Minutes) {
     return Text(
-      '${gteZone2Minutes}z',
+      '${gteZone2Minutes}z2-5',
       style: TextStyle(
         fontSize: _summaryFontSize - 1,
         color: AppColors.textColor4,

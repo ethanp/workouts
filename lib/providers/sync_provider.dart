@@ -12,11 +12,17 @@ enum SyncState { connecting, downloading, uploading, synced, offline, error }
 final syncStateProvider = Provider<SyncState>((ref) {
   return ref.watch(sync.syncStatusProvider).when(
         data: (status) {
-          if (!status.connected) return SyncState.offline;
-          if (status.downloading) return SyncState.downloading;
-          if (status.uploading) return SyncState.uploading;
-          if (status.hasSynced == true) return SyncState.synced;
-          return SyncState.connecting;
+          if (status.connected) {
+            if (status.downloading) return SyncState.downloading;
+            if (status.uploading) return SyncState.uploading;
+            if (status.hasSynced == true) return SyncState.synced;
+            return SyncState.connecting;
+          }
+          // PowerSync sets `connecting` while the socket is mid-handshake or
+          // retrying. Treat that as connecting, not offline — otherwise a
+          // reachable selected host still shows yellow "Offline".
+          if (status.connecting) return SyncState.connecting;
+          return SyncState.offline;
         },
         loading: () => SyncState.connecting,
         error: (_, __) => SyncState.error,
@@ -33,20 +39,23 @@ final syncStatusDescriptionProvider = Provider<String>((ref) {
 });
 
 String _describeStatus(SyncStatus status) {
-  if (!status.connected) return 'Offline';
-  if (status.downloading) {
-    final progress = status.downloadProgress;
-    if (progress != null) {
-      return 'Downloading ${progress.downloadedOperations}/${progress.totalOperations}';
+  if (status.connected) {
+    if (status.downloading) {
+      final progress = status.downloadProgress;
+      if (progress != null) {
+        return 'Downloading ${progress.downloadedOperations}/${progress.totalOperations}';
+      }
+      return 'Downloading...';
     }
-    return 'Downloading...';
+    if (status.uploading) return 'Uploading changes...';
+    if (status.hasSynced == true) {
+      final lastSyncedAt = status.lastSyncedAt;
+      return lastSyncedAt != null ? 'Synced ${_relativeTime(lastSyncedAt)}' : 'Synced';
+    }
+    return 'Connecting...';
   }
-  if (status.uploading) return 'Uploading changes...';
-  if (status.hasSynced == true) {
-    final lastSyncedAt = status.lastSyncedAt;
-    return lastSyncedAt != null ? 'Synced ${_relativeTime(lastSyncedAt)}' : 'Synced';
-  }
-  return 'Connecting...';
+  if (status.connecting) return 'Connecting...';
+  return 'Offline';
 }
 
 String _relativeTime(DateTime time) {

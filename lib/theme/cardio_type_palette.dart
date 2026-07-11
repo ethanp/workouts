@@ -8,6 +8,7 @@ class CardioTypePalette {
   static Color colorFor(CardioType cardioType) => switch (cardioType) {
     CardioType.outdoorRun => AppColors.accentPrimary,
     CardioType.indoorRun => AppColors.accentSecondary,
+    CardioType.outdoorWalk => const Color(0xFF5E5CE6),
     CardioType.indoorWalk => const Color(0xFFBF5AF2),
     CardioType.elliptical => const Color(0xFFFF9F0A),
     CardioType.stairClimbing => AppColors.success,

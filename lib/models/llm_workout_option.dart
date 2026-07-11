@@ -1,3 +1,5 @@
+// ignore_for_file: invalid_annotation_target
+
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:workouts/models/exercise_set_metrics.dart';
 import 'package:workouts/models/workout_exercise.dart';
@@ -39,7 +41,10 @@ abstract class LlmExercise with _$LlmExercise {
   const factory LlmExercise({
     required String name,
     required String prescription,
-    @Default(ExerciseModality.reps) ExerciseModality modality,
+    @JsonKey(unknownEnumValue: ExerciseModality.reps)
+    @Default(ExerciseModality.reps)
+    ExerciseModality modality,
+    @JsonKey(unknownEnumValue: JsonKey.nullForUndefinedEnumValue)
     ExerciseSetMetricsStyle? setMetricsStyle,
     @Default([]) List<PlannedSet> plannedSets,
     int? restSeconds,

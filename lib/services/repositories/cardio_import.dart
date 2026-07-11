@@ -57,9 +57,11 @@ class CardioImporter {
     );
     final String now = DateTime.now().toIso8601String();
     await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
-    await _saveRoutePoints(workoutId, workout.routePoints, now: now);
+    // HR before route points: outdoor walks can have large routes, and metrics
+    // backfill must not observe a workout that still has no samples.
     await _saveHeartRateSamples(workoutId, workout.heartRateSamples, now: now);
     await _metricsStore.computeAndStore(workoutId);
+    await _saveRoutePoints(workoutId, workout.routePoints, now: now);
     await _bestEffortStore.computeAndStore(workoutId);
     return true;
   }

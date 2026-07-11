@@ -168,7 +168,7 @@ class CalendarDayCell extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return Text(
-      '${entry!.cardioZoneTime.gteZone2Minutes}z',
+      '${entry!.cardioZoneTime.gteZone2Minutes}z2-5',
       textAlign: TextAlign.right,
       style: TextStyle(fontSize: 8, color: textColor.withValues(alpha: 0.75)),
     );

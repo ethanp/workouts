@@ -1,4 +1,9 @@
-import 'package:ethan_sync/ethan_sync.dart' show hostResolverProvider, pendingUploadCountProvider, syncStatusProvider;
+import 'package:ethan_sync/ethan_sync.dart'
+    show
+        hostResolverProvider,
+        pendingUploadCountProvider,
+        syncConnectionProvider,
+        syncStatusProvider;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -21,8 +26,38 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      ref.read(hostProbesProvider.notifier).probe();
+      _probeAndReconnectIfNeeded();
     });
+  }
+
+  Future<void> _probeAndReconnectIfNeeded() async {
+    await ref.read(hostProbesProvider.notifier).probe();
+    if (!mounted) return;
+
+    // Refresh host selection; reconnects automatically when the host changes.
+    final hostChanged =
+        await ref.read(hostResolverProvider.notifier).refineByTcpProbe();
+    if (!mounted || hostChanged) return;
+
+    // Host already correct but PowerSync may still be sitting in a failed /
+    // backoff state — nudge it when the selected host just proved reachable.
+    final syncStatus = ref.read(syncStatusProvider).value;
+    if (syncStatus != null && syncStatus.connected) return;
+
+    final activeHost = ref.read(hostResolverProvider);
+    final probes = ref.read(hostProbesProvider).probes;
+    HostProbe? activeHostProbe;
+    for (final probe in probes) {
+      if (probe.host == activeHost) {
+        activeHostProbe = probe;
+        break;
+      }
+    }
+    if (activeHostProbe == null || !activeHostProbe.reachable) return;
+
+    final controller = await ref.read(syncConnectionProvider.future);
+    if (!mounted) return;
+    await controller.connect('active host reachable');
   }
 
   @override
@@ -33,6 +68,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     final activeHost = ref.watch(hostResolverProvider);
     final probes = ref.watch(hostProbesProvider);
     final isConnected = syncStatus.value?.connected ?? false;
+    final isConnecting = syncStatus.value?.connecting ?? false;
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -46,7 +82,11 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
         children: [
           _titleRow(probes.isProbing),
           const SizedBox(height: AppSpacing.sm),
-          _statusRow(isConnected, description),
+          _statusRow(
+            isConnected: isConnected,
+            isConnecting: isConnecting,
+            description: description,
+          ),
           const SizedBox(height: AppSpacing.sm),
           ..._hostRows(activeHost, probes),
           ..._switchRouteSection(activeHost),
@@ -74,9 +114,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     minimumSize: const Size(0, 0),
     color: AppColors.backgroundDepth3,
     borderRadius: BorderRadius.circular(AppRadius.sm),
-    onPressed: isProbing
-        ? null
-        : () => ref.read(hostProbesProvider.notifier).probe(),
+    onPressed: isProbing ? null : _probeAndReconnectIfNeeded,
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -100,14 +138,20 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     ),
   );
 
-  Widget _statusRow(bool isConnected, String description) => Row(
+  Widget _statusRow({
+    required bool isConnected,
+    required bool isConnecting,
+    required String description,
+  }) => Row(
     children: [
       Container(
         width: 8,
         height: 8,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: isConnected ? AppColors.success : AppColors.warning,
+          color: isConnected
+              ? AppColors.success
+              : (isConnecting ? AppColors.accentPrimary : AppColors.warning),
         ),
       ),
       const SizedBox(width: AppSpacing.sm),
@@ -186,7 +230,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                     if (isActive) ...[
                       const SizedBox(width: AppSpacing.xs),
                       Text(
-                        '\u00B7 active',
+                        '\u00B7 selected',
                         style: AppTypography.caption.copyWith(
                           color: AppColors.accentPrimary,
                           fontWeight: FontWeight.w600,
@@ -238,8 +282,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
         child: CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           color: AppColors.backgroundDepth3,
-          onPressed: () =>
-              ref.read(hostResolverProvider.notifier).setHost(other.host),
+          onPressed: () => _switchRoute(other.host),
           child: Text(
             'Switch to ${other.label}',
             style: AppTypography.body.copyWith(
@@ -250,6 +293,15 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
         ),
       ),
     ];
+  }
+
+  Future<void> _switchRoute(String host) async {
+    ref.read(hostResolverProvider.notifier).setHost(host);
+    // Don't wait for the host-change listener alone — explicitly reconnect so
+    // a hung attempt against the previous route is aborted right away.
+    final controller = await ref.read(syncConnectionProvider.future);
+    if (!mounted) return;
+    await controller.connect('manual host switch');
   }
 
   IconData _statusIcon({required HostProbe? probe, required bool isProbing}) {

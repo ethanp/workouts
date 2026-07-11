@@ -142,54 +142,15 @@ class HistoryChartsTab extends ConsumerWidget {
           displayEnd: visibleRange?.end,
         ),
         const SizedBox(height: AppSpacing.xxl),
-        _sectionHeader('Outdoor Running'),
-        const SizedBox(height: AppSpacing.lg),
-        WeeklyBarChart(
-          title: 'Weekly Run Distance',
+        _OutdoorRunningCharts(
           weeks: _weekDataList(
             visibleWeeks,
             valueFor: (week) => week.outdoorRunMeters / metersPerMile,
           ),
-          barColor: AppColors.accentPrimary,
-          goalLine: const ChartGoalLine(
-            target: 0.5,
-            label: '0.5mi/wk goal',
-            color: AppColors.accentPrimary,
-          ),
-          formatValue: (value) => '${value.toStringAsFixed(1)}mi',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        CardioTrendChart(
-          title: 'Outdoor Run Trends',
-          series: const CardioTrendSeriesFactory().build(
-            workouts: workouts,
-            bestEfforts: bestEfforts,
-          ),
+          workouts: workouts,
+          bestEfforts: bestEfforts,
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
-        ),
-      ],
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Row(
-      children: [
-        Text(
-          title.toUpperCase(),
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.8,
-            color: AppColors.textColor4,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.md),
-        const Expanded(
-          child: SizedBox(
-            height: 0.5,
-            child: ColoredBox(color: AppColors.borderDepth1),
-          ),
         ),
       ],
     );
@@ -277,5 +238,97 @@ class HistoryChartsTab extends ConsumerWidget {
           ),
         )
         .toList();
+  }
+}
+
+class _OutdoorRunningCharts extends StatefulWidget {
+  const _OutdoorRunningCharts({
+    required this.weeks,
+    required this.workouts,
+    required this.bestEfforts,
+    this.displayStart,
+    this.displayEnd,
+  });
+
+  final List<WeekData> weeks;
+  final List<CardioWorkout> workouts;
+  final List<CardioBestEffort> bestEfforts;
+  final DateTime? displayStart;
+  final DateTime? displayEnd;
+
+  @override
+  State<_OutdoorRunningCharts> createState() => _OutdoorRunningChartsState();
+}
+
+class _OutdoorRunningChartsState extends State<_OutdoorRunningCharts> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _sectionHeader(),
+        if (_expanded) ...[
+          const SizedBox(height: AppSpacing.lg),
+          WeeklyBarChart(
+            title: 'Weekly Run Distance',
+            weeks: widget.weeks,
+            barColor: AppColors.accentPrimary,
+            goalLine: const ChartGoalLine(
+              target: 0.5,
+              label: '0.5mi/wk goal',
+              color: AppColors.accentPrimary,
+            ),
+            formatValue: (value) => '${value.toStringAsFixed(1)}mi',
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          CardioTrendChart(
+            title: 'Outdoor Run Trends',
+            series: const CardioTrendSeriesFactory().build(
+              workouts: widget.workouts,
+              bestEfforts: widget.bestEfforts,
+            ),
+            displayStart: widget.displayStart,
+            displayEnd: widget.displayEnd,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _sectionHeader() {
+    return GestureDetector(
+      onTap: () => setState(() => _expanded = !_expanded),
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        children: [
+          Text(
+            'OUTDOOR RUNNING',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.8,
+              color: AppColors.textColor4,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Icon(
+            _expanded
+                ? CupertinoIcons.chevron_up
+                : CupertinoIcons.chevron_down,
+            size: 11,
+            color: AppColors.textColor4,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          const Expanded(
+            child: SizedBox(
+              height: 0.5,
+              child: ColoredBox(color: AppColors.borderDepth1),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

@@ -144,7 +144,8 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
   Future<void> _callLlm([String? feedback]) async {
     _tokenSubscription?.cancel();
     _activeClient?.close();
-    _activeClient = http.Client();
+    final client = http.Client();
+    _activeClient = client;
 
     if (feedback == null) {
       _log.log('Starting workout generation...');
@@ -170,34 +171,38 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
           .streamWorkoutOptions(
             context: contextWithPrefs,
             userFeedback: feedback,
-            httpClient: _activeClient!,
+            httpClient: client,
           );
 
+      // The live token stream only drives the streaming UI. Completion and
+      // errors — including the ClientException raised when cancel() closes
+      // the connection — are delivered through `parsed`, so awaiting it is
+      // the single completion signal. (Coordinating via a subscription
+      // completer here would deadlock: cancel() cancels the subscription
+      // before onDone/onError can fire, and the parsed error would then go
+      // unawaited and surface as an uncaught zone error.)
       final accumulated = StringBuffer();
-      final tokenCompleter = Completer<void>();
-
       _tokenSubscription = tokens.listen(
         (delta) {
+          if (!identical(_activeClient, client)) return;
           accumulated.write(delta);
           state = GenerationStreaming(accumulated.toString());
         },
-        onError: (Object error) {
-          if (!tokenCompleter.isCompleted) tokenCompleter.completeError(error);
-        },
-        onDone: () {
-          if (!tokenCompleter.isCompleted) tokenCompleter.complete();
-        },
+        onError: (_) {},
       );
 
-      await tokenCompleter.future;
       final response = await parsed;
-
+      if (!identical(_activeClient, client)) return;
       _log.log('Generated ${response.options.length} workout options');
       state = GenerationComplete(response);
     } on http.ClientException catch (clientException) {
-      _log.log('LLM request cancelled: $clientException');
+      // A closed connection is expected once this request has been cancelled
+      // or superseded; only the still-active request treats it as a failure.
+      if (!identical(_activeClient, client)) return;
+      _log.error('Workout generation request failed: $clientException');
       state = GenerationFailed(clientException);
     } catch (error, stackTrace) {
+      if (!identical(_activeClient, client)) return;
       _log.error(
         'Workout generation notifier failed: $error',
         null,
@@ -205,8 +210,10 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
       );
       state = GenerationFailed(error);
     } finally {
-      _tokenSubscription = null;
-      _activeClient = null;
+      if (identical(_activeClient, client)) {
+        _tokenSubscription = null;
+        _activeClient = null;
+      }
     }
   }
 }

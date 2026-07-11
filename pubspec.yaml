@@ -72,6 +72,9 @@ dev_dependencies:
 dependency_overrides:
   sqlite3_flutter_libs: 0.5.41
   powersync: 1.16.2
+  # 2.6.0 FFI loads objective_c via a relative path that skips @rpath on iOS
+  # (github.com/flutter/flutter/issues/186794). 2.5.1 uses method channels.
+  path_provider_foundation: 2.5.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
