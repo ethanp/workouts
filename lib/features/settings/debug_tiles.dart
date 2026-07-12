@@ -268,8 +268,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _forceReconnect() async {
     setState(() => _reconnecting = true);
     try {
-      final controller = await ref.read(syncConnectionProvider.future);
-      await controller.connect('manual reconnect');
+      await ref.read(syncEnsureProvider).reconnect();
     } finally {
       if (mounted) setState(() => _reconnecting = false);
     }
@@ -280,8 +279,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
     try {
       final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
       await powerSyncDatabase.disconnectAndClear();
-      final controller = await ref.read(syncConnectionProvider.future);
-      await controller.connect('after reset');
+      await ref.read(syncEnsureProvider).reconnect(reason: 'after reset');
       if (mounted) _refreshCounts();
     } finally {
       if (mounted) setState(() => _resettingSync = false);

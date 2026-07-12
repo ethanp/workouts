@@ -27,6 +27,7 @@ SyncConfig buildWorkoutsSyncConfig(SharedPreferences preferences) {
   return SyncConfig(
     hostResolution: HostResolutionSettings(
       candidates: _hostCandidates(),
+      labels: _hostLabels(),
       probePort: _postgrestPort,
       unreachablePolicy: const ParkOnLastCandidatePolicy(),
     ),
@@ -71,6 +72,18 @@ List<String> _hostCandidates() {
     );
   }
   return candidates;
+}
+
+Map<String, String> _hostLabels() {
+  final lan = dotenv.env['SERVER_HOST_LAN'];
+  final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'];
+  return {
+    if (lan != null && lan.isNotEmpty) lan: 'Home LAN',
+    if (tailscale != null &&
+        tailscale.isNotEmpty &&
+        tailscale != lan)
+      tailscale: 'Tailscale',
+  };
 }
 
 Future<String> _resolveDatabasePath(SharedPreferences preferences) async {

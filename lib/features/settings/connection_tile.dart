@@ -1,18 +1,12 @@
-import 'package:ethan_sync/ethan_sync.dart'
-    show
-        hostResolverProvider,
-        pendingUploadCountProvider,
-        syncConnectionProvider,
-        syncStatusProvider;
+import 'dart:async';
+
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/backend/host_probes_notifier.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-/// Single tile that surfaces all user-relevant connection state: status,
-/// pending uploads, and per-candidate host reachability (LAN, Tailscale).
+/// Surfaces sync status, pending uploads, and per-candidate host reachability.
 class ConnectionTile extends ConsumerStatefulWidget {
   const ConnectionTile({super.key});
 
@@ -26,38 +20,8 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _probeAndReconnectIfNeeded();
+      unawaited(ref.read(syncEnsureProvider).ensureConnected());
     });
-  }
-
-  Future<void> _probeAndReconnectIfNeeded() async {
-    await ref.read(hostProbesProvider.notifier).probe();
-    if (!mounted) return;
-
-    // Refresh host selection; reconnects automatically when the host changes.
-    final hostChanged =
-        await ref.read(hostResolverProvider.notifier).refineByTcpProbe();
-    if (!mounted || hostChanged) return;
-
-    // Host already correct but PowerSync may still be sitting in a failed /
-    // backoff state — nudge it when the selected host just proved reachable.
-    final syncStatus = ref.read(syncStatusProvider).value;
-    if (syncStatus != null && syncStatus.connected) return;
-
-    final activeHost = ref.read(hostResolverProvider);
-    final probes = ref.read(hostProbesProvider).probes;
-    HostProbe? activeHostProbe;
-    for (final probe in probes) {
-      if (probe.host == activeHost) {
-        activeHostProbe = probe;
-        break;
-      }
-    }
-    if (activeHostProbe == null || !activeHostProbe.reachable) return;
-
-    final controller = await ref.read(syncConnectionProvider.future);
-    if (!mounted) return;
-    await controller.connect('active host reachable');
   }
 
   @override
@@ -66,7 +30,8 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     final description = ref.watch(syncStatusDescriptionProvider);
     final pendingAsync = ref.watch(pendingUploadCountProvider);
     final activeHost = ref.watch(hostResolverProvider);
-    final probes = ref.watch(hostProbesProvider);
+    final health = ref.watch(hostHealthProvider);
+    final hostResolution = ref.watch(syncConfigProvider).hostResolution;
     final isConnected = syncStatus.value?.connected ?? false;
     final isConnecting = syncStatus.value?.connecting ?? false;
 
@@ -80,7 +45,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _titleRow(probes.isProbing),
+          _titleRow(health.isProbing),
           const SizedBox(height: AppSpacing.sm),
           _statusRow(
             isConnected: isConnected,
@@ -88,8 +53,15 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
             description: description,
           ),
           const SizedBox(height: AppSpacing.sm),
-          ..._hostRows(activeHost, probes),
-          ..._switchRouteSection(activeHost),
+          ..._hostRows(
+            activeHost: activeHost,
+            health: health,
+            hostResolution: hostResolution,
+          ),
+          ..._switchRouteSection(
+            activeHost: activeHost,
+            hostResolution: hostResolution,
+          ),
           if ((pendingAsync.value ?? 0) > 0) ...[
             const SizedBox(height: AppSpacing.xs),
             _pendingRow(pendingAsync.value!),
@@ -114,7 +86,9 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     minimumSize: const Size(0, 0),
     color: AppColors.backgroundDepth3,
     borderRadius: BorderRadius.circular(AppRadius.sm),
-    onPressed: isProbing ? null : _probeAndReconnectIfNeeded,
+    onPressed: isProbing
+        ? null
+        : () => ref.read(syncEnsureProvider).ensureConnected(),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -164,42 +138,33 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     ],
   );
 
-  /// Always renders one row per declared candidate (LAN, Tailscale) so the
-  /// list is stable across probe states. While the first probe is in flight
-  /// we synthesize "Probing..." rows from `.env` rather than empty space.
-  List<Widget> _hostRows(String activeHost, HostProbesState probes) {
-    final lanHost = dotenv.env['SERVER_HOST_LAN'] ?? '';
-    final tailscaleHost = dotenv.env['SERVER_HOST_TAILSCALE'] ?? '';
-    return [
-      _hostRow(
-        label: 'Home LAN',
-        host: lanHost,
-        probe: _probeFor('LAN', probes.probes),
-        isActive: activeHost == lanHost,
-        isProbing: probes.isProbing && probes.probes.isEmpty,
-      ),
-      const SizedBox(height: AppSpacing.xs),
-      _hostRow(
-        label: 'Tailscale',
-        host: tailscaleHost,
-        probe: _probeFor('Tailscale', probes.probes),
-        isActive: activeHost == tailscaleHost,
-        isProbing: probes.isProbing && probes.probes.isEmpty,
-      ),
-    ];
-  }
-
-  HostProbe? _probeFor(String label, List<HostProbe> probes) {
-    for (final probe in probes) {
-      if (probe.label == label) return probe;
+  List<Widget> _hostRows({
+    required String activeHost,
+    required HostHealthState health,
+    required HostResolutionSettings hostResolution,
+  }) {
+    final rows = <Widget>[];
+    for (var index = 0; index < hostResolution.candidates.length; index++) {
+      if (index > 0) rows.add(const SizedBox(height: AppSpacing.xs));
+      final host = hostResolution.candidates[index];
+      final label = hostResolution.labels[host] ?? host;
+      rows.add(
+        _hostRow(
+          label: label,
+          host: host,
+          probe: health.forHost(host),
+          isActive: activeHost == host,
+          isProbing: health.isProbing && health.candidates.isEmpty,
+        ),
+      );
     }
-    return null;
+    return rows;
   }
 
   Widget _hostRow({
     required String label,
     required String host,
-    required HostProbe? probe,
+    required HostCandidateHealth? probe,
     required bool isActive,
     required bool isProbing,
   }) {
@@ -222,9 +187,8 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                       label,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textColor3,
-                        fontWeight: isActive
-                            ? FontWeight.w600
-                            : FontWeight.w400,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.w400,
                       ),
                     ),
                     if (isActive) ...[
@@ -260,20 +224,29 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     );
   }
 
-  /// Pair of [label, host] for the route that is currently NOT active, or
-  /// null when there's no alternative to switch to (single candidate
-  /// configured, both env vars equal, or active host doesn't match either).
-  ({String label, String host})? _otherRoute(String activeHost) {
-    final lan = dotenv.env['SERVER_HOST_LAN'] ?? '';
-    final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'] ?? '';
-    if (lan.isEmpty || tailscale.isEmpty || lan == tailscale) return null;
-    if (activeHost == lan) return (label: 'Tailscale', host: tailscale);
-    if (activeHost == tailscale) return (label: 'Home LAN', host: lan);
+  ({String label, String host})? _otherRoute({
+    required String activeHost,
+    required HostResolutionSettings hostResolution,
+  }) {
+    if (hostResolution.candidates.length < 2) return null;
+    for (final host in hostResolution.candidates) {
+      if (host == activeHost) continue;
+      return (
+        label: hostResolution.labels[host] ?? host,
+        host: host,
+      );
+    }
     return null;
   }
 
-  List<Widget> _switchRouteSection(String activeHost) {
-    final other = _otherRoute(activeHost);
+  List<Widget> _switchRouteSection({
+    required String activeHost,
+    required HostResolutionSettings hostResolution,
+  }) {
+    final other = _otherRoute(
+      activeHost: activeHost,
+      hostResolution: hostResolution,
+    );
     if (other == null) return const [];
     return [
       const SizedBox(height: AppSpacing.sm),
@@ -282,7 +255,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
         child: CupertinoButton(
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           color: AppColors.backgroundDepth3,
-          onPressed: () => _switchRoute(other.host),
+          onPressed: () => ref.read(syncEnsureProvider).switchHost(other.host),
           child: Text(
             'Switch to ${other.label}',
             style: AppTypography.body.copyWith(
@@ -295,22 +268,19 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     ];
   }
 
-  Future<void> _switchRoute(String host) async {
-    ref.read(hostResolverProvider.notifier).setHost(host);
-    // Don't wait for the host-change listener alone — explicitly reconnect so
-    // a hung attempt against the previous route is aborted right away.
-    final controller = await ref.read(syncConnectionProvider.future);
-    if (!mounted) return;
-    await controller.connect('manual host switch');
-  }
-
-  IconData _statusIcon({required HostProbe? probe, required bool isProbing}) {
+  IconData _statusIcon({
+    required HostCandidateHealth? probe,
+    required bool isProbing,
+  }) {
     if (isProbing || probe == null) return CupertinoIcons.circle;
     if (probe.reachable) return CupertinoIcons.checkmark_circle_fill;
     return CupertinoIcons.xmark_circle_fill;
   }
 
-  Color _statusColor({required HostProbe? probe, required bool isProbing}) {
+  Color _statusColor({
+    required HostCandidateHealth? probe,
+    required bool isProbing,
+  }) {
     if (isProbing || probe == null) return AppColors.textColor4;
     if (probe.reachable) return AppColors.success;
     return AppColors.warning;
@@ -329,7 +299,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
         Expanded(
           child: Text(
             '$pending pending upload${pending == 1 ? '' : 's'}',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
           ),
         ),
       ],

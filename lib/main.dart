@@ -8,10 +8,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
-import 'package:workouts/services/backend/backend_host_probe_scheduler.dart';
 import 'package:workouts/services/backend/sync_config.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/preferences_provider.dart';
 import 'package:workouts/utils/error_bus.dart';
 
@@ -43,30 +41,20 @@ Future<void> _bootstrap() async {
     ],
   );
 
-  // Probe before runApp so the very first PowerSync connector targets a
-  // reachable host — no transient bad-host attempt before the after-first-
-  // frame re-probe lands.
-  await container.read(hostResolverProvider.notifier).refineByTcpProbe();
+  // Probe + open DB + connect before runApp. Post-frame re-probe is scheduled
+  // inside SyncLifecycle so networking that was still settling at launch is
+  // picked up without an app-owned scheduler.
+  try {
+    await SyncLifecycle.start(container);
+  } catch (error, stackTrace) {
+    _log.error('PowerSync bootstrap failed', error, stackTrace);
+    errorBus.add('PowerSync init: $error');
+  }
 
   // Warm up the local-notification plugin (timezone DB + plugin init) so
   // the first interval-timer start doesn't pay that cost. Permission is
   // still requested lazily inside `scheduleAt` on first use.
   await container.read(timerNotificationServiceProvider).init();
-
-  // Pre-open the local PowerSync DB before runApp so the synchronous
-  // `xxxRepositoryPowerSyncProvider` family (which throws when
-  // `powerSyncDatabaseProvider.value == null`) never observes the
-  // AsyncLoading state. `initPowerSync` is local SQLite open + schema
-  // setup; `connectPowerSync` only registers the connector and does not
-  // block on network. Failures here are surfaced to the error banner so
-  // they're copy-pasteable instead of just rendered as a blank/error
-  // first frame.
-  try {
-    await container.read(powerSyncDatabaseProvider.future);
-  } catch (error, stackTrace) {
-    _log.error('PowerSync pre-warm failed', error, stackTrace);
-    errorBus.add('PowerSync init: $error');
-  }
 
   runApp(
     UncontrolledProviderScope(
@@ -74,10 +62,6 @@ Future<void> _bootstrap() async {
       child: const WorkoutsApp(),
     ),
   );
-
-  // Re-probe after first frame to catch e.g. networking that took a moment
-  // to come up (Tailscale just-launched, Wi-Fi association still settling).
-  BackendHostProbeScheduler(container).scheduleAfterFirstFrame();
 }
 
 void _installGlobalErrorHandlers() {
