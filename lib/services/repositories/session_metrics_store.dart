@@ -1,7 +1,7 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/services/powersync/powersync_extensions.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 
 const _log = ELogger('SessionMetricsStore');

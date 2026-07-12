@@ -102,7 +102,7 @@ class HistoryChartsTab extends ConsumerWidget {
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
           summarySuffix: ' / 7d',
-          showMinutesNeededToday: true,
+          showGoalDailyPace: true,
           inspectHint: 'Drag to inspect the trailing 7-day Z2-5 load',
           emptySummaryLabel: 'No HR load yet',
           goals: const [

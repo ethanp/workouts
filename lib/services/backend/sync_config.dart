@@ -17,6 +17,7 @@ const _log = ELogger('WorkoutsSync');
 
 const _powersyncPort = 8081;
 const _postgrestPort = 3001;
+const _llmProxyPort = 3002;
 const _databasePathKey = 'powersync_database_path';
 
 /// Builds the workouts app's [SyncConfig] for `ethan_sync`. This is the single
@@ -29,7 +30,11 @@ SyncConfig buildWorkoutsSyncConfig(SharedPreferences preferences) {
       probePort: _postgrestPort,
       unreachablePolicy: const ParkOnLastCandidatePolicy(),
     ),
-    ports: const SyncPorts(powersync: _powersyncPort, postgrest: _postgrestPort),
+    ports: const SyncPorts(
+      powersync: _powersyncPort,
+      postgrest: _postgrestPort,
+      llmProxy: _llmProxyPort,
+    ),
     jwtCredentials: PowerSyncJwtCredentials(
       secret: _jwtSecret(),
       keyId: 'workouts-dev-key',

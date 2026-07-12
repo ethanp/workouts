@@ -1,9 +1,9 @@
 import 'dart:convert';
 
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/services/powersync/powersync_extensions.dart';
 
 /// Single source of truth for writing into the `exercises` library table.
 ///

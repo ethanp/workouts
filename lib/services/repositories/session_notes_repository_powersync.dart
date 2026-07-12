@@ -1,9 +1,9 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/services/powersync/powersync_extensions.dart';
 
 part 'session_notes_repository_powersync.g.dart';
 
