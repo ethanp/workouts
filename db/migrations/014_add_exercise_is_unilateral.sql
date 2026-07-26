@@ -1,0 +1,2 @@
+ALTER TABLE exercises
+    ADD COLUMN IF NOT EXISTS is_unilateral BOOLEAN NOT NULL DEFAULT false;

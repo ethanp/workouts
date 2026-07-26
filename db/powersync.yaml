@@ -1,0 +1,122 @@
+# PowerSync Open Edition Configuration
+# Documentation: https://docs.powersync.com/self-hosting
+
+replication:
+  connections:
+    - type: postgresql
+      hostname: postgres
+      port: 5432
+      database: workouts
+      username: workouts
+      password: !env PS_PG_PASSWORD
+      sslmode: disable
+      id: workouts
+
+# Storage for sync bucket data
+storage:
+  type: postgresql
+  hostname: postgres
+  port: 5432
+  database: workouts
+  username: workouts
+  password: !env PS_PG_PASSWORD
+  sslmode: disable
+
+# HMAC-based JWT authentication.
+# PS_JWT_KEY is the base64url-encoded HMAC key (the JWK `k`); it must match the
+# raw secret the app signs with (POWERSYNC_JWT_SECRET in Flutter/workouts/.env,
+# base64-encoded).
+client_auth:
+  jwks:
+    keys:
+      - kty: oct
+        kid: workouts-dev-key
+        k: !env PS_JWT_KEY
+        alg: HS256
+  audience:
+    - powersync
+
+# Sync rules - inline YAML with priorities
+# Priority 1 syncs first, then 2, then 3, etc.
+sync_rules:
+  content: |
+    bucket_definitions:
+      fitness_goals:
+        priority: 0
+        data:
+          - SELECT * FROM fitness_goals
+      background_notes:
+        priority: 1
+        data:
+          - SELECT * FROM background_notes
+      exercises:
+        priority: 0
+        data:
+          - SELECT * FROM exercises
+      workout_templates:
+        priority: 0
+        data:
+          - SELECT * FROM workout_templates
+      workout_blocks:
+        priority: 1
+        data:
+          - SELECT * FROM workout_blocks
+      workout_block_exercises:
+        priority: 1
+        data:
+          - SELECT * FROM workout_block_exercises
+      sessions:
+        priority: 2
+        data:
+          - SELECT * FROM sessions
+      session_blocks:
+        priority: 2
+        data:
+          - SELECT * FROM session_blocks
+      session_block_exercises:
+        priority: 3
+        data:
+          - SELECT * FROM session_block_exercises
+      session_set_logs:
+        priority: 3
+        data:
+          - SELECT * FROM session_set_logs
+      session_notes:
+        priority: 3
+        data:
+          - SELECT * FROM session_notes
+      heart_rate_samples:
+        priority: 3
+        data:
+          - SELECT * FROM heart_rate_samples
+      training_influences:
+        priority: 0
+        data:
+          - SELECT * FROM training_influences
+      cardio_workouts:
+        priority: 2
+        data:
+          - SELECT * FROM cardio_workouts
+      cardio_route_points:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_route_points
+      cardio_heart_rate_samples:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_heart_rate_samples
+      cardio_best_efforts:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_best_efforts
+      training_locations:
+        priority: 0
+        data:
+          - SELECT * FROM training_locations
+
+# Disable telemetry
+telemetry:
+  disable_telemetry_sharing: true
+
+# API port
+port: 8080

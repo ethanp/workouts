@@ -4,7 +4,6 @@ import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
@@ -25,12 +24,8 @@ Future<void> _bootstrap() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installGlobalErrorHandlers();
 
-  try {
-    await dotenv.load();
-    _log.log('.env loaded');
-  } catch (error, stackTrace) {
-    _log.error('Failed to load .env file', error, stackTrace);
-  }
+  await loadAppDotEnv();
+  _log.log('.env loaded');
 
   final prefs = await SharedPreferences.getInstance();
 
