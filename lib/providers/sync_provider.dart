@@ -1,4 +1,5 @@
 import 'package:ethan_sync/ethan_sync.dart' as sync;
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:powersync/powersync.dart';
 
@@ -50,18 +51,12 @@ String _describeStatus(SyncStatus status) {
     if (status.uploading) return 'Uploading changes...';
     if (status.hasSynced == true) {
       final lastSyncedAt = status.lastSyncedAt;
-      return lastSyncedAt != null ? 'Synced ${_relativeTime(lastSyncedAt)}' : 'Synced';
+      return lastSyncedAt != null
+          ? 'Synced ${lastSyncedAt.relativeTimeAgo()}'
+          : 'Synced';
     }
     return 'Connecting...';
   }
   if (status.connecting) return 'Connecting...';
   return 'Offline';
-}
-
-String _relativeTime(DateTime time) {
-  final difference = DateTime.now().difference(time);
-  if (difference.inSeconds < 60) return 'just now';
-  if (difference.inMinutes < 60) return '${difference.inMinutes}m ago';
-  if (difference.inHours < 24) return '${difference.inHours}h ago';
-  return '${difference.inDays}d ago';
 }

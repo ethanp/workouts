@@ -1,0 +1,3 @@
+# Compose ports / env for PowerSync + PostgREST (consumed by infra/generate-sync-compose.sh).
+powersync_port: 8081
+postgrest_port: 3001

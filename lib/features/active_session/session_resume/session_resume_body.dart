@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
@@ -161,7 +162,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          _formatElapsed(_elapsedDuration(session)),
+          _elapsedDuration(session).formattedClock,
           style: AppTypography.body.copyWith(
             fontWeight: FontWeight.w600,
             color: timeColor,
@@ -180,17 +181,6 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
           ),
       ],
     );
-  }
-
-  String _formatElapsed(Duration elapsed) {
-    final totalSeconds = elapsed.inSeconds;
-    final hours = totalSeconds ~/ 3600;
-    final minutes = (totalSeconds % 3600) ~/ 60;
-    final seconds = totalSeconds % 60;
-    final mm = minutes.toString().padLeft(2, '0');
-    final ss = seconds.toString().padLeft(2, '0');
-    if (hours > 0) return '${hours.toString().padLeft(2, '0')}:$mm:$ss';
-    return '$mm:$ss';
   }
 
   Widget _blockPager(Session session) {

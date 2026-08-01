@@ -200,8 +200,6 @@ class _ActiveSessionWrapper extends ConsumerWidget {
       elapsed -= now.difference(session.pausedAt!);
     }
 
-    final minutes = elapsed.inMinutes;
-    final seconds = elapsed.inSeconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} elapsed';
+    return '${elapsed.formattedClock} elapsed';
   }
 }

@@ -344,7 +344,8 @@ class _DualMetricPainter extends CustomPainter {
           : TextAlign.center;
       _drawAxisLabel(
         canvas,
-        _formatElapsedTime(elapsedTick.elapsedMilliseconds),
+        Duration(milliseconds: elapsedTick.elapsedMilliseconds)
+            .formattedElapsed,
         Offset(elapsedTick.x, chartLayout.bottom + 7),
         textAlign: textAlign,
         anchor: anchor,
@@ -402,15 +403,6 @@ class _DualMetricPainter extends CustomPainter {
       ),
     };
     textPainter.paint(canvas, labelOffset);
-  }
-
-  String _formatElapsedTime(int durationMilliseconds) {
-    final duration = Duration(milliseconds: durationMilliseconds);
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    if (hours > 0) return '$hours:$minutes:$seconds';
-    return '${duration.inMinutes}:$seconds';
   }
 
   void _drawHeartRateSeries(

@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
@@ -56,24 +57,12 @@ class ExerciseTimerPanel extends StatelessWidget {
   };
 
   String get _timeDisplay =>
-      remaining == null ? '--:--' : _formatDuration(remaining!);
+      remaining == null ? '--:--' : remaining!.formattedClock;
 
   /// True while a timed phase is running/paused and has a configured length,
   /// so the countdown can display its target duration.
   bool get _showsPhaseLength =>
       remaining != null && phaseLength != null && phaseLength! > Duration.zero;
-
-  String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).abs();
-    final seconds = duration.inSeconds.remainder(60).abs();
-    final hours = duration.inHours;
-    if (hours > 0) {
-      final mins = minutes.toString().padLeft(2, '0');
-      final secs = seconds.toString().padLeft(2, '0');
-      return '${hours.toString().padLeft(2, '0')}:$mins:$secs';
-    }
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,7 +101,7 @@ class ExerciseTimerPanel extends StatelessWidget {
         if (_showsPhaseLength) ...[
           const SizedBox(width: AppSpacing.xs),
           Text(
-            '/ ${_formatDuration(phaseLength!)}',
+            '/ ${phaseLength!.formattedClock}',
             style: AppTypography.caption.copyWith(
               color: AppColors.textColor4,
               fontFeatures: const [FontFeature.tabularFigures()],
