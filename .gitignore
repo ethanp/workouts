@@ -54,6 +54,6 @@ ios/build/
 *.g.dart
 *.freezed.dart
 
-# Deployment tracking
+# Local phone_deploy / deploy.rb fingerprints
 .deploy_hash
-.deploy_ios_hash
+.deploy_*_hash
