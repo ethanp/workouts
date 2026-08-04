@@ -158,33 +158,36 @@ void main() {
       expect(exercise.prescriptionLabel, '2 x 10 @ 20kg, RIR 2');
     });
 
-    test('falls back to "N working" when targetIntensity differs across sets', () {
-      final exercise = WorkoutExercise(
-        id: 'swing',
-        name: 'Kettlebell Swing',
-        modality: ExerciseModality.reps,
-        prescription: 'legacy',
-        plannedSets: const [
-          PlannedSet(
-            reps: 10,
-            weight: Weight.kilograms(20),
-            targetIntensity: 'RIR 3',
-          ),
-          PlannedSet(
-            reps: 10,
-            weight: Weight.kilograms(20),
-            targetIntensity: 'RIR 2',
-          ),
-          PlannedSet(
-            reps: 10,
-            weight: Weight.kilograms(20),
-            targetIntensity: 'RIR 1',
-          ),
-        ],
-      );
+    test(
+      'falls back to "N working" when targetIntensity differs across sets',
+      () {
+        final exercise = WorkoutExercise(
+          id: 'swing',
+          name: 'Kettlebell Swing',
+          modality: ExerciseModality.reps,
+          prescription: 'legacy',
+          plannedSets: const [
+            PlannedSet(
+              reps: 10,
+              weight: Weight.kilograms(20),
+              targetIntensity: 'RIR 3',
+            ),
+            PlannedSet(
+              reps: 10,
+              weight: Weight.kilograms(20),
+              targetIntensity: 'RIR 2',
+            ),
+            PlannedSet(
+              reps: 10,
+              weight: Weight.kilograms(20),
+              targetIntensity: 'RIR 1',
+            ),
+          ],
+        );
 
-      expect(exercise.prescriptionLabel, '3 working');
-    });
+        expect(exercise.prescriptionLabel, '3 working');
+      },
+    );
   });
 
   group('CurrentSetPlannedLabel targetIntensity', () {

@@ -5,11 +5,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
 class SessionSetLogRow extends StatelessWidget {
-  const SessionSetLogRow({
-    super.key,
-    required this.log,
-    required this.exercise,
-  });
+  const SessionSetLogRow({required this.log, required this.exercise});
 
   final SessionSetLog log;
   final WorkoutExercise exercise;

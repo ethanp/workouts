@@ -5,7 +5,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class WeeklyBarChart extends StatefulWidget {
   const WeeklyBarChart({
-    super.key,
     required this.title,
     required this.weeks,
     this.barColor,
@@ -27,8 +26,6 @@ class WeeklyBarChart extends StatefulWidget {
 
 class _WeeklyBarChartState extends State<WeeklyBarChart> {
   int? _activeIndex;
-
-  List<WeekData> get weeks => widget.weeks;
 
   String _formatValue(double value) => widget.formatValue != null
       ? widget.formatValue!(value)
@@ -59,11 +56,11 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
   }
 
   Widget _header() {
-    if (weeks.isEmpty) {
+    if (widget.weeks.isEmpty) {
       return Text(widget.title, style: AppTypography.subtitle);
     }
 
-    final averageableWeeks = weeks
+    final averageableWeeks = widget.weeks
         .where((weekData) => weekData.includeInAverage)
         .toList();
     final total = averageableWeeks.fold(
@@ -88,16 +85,16 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
 
   List<int> _yearBoundaryIndices() {
     final indices = <int>[];
-    for (var weekIndex = 1; weekIndex < weeks.length; weekIndex++) {
-      if (weeks[weekIndex].weekStart.year !=
-          weeks[weekIndex - 1].weekStart.year) {
+    for (var weekIndex = 1; weekIndex < widget.weeks.length; weekIndex++) {
+      if (widget.weeks[weekIndex].weekStart.year !=
+          widget.weeks[weekIndex - 1].weekStart.year) {
         indices.add(weekIndex);
       }
     }
     return indices;
   }
 
-  double _barSpacing() => switch (weeks.length) {
+  double _barSpacing() => switch (widget.weeks.length) {
     > 24 => 1.0,
     > 16 => 2.0,
     _ => 4.0,
@@ -124,7 +121,7 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
 
     if (boundaries.isEmpty) return barsAndLabels;
 
-    final count = weeks.length;
+    final count = widget.weeks.length;
     final barSpacing = _barSpacing();
 
     return LayoutBuilder(
@@ -152,13 +149,13 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
   }
 
   Widget _bars() {
-    if (weeks.isEmpty) {
+    if (widget.weeks.isEmpty) {
       return const Center(
         child: Text('No data yet', style: AppTypography.caption),
       );
     }
 
-    final highestWeekValue = weeks.fold(
+    final highestWeekValue = widget.weeks.fold(
       0.0,
       (maxSoFar, weekData) => math.max(maxSoFar, weekData.value),
     );
@@ -190,7 +187,7 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) ...[
+        for (var weekIndex = 0; weekIndex < widget.weeks.length; weekIndex++) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(child: _interactiveBar(weekIndex, maxValue, color)),
         ],
@@ -226,7 +223,7 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
   }
 
   Widget _interactiveBar(int index, double maxValue, Color color) {
-    final WeekData week = weeks[index];
+    final WeekData week = widget.weeks[index];
     final double fraction = (week.value / maxValue).clamp(0.0, 1.0);
     final double barFraction = fraction == 0 ? 0.0 : math.max(fraction, 0.04);
     final bool isActive = _activeIndex == index;
@@ -317,7 +314,7 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
   }
 
   Widget _labels() {
-    final count = weeks.length;
+    final count = widget.weeks.length;
     final (labelStride, barSpacing) = switch (count) {
       > 40 => (8, 1.0),
       > 24 => (4, 1.0),
@@ -336,7 +333,7 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
             clipBehavior: Clip.none,
             children: [
               for (var weekIndex = 0; weekIndex < count; weekIndex++)
-                if (weekIndex % labelStride == 0 || weeks[weekIndex].isCurrent)
+                if (weekIndex % labelStride == 0 || widget.weeks[weekIndex].isCurrent)
                   Positioned(
                     left:
                         weekIndex * (barWidth + barSpacing) + barWidth / 2 - 20,
@@ -344,14 +341,14 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
                     child: SizedBox(
                       width: 40,
                       child: Text(
-                        weeks[weekIndex].label,
+                        widget.weeks[weekIndex].label,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 9,
-                          color: weeks[weekIndex].isCurrent
+                          color: widget.weeks[weekIndex].isCurrent
                               ? AppColors.accentPrimary
                               : AppColors.textColor4,
-                          fontWeight: weeks[weekIndex].isCurrent
+                          fontWeight: widget.weeks[weekIndex].isCurrent
                               ? FontWeight.w600
                               : FontWeight.normal,
                         ),

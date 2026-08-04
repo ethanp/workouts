@@ -4,7 +4,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutOptionCard extends StatelessWidget {
   const WorkoutOptionCard({
-    super.key,
     required this.option,
     required this.isExpanded,
     required this.onTap,

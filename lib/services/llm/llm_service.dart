@@ -485,9 +485,7 @@ Respond with valid JSON only, no markdown. Structure:
     required List<WorkoutExercise> libraryExercises,
     Set<String> excludeIds = const {},
   }) async {
-    _log.log(
-      'Suggesting replacements for "${originalExercise.name}"...',
-    );
+    _log.log('Suggesting replacements for "${originalExercise.name}"...');
 
     final libraryById = {
       for (final exercise in libraryExercises) exercise.id: exercise,

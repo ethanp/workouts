@@ -77,10 +77,7 @@ class ExerciseProgress {
   /// sets, all sets logged, or the user said "I'm done with this one".
   bool get isComplete {
     if (loggedCount >= exercise.effectiveTargetSets) return true;
-    return _earlyStopped.includes(
-      blockId: _blockId,
-      exerciseId: exercise.id,
-    );
+    return _earlyStopped.includes(blockId: _blockId, exerciseId: exercise.id);
   }
 }
 
@@ -91,8 +88,8 @@ class ExerciseProgress {
 /// Auto-disposes when no listener remains; cached by SessionBlock value
 /// equality (Freezed), so identical blocks across rebuilds reuse the
 /// same instance until the block's logs/exercises actually change.
-final blockProgressProvider =
-    Provider.autoDispose.family<BlockProgress, SessionBlock>((ref, block) {
+final blockProgressProvider = Provider.autoDispose
+    .family<BlockProgress, SessionBlock>((ref, block) {
       final earlyStopped = ref.watch(earlyStoppedProvider);
       return BlockProgress(block, earlyStopped);
     });

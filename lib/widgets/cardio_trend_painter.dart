@@ -56,10 +56,12 @@ class CardioTrendPainter extends CustomPainter {
     for (final series in visibleSeries) {
       if (series.points.length < 2) continue;
       final values = series.points.map((point) => point.value);
-      final hi = values.reduce((largest, current) =>
-          current > largest ? current : largest);
-      final lo = values.reduce((smallest, current) =>
-          current < smallest ? current : smallest);
+      final hi = values.reduce(
+        (largest, current) => current > largest ? current : largest,
+      );
+      final lo = values.reduce(
+        (smallest, current) => current < smallest ? current : smallest,
+      );
       final highLabel = series.invertY ? lo : hi;
       final lowLabel = series.invertY ? hi : lo;
       _drawAxisLabel(

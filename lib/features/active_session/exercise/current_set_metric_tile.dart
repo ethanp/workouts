@@ -3,7 +3,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class CurrentSetMetricTile extends StatelessWidget {
   const CurrentSetMetricTile({
-    super.key,
     required this.label,
     required this.controller,
     required this.focusNode,

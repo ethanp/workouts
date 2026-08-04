@@ -10,7 +10,7 @@ import 'package:workouts/services/repositories/templates/template_repository_pow
 import 'package:workouts/theme/app_theme.dart';
 
 class TemplateDetailScreen extends ConsumerStatefulWidget {
-  const TemplateDetailScreen({super.key, required this.templateId});
+  const TemplateDetailScreen({required this.templateId});
 
   final String templateId;
 
@@ -382,19 +382,23 @@ class _TemplateDetailScreenState extends ConsumerState<TemplateDetailScreen> {
       );
 
   Future<void> _addWarmupSet(String blockId, WorkoutExercise exercise) {
-    return ref.read(templateRepositoryPowerSyncProvider).addWarmupSet(
-      templateId: widget.templateId,
-      blockId: blockId,
-      exercise: exercise,
-    );
+    return ref
+        .read(templateRepositoryPowerSyncProvider)
+        .addWarmupSet(
+          templateId: widget.templateId,
+          blockId: blockId,
+          exercise: exercise,
+        );
   }
 
   Future<void> _removeWarmupSet(String blockId, WorkoutExercise exercise) {
-    return ref.read(templateRepositoryPowerSyncProvider).removeWarmupSet(
-      templateId: widget.templateId,
-      blockId: blockId,
-      exercise: exercise,
-    );
+    return ref
+        .read(templateRepositoryPowerSyncProvider)
+        .removeWarmupSet(
+          templateId: widget.templateId,
+          blockId: blockId,
+          exercise: exercise,
+        );
   }
 }
 

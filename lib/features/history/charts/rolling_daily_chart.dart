@@ -8,7 +8,6 @@ import 'package:workouts/theme/app_theme.dart';
 /// any daily metric (Z2-5 minutes, active days, etc.).
 class RollingDailyChart extends StatefulWidget {
   const RollingDailyChart({
-    super.key,
     required this.title,
     required this.points,
     required this.goals,
@@ -41,8 +40,6 @@ class RollingDailyChart extends StatefulWidget {
 class _RollingDailyChartState extends State<RollingDailyChart> {
   Offset? _hoverPosition;
   RollingDailyPoint? _hoveredPoint;
-
-  List<RollingDailyPoint> get points => widget.points;
 
   @override
   Widget build(BuildContext context) => _chartCard();
@@ -120,7 +117,7 @@ class _RollingDailyChartState extends State<RollingDailyChart> {
   }
 
   Widget _chartArea() {
-    if (points.length < 2) return _emptyState();
+    if (widget.points.length < 2) return _emptyState();
 
     return SizedBox(
       height: 180,
@@ -139,7 +136,7 @@ class _RollingDailyChartState extends State<RollingDailyChart> {
               child: CustomPaint(
                 size: Size(constraints.maxWidth, constraints.maxHeight),
                 painter: RollingDailyPainter(
-                  points: points,
+                  points: widget.points,
                   goals: widget.goals,
                   lineColor: widget.lineColor,
                   formatValue: widget.formatValue,
@@ -205,7 +202,7 @@ class _RollingDailyChartState extends State<RollingDailyChart> {
   List<RollingDailyPoint> _visiblePoints() {
     final displayStart = widget.displayStart;
     final displayEnd = widget.displayEnd;
-    return points.where((point) {
+    return widget.points.where((point) {
       if (displayStart != null && point.date.isBefore(displayStart)) {
         return false;
       }

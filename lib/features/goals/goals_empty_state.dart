@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class GoalsEmptyState extends StatelessWidget {
-  const GoalsEmptyState({super.key, required this.onAddGoal});
+  const GoalsEmptyState({required this.onAddGoal});
 
   final VoidCallback onAddGoal;
 

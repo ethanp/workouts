@@ -10,8 +10,7 @@ import 'package:workouts/models/workout_template.dart';
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/seed_templates.dart' as seeds;
-import 'package:workouts/services/repositories/templates/llm_template_converter.dart'
-    as llm;
+import 'package:workouts/services/repositories/templates/llm_template_converter.dart';
 import 'package:workouts/services/repositories/templates/template_block_store.dart';
 import 'package:workouts/services/repositories/templates/template_exercise_store.dart';
 import 'package:workouts/services/repositories/templates/template_hydrator.dart';
@@ -105,7 +104,7 @@ class TemplateRepositoryPowerSync {
   }
 
   Future<WorkoutTemplate> createFromLlmOption(LlmWorkoutOption option) async {
-    final template = llm.templateFromLlmOption(option);
+    final template = LlmTemplateConverter.fromOption(option);
     await saveTemplate(template);
     return template;
   }

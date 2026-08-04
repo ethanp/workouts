@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class EmptyActivityPlaceholder extends StatelessWidget {
-  const EmptyActivityPlaceholder({super.key, this.onImport});
+  const EmptyActivityPlaceholder({this.onImport});
 
   final VoidCallback? onImport;
 

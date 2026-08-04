@@ -4,11 +4,10 @@ import 'package:workouts/features/goals/goal_form_sheet.dart';
 import 'package:workouts/features/goals/goals_empty_state.dart';
 import 'package:workouts/features/goals/goals_list.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
-import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class GoalsTab extends ConsumerStatefulWidget {
-  const GoalsTab({super.key});
+  const GoalsTab();
 
   @override
   ConsumerState<GoalsTab> createState() => _GoalsTabState();
@@ -23,15 +22,12 @@ class _GoalsTabState extends ConsumerState<GoalsTab> {
 
     return goalsAsync.when(
       data: (goals) {
-        final activeGoals =
-            goals.where((goal) => goal.status == GoalStatus.active).toList()
-              ..sort(
-                (firstGoal, secondGoal) =>
-                    firstGoal.priority.compareTo(secondGoal.priority),
-              );
-        final archivedGoals = goals
-            .where((goal) => goal.status != GoalStatus.active)
-            .toList();
+        final activeGoals = goals.where((goal) => goal.isActive).toList()
+          ..sort(
+            (firstGoal, secondGoal) =>
+                firstGoal.priority.compareTo(secondGoal.priority),
+          );
+        final archivedGoals = goals.where((goal) => !goal.isActive).toList();
 
         if (goals.isEmpty) {
           return GoalsEmptyState(onAddGoal: () => _showAddGoalSheet(context));

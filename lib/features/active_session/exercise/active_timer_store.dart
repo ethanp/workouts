@@ -61,14 +61,14 @@ class ActiveTimerRecord {
   bool get isPaused => pausedRemaining != null;
 
   Map<String, dynamic> toJson() => {
-        'sessionId': sessionId,
-        'blockId': blockId,
-        'exerciseId': exerciseId,
-        'phase': phase.name,
-        if (endsAt != null) 'endsAtIso': endsAt!.toIso8601String(),
-        if (pausedRemaining != null)
-          'pausedRemainingMs': pausedRemaining!.inMilliseconds,
-      };
+    'sessionId': sessionId,
+    'blockId': blockId,
+    'exerciseId': exerciseId,
+    'phase': phase.name,
+    if (endsAt != null) 'endsAtIso': endsAt!.toIso8601String(),
+    if (pausedRemaining != null)
+      'pausedRemainingMs': pausedRemaining!.inMilliseconds,
+  };
 
   static ActiveTimerRecord? tryFromJson(Map<String, dynamic> json) {
     try {

@@ -182,14 +182,11 @@ class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
       // before onDone/onError can fire, and the parsed error would then go
       // unawaited and surface as an uncaught zone error.)
       final accumulated = StringBuffer();
-      _tokenSubscription = tokens.listen(
-        (delta) {
-          if (!identical(_activeClient, client)) return;
-          accumulated.write(delta);
-          state = GenerationStreaming(accumulated.toString());
-        },
-        onError: (_) {},
-      );
+      _tokenSubscription = tokens.listen((delta) {
+        if (!identical(_activeClient, client)) return;
+        accumulated.write(delta);
+        state = GenerationStreaming(accumulated.toString());
+      }, onError: (_) {});
 
       final response = await parsed;
       if (!identical(_activeClient, client)) return;

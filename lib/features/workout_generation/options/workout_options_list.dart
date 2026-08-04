@@ -5,7 +5,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutOptionsList extends StatelessWidget {
   const WorkoutOptionsList({
-    super.key,
     required this.response,
     required this.expandedOptionId,
     required this.onToggleOption,

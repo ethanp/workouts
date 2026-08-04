@@ -7,11 +7,7 @@ import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/features/history/calendar_week_row.dart';
 
 class ActivityCalendar extends StatelessWidget {
-  const ActivityCalendar({
-    super.key,
-    required this.activityData,
-    required this.onDateTap,
-  });
+  const ActivityCalendar({required this.activityData, required this.onDateTap});
 
   final Map<DateTime, ActivityCalendarDay> activityData;
   final void Function(DateTime date) onDateTap;

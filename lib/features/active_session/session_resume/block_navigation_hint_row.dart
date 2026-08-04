@@ -3,7 +3,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class BlockNavigationHintRow extends StatelessWidget {
   const BlockNavigationHintRow({
-    super.key,
     required this.onPrevious,
     required this.onNext,
   });

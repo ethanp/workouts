@@ -17,7 +17,7 @@ import 'package:workouts/features/today/today_template_card.dart';
 import 'package:workouts/features/workout_generation/options/workout_options_sheet.dart';
 
 class TodayScreen extends ConsumerWidget {
-  const TodayScreen({super.key});
+  const TodayScreen();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +31,7 @@ class TodayScreen extends ConsumerWidget {
     final templates = ref.watch(todayTemplatesProvider);
     final activeSession = ref.watch(activeSessionProvider).value;
     final inProgressSession =
-        activeSession?.completedAt == null ? activeSession : null;
+        activeSession?.isInProgress == true ? activeSession : null;
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(

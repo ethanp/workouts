@@ -6,7 +6,6 @@ enum TimerPhase { idle, setup, work, rest, complete }
 
 class ExerciseTimerPanel extends StatelessWidget {
   const ExerciseTimerPanel({
-    super.key,
     required this.phase,
     required this.remaining,
     this.phaseLength,

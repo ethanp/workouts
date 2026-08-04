@@ -6,7 +6,6 @@ import 'package:workouts/widgets/trend_series.dart';
 
 class CardioTrendChart extends StatefulWidget {
   const CardioTrendChart({
-    super.key,
     required this.title,
     required this.series,
     this.displayStart,

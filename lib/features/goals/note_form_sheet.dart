@@ -7,7 +7,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class NoteFormSheet extends StatefulWidget {
   const NoteFormSheet({
-    super.key,
     required this.availableGoals,
     this.initialNote,
     required this.onSave,
@@ -192,7 +191,7 @@ class _NoteFormSheetState extends State<NoteFormSheet> {
         ),
         const SizedBox(height: AppSpacing.sm),
         ...widget.availableGoals
-            .where((goal) => goal.status == GoalStatus.active)
+            .where((goal) => goal.isActive)
             .map(
               (goal) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),

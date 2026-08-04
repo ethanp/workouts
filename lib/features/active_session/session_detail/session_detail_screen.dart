@@ -15,7 +15,7 @@ import 'package:workouts/providers/heart_rate_samples_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SessionDetailScreen extends ConsumerWidget {
-  const SessionDetailScreen({super.key, required this.session});
+  const SessionDetailScreen({required this.session});
 
   final Session session;
 
@@ -78,7 +78,8 @@ class SessionDetailScreen extends ConsumerWidget {
   }
 
   List<Widget> _heartRateSlot(Session session, List<HeartRateSample> samples) {
-    final hasHeartRate = samples.isNotEmpty ||
+    final hasHeartRate =
+        samples.isNotEmpty ||
         session.averageHeartRate != null ||
         session.maxHeartRate != null;
     if (!hasHeartRate) return const [];

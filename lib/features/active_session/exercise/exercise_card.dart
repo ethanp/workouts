@@ -17,7 +17,6 @@ import 'package:workouts/widgets/replace_confirmation_dialog.dart';
 
 class ExerciseCard extends ConsumerStatefulWidget {
   const ExerciseCard({
-    super.key,
     required this.block,
     required this.exercise,
     required this.isNextRecommended,
@@ -38,12 +37,10 @@ class ExerciseCard extends ConsumerStatefulWidget {
 class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   final _currentSetDraftController = CurrentSetDraftController();
 
-  SessionBlock get block => widget.block;
-
-  WorkoutExercise get exercise => widget.exercise;
-
-  ExerciseSetPlanContext get _planContext =>
-      ExerciseSetPlanContext(block: block, exercise: exercise);
+  ExerciseSetPlanContext get _planContext => ExerciseSetPlanContext(
+        block: widget.block,
+        exercise: widget.exercise,
+      );
 
   @override
   void initState() {
@@ -62,7 +59,10 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     final ExerciseSetPlanContext planContext = _syncedPlanContext();
     final isStoppedEarly = ref
         .watch(earlyStoppedProvider)
-        .includes(blockId: block.id, exerciseId: exercise.id);
+        .includes(
+          blockId: widget.block.id,
+          exerciseId: widget.exercise.id,
+        );
     return ExerciseCardContent(
       timerIdentity: _timerIdentity(),
       planContext: planContext,
@@ -75,8 +75,12 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       onReplacePressed: _runReplaceFlow,
       onHistoryPressed: _openHistory,
       onAskAiPressed: _openAskAi,
-      onAddWarmupSet: _addWarmupSet,
-      onRemoveWarmupSet: _removeWarmupSet,
+      onAddWarmupSet: () => ref
+          .read(activeSessionProvider.notifier)
+          .addWarmupSet(widget.block, widget.exercise),
+      onRemoveWarmupSet: () => ref
+          .read(activeSessionProvider.notifier)
+          .removeWarmupSet(widget.block, widget.exercise),
       isStoppedEarly: isStoppedEarly,
       onToggleStoppedEarly: _toggleStoppedEarly,
       dragHandle: widget.dragHandle,
@@ -88,33 +92,27 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   /// type non-nullable down through `ExerciseIntervalTimer`; a missing
   /// session would also fail every other code path on this card.
   TimerIdentity _timerIdentity() {
-    final String sessionId =
-        ref.read(activeSessionProvider).value?.id ?? '';
+    final String sessionId = ref.read(activeSessionProvider).value?.id ?? '';
     return TimerIdentity(
       sessionId: sessionId,
-      blockId: block.id,
-      exerciseId: exercise.id,
+      blockId: widget.block.id,
+      exerciseId: widget.exercise.id,
     );
   }
-
-  Future<void> _addWarmupSet() => ref
-      .read(activeSessionProvider.notifier)
-      .addWarmupSet(block, exercise);
-
-  Future<void> _removeWarmupSet() => ref
-      .read(activeSessionProvider.notifier)
-      .removeWarmupSet(block, exercise);
 
   void _toggleStoppedEarly() {
     ref
         .read(earlyStoppedProvider.notifier)
-        .toggle(blockId: block.id, exerciseId: exercise.id);
+        .toggle(
+          blockId: widget.block.id,
+          exerciseId: widget.exercise.id,
+        );
   }
 
   void _openHistory() {
     Navigator.of(context).push<void>(
       CupertinoPageRoute(
-        builder: (_) => ExerciseHistoryScreen(exercise: exercise),
+        builder: (_) => ExerciseHistoryScreen(exercise: widget.exercise),
       ),
     );
   }
@@ -122,7 +120,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   void _openAskAi() {
     Navigator.of(context).push<void>(
       CupertinoPageRoute(
-        builder: (_) => ExerciseChatScreen(exercise: exercise),
+        builder: (_) => ExerciseChatScreen(exercise: widget.exercise),
       ),
     );
   }
@@ -142,8 +140,8 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       planContext,
     );
     await activeSessionNotifier.logSet(
-      block: block,
-      exercise: exercise,
+      block: widget.block,
+      exercise: widget.exercise,
       weight: setLogInput.weight,
       reps: setLogInput.reps,
       duration: setLogInput.duration,
@@ -159,7 +157,10 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     final ActiveSessionNotifier activeSessionNotifier = ref.read(
       activeSessionProvider.notifier,
     );
-    await activeSessionNotifier.unlogSet(block: block, exercise: exercise);
+    await activeSessionNotifier.unlogSet(
+      block: widget.block,
+      exercise: widget.exercise,
+    );
   }
 
   Future<void> _logSetAndAdvance() async {
@@ -172,12 +173,14 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     final ActiveSessionNotifier activeSessionNotifier = ref.read(
       activeSessionProvider.notifier,
     );
-    final excludeIds = block.exercises.map((blockExercise) => blockExercise.id).toSet();
+    final excludeIds = widget.block.exercises
+        .map((blockExercise) => blockExercise.id)
+        .toSet();
 
     final WorkoutExercise? replacement = await navigator.push<WorkoutExercise>(
       CupertinoPageRoute(
         builder: (_) => ReplaceExercisePickerScreen(
-          originalExercise: exercise,
+          originalExercise: widget.exercise,
           excludeIds: excludeIds,
         ),
       ),
@@ -187,14 +190,14 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     final Session? activeSession = ref.read(activeSessionProvider).value;
     if (activeSession == null) return;
 
-    final int discardedLogCount = activeSession
-        .loggedSetCountAcrossRoundsOf(
-          blockId: block.id,
-          exerciseId: exercise.id,
-        );
+    final int discardedLogCount = activeSession.loggedSetCountAcrossRoundsOf(
+      blockId: widget.block.id,
+      exerciseId: widget.exercise.id,
+    );
     if (discardedLogCount > 0) {
-      final int affectedBlockCount =
-          activeSession.allRoundsOfBlock(block.id).length;
+      final int affectedBlockCount = activeSession
+          .allRoundsOfBlock(widget.block.id)
+          .length;
       final bool confirmed = await confirmReplaceWithLogs(
         context,
         loggedSetCount: discardedLogCount,
@@ -204,8 +207,8 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     }
 
     await activeSessionNotifier.replaceExercise(
-      block,
-      exercise.id,
+      widget.block,
+      widget.exercise.id,
       replacement,
     );
   }

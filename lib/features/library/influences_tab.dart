@@ -11,7 +11,7 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class InfluencesTab extends ConsumerWidget {
-  const InfluencesTab({super.key});
+  const InfluencesTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -306,7 +306,7 @@ class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
 }
 
 class InfluenceFormSheet extends ConsumerStatefulWidget {
-  const InfluenceFormSheet({super.key, this.existing});
+  const InfluenceFormSheet({this.existing});
 
   final TrainingInfluence? existing;
 

@@ -24,7 +24,7 @@ class CardioImportSnapshot {
 }
 
 class CardioImportDebugTile extends ConsumerStatefulWidget {
-  const CardioImportDebugTile({super.key});
+  const CardioImportDebugTile();
 
   @override
   ConsumerState<CardioImportDebugTile> createState() =>
@@ -205,7 +205,7 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
 }
 
 class SyncDebugTile extends ConsumerStatefulWidget {
-  const SyncDebugTile({super.key});
+  const SyncDebugTile();
 
   @override
   ConsumerState<SyncDebugTile> createState() => _SyncDebugTileState();
@@ -277,7 +277,9 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   Future<void> _resetSyncData() async {
     setState(() => _resettingSync = true);
     try {
-      final powerSyncDatabase = await ref.read(powerSyncDatabaseProvider.future);
+      final powerSyncDatabase = await ref.read(
+        powerSyncDatabaseProvider.future,
+      );
       await powerSyncDatabase.disconnectAndClear();
       await ref.read(syncEnsureProvider).reconnect(reason: 'after reset');
       if (mounted) _refreshCounts();
@@ -469,7 +471,7 @@ class _DebugAction extends StatelessWidget {
 }
 
 class DebugRow extends StatelessWidget {
-  const DebugRow(this.label, this.value, {super.key});
+  const DebugRow(this.label, this.value);
 
   final String label;
   final String value;

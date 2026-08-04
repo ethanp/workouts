@@ -10,7 +10,7 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class BackgroundTab extends ConsumerStatefulWidget {
-  const BackgroundTab({super.key});
+  const BackgroundTab();
 
   @override
   ConsumerState<BackgroundTab> createState() => _BackgroundTabState();
@@ -77,7 +77,6 @@ class _BackgroundTabState extends ConsumerState<BackgroundTab> {
 
 class BackgroundNotesList extends StatelessWidget {
   const BackgroundNotesList({
-    super.key,
     required this.activeNotes,
     required this.archivedNotes,
     required this.allGoals,

@@ -7,7 +7,7 @@ import 'package:workouts/utils/hr_zone_classifier.dart';
 /// Surfaced on the Today tab so the bpm cutoffs are visible at a glance
 /// alongside the day's planned/active workout.
 class HrZonesReferenceTile extends StatelessWidget {
-  const HrZonesReferenceTile({super.key});
+  const HrZonesReferenceTile();
 
   @override
   Widget build(BuildContext context) {

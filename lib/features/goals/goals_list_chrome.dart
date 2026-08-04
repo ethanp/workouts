@@ -3,7 +3,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class GoalsSectionHeader extends StatelessWidget {
   const GoalsSectionHeader({
-    super.key,
     required this.icon,
     required this.title,
     this.action,
@@ -36,7 +35,6 @@ class GoalsSectionHeader extends StatelessWidget {
 
 class GoalsArchivedToggleRow extends StatelessWidget {
   const GoalsArchivedToggleRow({
-    super.key,
     required this.count,
     required this.isExpanded,
     required this.onTap,
@@ -76,7 +74,7 @@ class GoalsArchivedToggleRow extends StatelessWidget {
 }
 
 class GoalsQuickAddRow extends StatelessWidget {
-  const GoalsQuickAddRow({super.key, required this.onAddGoal});
+  const GoalsQuickAddRow({required this.onAddGoal});
 
   final VoidCallback onAddGoal;
 

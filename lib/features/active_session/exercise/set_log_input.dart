@@ -27,13 +27,12 @@ class SetLogInput {
       weight: exercise.setMetrics.supportsAddedWeight
           ? priorLog?.weight ?? plannedSet?.weight
           : null,
-      reps: priorLog?.reps ??
+      reps:
+          priorLog?.reps ??
           plannedSet?.reps ??
           (exercise.setMetrics.tracksReps ? 1 : null),
       duration: exercise.setMetrics.tracksDuration
-          ? priorLog?.duration ??
-              plannedSet?.duration ??
-              exercise.workDuration
+          ? priorLog?.duration ?? plannedSet?.duration ?? exercise.workDuration
           : null,
       unitRemaining: plannedSet?.unitRemaining,
     );

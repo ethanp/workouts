@@ -20,10 +20,7 @@ void main() {
       final exercise = _exercise(name: 'Chest Press Machine');
 
       expect(WeightDisplay.unitLabel(exercise), 'lb');
-      expect(
-        const Weight.kilograms(22.6796185).formatFor(exercise),
-        '50lb',
-      );
+      expect(const Weight.kilograms(22.6796185).formatFor(exercise), '50lb');
       expect(
         WeightDisplay.inputValue(const Weight.kilograms(22.6796185), exercise),
         '50',
@@ -38,10 +35,7 @@ void main() {
       final exercise = _exercise(name: 'Kettlebell Swing');
 
       expect(WeightDisplay.unitLabel(exercise), 'kg');
-      expect(
-        const Weight.kilograms(20).formatFor(exercise),
-        '20kg',
-      );
+      expect(const Weight.kilograms(20).formatFor(exercise), '20kg');
       expect(
         WeightDisplay.inputValue(const Weight.kilograms(20), exercise),
         '20',

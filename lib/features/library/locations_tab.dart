@@ -11,7 +11,7 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class LocationsTab extends ConsumerWidget {
-  const LocationsTab({super.key});
+  const LocationsTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -230,7 +230,7 @@ class _LocationCard extends ConsumerWidget {
 }
 
 class LocationFormSheet extends ConsumerStatefulWidget {
-  const LocationFormSheet({super.key, this.existing});
+  const LocationFormSheet({this.existing});
 
   final TrainingLocation? existing;
 

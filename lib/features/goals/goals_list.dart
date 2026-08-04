@@ -7,7 +7,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class GoalsList extends StatelessWidget {
   const GoalsList({
-    super.key,
     required this.activeGoals,
     required this.archivedGoals,
     required this.allGoals,

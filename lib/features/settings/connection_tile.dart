@@ -8,7 +8,7 @@ import 'package:workouts/theme/app_theme.dart';
 
 /// Surfaces sync status, pending uploads, and per-candidate host reachability.
 class ConnectionTile extends ConsumerStatefulWidget {
-  const ConnectionTile({super.key});
+  const ConnectionTile();
 
   @override
   ConsumerState<ConnectionTile> createState() => _ConnectionTileState();
@@ -187,8 +187,9 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
                       label,
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textColor3,
-                        fontWeight:
-                            isActive ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight: isActive
+                            ? FontWeight.w600
+                            : FontWeight.w400,
                       ),
                     ),
                     if (isActive) ...[
@@ -231,10 +232,7 @@ class _ConnectionTileState extends ConsumerState<ConnectionTile> {
     if (hostResolution.candidates.length < 2) return null;
     for (final host in hostResolution.candidates) {
       if (host == activeHost) continue;
-      return (
-        label: hostResolution.labels[host] ?? host,
-        host: host,
-      );
+      return (label: hostResolution.labels[host] ?? host, host: host);
     }
     return null;
   }

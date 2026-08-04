@@ -15,7 +15,7 @@ import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
 class CardioDetailScreen extends ConsumerWidget {
-  const CardioDetailScreen({super.key, required this.workout});
+  const CardioDetailScreen({required this.workout});
 
   final CardioWorkout workout;
 
@@ -172,39 +172,39 @@ class _RouteCard extends ConsumerWidget {
 
   Widget _routeMapCard(List<LatLng> routeLatLngPoints, String tileProxyUrl) =>
       Container(
-    decoration: BoxDecoration(
-      color: AppColors.backgroundDepth2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: Border.all(color: AppColors.borderDepth1),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: SizedBox(
-        height: 240,
-        child: FlutterMap(
-          options: MapOptions(
-            initialCameraFit: CameraFit.coordinates(
-              coordinates: routeLatLngPoints,
-              padding: const EdgeInsets.all(24),
-            ),
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: '$tileProxyUrl/tiles/{z}/{x}/{y}.png',
-              tileProvider: LoggingCacheTileProvider(tileProxyUrl),
-            ),
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: routeLatLngPoints,
-                  strokeWidth: 4,
-                  color: AppColors.accentPrimary,
+        decoration: BoxDecoration(
+          color: AppColors.backgroundDepth2,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.borderDepth1),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: SizedBox(
+            height: 240,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCameraFit: CameraFit.coordinates(
+                  coordinates: routeLatLngPoints,
+                  padding: const EdgeInsets.all(24),
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: '$tileProxyUrl/tiles/{z}/{x}/{y}.png',
+                  tileProvider: LoggingCacheTileProvider(tileProxyUrl),
+                ),
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: routeLatLngPoints,
+                      strokeWidth: 4,
+                      color: AppColors.accentPrimary,
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

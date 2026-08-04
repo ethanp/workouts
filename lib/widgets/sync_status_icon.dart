@@ -12,7 +12,7 @@ import 'package:workouts/providers/sync_provider.dart';
 ///
 /// Long press shows detailed sync status.
 class SyncStatusIcon extends ConsumerWidget {
-  const SyncStatusIcon({super.key});
+  const SyncStatusIcon();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

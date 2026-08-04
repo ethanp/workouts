@@ -10,7 +10,7 @@ import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class ExerciseChatScreen extends ConsumerStatefulWidget {
-  const ExerciseChatScreen({super.key, required this.exercise});
+  const ExerciseChatScreen({required this.exercise});
 
   final WorkoutExercise exercise;
 
@@ -147,9 +147,7 @@ class _ExerciseChatScreenState extends ConsumerState<ExerciseChatScreen> {
             decoration: BoxDecoration(
               color: AppColors.error.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(
-                color: AppColors.error.withValues(alpha: 0.4),
-              ),
+              border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
             ),
             child: Text(
               _streamError!,
@@ -169,9 +167,7 @@ class _ExerciseChatScreenState extends ConsumerState<ExerciseChatScreen> {
     decoration: BoxDecoration(
       color: isUser ? AppColors.accentPrimary : AppColors.backgroundDepth2,
       borderRadius: BorderRadius.circular(AppRadius.md),
-      border: isUser
-          ? null
-          : Border.all(color: AppColors.borderDepth1),
+      border: isUser ? null : Border.all(color: AppColors.borderDepth1),
     ),
     child: Text(
       text,

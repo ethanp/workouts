@@ -41,8 +41,9 @@ class SessionRepositoryPowerSync {
   late final SessionMetricsStore _metricsStore = SessionMetricsStore(
     _powerSync,
   );
-  late final ExerciseHistoryStore _exerciseHistoryStore =
-      ExerciseHistoryStore(_powerSync);
+  late final ExerciseHistoryStore _exerciseHistoryStore = ExerciseHistoryStore(
+    _powerSync,
+  );
 
   Future<Session> startSession(String templateId) =>
       _materializer.startSession(templateId);
@@ -158,10 +159,9 @@ class SessionRepositoryPowerSync {
     final age = DateTime.now().difference(startedAt);
 
     if (age > const Duration(hours: _resumableWindowHours)) {
-      await _powerSync.execute(
-        'DELETE FROM sessions WHERE id = ?',
-        [mostRecentId],
-      );
+      await _powerSync.execute('DELETE FROM sessions WHERE id = ?', [
+        mostRecentId,
+      ]);
       _log.log(
         'Discarded stale in-progress session $mostRecentId (${age.inHours}h old).',
       );
@@ -176,13 +176,9 @@ class SessionRepositoryPowerSync {
     final sessions = await fetchSessions();
 
     sessions.sort((sessionA, sessionB) {
-      if (sessionA.completedAt == null && sessionB.completedAt != null) {
-        return -1;
-      }
-      if (sessionA.completedAt != null && sessionB.completedAt == null) {
-        return 1;
-      }
-      if (sessionA.completedAt == null && sessionB.completedAt == null) {
+      if (sessionA.isInProgress && sessionB.isComplete) return -1;
+      if (sessionA.isComplete && sessionB.isInProgress) return 1;
+      if (sessionA.isInProgress && sessionB.isInProgress) {
         return sessionB.startedAt.compareTo(sessionA.startedAt);
       }
       return sessionB.completedAt!.compareTo(sessionA.completedAt!);
@@ -199,7 +195,10 @@ class SessionRepositoryPowerSync {
     );
   }
 
-  Future<void> updateSessionDuration(String sessionId, Duration duration) async {
+  Future<void> updateSessionDuration(
+    String sessionId,
+    Duration duration,
+  ) async {
     final now = DateTime.now().toUtc().toIso8601String();
     await _powerSync.execute(
       'UPDATE sessions SET duration_seconds = ?, updated_at = ? WHERE id = ?',

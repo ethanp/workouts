@@ -8,7 +8,7 @@ import 'package:workouts/features/settings/settings_section.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen({super.key});
+  const SettingsScreen();
 
   static const AppLogViewerStyle _logViewerStyle = AppLogViewerStyle(
     surface: AppColors.backgroundDepth2,
@@ -35,10 +35,7 @@ class SettingsScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: const [
-            SettingsSection(
-              title: 'Connection',
-              children: [ConnectionTile()],
-            ),
+            SettingsSection(title: 'Connection', children: [ConnectionTile()]),
             SizedBox(height: AppSpacing.xl),
             SettingsSection(
               title: 'Apple Health',

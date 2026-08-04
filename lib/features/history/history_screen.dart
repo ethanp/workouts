@@ -13,7 +13,7 @@ import 'package:workouts/widgets/sync_status_icon.dart';
 enum HistoryTab { charts, list, calendar }
 
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({super.key});
+  const HistoryScreen();
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
@@ -30,7 +30,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     // Drop back to idle on error so this banner doesn't stay stuck on
     // "Requesting Apple Health access…" forever — the global error banner
     // and the Settings Apple Health card surface the actual failure.
-    final importProgress = (importAsync.hasError ? null : importAsync.value) ??
+    final importProgress =
+        (importAsync.hasError ? null : importAsync.value) ??
         const CardioImportProgress.idle();
     final isImporting = importProgress.inProgress;
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
@@ -107,11 +108,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       HistoryTab.calendar => const HistoryCalendarTab(),
     };
   }
-
 }
 
 class ImportProgressBanner extends StatelessWidget {
-  const ImportProgressBanner({super.key, required this.importProgress});
+  const ImportProgressBanner({required this.importProgress});
 
   final CardioImportProgress importProgress;
 

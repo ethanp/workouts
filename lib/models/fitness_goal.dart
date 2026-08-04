@@ -39,6 +39,12 @@ abstract class FitnessGoal with _$FitnessGoal {
   factory FitnessGoal.fromJson(Map<String, dynamic> json) =>
       _$FitnessGoalFromJson(json);
 
+  bool get isActive => status == GoalStatus.active;
+
+  bool get isAchieved => status == GoalStatus.achieved;
+
+  bool get isPaused => status == GoalStatus.paused;
+
   factory FitnessGoal.fromRow(Map<String, dynamic> goalRow) {
     return FitnessGoal(
       id: goalRow['id'] as String,

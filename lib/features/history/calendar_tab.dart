@@ -13,7 +13,7 @@ import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/features/history/activity_calendar.dart';
 
 class HistoryCalendarTab extends ConsumerStatefulWidget {
-  const HistoryCalendarTab({super.key});
+  const HistoryCalendarTab();
 
   @override
   ConsumerState<HistoryCalendarTab> createState() => _HistoryCalendarTabState();
@@ -77,7 +77,7 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
 }
 
 class DayDetailSheet extends ConsumerWidget {
-  const DayDetailSheet({super.key, required this.date});
+  const DayDetailSheet({required this.date});
 
   final DateTime date;
 
@@ -108,7 +108,7 @@ class DayDetailSheet extends ConsumerWidget {
 }
 
 class DayDetailItemList extends StatelessWidget {
-  const DayDetailItemList({super.key, required this.items});
+  const DayDetailItemList({required this.items});
 
   final List<ActivityItem> items;
 
@@ -142,7 +142,7 @@ class DayDetailItemList extends StatelessWidget {
 }
 
 class DayDetailCardioRow extends StatelessWidget {
-  const DayDetailCardioRow({super.key, required this.workout});
+  const DayDetailCardioRow({required this.workout});
 
   final CardioWorkout workout;
 
@@ -178,7 +178,7 @@ class DayDetailCardioRow extends StatelessWidget {
 }
 
 class DayDetailSessionRow extends ConsumerWidget {
-  const DayDetailSessionRow({super.key, required this.session});
+  const DayDetailSessionRow({required this.session});
 
   final Session session;
 

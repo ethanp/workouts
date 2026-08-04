@@ -6,7 +6,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 
 class EditSessionDurationSheet extends ConsumerStatefulWidget {
-  const EditSessionDurationSheet({super.key, required this.session});
+  const EditSessionDurationSheet({required this.session});
 
   final Session session;
 

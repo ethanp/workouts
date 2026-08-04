@@ -4,7 +4,7 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class GoalFormSheet extends StatefulWidget {
-  const GoalFormSheet({super.key, this.initialGoal, required this.onSave});
+  const GoalFormSheet({this.initialGoal, required this.onSave});
 
   final FitnessGoal? initialGoal;
   final Future<void> Function(

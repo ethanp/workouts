@@ -6,11 +6,7 @@ import 'package:workouts/theme/app_theme.dart';
 /// Tiles are spaced with [AppSpacing.md] between each other and the section
 /// itself is padded with [AppSpacing.lg] below the header for breathing room.
 class SettingsSection extends StatelessWidget {
-  const SettingsSection({
-    super.key,
-    required this.title,
-    required this.children,
-  });
+  const SettingsSection({required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -34,7 +30,11 @@ class SettingsSection extends StatelessWidget {
             ),
           ),
         ),
-        for (var childIndex = 0; childIndex < children.length; childIndex++) ...[
+        for (
+          var childIndex = 0;
+          childIndex < children.length;
+          childIndex++
+        ) ...[
           children[childIndex],
           if (childIndex < children.length - 1)
             const SizedBox(height: AppSpacing.md),

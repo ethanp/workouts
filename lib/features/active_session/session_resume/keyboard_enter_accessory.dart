@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class KeyboardEnterAccessory extends StatelessWidget {
-  const KeyboardEnterAccessory({super.key, required this.onPressed});
+  const KeyboardEnterAccessory({required this.onPressed});
 
   final VoidCallback onPressed;
 

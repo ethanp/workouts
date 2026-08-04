@@ -5,10 +5,7 @@ import 'package:workouts/services/repositories/session/session_repository_powers
 part 'exercise_history_provider.g.dart';
 
 @riverpod
-Future<List<ExerciseHistoryEntry>> exerciseHistory(
-  Ref ref,
-  String exerciseId,
-) {
+Future<List<ExerciseHistoryEntry>> exerciseHistory(Ref ref, String exerciseId) {
   final repository = ref.watch(sessionRepositoryPowerSyncProvider);
   return repository.fetchExerciseHistory(exerciseId: exerciseId);
 }

@@ -9,7 +9,6 @@ import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class BackgroundNoteRow extends ConsumerWidget {
   const BackgroundNoteRow({
-    super.key,
     required this.note,
     required this.allGoals,
     this.isArchived = false,

@@ -175,7 +175,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final activeSession = state.value;
     if (activeSession == null ||
         activeSession.isPaused ||
-        activeSession.completedAt != null) {
+        activeSession.isComplete) {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
@@ -189,7 +189,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
     final activeSession = state.value;
     if (activeSession == null ||
         !activeSession.isPaused ||
-        activeSession.completedAt != null) {
+        activeSession.isComplete) {
       return;
     }
     final repository = ref.read(sessionRepositoryPowerSyncProvider);

@@ -114,7 +114,8 @@ class TimerNotificationService {
     try {
       final IOSFlutterLocalNotificationsPlugin? iosPlugin = _plugin
           .resolvePlatformSpecificImplementation<
-              IOSFlutterLocalNotificationsPlugin>();
+            IOSFlutterLocalNotificationsPlugin
+          >();
       final bool? granted = await iosPlugin?.requestPermissions(
         alert: true,
         sound: true,

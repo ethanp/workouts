@@ -80,7 +80,7 @@ const librarySections = <LibrarySection>[
 ];
 
 class LibraryScreen extends ConsumerWidget {
-  const LibraryScreen({super.key});
+  const LibraryScreen();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -188,7 +188,7 @@ class _LibraryIndexRow extends StatelessWidget {
 }
 
 class LibrarySectionPage extends ConsumerWidget {
-  const LibrarySectionPage({super.key, required this.section});
+  const LibrarySectionPage({required this.section});
 
   final LibrarySection section;
 

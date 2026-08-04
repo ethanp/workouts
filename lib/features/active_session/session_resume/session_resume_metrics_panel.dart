@@ -8,7 +8,6 @@ import 'package:workouts/widgets/cardio_metrics_card.dart';
 
 class SessionResumeMetricsPanel extends StatelessWidget {
   const SessionResumeMetricsPanel({
-    super.key,
     required this.session,
     required this.heartRateSamples,
     required this.watchConnected,

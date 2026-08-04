@@ -16,7 +16,6 @@ import 'package:workouts/widgets/trend_series.dart';
 /// session, the chart situates it within their progress.
 class ExerciseProgressCard extends ConsumerWidget {
   const ExerciseProgressCard({
-    super.key,
     required this.exercise,
     required this.exerciseLogs,
     required this.sessionDate,
@@ -57,9 +56,7 @@ class ExerciseProgressCard extends ConsumerWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(
-          child: Text(exercise.name, style: AppTypography.subtitle),
-        ),
+        Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
         Text(
           '$completedSets/$targetSets sets',
           style: AppTypography.caption.copyWith(

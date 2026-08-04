@@ -106,11 +106,7 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
 }
 
 class ZoomableChartArea extends ConsumerStatefulWidget {
-  const ZoomableChartArea({
-    super.key,
-    required this.fullRange,
-    required this.child,
-  });
+  const ZoomableChartArea({required this.fullRange, required this.child});
 
   final DateTimeRange fullRange;
   final Widget child;

@@ -29,9 +29,11 @@ class SessionDetailBlockCard extends StatelessWidget {
         children: [
           _blockHeader(),
           const SizedBox(height: AppSpacing.md),
-          for (var exerciseIndex = 0;
-              exerciseIndex < block.exercises.length;
-              exerciseIndex++) ...[
+          for (
+            var exerciseIndex = 0;
+            exerciseIndex < block.exercises.length;
+            exerciseIndex++
+          ) ...[
             _exerciseCard(block.exercises[exerciseIndex]),
             if (exerciseIndex < block.exercises.length - 1)
               const SizedBox(height: AppSpacing.sm),

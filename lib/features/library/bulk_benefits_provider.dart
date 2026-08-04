@@ -77,7 +77,9 @@ class BulkBenefitsController extends _$BulkBenefitsController {
         await repository.updateExerciseBenefits(exercise.id, generatedBenefits);
         completed++;
       } catch (error) {
-        _log.log('Failed to generate/save benefits for "${exercise.name}": $error');
+        _log.log(
+          'Failed to generate/save benefits for "${exercise.name}": $error',
+        );
         failed++;
       }
       if (!ref.mounted || _cancelled) return;
@@ -89,7 +91,9 @@ class BulkBenefitsController extends _$BulkBenefitsController {
     }
 
     if (failed > 0) {
-      errorBus.add('Benefits generation: $failed / $total exercises failed. Check logs for details.');
+      errorBus.add(
+        'Benefits generation: $failed / $total exercises failed. Check logs for details.',
+      );
     }
 
     ref.invalidate(allExercisesProvider);

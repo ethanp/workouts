@@ -30,8 +30,9 @@ class WeeklyActivityAggregator {
 
     final byMonday = <DateTime, WeekAggregate>{};
     for (var weekIndex = 0; weekIndex < weekCount; weekIndex++) {
-      final monday =
-          currentMonday.shiftedByDays(-7 * (weekCount - 1 - weekIndex));
+      final monday = currentMonday.shiftedByDays(
+        -7 * (weekCount - 1 - weekIndex),
+      );
       byMonday[monday] = WeekAggregate(
         label: '${monday.month}/${monday.day}',
         weekStart: monday,

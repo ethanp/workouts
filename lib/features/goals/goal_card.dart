@@ -9,7 +9,6 @@ import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class GoalCard extends ConsumerWidget {
   const GoalCard({
-    super.key,
     required this.goal,
     required this.allGoals,
     this.isArchived = false,
@@ -108,7 +107,7 @@ class GoalCard extends ConsumerWidget {
   }
 
   bool get _showsStatusRow {
-    return showCategoryPill || goal.status != GoalStatus.active;
+    return showCategoryPill || !goal.isActive;
   }
 
   Widget _statusRow(GoalCategoryStyle categoryStyle) {
@@ -120,8 +119,8 @@ class GoalCard extends ConsumerWidget {
             color: categoryStyle.color,
             isArchived: isArchived,
           ),
-        if (goal.status == GoalStatus.achieved) ..._achievedBadge(),
-        if (goal.status == GoalStatus.paused) ..._pausedBadge(),
+        if (goal.isAchieved) ..._achievedBadge(),
+        if (goal.isPaused) ..._pausedBadge(),
       ],
     );
   }
@@ -188,7 +187,7 @@ class GoalCard extends ConsumerWidget {
     WidgetRef ref,
     GoalsController goalsNotifier,
   ) {
-    final isActive = goal.status == GoalStatus.active;
+    final isActive = goal.isActive;
     return [
       CupertinoActionSheetAction(
         onPressed: () {

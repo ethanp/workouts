@@ -19,7 +19,6 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 /// - Tap "Apply" to persist or "Cancel" to discard
 class ExerciseBenefitsSheet extends ConsumerStatefulWidget {
   const ExerciseBenefitsSheet({
-    super.key,
     required this.exercise,
     this.autoGenerate = false,
   });

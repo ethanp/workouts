@@ -4,12 +4,12 @@ import 'dart:io';
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workouts/app_identity.dart';
 import 'package:workouts/services/powersync/powersync_schema.dart';
 import 'package:workouts/utils/error_bus.dart';
 
@@ -38,7 +38,7 @@ SyncConfig buildWorkoutsSyncConfig(SharedPreferences preferences) {
     ),
     jwtCredentials: PowerSyncJwtCredentials(
       secret: _jwtSecret(),
-      keyId: 'workouts-dev-key',
+      keyId: '${AppIdentity.syncAppName.replaceAll('_', '-')}-dev-key',
     ),
     schema: schema,
     databasePath: () => _resolveDatabasePath(preferences),
@@ -64,7 +64,8 @@ List<String> _hostCandidates() {
   final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'];
   final candidates = [
     if (lan != null && lan.isNotEmpty) lan,
-    if (tailscale != null && tailscale.isNotEmpty && tailscale != lan) tailscale,
+    if (tailscale != null && tailscale.isNotEmpty && tailscale != lan)
+      tailscale,
   ];
   if (candidates.isEmpty) {
     throw StateError(
@@ -79,9 +80,7 @@ Map<String, String> _hostLabels() {
   final tailscale = dotenv.env['SERVER_HOST_TAILSCALE'];
   return {
     if (lan != null && lan.isNotEmpty) lan: 'Home LAN',
-    if (tailscale != null &&
-        tailscale.isNotEmpty &&
-        tailscale != lan)
+    if (tailscale != null && tailscale.isNotEmpty && tailscale != lan)
       tailscale: 'Tailscale',
   };
 }
@@ -209,7 +208,9 @@ class WorkoutsConflictResolver extends ConflictResolver {
     if (externalId == null) return;
     final table = conflict.op.table;
     await conflict.client.delete(
-      Uri.parse('${conflict.postgrestUrl}/$table?external_workout_id=eq.$externalId'),
+      Uri.parse(
+        '${conflict.postgrestUrl}/$table?external_workout_id=eq.$externalId',
+      ),
       headers: const {'Content-Type': 'application/json'},
     );
     final response = await conflict.client.post(
@@ -252,7 +253,9 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
     final orphanCount = countRows.first['cnt'] as int? ?? 0;
     if (orphanCount == 0) return;
     await database.execute('DELETE FROM ps_crud WHERE $orphanFilter');
-    _log.log('Removed $orphanCount stale upload entries for deleted cardio workouts.');
+    _log.log(
+      'Removed $orphanCount stale upload entries for deleted cardio workouts.',
+    );
   } catch (error) {
     _log.warn('Could not purge orphaned cardio CRUD entries: $error');
   }

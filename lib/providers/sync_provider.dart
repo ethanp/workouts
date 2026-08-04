@@ -11,7 +11,9 @@ import 'package:powersync/powersync.dart';
 enum SyncState { connecting, downloading, uploading, synced, offline, error }
 
 final syncStateProvider = Provider<SyncState>((ref) {
-  return ref.watch(sync.syncStatusProvider).when(
+  return ref
+      .watch(sync.syncStatusProvider)
+      .when(
         data: (status) {
           if (status.connected) {
             if (status.downloading) return SyncState.downloading;
@@ -32,7 +34,9 @@ final syncStateProvider = Provider<SyncState>((ref) {
 
 /// Human-readable sync status description.
 final syncStatusDescriptionProvider = Provider<String>((ref) {
-  return ref.watch(sync.syncStatusProvider).when(
+  return ref
+      .watch(sync.syncStatusProvider)
+      .when(
         data: _describeStatus,
         loading: () => 'Connecting...',
         error: (error, _) => 'Error: $error',

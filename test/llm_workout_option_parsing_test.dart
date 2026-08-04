@@ -37,23 +37,26 @@ void main() {
       expect(exercise.setMetricsStyle, ExerciseSetMetricsStyle.repsAndWeight);
     });
 
-    test('a block with one bad-modality exercise still parses all exercises', () {
-      final block = LlmWorkoutBlock.fromJson({
-        'title': 'Main',
-        'type': 'strength',
-        'estimatedMinutes': 20,
-        'exercises': [
-          {
-            'name': 'Plank',
-            'prescription': '3 x 45s',
-            'modality': 'durationOnly',
-          },
-          {'name': 'Row', 'prescription': '3 x 10', 'modality': 'reps'},
-        ],
-      });
+    test(
+      'a block with one bad-modality exercise still parses all exercises',
+      () {
+        final block = LlmWorkoutBlock.fromJson({
+          'title': 'Main',
+          'type': 'strength',
+          'estimatedMinutes': 20,
+          'exercises': [
+            {
+              'name': 'Plank',
+              'prescription': '3 x 45s',
+              'modality': 'durationOnly',
+            },
+            {'name': 'Row', 'prescription': '3 x 10', 'modality': 'reps'},
+          ],
+        });
 
-      expect(block.exercises, hasLength(2));
-      expect(block.exercises.first.modality, ExerciseModality.reps);
-    });
+        expect(block.exercises, hasLength(2));
+        expect(block.exercises.first.modality, ExerciseModality.reps);
+      },
+    );
   });
 }

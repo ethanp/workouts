@@ -11,7 +11,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class ExerciseHistoryScreen extends ConsumerWidget {
-  const ExerciseHistoryScreen({super.key, required this.exercise});
+  const ExerciseHistoryScreen({required this.exercise});
 
   final WorkoutExercise exercise;
 
@@ -28,9 +28,8 @@ class ExerciseHistoryScreen extends ConsumerWidget {
 
   Widget _body(AsyncValue<List<ExerciseHistoryEntry>> historyAsync) {
     return historyAsync.when(
-      data: (entries) => entries.isEmpty
-          ? _emptyState()
-          : _historyList(entries),
+      data: (entries) =>
+          entries.isEmpty ? _emptyState() : _historyList(entries),
       loading: () => const Center(child: CupertinoActivityIndicator()),
       error: (error, _) => _errorView(error),
     );
@@ -85,8 +84,6 @@ class _SessionSection extends ConsumerStatefulWidget {
 class _SessionSectionState extends ConsumerState<_SessionSection> {
   bool _isOpening = false;
 
-  ExerciseHistoryEntry get entry => widget.entry;
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -99,7 +96,7 @@ class _SessionSectionState extends ConsumerState<_SessionSection> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sessionDateHeader(),
-          if (entry.sets.isNotEmpty) ...[
+          if (widget.entry.sets.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xs),
             ..._setRows(),
             const SizedBox(height: AppSpacing.sm),
@@ -123,7 +120,7 @@ class _SessionSectionState extends ConsumerState<_SessionSection> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  Format.dateRelative(entry.completedAt),
+                  Format.dateRelative(widget.entry.completedAt),
                   style: AppTypography.subtitle,
                 ),
                 const SizedBox(height: AppSpacing.xs),
@@ -144,15 +141,15 @@ class _SessionSectionState extends ConsumerState<_SessionSection> {
   }
 
   String get _subtitle {
-    final setCount = entry.sets.length;
+    final setCount = widget.entry.sets.length;
     final setLabel = '$setCount ${setCount == 1 ? 'set' : 'sets'}';
-    final templateName = entry.templateName;
+    final templateName = widget.entry.templateName;
     if (templateName == null || templateName.isEmpty) return setLabel;
     return '$templateName · $setLabel';
   }
 
   Iterable<Widget> _setRows() {
-    return entry.sets.map(
+    return widget.entry.sets.map(
       (log) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: SessionSetLogRow(log: log, exercise: widget.exercise),
@@ -166,11 +163,13 @@ class _SessionSectionState extends ConsumerState<_SessionSection> {
     final repository = ref.read(sessionRepositoryPowerSyncProvider);
     try {
       final Session session = await repository.fetchSessionById(
-        entry.sessionId,
+        widget.entry.sessionId,
       );
       if (!mounted) return;
       navigator.push<void>(
-        CupertinoPageRoute(builder: (_) => SessionDetailScreen(session: session)),
+        CupertinoPageRoute(
+          builder: (_) => SessionDetailScreen(session: session),
+        ),
       );
     } finally {
       if (mounted) setState(() => _isOpening = false);

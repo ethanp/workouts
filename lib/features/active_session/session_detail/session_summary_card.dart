@@ -4,11 +4,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class SessionSummaryCard extends StatelessWidget {
-  const SessionSummaryCard({
-    super.key,
-    required this.session,
-    this.onEditDuration,
-  });
+  const SessionSummaryCard({required this.session, this.onEditDuration});
 
   final Session session;
   final VoidCallback? onEditDuration;
@@ -127,7 +123,7 @@ class SessionSummaryCard extends StatelessWidget {
   }
 
   Widget _statusBadge() {
-    final isComplete = session.completedAt != null;
+    final isComplete = session.isComplete;
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,

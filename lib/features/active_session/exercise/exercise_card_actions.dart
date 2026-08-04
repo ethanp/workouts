@@ -4,7 +4,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class ExerciseCardActions extends StatelessWidget {
   const ExerciseCardActions({
-    super.key,
     required this.completedSetCount,
     required this.plannedSetCount,
     required this.nextPlannedSet,
@@ -42,9 +41,8 @@ class ExerciseCardActions extends StatelessWidget {
         // "completed" word whenever the warmup group is visible, an unlog
         // button is present, the exercise is unilateral, or the row is just
         // narrow. Tablets (>=500 logical) still get the full label.
-        final isCrowded = _showsWarmupGroup ||
-            onUnlogSet != null ||
-            sidesPerSet > 1;
+        final isCrowded =
+            _showsWarmupGroup || onUnlogSet != null || sidesPerSet > 1;
         final useCompactProgressLabel =
             isComplete || isCrowded || constraints.maxWidth < 500;
         return _actionRow(

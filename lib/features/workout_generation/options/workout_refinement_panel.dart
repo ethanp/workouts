@@ -7,7 +7,6 @@ enum RefinementMode { refine, ask }
 
 class WorkoutRefinementPanel extends StatelessWidget {
   const WorkoutRefinementPanel({
-    super.key,
     required this.mode,
     required this.feedbackController,
     required this.onModeChanged,

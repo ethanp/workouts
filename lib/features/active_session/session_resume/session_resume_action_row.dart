@@ -4,7 +4,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class SessionResumeActionRow extends StatelessWidget {
   const SessionResumeActionRow({
-    super.key,
     required this.isPaused,
     required this.watchConnected,
     required this.onTogglePause,

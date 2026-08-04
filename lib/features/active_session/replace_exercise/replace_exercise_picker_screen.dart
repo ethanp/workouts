@@ -16,7 +16,6 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 /// new movement — that detail belongs to the picker.
 class ReplaceExercisePickerScreen extends ConsumerWidget {
   const ReplaceExercisePickerScreen({
-    super.key,
     required this.originalExercise,
     required this.excludeIds,
   });
@@ -317,9 +316,7 @@ class _ReplacePickerBodyState extends ConsumerState<_ReplacePickerBody> {
             Expanded(
               child: Text(
                 exercise.name,
-                style: AppTypography.body.copyWith(
-                  color: AppColors.textColor1,
-                ),
+                style: AppTypography.body.copyWith(color: AppColors.textColor1),
               ),
             ),
             if (!suggestion.isFromLibrary) _newBadge(),
@@ -619,8 +616,7 @@ class _ReplacePickerBodyState extends ConsumerState<_ReplacePickerBody> {
     });
 
     final llmService = ref.read(llmServiceProvider);
-    final activeGoals =
-        ref.read(activeGoalsStreamProvider).value ?? const [];
+    final activeGoals = ref.read(activeGoalsStreamProvider).value ?? const [];
 
     try {
       final suggestions = await llmService.suggestExerciseReplacements(

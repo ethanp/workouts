@@ -17,7 +17,6 @@ const Duration _maxRestoreAge = Duration(hours: 12);
 
 class ExerciseIntervalTimer extends ConsumerStatefulWidget {
   const ExerciseIntervalTimer({
-    super.key,
     required this.identity,
     required this.planContext,
     required this.isNextRecommended,
@@ -78,12 +77,6 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// the official guidance is to stash provider notifiers in a field.
   late final ActiveExerciseTimer _activeExerciseTimerNotifier;
 
-  Duration get _setupDuration => widget.planContext.setupDuration;
-
-  Duration get _workDuration => widget.planContext.workDuration;
-
-  Duration get _restDuration => widget.planContext.restDuration;
-
   bool get _isPaused => _pausedRemaining != null;
 
   bool get _isRunningPhase =>
@@ -99,11 +92,6 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
     if (plannedSetCount <= 0) return false;
     return widget.planContext.loggedSetCount >= plannedSetCount;
   }
-
-  ActiveTimerStore get _store => ref.read(activeTimerStoreProvider);
-
-  TimerNotificationService get _notif =>
-      ref.read(timerNotificationServiceProvider);
 
   /// Live remaining duration derived from wall-clock state. Returns
   /// `Duration.zero` (not a negative value) once we're past `_endsAt` so
@@ -155,7 +143,7 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
     final didLogSet = newLoggedSetCount > _lastObservedLoggedSetCount;
     _lastObservedLoggedSetCount = newLoggedSetCount;
     if (!didLogSet) return;
-    if (_restDuration <= Duration.zero) return;
+    if (widget.planContext.restDuration <= Duration.zero) return;
     if (_isLastPlannedSet) return;
     _scheduleAutoStart(() => _startPhase(TimerPhase.rest));
   }
@@ -168,7 +156,8 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// timer the user just tapped Reset on, which is hostile.
   void _autoStartIfNewlyRecommended(ExerciseIntervalTimer oldWidget) {
     final bool wasRecommended =
-        oldWidget.isNextRecommended && oldWidget.planContext.hasSetupOrWorkTiming;
+        oldWidget.isNextRecommended &&
+        oldWidget.planContext.hasSetupOrWorkTiming;
     if (wasRecommended) return;
     if (!_shouldAutoStartSetupOrWork) return;
     if (_phase != TimerPhase.idle) return;
@@ -247,9 +236,9 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
       canStart: !_isRunningPhase,
       canReset: _phase != TimerPhase.idle,
       canAdjust: _isRunningPhase,
-      hasSetupPhase: _setupDuration > Duration.zero,
-      hasWorkPhase: _workDuration > Duration.zero,
-      hasRestPhase: _restDuration > Duration.zero,
+      hasSetupPhase: widget.planContext.setupDuration > Duration.zero,
+      hasWorkPhase: widget.planContext.workDuration > Duration.zero,
+      hasRestPhase: widget.planContext.restDuration > Duration.zero,
     );
   }
 
@@ -258,12 +247,13 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// callers use that to skip auto-start (since the restored state takes
   /// precedence).
   bool _restoreFromStore() {
-    final ActiveTimerRecord? record = _store.read();
+    final ActiveTimerRecord? record =
+        ref.read(activeTimerStoreProvider).read();
     if (record == null) return false;
     if (record.sessionId != widget.identity.sessionId) {
       // Stale leftover from a different session — clear it for everyone.
-      unawaited(_store.clear());
-      unawaited(_notif.cancel());
+      unawaited(ref.read(activeTimerStoreProvider).clear());
+      unawaited(ref.read(timerNotificationServiceProvider).cancel());
       return false;
     }
     if (!widget.identity.matches(record)) {
@@ -271,8 +261,8 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
       return false;
     }
     if (_isStaleRecord(record)) {
-      unawaited(_store.clear());
-      unawaited(_notif.cancel());
+      unawaited(ref.read(activeTimerStoreProvider).clear());
+      unawaited(ref.read(timerNotificationServiceProvider).cancel());
       return false;
     }
     // initState is a forbidden lifecycle for provider mutations. Stage
@@ -310,10 +300,13 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
 
   void _startInitialPhase() {
     if (!widget.planContext.hasTiming) return;
-    final TimerPhase phase = _setupDuration > Duration.zero
+    final TimerPhase phase = widget.planContext.setupDuration > Duration.zero
         ? TimerPhase.setup
         : TimerPhase.work;
-    if (phase == TimerPhase.work && _workDuration <= Duration.zero) return;
+    if (phase == TimerPhase.work &&
+        widget.planContext.workDuration <= Duration.zero) {
+      return;
+    }
     _startPhase(phase);
   }
 
@@ -353,7 +346,8 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   }
 
   void _advancePhase(TimerPhase phase) {
-    if (phase == TimerPhase.setup && _workDuration > Duration.zero) {
+    if (phase == TimerPhase.setup &&
+        widget.planContext.workDuration > Duration.zero) {
       _startPhase(TimerPhase.work);
       return;
     }
@@ -399,7 +393,7 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
       _endsAt = null;
     });
     _persistPaused(phase: _phase, pausedRemaining: paused);
-    unawaited(_notif.cancel());
+    unawaited(ref.read(timerNotificationServiceProvider).cancel());
   }
 
   void _resumeTimer() {
@@ -450,48 +444,58 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   }
 
   Duration _durationForPhase(TimerPhase phase) => switch (phase) {
-    TimerPhase.setup => _setupDuration,
-    TimerPhase.work => _workDuration,
-    TimerPhase.rest => _restDuration,
+    TimerPhase.setup => widget.planContext.setupDuration,
+    TimerPhase.work => widget.planContext.workDuration,
+    TimerPhase.rest => widget.planContext.restDuration,
     TimerPhase.idle || TimerPhase.complete => Duration.zero,
   };
 
   void _persistRunning({required TimerPhase phase, required DateTime endsAt}) {
-    unawaited(_store.write(ActiveTimerRecord(
-      sessionId: widget.identity.sessionId,
-      blockId: widget.identity.blockId,
-      exerciseId: widget.identity.exerciseId,
-      phase: phase,
-      endsAt: endsAt,
-    )));
+    unawaited(
+      ref.read(activeTimerStoreProvider).write(
+        ActiveTimerRecord(
+          sessionId: widget.identity.sessionId,
+          blockId: widget.identity.blockId,
+          exerciseId: widget.identity.exerciseId,
+          phase: phase,
+          endsAt: endsAt,
+        ),
+      ),
+    );
   }
 
   void _persistPaused({
     required TimerPhase phase,
     required Duration pausedRemaining,
   }) {
-    unawaited(_store.write(ActiveTimerRecord(
-      sessionId: widget.identity.sessionId,
-      blockId: widget.identity.blockId,
-      exerciseId: widget.identity.exerciseId,
-      phase: phase,
-      pausedRemaining: pausedRemaining,
-    )));
+    unawaited(
+      ref.read(activeTimerStoreProvider).write(
+        ActiveTimerRecord(
+          sessionId: widget.identity.sessionId,
+          blockId: widget.identity.blockId,
+          exerciseId: widget.identity.exerciseId,
+          phase: phase,
+          pausedRemaining: pausedRemaining,
+        ),
+      ),
+    );
   }
 
   void _clearPersisted() {
-    unawaited(_store.clear());
-    unawaited(_notif.cancel());
+    unawaited(ref.read(activeTimerStoreProvider).clear());
+    unawaited(ref.read(timerNotificationServiceProvider).cancel());
   }
 
   void _scheduleNotification({
     required TimerPhase phase,
     required DateTime endsAt,
   }) {
-    unawaited(_notif.scheduleAt(
-      endsAt: endsAt,
-      body: _notificationBody(phase),
-    ));
+    unawaited(
+      ref.read(timerNotificationServiceProvider).scheduleAt(
+        endsAt: endsAt,
+        body: _notificationBody(phase),
+      ),
+    );
   }
 
   String _notificationBody(TimerPhase phase) {

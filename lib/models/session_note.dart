@@ -1,9 +1,21 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'session_note.freezed.dart';
 part 'session_note.g.dart';
 
-enum SessionNoteType { observation, modification, painSignal, breakthrough }
+enum SessionNoteType {
+  observation(icon: '👀'),
+  modification(icon: '🔧'),
+  painSignal(icon: '⚠️'),
+  breakthrough(icon: '🎉');
+
+  const SessionNoteType({required this.icon});
+
+  final String icon;
+
+  String get displayName => nameAsCapitalizedWords;
+}
 
 enum SessionNoteSource { user, llmSuggested }
 
@@ -53,21 +65,5 @@ abstract class SessionNote with _$SessionNote {
     'note_type': noteType.name,
     'source': source.name,
     'timestamp': timestamp.toIso8601String(),
-  };
-}
-
-extension SessionNoteTypeX on SessionNoteType {
-  String get displayName => switch (this) {
-    SessionNoteType.observation => 'Observation',
-    SessionNoteType.modification => 'Modification',
-    SessionNoteType.painSignal => 'Pain Signal',
-    SessionNoteType.breakthrough => 'Breakthrough',
-  };
-
-  String get icon => switch (this) {
-    SessionNoteType.observation => '👀',
-    SessionNoteType.modification => '🔧',
-    SessionNoteType.painSignal => '⚠️',
-    SessionNoteType.breakthrough => '🎉',
   };
 }

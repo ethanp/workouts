@@ -5,7 +5,7 @@ import 'package:workouts/features/active_session/session_resume/session_resume_b
 import 'package:workouts/theme/app_theme.dart';
 
 class SessionResumeScreen extends ConsumerWidget {
-  const SessionResumeScreen({super.key, required this.sessionId});
+  const SessionResumeScreen({required this.sessionId});
 
   final String sessionId;
 

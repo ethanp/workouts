@@ -52,9 +52,7 @@ class ExerciseHistoryStore {
     );
 
     return sessionRows
-        .map(
-          (row) => _entryFromRow(row, logsBySessionId),
-        )
+        .map((row) => _entryFromRow(row, logsBySessionId))
         .toList();
   }
 
@@ -91,8 +89,9 @@ class ExerciseHistoryStore {
     final sessionId = sessionRow['session_id'] as String;
     return ExerciseHistoryEntry(
       sessionId: sessionId,
-      completedAt: DateTime.parse(sessionRow['completed_at'] as String)
-          .toLocal(),
+      completedAt: DateTime.parse(
+        sessionRow['completed_at'] as String,
+      ).toLocal(),
       templateName: sessionRow['template_name'] as String?,
       sets: logsBySessionId[sessionId] ?? const [],
     );

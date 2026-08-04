@@ -17,7 +17,7 @@ import 'package:workouts/services/repositories/session/session_repository_powers
 import 'package:workouts/theme/app_theme.dart';
 
 class HistoryActivityListTab extends ConsumerWidget {
-  const HistoryActivityListTab({super.key});
+  const HistoryActivityListTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

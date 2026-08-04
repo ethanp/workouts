@@ -74,9 +74,7 @@ class ContextBuilder {
   Future<WorkoutContext> build() async {
     // Fetch active goals, sorted by priority
     final goals = await goalsRepo.fetchGoals();
-    final activeGoals = goals.whereL(
-      (goal) => goal.status == GoalStatus.active,
-    );
+    final activeGoals = goals.whereL((goal) => goal.isActive);
 
     // Fetch active background notes
     final allNotes = await notesRepo.fetchNotes();
@@ -88,8 +86,7 @@ class ContextBuilder {
     final recentSessions = sessions
         .where(
           (session) =>
-              session.completedAt != null &&
-              session.completedAt!.isAfter(cutoff),
+              session.isComplete && session.completedAt!.isAfter(cutoff),
         )
         .take(10) // Limit to last 10 sessions for token budget
         .toList();

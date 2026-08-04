@@ -91,7 +91,7 @@ WorkoutExercise _exerciseFromJoinRow({
       : parseTargetSetsFromPrescription(prescription);
   final plannedSets = storedPlannedSets.isNotEmpty
       ? storedPlannedSets
-      : plannedSetsFromLegacyPrescription(
+      : PlannedSet.fromLegacyPrescription(
           modality: modality,
           prescription: prescription,
           targetSets: targetSets,
@@ -114,9 +114,7 @@ WorkoutExercise _exerciseFromJoinRow({
     benefits: ExerciseBenefit.listFromJsonString(
       row[_prefixed(exercisePrefix, 'benefits')] as String?,
     ),
-    isUnilateral: _boolFromInt(
-      row[_prefixed(exercisePrefix, 'is_unilateral')],
-    ),
+    isUnilateral: _boolFromInt(row[_prefixed(exercisePrefix, 'is_unilateral')]),
     setupDuration: _durationFromSeconds(
       row[_prefixed(linkPrefix, 'setup_duration_seconds')],
     ),

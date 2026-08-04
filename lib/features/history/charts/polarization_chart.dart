@@ -19,7 +19,7 @@ const _kPriorityTwoTargetSeconds = 150 * 60; // 150 min/week priority 2 target
 ///
 /// Horizontal drag activates a scrub cursor and live readout panel.
 class PolarizationChart extends StatefulWidget {
-  const PolarizationChart({super.key, required this.weeks});
+  const PolarizationChart({required this.weeks});
 
   final List<WeekZoneData> weeks;
 
@@ -30,8 +30,6 @@ class PolarizationChart extends StatefulWidget {
 class _PolarizationChartState extends State<PolarizationChart> {
   int? _scrubIndex;
   bool _legendExpanded = false;
-
-  List<WeekZoneData> get weeks => widget.weeks;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +53,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
             _labels(),
             const SizedBox(height: AppSpacing.sm),
             PolarizationScrubDetailPanel(
-              week: _scrubIndex != null ? weeks[_scrubIndex!] : null,
+              week: _scrubIndex != null ? widget.weeks[_scrubIndex!] : null,
             ),
           ],
         ),
@@ -142,13 +140,13 @@ class _PolarizationChartState extends State<PolarizationChart> {
   ) => boundaryIndex * (barWidth + barSpacing) - barSpacing / 2;
 
   Widget _barsWithScrub() {
-    if (weeks.isEmpty) {
+    if (widget.weeks.isEmpty) {
       return const Center(
         child: Text('No data yet', style: AppTypography.caption),
       );
     }
 
-    final zoneTimes = weeks.map((week) => week.zoneTime).toList();
+    final zoneTimes = widget.weeks.map((week) => week.zoneTime).toList();
     final maxTotal = zoneTimes.fold(
       0,
       (maxSoFar, zoneTime) => math.max(maxSoFar, zoneTime.total),
@@ -161,21 +159,21 @@ class _PolarizationChartState extends State<PolarizationChart> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final barWidth =
-            (constraints.maxWidth - barSpacing * (weeks.length - 1)) /
-            weeks.length;
+            (constraints.maxWidth - barSpacing * (widget.weeks.length - 1)) /
+            widget.weeks.length;
 
         return GestureDetector(
           onHorizontalDragStart: (details) => _updateScrubFromOffset(
             details.localPosition.dx,
             barWidth,
             barSpacing,
-            weeks.length,
+            widget.weeks.length,
           ),
           onHorizontalDragUpdate: (details) => _updateScrubFromOffset(
             details.localPosition.dx,
             barWidth,
             barSpacing,
-            weeks.length,
+            widget.weeks.length,
           ),
           onHorizontalDragEnd: (_) => setState(() => _scrubIndex = null),
           behavior: HitTestBehavior.opaque,
@@ -212,7 +210,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) ...[
+        for (var weekIndex = 0; weekIndex < widget.weeks.length; weekIndex++) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(
             child: _stackedBar(zoneTimes[weekIndex], effectiveMax, weekIndex),
@@ -354,13 +352,13 @@ class _PolarizationChartState extends State<PolarizationChart> {
   }
 
   double _chartBarWidth(BoxConstraints constraints, double barSpacing) {
-    final weekCount = weeks.length;
+    final weekCount = widget.weeks.length;
     return (constraints.maxWidth - barSpacing * (weekCount - 1)) / weekCount;
   }
 
   List<Widget> _weekLabels(double barWidth, double barSpacing) {
     final weekLabels = <Widget>[];
-    for (var weekIndex = 0; weekIndex < weeks.length; weekIndex++) {
+    for (var weekIndex = 0; weekIndex < widget.weeks.length; weekIndex++) {
       if (!_showsWeekLabel(weekIndex)) continue;
       weekLabels.add(_positionedWeekLabel(weekIndex, barWidth, barSpacing));
     }
@@ -368,9 +366,9 @@ class _PolarizationChartState extends State<PolarizationChart> {
   }
 
   bool _showsWeekLabel(int weekIndex) =>
-      weekIndex % _labelStride() == 0 || weeks[weekIndex].isCurrent;
+      weekIndex % _labelStride() == 0 || widget.weeks[weekIndex].isCurrent;
 
-  int _labelStride() => switch (weeks.length) {
+  int _labelStride() => switch (widget.weeks.length) {
     > 40 => 8,
     > 24 => 4,
     > 16 => 2,
@@ -382,7 +380,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
     double barWidth,
     double barSpacing,
   ) {
-    final week = weeks[weekIndex];
+    final week = widget.weeks[weekIndex];
     return Positioned(
       left: _weekLabelLeft(weekIndex, barWidth, barSpacing),
       top: 0,
@@ -410,7 +408,7 @@ class _PolarizationChartState extends State<PolarizationChart> {
     );
   }
 
-  double _barSpacing() => switch (weeks.length) {
+  double _barSpacing() => switch (widget.weeks.length) {
     > 24 => 1.0,
     > 16 => 2.0,
     _ => 4.0,
@@ -418,9 +416,9 @@ class _PolarizationChartState extends State<PolarizationChart> {
 
   List<int> _yearBoundaryIndices() {
     final indices = <int>[];
-    for (var weekIndex = 1; weekIndex < weeks.length; weekIndex++) {
-      if (weeks[weekIndex].weekStart.year !=
-          weeks[weekIndex - 1].weekStart.year) {
+    for (var weekIndex = 1; weekIndex < widget.weeks.length; weekIndex++) {
+      if (widget.weeks[weekIndex].weekStart.year !=
+          widget.weeks[weekIndex - 1].weekStart.year) {
         indices.add(weekIndex);
       }
     }

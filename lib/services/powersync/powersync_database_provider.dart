@@ -8,7 +8,9 @@ import 'package:powersync/powersync.dart';
 /// connect + reconnect when the host changes) and returns the underlying
 /// [PowerSyncDatabase]. The DB is opened once; connection is managed by the
 /// shared connection controller.
-final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>((ref) async {
+final powerSyncDatabaseProvider = FutureProvider<PowerSyncDatabase>((
+  ref,
+) async {
   await ref.watch(syncConnectionProvider.future);
   final manager = await ref.watch(powerSyncDatabaseManagerProvider.future);
   return manager.database;

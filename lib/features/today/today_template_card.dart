@@ -6,11 +6,7 @@ import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class TodayTemplateCard extends StatefulWidget {
-  const TodayTemplateCard({
-    super.key,
-    required this.template,
-    required this.onStart,
-  });
+  const TodayTemplateCard({required this.template, required this.onStart});
 
   final WorkoutTemplate template;
   final VoidCallback onStart;
@@ -22,13 +18,11 @@ class TodayTemplateCard extends StatefulWidget {
 class _TodayTemplateCardState extends State<TodayTemplateCard> {
   bool _isExpanded = false;
 
-  WorkoutTemplate get template => widget.template;
-
-  int get totalDuration => template.blocks
+  int get totalDuration => widget.template.blocks
       .map((block) => block.targetDuration.inMinutes)
       .fold(0, (value, minutes) => value + minutes);
 
-  int get exerciseCount => template.blocks
+  int get exerciseCount => widget.template.blocks
       .map((block) => block.exercises.length)
       .fold(0, (value, count) => value + count);
 
@@ -58,11 +52,11 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
   Widget _header() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(template.name, style: AppTypography.title),
-      if (template.goal.isNotEmpty) ...[
+      Text(widget.template.name, style: AppTypography.title),
+      if (widget.template.goal.isNotEmpty) ...[
         const SizedBox(height: AppSpacing.xs),
         Text(
-          template.goal,
+          widget.template.goal,
           style: AppTypography.body.copyWith(color: AppColors.textColor2),
         ),
       ],
@@ -73,7 +67,7 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
     children: [
       _stat('${totalDuration}m'),
       _statDivider(),
-      _stat('${template.blocks.length} blocks'),
+      _stat('${widget.template.blocks.length} blocks'),
       _statDivider(),
       _stat('$exerciseCount exercises'),
       const Spacer(),
@@ -140,7 +134,7 @@ class _TodayTemplateCardState extends State<TodayTemplateCard> {
 
   Widget _blockList() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
-    children: template.blocks.mapL(_blockPreview),
+    children: widget.template.blocks.mapL(_blockPreview),
   );
 
   Widget _blockPreview(WorkoutBlock block) {

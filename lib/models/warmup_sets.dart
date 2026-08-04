@@ -28,7 +28,7 @@ class WarmupSets {
   /// dropping that next set; we never delete a logged set.
   bool get canRemove =>
       loggedSetCount < plannedSets.length &&
-      plannedSets[loggedSetCount].type == PlannedSetType.warmup;
+      plannedSets[loggedSetCount].isWarmup;
 
   /// Returns the planned-set list with one additional warmup inserted at
   /// [loggedSetCount]. Mirrors the next unlogged warmup when one exists so
@@ -51,7 +51,9 @@ class WarmupSets {
   /// is enforced once here rather than at every call site.
   List<PlannedSet> withOneRemoved() {
     if (!canRemove) {
-      throw StateError('WarmupSets.withOneRemoved called when canRemove is false');
+      throw StateError(
+        'WarmupSets.withOneRemoved called when canRemove is false',
+      );
     }
     return [
       ...plannedSets.sublist(0, loggedSetCount),

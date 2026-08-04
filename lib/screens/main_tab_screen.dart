@@ -40,11 +40,7 @@ const _mainTabs = <MainTab>[
     label: 'Start Workout',
     screen: TodayScreen(),
   ),
-  MainTab(
-    icon: CupertinoIcons.book,
-    label: 'Library',
-    screen: LibraryScreen(),
-  ),
+  MainTab(icon: CupertinoIcons.book, label: 'Library', screen: LibraryScreen()),
   MainTab(
     icon: CupertinoIcons.gear,
     label: 'Settings',
@@ -53,7 +49,7 @@ const _mainTabs = <MainTab>[
 ];
 
 class MainTabScreen extends ConsumerStatefulWidget {
-  const MainTabScreen({super.key});
+  const MainTabScreen();
 
   @override
   ConsumerState<MainTabScreen> createState() => _MainTabScreenState();
@@ -80,9 +76,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
 
     return CupertinoTabScaffold(
       tabBar: _tabBar(),
-      tabBuilder: (_, selectedIndex) => CupertinoTabView(
-        builder: (_) => _tabContent(selectedIndex),
-      ),
+      tabBuilder: (_, selectedIndex) =>
+          CupertinoTabView(builder: (_) => _tabContent(selectedIndex)),
     );
   }
 

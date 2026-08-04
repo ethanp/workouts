@@ -8,7 +8,6 @@ import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 /// most notably AI-powered features that call the LLM proxy.
 class ConnectionGatedWidget extends ConsumerWidget {
   const ConnectionGatedWidget({
-    super.key,
     required this.child,
     this.offlinePlaceholder = const SizedBox.shrink(),
   });

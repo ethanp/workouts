@@ -12,7 +12,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
 
 class BlockView extends ConsumerStatefulWidget {
-  const BlockView({super.key, required this.block});
+  const BlockView({required this.block});
 
   final SessionBlock block;
 

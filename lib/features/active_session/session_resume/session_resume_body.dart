@@ -17,7 +17,7 @@ import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class SessionResumeBody extends ConsumerStatefulWidget {
-  const SessionResumeBody({super.key, required this.session});
+  const SessionResumeBody({required this.session});
 
   final Session session;
 
@@ -116,15 +116,19 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
                     session: session,
                     heartRateSamples: heartRateSamples,
                     watchConnected: watchConnected,
-                    onPreviousBlock: _canGoPrevious ? _goToPreviousBlock : null,
-                    onNextBlock: _canGoNext(session) ? _goToNextBlock : null,
+                    onPreviousBlock:
+                        _canGoPrevious ? () => _goToBlock(_currentBlockIndex - 1) : null,
+                    onNextBlock: _canGoNext(session)
+                        ? () => _goToBlock(_currentBlockIndex + 1)
+                        : null,
                     onTogglePause: () => _togglePause(session),
                     onAddNote: () => _showAddNoteSheet(context, session),
                   ),
                 _blockPager(session),
               ],
             ),
-            if (keyboardVisible) KeyboardEnterAccessory(onPressed: _dismissKeyboard),
+            if (keyboardVisible)
+              KeyboardEnterAccessory(onPressed: _dismissKeyboard),
           ],
         ),
       ),
@@ -232,10 +236,6 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
       _goToBlock(_currentBlockIndex + 1);
     });
   }
-
-  void _goToPreviousBlock() => _goToBlock(_currentBlockIndex - 1);
-
-  void _goToNextBlock() => _goToBlock(_currentBlockIndex + 1);
 
   void _goToBlock(int blockIndex) {
     _pageController.animateToPage(

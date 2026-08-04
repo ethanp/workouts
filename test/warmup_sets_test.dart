@@ -31,10 +31,7 @@ void main() {
       );
       final exercise = _exercise(plannedSets: const [sibling]);
 
-      final result = PlannedSet.newWarmup(
-        exercise: exercise,
-        sibling: sibling,
-      );
+      final result = PlannedSet.newWarmup(exercise: exercise, sibling: sibling);
 
       expect(result.type, PlannedSetType.warmup);
       expect(result.reps, 5);
@@ -42,10 +39,7 @@ void main() {
     });
 
     test('coerces a working sibling to warmup type', () {
-      const workingSibling = PlannedSet(
-        reps: 8,
-        weight: Weight.kilograms(20),
-      );
+      const workingSibling = PlannedSet(reps: 8, weight: Weight.kilograms(20));
 
       final result = PlannedSet.newWarmup(
         exercise: _exercise(plannedSets: const [workingSibling]),
@@ -75,52 +69,43 @@ void main() {
       },
     );
 
-    test(
-      'falls back to reps: 8 for empty rep-modality exercises',
-      () {
-        final exercise = _exercise(
-          modality: ExerciseModality.reps,
-          setMetricsStyle: ExerciseSetMetricsStyle.repsAndWeight,
-        );
+    test('falls back to reps: 8 for empty rep-modality exercises', () {
+      final exercise = _exercise(
+        modality: ExerciseModality.reps,
+        setMetricsStyle: ExerciseSetMetricsStyle.repsAndWeight,
+      );
 
-        final result = PlannedSet.newWarmup(exercise: exercise);
+      final result = PlannedSet.newWarmup(exercise: exercise);
 
-        expect(result.type, PlannedSetType.warmup);
-        expect(result.reps, 8);
-        expect(result.duration, isNull);
-      },
-    );
+      expect(result.type, PlannedSetType.warmup);
+      expect(result.reps, 8);
+      expect(result.duration, isNull);
+    });
 
-    test(
-      'falls back to workDuration for empty timed-modality exercises',
-      () {
-        final exercise = _exercise(
-          modality: ExerciseModality.timed,
-          setMetricsStyle: ExerciseSetMetricsStyle.durationOnly,
-          workDuration: const Duration(seconds: 45),
-        );
+    test('falls back to workDuration for empty timed-modality exercises', () {
+      final exercise = _exercise(
+        modality: ExerciseModality.timed,
+        setMetricsStyle: ExerciseSetMetricsStyle.durationOnly,
+        workDuration: const Duration(seconds: 45),
+      );
 
-        final result = PlannedSet.newWarmup(exercise: exercise);
+      final result = PlannedSet.newWarmup(exercise: exercise);
 
-        expect(result.type, PlannedSetType.warmup);
-        expect(result.reps, isNull);
-        expect(result.duration, const Duration(seconds: 45));
-      },
-    );
+      expect(result.type, PlannedSetType.warmup);
+      expect(result.reps, isNull);
+      expect(result.duration, const Duration(seconds: 45));
+    });
 
-    test(
-      'falls back to 30s when timed exercise has no workDuration',
-      () {
-        final exercise = _exercise(
-          modality: ExerciseModality.hold,
-          setMetricsStyle: ExerciseSetMetricsStyle.durationOnly,
-        );
+    test('falls back to 30s when timed exercise has no workDuration', () {
+      final exercise = _exercise(
+        modality: ExerciseModality.hold,
+        setMetricsStyle: ExerciseSetMetricsStyle.durationOnly,
+      );
 
-        final result = PlannedSet.newWarmup(exercise: exercise);
+      final result = PlannedSet.newWarmup(exercise: exercise);
 
-        expect(result.duration, const Duration(seconds: 30));
-      },
-    );
+      expect(result.duration, const Duration(seconds: 30));
+    });
   });
 
   group('WarmupSets predicates', () {
@@ -200,28 +185,25 @@ void main() {
       expect(next[5].type, PlannedSetType.working);
     });
 
-    test(
-      'mirrors the next unlogged warmup when one exists',
-      () {
-        const sibling = PlannedSet(
-          type: PlannedSetType.warmup,
-          reps: 8,
-          weight: Weight.kilograms(20),
-        );
-        const working = PlannedSet(reps: 5, weight: Weight.kilograms(60));
-        final warmupSets = WarmupSets(
-          plannedSets: const [sibling, working],
-          exercise: _exercise(plannedSets: const [sibling, working]),
-          loggedSetCount: 0,
-        );
+    test('mirrors the next unlogged warmup when one exists', () {
+      const sibling = PlannedSet(
+        type: PlannedSetType.warmup,
+        reps: 8,
+        weight: Weight.kilograms(20),
+      );
+      const working = PlannedSet(reps: 5, weight: Weight.kilograms(60));
+      final warmupSets = WarmupSets(
+        plannedSets: const [sibling, working],
+        exercise: _exercise(plannedSets: const [sibling, working]),
+        loggedSetCount: 0,
+      );
 
-        final next = warmupSets.withOneAdded();
+      final next = warmupSets.withOneAdded();
 
-        expect(next[0].reps, 8);
-        expect(next[0].weight, const Weight.kilograms(20));
-        expect(next[0].type, PlannedSetType.warmup);
-      },
-    );
+      expect(next[0].reps, 8);
+      expect(next[0].weight, const Weight.kilograms(20));
+      expect(next[0].type, PlannedSetType.warmup);
+    });
 
     test(
       'derives from first working set when no warmup is in the unlogged tail',

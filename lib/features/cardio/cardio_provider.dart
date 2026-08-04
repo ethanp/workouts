@@ -225,26 +225,22 @@ class CardioImportController extends _$CardioImportController {
       status: _addingStatus,
       totalWorkouts: importedWorkouts.length,
     );
-    final newCount = await CardioRepositoryPowerSync(
-      database,
-    ).upsertImportedWorkouts(
-      importedWorkouts,
-      onProgress: (processedWorkouts, totalWorkouts) => _publishProgress(
-        status: _addingStatus,
-        totalWorkouts: totalWorkouts,
-        processedWorkouts: processedWorkouts,
-      ),
-    );
+    final newCount = await CardioRepositoryPowerSync(database)
+        .upsertImportedWorkouts(
+          importedWorkouts,
+          onProgress: (processedWorkouts, totalWorkouts) => _publishProgress(
+            status: _addingStatus,
+            totalWorkouts: totalWorkouts,
+            processedWorkouts: processedWorkouts,
+          ),
+        );
     _publishCompletion(
       importedCount: importedWorkouts.length,
       newCount: newCount,
     );
   }
 
-  void _publishCompletion({
-    required int importedCount,
-    required int newCount,
-  }) {
+  void _publishCompletion({required int importedCount, required int newCount}) {
     if (!ref.mounted) return;
     ref.invalidate(cardioWorkoutsProvider);
     state = AsyncValue.data(

@@ -11,7 +11,7 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
 class ExercisesTab extends ConsumerStatefulWidget {
-  const ExercisesTab({super.key, required this.onGenerateAllPressed});
+  const ExercisesTab({required this.onGenerateAllPressed});
 
   final VoidCallback onGenerateAllPressed;
 

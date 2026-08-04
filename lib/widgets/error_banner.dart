@@ -13,7 +13,7 @@ const _recentLogLineCount = 75;
 const _log = ELogger('ErrorBanner');
 
 class ErrorBanner extends StatefulWidget {
-  const ErrorBanner({super.key, required this.child});
+  const ErrorBanner({required this.child});
 
   final Widget child;
 

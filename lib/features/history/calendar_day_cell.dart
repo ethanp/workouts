@@ -42,7 +42,6 @@ class CalendarDayCell extends StatelessWidget {
   }
 
   const CalendarDayCell({
-    super.key,
     required this.date,
     required this.entry,
     required this.globalMax,
@@ -176,7 +175,7 @@ class CalendarDayCell extends StatelessWidget {
 }
 
 class EmptyDayCell extends StatelessWidget {
-  const EmptyDayCell({super.key});
+  const EmptyDayCell();
 
   @override
   Widget build(BuildContext context) {

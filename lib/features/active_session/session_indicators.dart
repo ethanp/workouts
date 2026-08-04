@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class WatchConnectionIndicator extends StatelessWidget {
-  const WatchConnectionIndicator({super.key, required this.isConnected});
+  const WatchConnectionIndicator({required this.isConnected});
 
   final bool isConnected;
 

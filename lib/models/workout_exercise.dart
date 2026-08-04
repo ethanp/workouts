@@ -12,7 +12,24 @@ import 'package:workouts/utils/weight_display.dart';
 part 'workout_exercise.freezed.dart';
 part 'workout_exercise.g.dart';
 
-enum ExerciseModality { reps, timed, hold, mobility, breath }
+enum ExerciseModality {
+  reps,
+  timed,
+  hold,
+  mobility,
+  breath;
+
+  bool get usesReps =>
+      this == ExerciseModality.reps ||
+      this == ExerciseModality.mobility ||
+      this == ExerciseModality.breath;
+
+  bool get usesDuration =>
+      this == ExerciseModality.timed ||
+      this == ExerciseModality.hold ||
+      this == ExerciseModality.mobility ||
+      this == ExerciseModality.breath;
+}
 
 enum PlannedSetType { warmup, working }
 
@@ -34,6 +51,10 @@ abstract class PlannedSet with _$PlannedSet {
 
   const PlannedSet._();
 
+  bool get isWarmup => type == PlannedSetType.warmup;
+
+  bool get isWorking => type == PlannedSetType.working;
+
   factory PlannedSet.fromJson(Map<String, dynamic> json) =>
       _$PlannedSetFromJson(json);
 
@@ -53,7 +74,7 @@ abstract class PlannedSet with _$PlannedSet {
       return sibling.copyWith(type: PlannedSetType.warmup);
     }
     final firstWorkingSet = exercise.plannedSets
-        .where((plannedSet) => plannedSet.type == PlannedSetType.working)
+        .where((plannedSet) => plannedSet.isWorking)
         .firstOrNull;
     if (firstWorkingSet != null) {
       return PlannedSet(
@@ -110,6 +131,57 @@ abstract class PlannedSet with _$PlannedSet {
 
   static String listToJsonString(List<PlannedSet> plannedSets) =>
       jsonEncode(plannedSets.map((plannedSet) => plannedSet.toJson()).toList());
+
+  static List<PlannedSet> fromLegacyPrescription({
+    required ExerciseModality modality,
+    required String prescription,
+    required int targetSets,
+  }) {
+    if (targetSets <= 0) return const [];
+
+    final reps = _legacyPrescriptionReps(prescription);
+    final duration = _legacyPrescriptionDuration(prescription);
+
+    return [
+      for (var setIndex = 0; setIndex < targetSets; setIndex++)
+        PlannedSet(
+          reps: modality.usesReps ? reps : null,
+          duration: modality.usesDuration ? duration : null,
+        ),
+    ];
+  }
+
+  static int? _legacyPrescriptionReps(String prescription) {
+    final afterSetsMatch = RegExp(
+      r'^\s*\d+\s*[×x]\s*(\d+)',
+      caseSensitive: false,
+    ).firstMatch(prescription);
+    if (afterSetsMatch != null) return int.parse(afterSetsMatch.group(1)!);
+
+    final numberMatch = RegExp(r'(\d+)').firstMatch(prescription);
+    if (numberMatch == null) return null;
+    return int.parse(numberMatch.group(1)!);
+  }
+
+  static Duration? _legacyPrescriptionDuration(String prescription) {
+    final secondsMatch = RegExp(
+      r'(\d+)\s*(?:s|sec|secs|second|seconds)\b',
+      caseSensitive: false,
+    ).firstMatch(prescription);
+    if (secondsMatch != null) {
+      return Duration(seconds: int.parse(secondsMatch.group(1)!));
+    }
+
+    final minutesMatch = RegExp(
+      r'(\d+)\s*(?:m|min|mins|minute|minutes)\b',
+      caseSensitive: false,
+    ).firstMatch(prescription);
+    if (minutesMatch != null) {
+      return Duration(minutes: int.parse(minutesMatch.group(1)!));
+    }
+
+    return null;
+  }
 }
 
 @freezed
@@ -148,13 +220,11 @@ abstract class WorkoutExercise with _$WorkoutExercise {
     return base * sidesPerSet;
   }
 
-  int get warmupSetCount => plannedSets
-      .where((plannedSet) => plannedSet.type == PlannedSetType.warmup)
-      .length;
+  int get warmupSetCount =>
+      plannedSets.where((plannedSet) => plannedSet.isWarmup).length;
 
-  int get workingSetCount => plannedSets
-      .where((plannedSet) => plannedSet.type == PlannedSetType.working)
-      .length;
+  int get workingSetCount =>
+      plannedSets.where((plannedSet) => plannedSet.isWorking).length;
 
   String get prescriptionLabel {
     if (plannedSets.isEmpty) return prescription;
@@ -183,83 +253,17 @@ ExerciseSetMetricsStyle inferSetMetricsStyle({
   if (hasDuration) return ExerciseSetMetricsStyle.durationOnly;
   if (hasReps) return ExerciseSetMetricsStyle.repsOnly;
 
-  return switch (modality) {
-    ExerciseModality.timed ||
-    ExerciseModality.hold => ExerciseSetMetricsStyle.durationOnly,
-    ExerciseModality.mobility ||
-    ExerciseModality.breath => ExerciseSetMetricsStyle.repsAndDuration,
-    ExerciseModality.reps => ExerciseSetMetricsStyle.repsOnly,
-  };
+  if (modality.usesReps && modality.usesDuration) {
+    return ExerciseSetMetricsStyle.repsAndDuration;
+  }
+  if (modality.usesDuration) return ExerciseSetMetricsStyle.durationOnly;
+  return ExerciseSetMetricsStyle.repsOnly;
 }
 
 String plannedSetsPrescriptionLabel(
   List<PlannedSet> plannedSets,
   WorkoutExercise exercise,
 ) => _PlannedSetLabelFormatter(plannedSets, exercise).label;
-
-List<PlannedSet> plannedSetsFromLegacyPrescription({
-  required ExerciseModality modality,
-  required String prescription,
-  required int targetSets,
-}) {
-  if (targetSets <= 0) return const [];
-
-  final reps = _legacyPrescriptionReps(prescription);
-  final duration = _legacyPrescriptionDuration(prescription);
-
-  return [
-    for (var setIndex = 0; setIndex < targetSets; setIndex++)
-      PlannedSet(
-        reps: _usesReps(modality) ? reps : null,
-        duration: _usesDuration(modality) ? duration : null,
-      ),
-  ];
-}
-
-bool _usesReps(ExerciseModality modality) {
-  return modality == ExerciseModality.reps ||
-      modality == ExerciseModality.mobility ||
-      modality == ExerciseModality.breath;
-}
-
-bool _usesDuration(ExerciseModality modality) {
-  return modality == ExerciseModality.timed ||
-      modality == ExerciseModality.hold ||
-      modality == ExerciseModality.mobility ||
-      modality == ExerciseModality.breath;
-}
-
-int? _legacyPrescriptionReps(String prescription) {
-  final afterSetsMatch = RegExp(
-    r'^\s*\d+\s*[×x]\s*(\d+)',
-    caseSensitive: false,
-  ).firstMatch(prescription);
-  if (afterSetsMatch != null) return int.parse(afterSetsMatch.group(1)!);
-
-  final numberMatch = RegExp(r'(\d+)').firstMatch(prescription);
-  if (numberMatch == null) return null;
-  return int.parse(numberMatch.group(1)!);
-}
-
-Duration? _legacyPrescriptionDuration(String prescription) {
-  final secondsMatch = RegExp(
-    r'(\d+)\s*(?:s|sec|secs|second|seconds)\b',
-    caseSensitive: false,
-  ).firstMatch(prescription);
-  if (secondsMatch != null) {
-    return Duration(seconds: int.parse(secondsMatch.group(1)!));
-  }
-
-  final minutesMatch = RegExp(
-    r'(\d+)\s*(?:m|min|mins|minute|minutes)\b',
-    caseSensitive: false,
-  ).firstMatch(prescription);
-  if (minutesMatch != null) {
-    return Duration(minutes: int.parse(minutesMatch.group(1)!));
-  }
-
-  return null;
-}
 
 class _PlannedSetLabelFormatter {
   const _PlannedSetLabelFormatter(this.plannedSets, this.exercise);
@@ -275,14 +279,12 @@ class _PlannedSetLabelFormatter {
 
   String _baseLabel() {
     final groupedLabels = <String>[];
-    final warmupCount = plannedSets
-        .where((plannedSet) => plannedSet.type == PlannedSetType.warmup)
-        .length;
+    final warmupCount =
+        plannedSets.where((plannedSet) => plannedSet.isWarmup).length;
     if (warmupCount > 0) groupedLabels.add('$warmupCount warmup');
 
-    final workingSets = plannedSets
-        .where((plannedSet) => plannedSet.type == PlannedSetType.working)
-        .toList();
+    final workingSets =
+        plannedSets.where((plannedSet) => plannedSet.isWorking).toList();
     if (workingSets.isNotEmpty) {
       groupedLabels.add(_workingSetsLabel(workingSets));
     }

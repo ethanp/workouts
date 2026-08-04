@@ -83,14 +83,17 @@ abstract class Session with _$Session {
   factory Session.fromJson(Map<String, dynamic> json) =>
       _$SessionFromJson(json);
 
+  bool get isComplete => completedAt != null;
+
+  bool get isInProgress => completedAt == null;
+
   /// Looks up a block by id. Throws when not found rather than returning
   /// null because every existing caller depends on the block being present
   /// (the id came from this session in the first place); a missing block is
   /// a programmer error worth surfacing loudly.
   SessionBlock blockById(String blockId) => blocks.firstWhere(
     (block) => block.id == blockId,
-    orElse: () =>
-        throw StateError('Block $blockId not found in session $id'),
+    orElse: () => throw StateError('Block $blockId not found in session $id'),
   );
 }
 

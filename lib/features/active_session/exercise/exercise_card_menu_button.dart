@@ -13,7 +13,6 @@ import 'package:workouts/theme/app_theme.dart';
 /// unreachable (mirrors the gating used by other AI affordances).
 class ExerciseCardMenuButton extends ConsumerWidget {
   const ExerciseCardMenuButton({
-    super.key,
     required this.exerciseName,
     this.onHistoryPressed,
     this.onAskAiPressed,

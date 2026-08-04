@@ -9,7 +9,6 @@ class CalendarWeekRow extends StatelessWidget {
   static const summaryWidth = 74.0;
 
   const CalendarWeekRow({
-    super.key,
     required this.monthDate,
     required this.daysInMonth,
     required this.week,

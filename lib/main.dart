@@ -52,10 +52,7 @@ Future<void> _bootstrap() async {
   await container.read(timerNotificationServiceProvider).init();
 
   runApp(
-    UncontrolledProviderScope(
-      container: container,
-      child: const WorkoutsApp(),
-    ),
+    UncontrolledProviderScope(container: container, child: const WorkoutsApp()),
   );
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show DefaultMaterialLocalizations;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/app_identity.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/screens/main_tab_screen.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
@@ -16,7 +17,7 @@ class WorkoutsApp extends ConsumerWidget {
     ref.watch(cardioMetricsBackfillProvider);
 
     return CupertinoApp(
-      title: 'Workouts',
+      title: AppIdentity.displayName,
       theme: buildAppTheme(),
       debugShowCheckedModeBanner: false,
       // ReorderableListView (used in BlockView) is a Material widget and

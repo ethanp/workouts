@@ -8,7 +8,6 @@ import 'package:workouts/theme/app_theme.dart';
 
 class DismissibleExerciseCard extends ConsumerWidget {
   const DismissibleExerciseCard({
-    super.key,
     required this.block,
     required this.exercise,
     required this.isNextRecommended,

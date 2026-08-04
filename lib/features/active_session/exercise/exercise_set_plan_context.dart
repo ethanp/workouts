@@ -34,8 +34,7 @@ class ExerciseSetPlanContext {
 
   /// 1-based index of the side currently being prepared (1 for bilateral
   /// exercises, 1 or 2 for unilateral). Drives the "Side N of 2" caption.
-  int get currentSideOfPair =>
-      (exerciseLogs.length % exercise.sidesPerSet) + 1;
+  int get currentSideOfPair => (exerciseLogs.length % exercise.sidesPerSet) + 1;
 
   Duration get setupDuration => exercise.setupDuration ?? Duration.zero;
 
@@ -52,8 +51,7 @@ class ExerciseSetPlanContext {
 
   /// True when the exercise has any timed phase (setup, work, or rest).
   /// Drives whether the timer panel is visible at all.
-  bool get hasTiming =>
-      hasSetupOrWorkTiming || restDuration > Duration.zero;
+  bool get hasTiming => hasSetupOrWorkTiming || restDuration > Duration.zero;
 
   bool get showsCurrentSetEditor {
     final PlannedSet? plannedSet = nextPlannedSet;

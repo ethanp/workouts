@@ -23,7 +23,7 @@ import 'package:workouts/features/history/charts/weekly_bar_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
 
 class HistoryChartsTab extends ConsumerWidget {
-  const HistoryChartsTab({super.key});
+  const HistoryChartsTab();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -314,9 +314,7 @@ class _OutdoorRunningChartsState extends State<_OutdoorRunningCharts> {
           ),
           const SizedBox(width: AppSpacing.sm),
           Icon(
-            _expanded
-                ? CupertinoIcons.chevron_up
-                : CupertinoIcons.chevron_down,
+            _expanded ? CupertinoIcons.chevron_up : CupertinoIcons.chevron_down,
             size: 11,
             color: AppColors.textColor4,
           ),

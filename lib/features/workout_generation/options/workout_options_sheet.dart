@@ -13,7 +13,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
 class WorkoutOptionsSheet extends ConsumerStatefulWidget {
-  const WorkoutOptionsSheet({super.key});
+  const WorkoutOptionsSheet();
 
   static Future<LlmWorkoutOption?> show(BuildContext context) {
     return Navigator.of(context).push<LlmWorkoutOption>(

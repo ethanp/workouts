@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutGenerationPreparingView extends StatelessWidget {
-  const WorkoutGenerationPreparingView({super.key});
+  const WorkoutGenerationPreparingView();
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +11,7 @@ class WorkoutGenerationPreparingView extends StatelessWidget {
 }
 
 class WorkoutGenerationStreamingView extends StatefulWidget {
-  const WorkoutGenerationStreamingView({super.key, required this.partialText});
+  const WorkoutGenerationStreamingView({required this.partialText});
 
   final String partialText;
 

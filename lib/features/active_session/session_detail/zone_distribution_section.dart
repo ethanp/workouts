@@ -155,7 +155,9 @@ class ZoneBreakdown extends StatelessWidget {
                 firstSample.timestamp.compareTo(secondSample.timestamp),
           );
 
-    return PolarizationWeek.fromHrZoneTime(HrZoneClassifier.compute(timestamped));
+    return PolarizationWeek.fromHrZoneTime(
+      HrZoneClassifier.compute(timestamped),
+    );
   }
 }
 

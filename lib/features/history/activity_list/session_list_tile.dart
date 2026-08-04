@@ -10,13 +10,13 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class SessionListTile extends ConsumerWidget {
-  const SessionListTile({super.key, required this.session});
+  const SessionListTile({required this.session});
 
   final Session session;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isComplete = session.completedAt != null;
+    final isComplete = session.isComplete;
     final displayDate = session.completedAt ?? session.startedAt;
     final templatesMapAsync = ref.watch(templatesMapProvider);
 
@@ -150,7 +150,7 @@ class SessionListTile extends ConsumerWidget {
   }
 
   Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
-    if (session.completedAt == null) {
+    if (session.isInProgress) {
       await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {
       context.push(SessionDetailScreen(session: session));

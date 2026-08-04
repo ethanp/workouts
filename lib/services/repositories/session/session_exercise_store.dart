@@ -66,10 +66,7 @@ class SessionExerciseStore {
       newExercise,
     );
     await _propagateAcrossRoundsOf(session, blockId, (roundBlockId) async {
-      await _deleteSetLogsFor(
-        blockId: roundBlockId,
-        exerciseId: oldExerciseId,
-      );
+      await _deleteSetLogsFor(blockId: roundBlockId, exerciseId: oldExerciseId);
       await _swapExerciseId(
         blockId: roundBlockId,
         oldExerciseId: oldExerciseId,

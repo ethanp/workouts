@@ -5,13 +5,27 @@ part 'background_note.freezed.dart';
 part 'background_note.g.dart';
 
 enum NoteCategory {
-  injuryHistory,
-  preference,
-  equipment,
-  constraint,
-  avoid,
-  medical,
-  philosophy,
+  injuryHistory(icon: '🩹'),
+  preference(icon: '💜'),
+  equipment(icon: '🏋️'),
+  constraint(icon: '⏱️'),
+  avoid(icon: '⚠️'),
+  medical(icon: '🏥'),
+  philosophy(icon: '📚');
+
+  const NoteCategory({required this.icon});
+
+  final String icon;
+
+  String get dbKey => name.snakeCase;
+
+  static NoteCategory fromDbKey(String dbValue) =>
+      NoteCategory.values.firstWhere(
+        (noteCategory) => noteCategory.dbKey == dbValue,
+        orElse: () => NoteCategory.preference,
+      );
+
+  String get displayName => nameAsCapitalizedWords;
 }
 
 enum NoteSource { user, llmSuggested, imported }
@@ -38,7 +52,7 @@ abstract class BackgroundNote with _$BackgroundNote {
     return BackgroundNote(
       id: row['id'] as String,
       goalId: row['goal_id'] as String?,
-      category: NoteCategoryX.fromDbKey(row['category'] as String),
+      category: NoteCategory.fromDbKey(row['category'] as String),
       content: row['content'] as String,
       isActive: (row['is_active'] as int? ?? 0) == 1,
       source: NoteSource.values.firstWhere(
@@ -57,28 +71,6 @@ abstract class BackgroundNote with _$BackgroundNote {
     'content': content,
     'is_active': isActive ? 1 : 0,
     'source': source.name,
-  };
-}
-
-extension NoteCategoryX on NoteCategory {
-  String get dbKey => name.snakeCase;
-
-  static NoteCategory fromDbKey(String dbValue) =>
-      NoteCategory.values.firstWhere(
-        (noteCategory) => noteCategory.dbKey == dbValue,
-        orElse: () => NoteCategory.preference,
-      );
-
-  String get displayName => nameAsCapitalizedWords;
-
-  String get icon => switch (this) {
-    NoteCategory.injuryHistory => '🩹',
-    NoteCategory.preference => '💜',
-    NoteCategory.equipment => '🏋️',
-    NoteCategory.constraint => '⏱️',
-    NoteCategory.avoid => '⚠️',
-    NoteCategory.medical => '🏥',
-    NoteCategory.philosophy => '📚',
   };
 }
 

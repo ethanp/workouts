@@ -14,7 +14,6 @@ import 'package:workouts/widgets/expandable_cues.dart';
 
 class ExerciseCardContent extends StatelessWidget {
   const ExerciseCardContent({
-    super.key,
     required this.timerIdentity,
     required this.planContext,
     required this.isNextRecommended,

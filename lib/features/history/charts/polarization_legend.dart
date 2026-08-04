@@ -4,11 +4,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 class PolarizationLegend extends StatelessWidget {
-  const PolarizationLegend({
-    super.key,
-    required this.isExpanded,
-    required this.onToggle,
-  });
+  const PolarizationLegend({required this.isExpanded, required this.onToggle});
 
   final bool isExpanded;
   final VoidCallback onToggle;

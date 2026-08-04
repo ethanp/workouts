@@ -2,11 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class WorkoutFollowupAnswer extends StatelessWidget {
-  const WorkoutFollowupAnswer({
-    super.key,
-    required this.answer,
-    required this.answering,
-  });
+  const WorkoutFollowupAnswer({required this.answer, required this.answering});
 
   final String answer;
   final bool answering;

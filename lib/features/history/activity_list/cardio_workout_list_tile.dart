@@ -9,7 +9,7 @@ import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class CardioWorkoutListTile extends ConsumerWidget {
-  const CardioWorkoutListTile({super.key, required this.workout});
+  const CardioWorkoutListTile({required this.workout});
 
   final CardioWorkout workout;
 
