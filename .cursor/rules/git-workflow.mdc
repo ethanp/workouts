@@ -1,0 +1,12 @@
+---
+description: Git workflow — commit and push to main; never open PRs
+alwaysApply: true
+---
+
+# Git workflow
+
+- Do not create pull requests, merge requests, draft PRs, or PR feature branches.
+- Commit finished work directly on `main`.
+- Push to `origin/main` after committing (`git push origin main`).
+- Do not use `gh pr create`, ManagePullRequest create/update flows, or other PR-creation tooling.
+- Prefer updating `AGENTS.md` / `.cursor/rules` when workflow policy changes; keep this rule in sync.

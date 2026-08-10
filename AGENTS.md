@@ -9,6 +9,12 @@
   - Avoid verbose summaries and token-wasting explanations at the end of responses.
   - Focus on actionable results, not lengthy recaps of what was done.
 
+- **Git workflow**:
+  - Do not create pull requests, draft PRs, or PR feature branches.
+  - Commit finished work directly on `main`.
+  - Push to `origin/main` after committing (`git push origin main`).
+  - Do not use `gh pr create`, ManagePullRequest create/update flows, or equivalent PR tooling.
+
 - **Dart/Flutter preferences**:
   - Prefer getters over `getX()` method forms for model attributes.
   - Use switch expressions when returning values where practical.
