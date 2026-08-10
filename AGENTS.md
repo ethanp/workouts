@@ -15,6 +15,7 @@
   - Push to `origin/main` only when the repository is public (`git push origin main`).
   - Do not push non-public (private/internal) repositories — leave commits local on `main`.
   - Do not use `gh pr create`, ManagePullRequest create/update flows, or equivalent PR tooling.
+  - Do not commit `.cursor/rules` or `.cursor/skills` in this public repo; keep agent policy in `AGENTS.md` only.
 
 - **Dart/Flutter preferences**:
   - Prefer getters over `getX()` method forms for model attributes.
