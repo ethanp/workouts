@@ -90,6 +90,7 @@
 		AA3E3C162F1E62DD0060CEF4 /* WorkoutsWatch Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				AA3E3C172F1E62DE0060CEF4 /* Exceptions for "WorkoutsWatch Watch App" folder in "WorkoutsWatch Watch App" target */,
 			);
 			explicitFileTypes = {
 			};
@@ -99,6 +100,16 @@
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AA3E3C172F1E62DE0060CEF4 /* Exceptions for "WorkoutsWatch Watch App" folder in "WorkoutsWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AA3E3C142F1E62DD0060CEF4 /* WorkoutsWatch Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		97C146EB1CF9000F007C117D /* Frameworks */ = {
@@ -752,6 +763,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WorkoutsWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = WorkoutsWatch;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Workouts reads heart rate during workouts to track your training intensity.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Workouts saves workout data to track your training history.";
@@ -803,6 +815,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WorkoutsWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = WorkoutsWatch;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Workouts reads heart rate during workouts to track your training intensity.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Workouts saves workout data to track your training history.";
@@ -851,6 +864,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WorkoutsWatch Watch App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = WorkoutsWatch;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Workouts reads heart rate during workouts to track your training intensity.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Workouts saves workout data to track your training history.";
