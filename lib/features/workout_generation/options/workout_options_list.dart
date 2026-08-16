@@ -31,8 +31,8 @@ class WorkoutOptionsList extends StatelessWidget {
           (option) => WorkoutOptionCard(
             option: option,
             isExpanded: expandedOptionId == option.id,
-            onTap: () => onToggleOption(option.id),
-            onSelect: () => onSelectOption(option),
+            onExpansionToggled: () => onToggleOption(option.id),
+            onWorkoutSelected: () => onSelectOption(option),
           ),
         ),
         if (footer != null) ...[const SizedBox(height: AppSpacing.xl), footer!],

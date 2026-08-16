@@ -37,17 +37,17 @@ class GoalsArchivedToggleRow extends StatelessWidget {
   const GoalsArchivedToggleRow({
     required this.count,
     required this.isExpanded,
-    required this.onTap,
+    required this.onArchivedSectionToggled,
   });
 
   final int count;
   final bool isExpanded;
-  final VoidCallback onTap;
+  final VoidCallback onArchivedSectionToggled;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onArchivedSectionToggled,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
         child: Row(

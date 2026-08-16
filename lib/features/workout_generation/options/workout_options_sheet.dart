@@ -59,7 +59,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
       ),
       child: SafeArea(
         child: _showingForm
-            ? WorkoutPreferencesForm(onSubmit: _onFormSubmit)
+            ? WorkoutPreferencesForm(onPreferencesSubmitted: _generateFromPreferences)
             : switch (generationState) {
                 GenerationIdle() => const WorkoutGenerationPreparingView(),
                 GenerationStreaming(:final partialText) =>
@@ -77,7 +77,7 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
     );
   }
 
-  void _onFormSubmit(WorkoutPreferences preferences) {
+  void _generateFromPreferences(WorkoutPreferences preferences) {
     setState(() => _showingForm = false);
     ref
         .read(workoutGenerationProvider.notifier)

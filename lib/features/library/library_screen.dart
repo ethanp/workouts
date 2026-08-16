@@ -104,7 +104,7 @@ class LibraryScreen extends ConsumerWidget {
             final section = librarySections[sectionIndex];
             return _LibraryIndexRow(
               section: section,
-              onTap: () => Navigator.of(context).push(
+              onActivated: () => Navigator.of(context).push(
                 CupertinoPageRoute<void>(
                   builder: (_) => LibrarySectionPage(section: section),
                 ),
@@ -118,15 +118,15 @@ class LibraryScreen extends ConsumerWidget {
 }
 
 class _LibraryIndexRow extends StatelessWidget {
-  const _LibraryIndexRow({required this.section, required this.onTap});
+  const _LibraryIndexRow({required this.section, required this.onActivated});
 
   final LibrarySection section;
-  final VoidCallback onTap;
+  final VoidCallback onActivated;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onActivated,
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(
@@ -203,7 +203,7 @@ class LibrarySectionPage extends ConsumerWidget {
         trailing: section.canAdd
             ? CupertinoButton(
                 padding: EdgeInsets.zero,
-                onPressed: () => _onAdd(context, ref),
+                onPressed: () => _showAddSheetForSection(context, ref),
                 child: const Icon(
                   CupertinoIcons.add,
                   color: AppColors.accentPrimary,
@@ -220,11 +220,11 @@ class LibrarySectionPage extends ConsumerWidget {
       'goals' => const GoalsTab(),
       'background' => const BackgroundTab(),
       'exercises' => ExercisesTab(
-        onGenerateAllPressed: () =>
+        onGenerateAllBenefits: () =>
             ref.read(bulkBenefitsControllerProvider.notifier).generateAll(),
       ),
       'templates' => TemplatesTab(
-        onAddPressed: () => _showNewTemplateSheet(context),
+        onTemplateAddRequested: () => _showNewTemplateSheet(context),
       ),
       'influences' => const InfluencesTab(),
       'locations' => const LocationsTab(),
@@ -232,7 +232,7 @@ class LibrarySectionPage extends ConsumerWidget {
     };
   }
 
-  void _onAdd(BuildContext context, WidgetRef ref) {
+  void _showAddSheetForSection(BuildContext context, WidgetRef ref) {
     switch (section.id) {
       case 'goals':
         _showAddGoalSheet(context, ref);

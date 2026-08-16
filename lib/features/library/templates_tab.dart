@@ -8,9 +8,9 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class TemplatesTab extends ConsumerWidget {
-  const TemplatesTab({super.key, required this.onAddPressed});
+  const TemplatesTab({super.key, required this.onTemplateAddRequested});
 
-  final VoidCallback onAddPressed;
+  final VoidCallback onTemplateAddRequested;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,7 +18,7 @@ class TemplatesTab extends ConsumerWidget {
 
     return templatesAsync.when(
       data: (templates) => templates.isEmpty
-          ? _EmptyState(onAdd: onAddPressed)
+          ? _EmptyState(onTemplateAddRequested: onTemplateAddRequested)
           : _TemplateList(templates: templates),
       loading: () => const Center(child: CupertinoActivityIndicator()),
       error: (error, _) => Center(
@@ -195,9 +195,9 @@ class _TemplateCard extends ConsumerWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onAdd});
+  const _EmptyState({required this.onTemplateAddRequested});
 
-  final VoidCallback onAdd;
+  final VoidCallback onTemplateAddRequested;
 
   @override
   Widget build(BuildContext context) {
@@ -230,7 +230,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
             CupertinoButton.filled(
-              onPressed: onAdd,
+              onPressed: onTemplateAddRequested,
               child: const Text(
                 'Create Template',
                 style: TextStyle(

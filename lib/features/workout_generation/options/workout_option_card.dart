@@ -6,14 +6,14 @@ class WorkoutOptionCard extends StatelessWidget {
   const WorkoutOptionCard({
     required this.option,
     required this.isExpanded,
-    required this.onTap,
-    required this.onSelect,
+    required this.onExpansionToggled,
+    required this.onWorkoutSelected,
   });
 
   final LlmWorkoutOption option;
   final bool isExpanded;
-  final VoidCallback onTap;
-  final VoidCallback onSelect;
+  final VoidCallback onExpansionToggled;
+  final VoidCallback onWorkoutSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +33,7 @@ class WorkoutOptionCard extends StatelessWidget {
 
   Widget _header() {
     return GestureDetector(
-      onTap: onTap,
+      onTap: onExpansionToggled,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -113,7 +113,7 @@ class WorkoutOptionCard extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: CupertinoButton.filled(
-        onPressed: onSelect,
+        onPressed: onWorkoutSelected,
         child: const Text('Start This Workout'),
       ),
     );

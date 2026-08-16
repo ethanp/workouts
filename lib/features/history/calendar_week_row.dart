@@ -15,7 +15,7 @@ class CalendarWeekRow extends StatelessWidget {
     required this.firstWeekday,
     required this.globalMax,
     required this.activityData,
-    required this.onDateTap,
+    required this.onDateSelected,
   });
 
   final DateTime monthDate;
@@ -24,7 +24,7 @@ class CalendarWeekRow extends StatelessWidget {
   final int firstWeekday;
   final WeekMax globalMax;
   final Map<DateTime, ActivityCalendarDay> activityData;
-  final void Function(DateTime date) onDateTap;
+  final void Function(DateTime date) onDateSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -65,7 +65,7 @@ class CalendarWeekRow extends StatelessWidget {
             date: date,
             entry: activityData[date],
             globalMax: globalMax,
-            onTap: () => onDateTap(date),
+            onActivated: () => onDateSelected(date),
           ),
         );
       } else {

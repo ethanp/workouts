@@ -72,9 +72,9 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
       onLogSet: _logSet,
       onUnlogSet: planContext.loggedSetCount == 0 ? null : _unlogSet,
       onTimerCompleted: _logSetAndAdvance,
-      onReplacePressed: _runReplaceFlow,
-      onHistoryPressed: _openHistory,
-      onAskAiPressed: _openAskAi,
+      onExerciseSwapRequested: _runReplaceFlow,
+      onExerciseHistoryRequested: _openHistory,
+      onAiCoachRequested: _openAskAi,
       onAddWarmupSet: () => ref
           .read(activeSessionProvider.notifier)
           .addWarmupSet(widget.block, widget.exercise),

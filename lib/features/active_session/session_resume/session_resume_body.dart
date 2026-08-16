@@ -128,7 +128,7 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
               ],
             ),
             if (keyboardVisible)
-              KeyboardEnterAccessory(onPressed: _dismissKeyboard),
+              KeyboardEnterAccessory(onKeyboardDismissRequested: _dismissKeyboard),
           ],
         ),
       ),

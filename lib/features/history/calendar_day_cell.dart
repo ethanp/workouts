@@ -45,13 +45,13 @@ class CalendarDayCell extends StatelessWidget {
     required this.date,
     required this.entry,
     required this.globalMax,
-    required this.onTap,
+    required this.onActivated,
   });
 
   final DateTime date;
   final ActivityCalendarDay? entry;
   final WeekMax globalMax;
-  final VoidCallback onTap;
+  final VoidCallback onActivated;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +72,7 @@ class CalendarDayCell extends StatelessWidget {
         : AppColors.backgroundDepth3.withValues(alpha: 0.8);
 
     return GestureDetector(
-      onTap: onTap,
+      onTap: onActivated,
       child: Container(
         width: cellSize,
         height: cellSize,

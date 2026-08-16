@@ -10,9 +10,9 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 const _durationPresets = [5, 10, 15, 30, 45, 60];
 
 class WorkoutPreferencesForm extends ConsumerStatefulWidget {
-  const WorkoutPreferencesForm({required this.onSubmit});
+  const WorkoutPreferencesForm({required this.onPreferencesSubmitted});
 
-  final ValueChanged<WorkoutPreferences> onSubmit;
+  final ValueChanged<WorkoutPreferences> onPreferencesSubmitted;
 
   @override
   ConsumerState<WorkoutPreferencesForm> createState() =>
@@ -322,7 +322,7 @@ class _WorkoutPreferencesFormState
 
     final notes = _notesController.text.trim();
 
-    widget.onSubmit(
+    widget.onPreferencesSubmitted(
       WorkoutPreferences(
         durationMinutes: _selectedDuration,
         focusGoals: focusGoals,

@@ -333,10 +333,10 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// and to detect expiry while the app is foregrounded.
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _onTick());
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tickCountdown());
   }
 
-  void _onTick() {
+  void _tickCountdown() {
     if (!mounted || _isPaused || _endsAt == null) return;
     if (!DateTime.now().isBefore(_endsAt!)) {
       _advancePhase(_phase);

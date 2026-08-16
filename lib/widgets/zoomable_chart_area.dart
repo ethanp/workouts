@@ -124,14 +124,14 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Listener(
-          onPointerSignal: (event) => _handlePointerSignal(event, constraints),
+          onPointerSignal: (event) => _applyCmdScrollZoom(event, constraints),
           child: GestureDetector(
             onScaleStart: (details) {
               _lastScale = 1.0;
               _lastFocalPoint = details.localFocalPoint;
             },
             onScaleUpdate: (details) =>
-                _handleScaleUpdate(details, constraints),
+                _applyPinchZoomOrPan(details, constraints),
             onDoubleTap: () {
               ref.read(chartZoomProvider.notifier).reset();
             },
@@ -146,7 +146,7 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
   /// Interprets a pinch gesture as either a zoom (when scale != 1)
   /// or a horizontal pan, converting screen-space deltas to
   /// time-range adjustments.
-  void _handleScaleUpdate(
+  void _applyPinchZoomOrPan(
     ScaleUpdateDetails details,
     BoxConstraints constraints,
   ) {
@@ -177,7 +177,7 @@ class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
   /// Zooms the chart when the user scrolls while holding Cmd (macOS).
   /// Scroll-up zooms in, scroll-down zooms out, anchored at the
   /// cursor's horizontal position.
-  void _handlePointerSignal(
+  void _applyCmdScrollZoom(
     PointerSignalEvent event,
     BoxConstraints constraints,
   ) {

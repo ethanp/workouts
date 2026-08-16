@@ -52,7 +52,7 @@ Widget _buildFullContext({required _MockTemplateRepository mockRepository}) {
                       duration: const Duration(milliseconds: 180),
                       child: TemplatesTab(
                         key: const ValueKey('templates'),
-                        onAddPressed: _noop,
+                        onTemplateAddRequested: _noop,
                       ),
                     ),
                   ),

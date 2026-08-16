@@ -14,17 +14,17 @@ import 'package:workouts/theme/app_theme.dart';
 class ExerciseCardMenuButton extends ConsumerWidget {
   const ExerciseCardMenuButton({
     required this.exerciseName,
-    this.onHistoryPressed,
-    this.onAskAiPressed,
-    this.onReplacePressed,
+    this.onExerciseHistoryRequested,
+    this.onAiCoachRequested,
+    this.onExerciseSwapRequested,
     this.onToggleStoppedEarly,
     this.isStoppedEarly = false,
   });
 
   final String exerciseName;
-  final VoidCallback? onHistoryPressed;
-  final VoidCallback? onAskAiPressed;
-  final VoidCallback? onReplacePressed;
+  final VoidCallback? onExerciseHistoryRequested;
+  final VoidCallback? onAiCoachRequested;
+  final VoidCallback? onExerciseSwapRequested;
   final VoidCallback? onToggleStoppedEarly;
   final bool isStoppedEarly;
 
@@ -48,30 +48,30 @@ class ExerciseCardMenuButton extends ConsumerWidget {
 
   List<_MenuItem> _buildItems({required bool isOffline}) {
     return [
-      if (onHistoryPressed != null)
+      if (onExerciseHistoryRequested != null)
         _MenuItem(
           icon: CupertinoIcons.clock,
           label: 'History',
-          onPressed: onHistoryPressed!,
+          onActivated: onExerciseHistoryRequested!,
         ),
-      if (onAskAiPressed != null && !isOffline)
+      if (onAiCoachRequested != null && !isOffline)
         _MenuItem(
           icon: CupertinoIcons.sparkles,
           label: 'Ask AI Coach',
-          onPressed: onAskAiPressed!,
+          onActivated: onAiCoachRequested!,
         ),
       if (onToggleStoppedEarly != null)
         _MenuItem(
           icon: isStoppedEarly ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
           iconColor: isStoppedEarly ? AppColors.warning : null,
           label: isStoppedEarly ? 'Resume exercise' : 'Stop early',
-          onPressed: onToggleStoppedEarly!,
+          onActivated: onToggleStoppedEarly!,
         ),
-      if (onReplacePressed != null)
+      if (onExerciseSwapRequested != null)
         _MenuItem(
           icon: CupertinoIcons.arrow_2_squarepath,
           label: 'Swap exercise',
-          onPressed: onReplacePressed!,
+          onActivated: onExerciseSwapRequested!,
         ),
     ];
   }
@@ -86,7 +86,7 @@ class ExerciseCardMenuButton extends ConsumerWidget {
               (item) => CupertinoActionSheetAction(
                 onPressed: () {
                   Navigator.of(popupContext).pop();
-                  item.onPressed();
+                  item.onActivated();
                 },
                 child: _itemRow(item),
               ),
@@ -119,12 +119,12 @@ class _MenuItem {
   const _MenuItem({
     required this.icon,
     required this.label,
-    required this.onPressed,
+    required this.onActivated,
     this.iconColor,
   });
 
   final IconData icon;
   final String label;
   final Color? iconColor;
-  final VoidCallback onPressed;
+  final VoidCallback onActivated;
 }

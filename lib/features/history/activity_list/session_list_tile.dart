@@ -22,7 +22,7 @@ class SessionListTile extends ConsumerWidget {
 
     return CupertinoButton(
       padding: EdgeInsets.zero,
-      onPressed: () => _handleTap(context, ref),
+      onPressed: () => _resumeOrOpenSession(context, ref),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
@@ -149,7 +149,7 @@ class SessionListTile extends ConsumerWidget {
     );
   }
 
-  Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
+  Future<void> _resumeOrOpenSession(BuildContext context, WidgetRef ref) async {
     if (session.isInProgress) {
       await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {

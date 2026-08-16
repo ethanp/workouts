@@ -153,7 +153,7 @@ class GoalsList extends StatelessWidget {
       GoalsArchivedToggleRow(
         count: archivedGoals.length,
         isExpanded: showArchived,
-        onTap: onToggleArchived,
+        onArchivedSectionToggled: onToggleArchived,
       ),
       if (showArchived) ...[
         const SizedBox(height: AppSpacing.sm),

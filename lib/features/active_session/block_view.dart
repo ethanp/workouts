@@ -63,7 +63,7 @@ class _BlockViewState extends ConsumerState<BlockView> {
       itemCount: widget.block.exercises.length,
       itemBuilder: (context, index) =>
           _exerciseItem(index, nextExerciseId: nextExerciseId),
-      onReorder: _onReorder,
+      onReorderItem: _persistExerciseOrder,
     );
   }
 
@@ -100,11 +100,10 @@ class _BlockViewState extends ConsumerState<BlockView> {
     );
   }
 
-  void _onReorder(int oldIndex, int newIndex) {
+  void _persistExerciseOrder(int oldIndex, int newIndex) {
     final reordered = [...widget.block.exercises];
-    final adjustedNewIndex = newIndex > oldIndex ? newIndex - 1 : newIndex;
     final moved = reordered.removeAt(oldIndex);
-    reordered.insert(adjustedNewIndex, moved);
+    reordered.insert(newIndex, moved);
     ref
         .read(activeSessionProvider.notifier)
         .reorderExercises(

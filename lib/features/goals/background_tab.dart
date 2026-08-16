@@ -122,7 +122,7 @@ class BackgroundNotesList extends StatelessWidget {
         GoalsArchivedToggleRow(
           count: archivedNotes.length,
           isExpanded: showArchived,
-          onTap: onToggleArchived,
+          onArchivedSectionToggled: onToggleArchived,
         ),
         if (showArchived) ...[
           const SizedBox(height: AppSpacing.sm),

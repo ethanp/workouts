@@ -53,7 +53,7 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
           children: [
             ActivityCalendar(
               activityData: activityData,
-              onDateTap: (date) => _showDayDetail(context, date),
+              onDateSelected: (date) => _showDayDetail(context, date),
             ),
           ],
         );

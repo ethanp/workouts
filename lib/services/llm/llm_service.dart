@@ -2,7 +2,6 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/services/sse_content_transformer.dart';
 

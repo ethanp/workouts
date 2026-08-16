@@ -11,9 +11,9 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
 class ExercisesTab extends ConsumerStatefulWidget {
-  const ExercisesTab({required this.onGenerateAllPressed});
+  const ExercisesTab({required this.onGenerateAllBenefits});
 
-  final VoidCallback onGenerateAllPressed;
+  final VoidCallback onGenerateAllBenefits;
 
   @override
   ConsumerState<ExercisesTab> createState() => _ExercisesTabState();
@@ -29,7 +29,7 @@ class _ExercisesTabState extends ConsumerState<ExercisesTab> {
       data: (exercises) => _ExercisesBody(
         exercises: exercises,
         bulkProgress: bulkProgress,
-        onGenerateAll: widget.onGenerateAllPressed,
+        onGenerateAll: widget.onGenerateAllBenefits,
       ),
       loading: () => const Center(child: CupertinoActivityIndicator()),
       error: (error, _) => Center(
@@ -98,7 +98,7 @@ class _ExercisesBody extends ConsumerWidget {
     }
     if (_hasMissingBenefits && !isOffline) {
       return [
-        SliverToBoxAdapter(child: _GenerateAllBanner(onTap: onGenerateAll)),
+        SliverToBoxAdapter(child: _GenerateAllBanner(onGenerateAllBenefits: onGenerateAll)),
       ];
     }
     return [];
@@ -136,9 +136,9 @@ class _ExercisesBody extends ConsumerWidget {
 }
 
 class _GenerateAllBanner extends StatelessWidget {
-  const _GenerateAllBanner({required this.onTap});
+  const _GenerateAllBanner({required this.onGenerateAllBenefits});
 
-  final VoidCallback onTap;
+  final VoidCallback onGenerateAllBenefits;
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +151,7 @@ class _GenerateAllBanner extends StatelessWidget {
       ),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: onTap,
+        onPressed: onGenerateAllBenefits,
         child: _bannerCard(),
       ),
     );

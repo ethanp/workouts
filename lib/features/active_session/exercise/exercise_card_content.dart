@@ -22,9 +22,9 @@ class ExerciseCardContent extends StatelessWidget {
     required this.onLogSet,
     required this.onUnlogSet,
     required this.onTimerCompleted,
-    this.onReplacePressed,
-    this.onHistoryPressed,
-    this.onAskAiPressed,
+    this.onExerciseHistoryRequested,
+    this.onAiCoachRequested,
+    this.onExerciseSwapRequested,
     this.onAddWarmupSet,
     this.onRemoveWarmupSet,
     this.isStoppedEarly = false,
@@ -41,9 +41,9 @@ class ExerciseCardContent extends StatelessWidget {
   final VoidCallback onLogSet;
   final VoidCallback? onUnlogSet;
   final Future<void> Function() onTimerCompleted;
-  final VoidCallback? onReplacePressed;
-  final VoidCallback? onHistoryPressed;
-  final VoidCallback? onAskAiPressed;
+  final VoidCallback? onExerciseHistoryRequested;
+  final VoidCallback? onAiCoachRequested;
+  final VoidCallback? onExerciseSwapRequested;
   final VoidCallback? onAddWarmupSet;
   final VoidCallback? onRemoveWarmupSet;
   final bool isStoppedEarly;
@@ -161,9 +161,9 @@ class ExerciseCardContent extends StatelessWidget {
       Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
       ExerciseCardMenuButton(
         exerciseName: exercise.name,
-        onHistoryPressed: onHistoryPressed,
-        onAskAiPressed: onAskAiPressed,
-        onReplacePressed: onReplacePressed,
+        onExerciseHistoryRequested: onExerciseHistoryRequested,
+        onAiCoachRequested: onAiCoachRequested,
+        onExerciseSwapRequested: onExerciseSwapRequested,
         onToggleStoppedEarly: _canToggleStoppedEarly
             ? onToggleStoppedEarly
             : null,

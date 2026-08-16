@@ -2,9 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 class KeyboardEnterAccessory extends StatelessWidget {
-  const KeyboardEnterAccessory({required this.onPressed});
+  const KeyboardEnterAccessory({required this.onKeyboardDismissRequested});
 
-  final VoidCallback onPressed;
+  final VoidCallback onKeyboardDismissRequested;
 
   @override
   Widget build(BuildContext context) => Positioned(
@@ -25,7 +25,7 @@ class KeyboardEnterAccessory extends StatelessWidget {
               const Spacer(),
               CupertinoButton(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                onPressed: onPressed,
+                onPressed: onKeyboardDismissRequested,
                 child: Text(
                   'Enter',
                   style: AppTypography.button.copyWith(

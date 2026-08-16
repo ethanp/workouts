@@ -57,16 +57,16 @@ class _CurrentSetEditorState extends State<CurrentSetEditor> {
       durationController: _durationController,
       onChanged: _emitInput,
     );
-    _repsFocusNode.addListener(_onFocusChanged);
-    _weightFocusNode.addListener(_onFocusChanged);
-    _durationFocusNode.addListener(_onFocusChanged);
+    _repsFocusNode.addListener(_rebuildForFocusChange);
+    _weightFocusNode.addListener(_rebuildForFocusChange);
+    _durationFocusNode.addListener(_rebuildForFocusChange);
   }
 
   @override
   void dispose() {
-    _repsFocusNode.removeListener(_onFocusChanged);
-    _weightFocusNode.removeListener(_onFocusChanged);
-    _durationFocusNode.removeListener(_onFocusChanged);
+    _repsFocusNode.removeListener(_rebuildForFocusChange);
+    _weightFocusNode.removeListener(_rebuildForFocusChange);
+    _durationFocusNode.removeListener(_rebuildForFocusChange);
     _repsController.dispose();
     _weightController.dispose();
     _durationController.dispose();
@@ -257,7 +257,7 @@ class _CurrentSetEditorState extends State<CurrentSetEditor> {
     return Duration(seconds: durationSeconds);
   }
 
-  void _onFocusChanged() {
+  void _rebuildForFocusChange() {
     if (!mounted) return;
     setState(() {});
   }

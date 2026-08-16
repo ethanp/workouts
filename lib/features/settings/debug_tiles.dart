@@ -396,7 +396,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
           description:
               'Re-query the local SQLite and Postgres counts shown above. '
               'Use to check whether sync is making progress.',
-          onPressed: _refreshCounts,
+          onActivated: _refreshCounts,
         ),
         const SizedBox(height: AppSpacing.md),
         _DebugAction(
@@ -405,7 +405,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
               'Drop the current PowerSync session and re-handshake. '
               'Use after switching networks (Wi-Fi <-> cellular, Tailscale '
               'on/off) or if the Connection panel still says offline.',
-          onPressed: _reconnecting ? null : _forceReconnect,
+          onActivated: _reconnecting ? null : _forceReconnect,
           inProgress: _reconnecting,
           accent: AppColors.accentPrimary,
         ),
@@ -416,7 +416,7 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
               'Wipe the local SQLite cache and re-download everything from '
               'the server. Use only if local data looks stuck or corrupted. '
               'Pending offline edits will be lost. Destructive.',
-          onPressed: _resettingSync ? null : _resetSyncData,
+          onActivated: _resettingSync ? null : _resetSyncData,
           inProgress: _resettingSync,
           accent: AppColors.error,
         ),
@@ -429,14 +429,14 @@ class _DebugAction extends StatelessWidget {
   const _DebugAction({
     required this.title,
     required this.description,
-    required this.onPressed,
+    required this.onActivated,
     this.inProgress = false,
     this.accent,
   });
 
   final String title;
   final String description;
-  final VoidCallback? onPressed;
+  final VoidCallback? onActivated;
   final bool inProgress;
   final Color? accent;
 
@@ -456,7 +456,7 @@ class _DebugAction extends StatelessWidget {
           child: CupertinoButton(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             color: AppColors.backgroundDepth3,
-            onPressed: onPressed,
+            onPressed: onActivated,
             child: inProgress
                 ? const CupertinoActivityIndicator()
                 : Text(
