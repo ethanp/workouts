@@ -103,10 +103,16 @@ Stream<int> workoutsMissingMetricsCount(Ref ref) => _watchRepo(
 /// Backfills metrics for workouts missing computed zone data.
 /// Gated on sync status: only runs after initial sync is complete
 /// and connected, to avoid backfilling before data arrives.
+/// Skips while Apple Health import is writing the same local-only rows.
 @riverpod
 Future<void> cardioMetricsBackfill(Ref ref) async {
   final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
   if (powerSyncDatabase == null) return;
+  final CardioImportProgress? importProgress = ref
+      .watch(cardioImportControllerProvider)
+      .asData
+      ?.value;
+  if (importProgress != null && importProgress.inProgress) return;
   final syncStatus = ref.watch(syncStatusProvider).asData?.value;
   if (syncStatus == null ||
       syncStatus.hasSynced != true ||

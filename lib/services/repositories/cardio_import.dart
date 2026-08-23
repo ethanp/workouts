@@ -23,13 +23,25 @@ class CardioImporter {
   }) async {
     _log.log('Starting import of ${payloads.length} cardio workouts.');
     var inserted = 0;
+    Object? firstImportError;
+    StackTrace? firstImportStack;
     for (var payloadIndex = 0; payloadIndex < payloads.length; payloadIndex++) {
       final CardioImportPayload? workout = CardioImportPayload.tryParse(
         payloads[payloadIndex],
       );
       if (workout != null) {
-        final bool wasNew = await _upsert(workout);
-        if (wasNew) inserted++;
+        try {
+          final bool wasNew = await _upsert(workout);
+          if (wasNew) inserted++;
+        } catch (error, stackTrace) {
+          _log.error(
+            'Failed to import workout ${workout.externalWorkoutId}.',
+            error,
+            stackTrace,
+          );
+          firstImportError ??= error;
+          firstImportStack ??= stackTrace;
+        }
       } else {
         _log.warn(
           'Skipping unparseable workout payload at index $payloadIndex.',
@@ -40,6 +52,9 @@ class CardioImporter {
     _log.log(
       'Import complete: $inserted new, ${payloads.length - inserted} already stored.',
     );
+    if (firstImportError != null) {
+      Error.throwWithStackTrace(firstImportError, firstImportStack!);
+    }
     return inserted;
   }
 
