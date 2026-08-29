@@ -32,6 +32,8 @@ dependencies:
     sdk: flutter
   ethan_utils:
     path: ../ethan_utils
+  ethan_ui:
+    path: ../ethan_ui
   ethan_sync:
     path: ../ethan_sync
 

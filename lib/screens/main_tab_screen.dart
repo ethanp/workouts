@@ -1,5 +1,6 @@
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
@@ -10,10 +11,6 @@ import 'package:workouts/features/settings/settings_screen.dart';
 import 'package:workouts/features/today/today_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-/// A single bottom-bar destination: its icon, label, and the screen it shows.
-///
-/// The ordered list of these is the one source of truth for the tab bar, so
-/// the navigation item and its screen can never drift out of order.
 class MainTab {
   const MainTab({
     required this.icon,
@@ -24,25 +21,26 @@ class MainTab {
   final IconData icon;
   final String label;
   final Widget screen;
-
-  BottomNavigationBarItem get navigationItem =>
-      BottomNavigationBarItem(icon: Icon(icon), label: label);
 }
 
 const _mainTabs = <MainTab>[
   MainTab(
-    icon: CupertinoIcons.clock,
+    icon: Icons.history,
     label: 'History',
     screen: HistoryScreen(),
   ),
   MainTab(
-    icon: CupertinoIcons.play_circle,
+    icon: Icons.play_circle_outline,
     label: 'Start Workout',
     screen: TodayScreen(),
   ),
-  MainTab(icon: CupertinoIcons.book, label: 'Library', screen: LibraryScreen()),
   MainTab(
-    icon: CupertinoIcons.gear,
+    icon: Icons.menu_book_outlined,
+    label: 'Library',
+    screen: LibraryScreen(),
+  ),
+  MainTab(
+    icon: Icons.settings_outlined,
     label: 'Settings',
     screen: SettingsScreen(),
   ),
@@ -56,14 +54,17 @@ class MainTabScreen extends ConsumerStatefulWidget {
 }
 
 class _MainTabScreenState extends ConsumerState<MainTabScreen> {
-  int index = 0;
+  int _selectedTabIndex = 0;
+  final _navigatorKeys = List<GlobalKey<NavigatorState>>.generate(
+    _mainTabs.length,
+    (_) => GlobalKey<NavigatorState>(),
+  );
 
   @override
   Widget build(BuildContext context) {
     final activeSession = ref.watch(activeSessionProvider);
     final sessionUIVisible = ref.watch(sessionUIVisibilityProvider);
 
-    // Auto-hide session UI if there's no active session
     if (sessionUIVisible && activeSession.value == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(sessionUIVisibilityProvider.notifier).hide();
@@ -74,21 +75,38 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
       return SessionResumeScreen(sessionId: activeSession.value!.id);
     }
 
-    return CupertinoTabScaffold(
-      tabBar: _tabBar(),
-      tabBuilder: (_, selectedIndex) =>
-          CupertinoTabView(builder: (_) => _tabContent(selectedIndex)),
+    return EScaffoldShell(
+      contentMaxWidth: double.infinity,
+      bottomBar: ETabBar(
+        selectedIndex: _selectedTabIndex,
+        tabs: [
+          for (final tab in _mainTabs) ETab(icon: tab.icon, label: tab.label),
+        ],
+        onSelected: (index) {
+          if (index == _selectedTabIndex) {
+            _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+            return;
+          }
+          setState(() => _selectedTabIndex = index);
+        },
+      ),
+      body: IndexedStack(
+        index: _selectedTabIndex,
+        children: [
+          for (var tabIndex = 0; tabIndex < _mainTabs.length; tabIndex++)
+            Navigator(
+              key: _navigatorKeys[tabIndex],
+              onGenerateRoute: (settings) => MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => _ActiveSessionWrapper(
+                  child: _mainTabs[tabIndex].screen,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
-
-  CupertinoTabBar _tabBar() => CupertinoTabBar(
-    items: _mainTabs.mapL((tab) => tab.navigationItem),
-    currentIndex: index,
-    onTap: (value) => setState(() => index = value),
-  );
-
-  Widget _tabContent(int selectedIndex) =>
-      _ActiveSessionWrapper(child: _mainTabs[selectedIndex].screen);
 }
 
 class _ActiveSessionWrapper extends ConsumerWidget {
@@ -102,9 +120,6 @@ class _ActiveSessionWrapper extends ConsumerWidget {
     final sessionUIVisible = ref.watch(sessionUIVisibilityProvider);
     final showBanner = session != null && !sessionUIVisible;
 
-    // Always render the same Column structure so the child's state (e.g.
-    // HistoryScreen's selected tab) is never discarded when the banner
-    // appears or disappears.
     return Column(
       children: [
         if (showBanner)
@@ -129,10 +144,8 @@ class _ActiveSessionWrapper extends ConsumerWidget {
         child: Row(
           children: [
             Icon(
-              session.isPaused
-                  ? CupertinoIcons.pause_circle
-                  : CupertinoIcons.play_circle,
-              color: CupertinoColors.white,
+              session.isPaused ? Icons.pause_circle : Icons.play_circle,
+              color: Colors.white,
               size: 20,
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -153,7 +166,7 @@ class _ActiveSessionWrapper extends ConsumerWidget {
     return Text(
       session.isPaused ? 'Workout Paused' : 'Workout Active',
       style: const TextStyle(
-        color: CupertinoColors.white,
+        color: Colors.white,
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
@@ -164,7 +177,7 @@ class _ActiveSessionWrapper extends ConsumerWidget {
     return Text(
       _getElapsedTime(session),
       style: const TextStyle(
-        color: CupertinoColors.white,
+        color: Colors.white,
         fontSize: 12,
         fontWeight: FontWeight.w400,
       ),
@@ -172,13 +185,12 @@ class _ActiveSessionWrapper extends ConsumerWidget {
   }
 
   Widget openButton(WidgetRef ref) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    return TextButton(
       onPressed: () => ref.read(sessionUIVisibilityProvider.notifier).show(),
       child: const Text(
         'Open',
         style: TextStyle(
-          color: CupertinoColors.white,
+          color: Colors.white,
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),

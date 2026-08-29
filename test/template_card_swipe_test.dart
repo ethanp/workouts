@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,8 +18,6 @@ const _fakeTemplate = WorkoutTemplate(
   blocks: [],
 );
 
-// Mirrors the real app: CupertinoTabScaffold → CupertinoTabView →
-// CupertinoPageScaffold → AnimatedSwitcher → TemplatesTab
 Widget _buildFullContext({required _MockTemplateRepository mockRepository}) {
   return ProviderScope(
     overrides: [
@@ -27,39 +26,21 @@ Widget _buildFullContext({required _MockTemplateRepository mockRepository}) {
       ),
       templateRepositoryPowerSyncProvider.overrideWith((_) => mockRepository),
     ],
-    child: CupertinoApp(
-      home: CupertinoTabScaffold(
-        tabBar: CupertinoTabBar(
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.book),
-              label: 'Library',
-            ),
+    child: MaterialApp(
+      theme: ETheme.build(),
+      home: EScaffoldShell(
+        contentMaxWidth: double.infinity,
+        bottomBar: ETabBar(
+          selectedIndex: 1,
+          tabs: const [
+            ETab(icon: Icons.home_outlined, label: 'Home'),
+            ETab(icon: Icons.menu_book_outlined, label: 'Library'),
           ],
-          currentIndex: 1,
+          onSelected: (_) {},
         ),
-        tabBuilder: (_, index) => CupertinoTabView(
-          builder: (_) => CupertinoPageScaffold(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      child: TemplatesTab(
-                        key: const ValueKey('templates'),
-                        onTemplateAddRequested: _noop,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        body: const TemplatesTab(
+          key: ValueKey('templates'),
+          onTemplateAddRequested: _noop,
         ),
       ),
     ),
