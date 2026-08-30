@@ -1,15 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class BlockNavigationHintRow extends StatelessWidget {
-  const BlockNavigationHintRow({
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
+class const BlockNavigationHintRow({
+  required final VoidCallback? onPrevious,
+  required final VoidCallback? onNext,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,

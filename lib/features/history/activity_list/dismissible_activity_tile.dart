@@ -4,18 +4,12 @@ import 'package:workouts/models/activity_item.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class DismissibleActivityTile extends ConsumerWidget {
-  const DismissibleActivityTile({
-    required super.key,
-    required this.item,
-    required this.onDelete,
-    required this.child,
-  });
-
-  final ActivityItem item;
-  final Future<void> Function() onDelete;
-  final Widget child;
-
+class const DismissibleActivityTile({
+  required super.key,
+  required final ActivityItem item,
+  required final Future<void> Function() onDelete,
+  required final Widget child,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final (title, content) = switch (item) {

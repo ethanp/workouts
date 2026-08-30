@@ -4,17 +4,15 @@ import 'package:workouts/models/polarization_week.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 
-class ZoneDistributionSection extends StatefulWidget {
-  const ZoneDistributionSection({required this.samples});
-
-  final List<HeartRateSample> samples;
-
+class const ZoneDistributionSection({
+  required final List<HeartRateSample> samples,
+}) extends StatefulWidget {
   @override
   State<ZoneDistributionSection> createState() =>
       ZoneDistributionSectionState();
 }
 
-class ZoneDistributionSectionState extends State<ZoneDistributionSection> {
+class ZoneDistributionSectionState() extends State<ZoneDistributionSection> {
   bool _expanded = false;
 
   @override
@@ -54,11 +52,8 @@ class ZoneDistributionSectionState extends State<ZoneDistributionSection> {
   }
 }
 
-class ZoneBreakdown extends StatelessWidget {
-  const ZoneBreakdown({required this.samples});
-
-  final List<HeartRateSample> samples;
-
+class const ZoneBreakdown({required final List<HeartRateSample> samples})
+    extends StatelessWidget {
   static const _aerobicColor = Color(0xFF3FB37F);
   static const _grayZoneColor = Color(0xFFF0B347);
   static const _vo2maxColor = Color(0xFFE15A64);
@@ -161,12 +156,8 @@ class ZoneBreakdown extends StatelessWidget {
   }
 }
 
-class StatPill extends StatelessWidget {
-  const StatPill({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
+class const StatPill({required final String label, required final String value})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

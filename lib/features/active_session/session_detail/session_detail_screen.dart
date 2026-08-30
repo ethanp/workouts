@@ -14,11 +14,8 @@ import 'package:workouts/models/session_note.dart';
 import 'package:workouts/providers/heart_rate_samples_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SessionDetailScreen extends ConsumerWidget {
-  const SessionDetailScreen({required this.session});
-
-  final Session session;
-
+class const SessionDetailScreen({required final Session session})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesMapAsync = ref.watch(templatesMapProvider);
@@ -38,7 +35,7 @@ class SessionDetailScreen extends ConsumerWidget {
             return Text(template?.name ?? 'Session Details');
           },
           loading: () => const Text('Loading...'),
-          error: (_, __) => const Text('Session Details'),
+          error: (_, _) => const Text('Session Details'),
         ),
       ),
       child: SafeArea(

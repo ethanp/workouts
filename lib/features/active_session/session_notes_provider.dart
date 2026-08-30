@@ -16,7 +16,7 @@ Stream<List<SessionNote>> sessionNotesStream(Ref ref, String sessionId) {
 }
 
 @riverpod
-class SessionNotesController extends _$SessionNotesController {
+class SessionNotesController() extends _$SessionNotesController {
   @override
   void build() {}
 

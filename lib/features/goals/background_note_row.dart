@@ -7,17 +7,11 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class BackgroundNoteRow extends ConsumerWidget {
-  const BackgroundNoteRow({
-    required this.note,
-    required this.allGoals,
-    this.isArchived = false,
-  });
-
-  final BackgroundNote note;
-  final List<FitnessGoal> allGoals;
-  final bool isArchived;
-
+class const BackgroundNoteRow({
+  required final BackgroundNote note,
+  required final List<FitnessGoal> allGoals,
+  final bool isArchived = false,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final linkedGoal = note.goalId != null

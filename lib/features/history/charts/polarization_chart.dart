@@ -18,16 +18,13 @@ const _kPriorityTwoTargetSeconds = 150 * 60; // 150 min/week priority 2 target
 /// and red, little amber) is visually distinct from a gray-zone-heavy week.
 ///
 /// Horizontal drag activates a scrub cursor and live readout panel.
-class PolarizationChart extends StatefulWidget {
-  const PolarizationChart({required this.weeks});
-
-  final List<WeekZoneData> weeks;
-
+class const PolarizationChart({required final List<WeekZoneData> weeks})
+    extends StatefulWidget {
   @override
   State<PolarizationChart> createState() => _PolarizationChartState();
 }
 
-class _PolarizationChartState extends State<PolarizationChart> {
+class _PolarizationChartState() extends State<PolarizationChart> {
   int? _scrubIndex;
   bool _legendExpanded = false;
 
@@ -210,7 +207,11 @@ class _PolarizationChartState extends State<PolarizationChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var weekIndex = 0; weekIndex < widget.weeks.length; weekIndex++) ...[
+        for (
+          var weekIndex = 0;
+          weekIndex < widget.weeks.length;
+          weekIndex++
+        ) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(
             child: _stackedBar(zoneTimes[weekIndex], effectiveMax, weekIndex),

@@ -13,27 +13,17 @@ import 'package:workouts/utils/weight_display.dart';
 /// (lb or kg), for rep-based they are counts, for time-based they are
 /// seconds. [ExerciseProgressMetrics] is the single source of truth for
 /// that mapping.
-class ExerciseProgressPoint {
-  const ExerciseProgressPoint({
-    required this.date,
-    required this.topSet,
-    required this.volume,
-  });
-
-  final DateTime date;
-  final double topSet;
-  final double volume;
-}
+class const ExerciseProgressPoint({
+  required final DateTime date,
+  required final double topSet,
+  required final double volume,
+});
 
 /// Pure logic that turns a list of [ExerciseHistoryEntry] into trend
 /// points and formats their values for chart axes / legends. Auto-picks
 /// the right notion of "top set" and "volume" from the exercise's set
 /// metrics style so callers don't need to branch.
-class ExerciseProgressMetrics {
-  const ExerciseProgressMetrics(this.exercise);
-
-  final WorkoutExercise exercise;
-
+class const ExerciseProgressMetrics(final WorkoutExercise exercise) {
   ExerciseSetMetricsStyle get _style => exercise.setMetrics.style;
 
   /// One point per [entries] item, sorted oldest-first so the trend chart

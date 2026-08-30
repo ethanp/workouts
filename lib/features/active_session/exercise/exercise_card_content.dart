@@ -12,49 +12,30 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
 
-class ExerciseCardContent extends StatelessWidget {
-  const ExerciseCardContent({
-    required this.timerIdentity,
-    required this.planContext,
-    required this.isNextRecommended,
-    required this.currentSetInput,
-    required this.onCurrentSetChanged,
-    required this.onLogSet,
-    required this.onUnlogSet,
-    required this.onTimerCompleted,
-    this.onExerciseHistoryRequested,
-    this.onAiCoachRequested,
-    this.onExerciseSwapRequested,
-    this.onAddWarmupSet,
-    this.onRemoveWarmupSet,
-    this.isStoppedEarly = false,
-    this.onToggleStoppedEarly,
-    this.dragHandle,
-  });
-
+class const ExerciseCardContent({
   /// Stable identity for the embedded interval timer's persisted record.
-  final TimerIdentity timerIdentity;
-  final ExerciseSetPlanContext planContext;
-  final bool isNextRecommended;
-  final SetLogInput currentSetInput;
-  final ValueChanged<SetLogInput> onCurrentSetChanged;
-  final VoidCallback onLogSet;
-  final VoidCallback? onUnlogSet;
-  final Future<void> Function() onTimerCompleted;
-  final VoidCallback? onExerciseHistoryRequested;
-  final VoidCallback? onAiCoachRequested;
-  final VoidCallback? onExerciseSwapRequested;
-  final VoidCallback? onAddWarmupSet;
-  final VoidCallback? onRemoveWarmupSet;
-  final bool isStoppedEarly;
-  final VoidCallback? onToggleStoppedEarly;
+  required final TimerIdentity timerIdentity,
+  required final ExerciseSetPlanContext planContext,
+  required final bool isNextRecommended,
+  required final SetLogInput currentSetInput,
+  required final ValueChanged<SetLogInput> onCurrentSetChanged,
+  required final VoidCallback onLogSet,
+  required final VoidCallback? onUnlogSet,
+  required final Future<void> Function() onTimerCompleted,
+  final VoidCallback? onExerciseHistoryRequested,
+  final VoidCallback? onAiCoachRequested,
+  final VoidCallback? onExerciseSwapRequested,
+  final VoidCallback? onAddWarmupSet,
+  final VoidCallback? onRemoveWarmupSet,
+  final bool isStoppedEarly = false,
+  final VoidCallback? onToggleStoppedEarly,
 
   /// Opaque widget rendered in the header's icon cluster. The host (e.g.
   /// `BlockView`) supplies a `ReorderableDragStartListener` here when the
   /// card lives inside a `ReorderableListView`; otherwise null hides the
   /// affordance. This card knows nothing about reorder semantics.
-  final Widget? dragHandle;
-
+  final Widget? dragHandle,
+}) extends StatelessWidget {
   WorkoutExercise get exercise => planContext.exercise;
 
   @override

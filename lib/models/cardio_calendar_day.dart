@@ -2,17 +2,17 @@ import 'package:workouts/models/hr_zone_time.dart';
 
 /// Aggregated cardio workout data for a single calendar day, produced by
 /// [CardioRepositoryPowerSync.watchCalendarDays].
-class CardioCalendarDay {
-  CardioCalendarDay({
-    required this.date,
-    required this.outdoorRunDistanceMeters,
-    required this.totalDurationSeconds,
-    required this.zoneTime,
-    required this.hasHrData,
-    required this.workoutCount,
-  });
+class CardioCalendarDay({
+  required final DateTime date,
+  required final double outdoorRunDistanceMeters,
+  required final int totalDurationSeconds,
+  required final HrZoneTime zoneTime,
 
-  factory CardioCalendarDay.fromRow(Map<String, dynamic> dayRow) {
+  /// True if at least one workout that day has heart rate samples stored.
+  required final bool hasHrData,
+  required final int workoutCount,
+}) {
+  factory fromRow(Map<String, dynamic> dayRow) {
     final String dayString = dayRow['day'] as String;
     final List<String> dateParts = dayString.split('-');
     return CardioCalendarDay(
@@ -29,17 +29,6 @@ class CardioCalendarDay {
       workoutCount: (dayRow['workout_count'] as int?) ?? 0,
     );
   }
-
-  final DateTime date;
-  final double outdoorRunDistanceMeters;
-  final int totalDurationSeconds;
-
-  final HrZoneTime zoneTime;
-
-  /// True if at least one workout that day has heart rate samples stored.
-  final bool hasHrData;
-
-  final int workoutCount;
 
   bool get hasActivity => workoutCount > 0;
 }

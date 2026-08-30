@@ -4,7 +4,7 @@ import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class BestEffortCalculator {
+class BestEffortCalculator() {
   List<CardioBestEffort> compute(List<CardioRoutePoint> routePoints) {
     final timedPoints = _timedPointsSortedByTime(routePoints);
     if (timedPoints.length < 2) return const [];

@@ -7,14 +7,12 @@ import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
 /// Surfaces sync status, pending uploads, and per-candidate host reachability.
-class ConnectionTile extends ConsumerStatefulWidget {
-  const ConnectionTile();
-
+class const ConnectionTile() extends ConsumerStatefulWidget {
   @override
   ConsumerState<ConnectionTile> createState() => _ConnectionTileState();
 }
 
-class _ConnectionTileState extends ConsumerState<ConnectionTile> {
+class _ConnectionTileState() extends ConsumerState<ConnectionTile> {
   @override
   void initState() {
     super.initState();

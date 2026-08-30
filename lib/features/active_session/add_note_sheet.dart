@@ -4,17 +4,15 @@ import 'package:workouts/models/session_note.dart';
 import 'package:workouts/features/active_session/session_notes_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class AddNoteSheet extends ConsumerStatefulWidget {
-  const AddNoteSheet({required this.sessionId, this.currentBlockId});
-
-  final String sessionId;
-  final String? currentBlockId;
-
+class const AddNoteSheet({
+  required final String sessionId,
+  final String? currentBlockId,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<AddNoteSheet> createState() => _AddNoteSheetState();
 }
 
-class _AddNoteSheetState extends ConsumerState<AddNoteSheet> {
+class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
   final _contentController = TextEditingController();
   SessionNoteType _selectedType = SessionNoteType.observation;
   String? _errorText;

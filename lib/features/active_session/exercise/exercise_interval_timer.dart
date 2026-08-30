@@ -15,23 +15,15 @@ import 'package:workouts/services/notifications/timer_notification_service_provi
 /// yesterday never auto-fires anything on the next session.
 const Duration _maxRestoreAge = Duration(hours: 12);
 
-class ExerciseIntervalTimer extends ConsumerStatefulWidget {
-  const ExerciseIntervalTimer({
-    required this.identity,
-    required this.planContext,
-    required this.isNextRecommended,
-    required this.onCompleted,
-  });
-
+class const ExerciseIntervalTimer({
   /// Locates this card's record in [ActiveTimerStore]. The store holds at
   /// most one record (single-active-timer invariant); only the card whose
   /// identity matches the persisted record will restore from it.
-  final TimerIdentity identity;
-
-  final ExerciseSetPlanContext planContext;
-  final bool isNextRecommended;
-  final Future<void> Function() onCompleted;
-
+  required final TimerIdentity identity,
+  required final ExerciseSetPlanContext planContext,
+  required final bool isNextRecommended,
+  required final Future<void> Function() onCompleted,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ExerciseIntervalTimer> createState() =>
       _ExerciseIntervalTimerState();
@@ -52,7 +44,8 @@ class ExerciseIntervalTimer extends ConsumerStatefulWidget {
 ///   it. On the next launch, [initState] reads the record, restores the
 ///   phase, and either resumes live ticking or runs the same advance
 ///   path the resume hook would.
-class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
+class _ExerciseIntervalTimerState()
+    extends ConsumerState<ExerciseIntervalTimer>
     with WidgetsBindingObserver {
   /// Opaque token identifying this timer instance for the session-wide
   /// single-active-timer coordinator. Lifetime matches this State.
@@ -247,8 +240,7 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// callers use that to skip auto-start (since the restored state takes
   /// precedence).
   bool _restoreFromStore() {
-    final ActiveTimerRecord? record =
-        ref.read(activeTimerStoreProvider).read();
+    final ActiveTimerRecord? record = ref.read(activeTimerStoreProvider).read();
     if (record == null) return false;
     if (record.sessionId != widget.identity.sessionId) {
       // Stale leftover from a different session — clear it for everyone.
@@ -333,7 +325,10 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
   /// and to detect expiry while the app is foregrounded.
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tickCountdown());
+    _ticker = Timer.periodic(
+      const Duration(seconds: 1),
+      (_) => _tickCountdown(),
+    );
   }
 
   void _tickCountdown() {
@@ -452,15 +447,17 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
 
   void _persistRunning({required TimerPhase phase, required DateTime endsAt}) {
     unawaited(
-      ref.read(activeTimerStoreProvider).write(
-        ActiveTimerRecord(
-          sessionId: widget.identity.sessionId,
-          blockId: widget.identity.blockId,
-          exerciseId: widget.identity.exerciseId,
-          phase: phase,
-          endsAt: endsAt,
-        ),
-      ),
+      ref
+          .read(activeTimerStoreProvider)
+          .write(
+            ActiveTimerRecord(
+              sessionId: widget.identity.sessionId,
+              blockId: widget.identity.blockId,
+              exerciseId: widget.identity.exerciseId,
+              phase: phase,
+              endsAt: endsAt,
+            ),
+          ),
     );
   }
 
@@ -469,15 +466,17 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
     required Duration pausedRemaining,
   }) {
     unawaited(
-      ref.read(activeTimerStoreProvider).write(
-        ActiveTimerRecord(
-          sessionId: widget.identity.sessionId,
-          blockId: widget.identity.blockId,
-          exerciseId: widget.identity.exerciseId,
-          phase: phase,
-          pausedRemaining: pausedRemaining,
-        ),
-      ),
+      ref
+          .read(activeTimerStoreProvider)
+          .write(
+            ActiveTimerRecord(
+              sessionId: widget.identity.sessionId,
+              blockId: widget.identity.blockId,
+              exerciseId: widget.identity.exerciseId,
+              phase: phase,
+              pausedRemaining: pausedRemaining,
+            ),
+          ),
     );
   }
 
@@ -491,10 +490,9 @@ class _ExerciseIntervalTimerState extends ConsumerState<ExerciseIntervalTimer>
     required DateTime endsAt,
   }) {
     unawaited(
-      ref.read(timerNotificationServiceProvider).scheduleAt(
-        endsAt: endsAt,
-        body: _notificationBody(phase),
-      ),
+      ref
+          .read(timerNotificationServiceProvider)
+          .scheduleAt(endsAt: endsAt, body: _notificationBody(phase)),
     );
   }
 

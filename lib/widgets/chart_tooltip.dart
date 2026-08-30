@@ -5,19 +5,13 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/chart_date_axis.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-class ChartTooltip {
-  ChartTooltip({
-    required this.canvas,
-    required this.layout,
-    required this.hoverPosition,
-    required this.visibleSeries,
-  }) : _clampedX = hoverPosition.dx.clamp(layout.left, layout.right);
-
-  final Canvas canvas;
-  final ChartDateLayout layout;
-  final Offset hoverPosition;
-  final List<TrendSeries> visibleSeries;
-  final double _clampedX;
+class ChartTooltip({
+  required final Canvas canvas,
+  required final ChartDateLayout layout,
+  required final Offset hoverPosition,
+  required final List<TrendSeries> visibleSeries,
+}) {
+  final double _clampedX = hoverPosition.dx.clamp(layout.left, layout.right);
 
   static const _fontSize = 10.0;
   static const _lineHeight = 14.0;
@@ -131,9 +125,7 @@ class ChartTooltip {
   }
 }
 
-class _TooltipLine {
-  const _TooltipLine({required this.text, required this.color});
-
-  final String text;
-  final Color color;
-}
+class const _TooltipLine({
+  required final String text,
+  required final Color color,
+});

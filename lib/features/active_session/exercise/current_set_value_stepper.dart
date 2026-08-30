@@ -3,21 +3,13 @@ import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/utils/weight_display.dart';
 
-class CurrentSetValueStepper {
-  const CurrentSetValueStepper({
-    required this.exercise,
-    required this.repsController,
-    required this.weightController,
-    required this.durationController,
-    required this.onChanged,
-  });
-
-  final WorkoutExercise exercise;
-  final TextEditingController repsController;
-  final TextEditingController weightController;
-  final TextEditingController durationController;
-  final VoidCallback onChanged;
-
+class const CurrentSetValueStepper({
+  required final WorkoutExercise exercise,
+  required final TextEditingController repsController,
+  required final TextEditingController weightController,
+  required final TextEditingController durationController,
+  required final VoidCallback onChanged,
+}) {
   void decrementReps() => _setReps(_decrementedReps);
 
   void incrementReps() => _setReps(_incrementedReps);

@@ -9,11 +9,8 @@ import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class SessionListTile extends ConsumerWidget {
-  const SessionListTile({required this.session});
-
-  final Session session;
-
+class const SessionListTile({required final Session session})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isComplete = session.isComplete;
@@ -84,7 +81,7 @@ class SessionListTile extends ConsumerWidget {
         height: 24,
         child: CupertinoActivityIndicator(radius: 8),
       ),
-      error: (_, __) => Text(
+      error: (_, _) => Text(
         'Unknown Template',
         style: AppTypography.title.copyWith(color: AppColors.textColor3),
       ),

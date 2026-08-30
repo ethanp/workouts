@@ -11,16 +11,13 @@ import 'package:workouts/features/library/exercise_picker_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
 
-class BlockView extends ConsumerStatefulWidget {
-  const BlockView({required this.block});
-
-  final SessionBlock block;
-
+class const BlockView({required final SessionBlock block})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<BlockView> createState() => _BlockViewState();
 }
 
-class _BlockViewState extends ConsumerState<BlockView> {
+class _BlockViewState() extends ConsumerState<BlockView> {
   final _scrollController = ScrollController();
   final _exerciseKeys = <String, GlobalKey>{};
 
@@ -214,9 +211,7 @@ class _BlockViewState extends ConsumerState<BlockView> {
   }
 }
 
-class _ExerciseDragHandle extends StatelessWidget {
-  const _ExerciseDragHandle();
-
+class const _ExerciseDragHandle() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Padding(
     padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),

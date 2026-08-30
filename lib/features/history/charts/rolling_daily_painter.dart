@@ -5,17 +5,11 @@ import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/chart_date_axis.dart';
 
-class RollingDailyGoal {
-  const RollingDailyGoal({
-    required this.value,
-    required this.label,
-    required this.color,
-  });
-
-  final double value;
-  final String label;
-  final Color color;
-
+class const RollingDailyGoal({
+  required final double value,
+  required final String label,
+  required final Color color,
+}) {
   /// Legend text reframing the trailing-window goal as an average daily pace.
   String legendWithDailyPace({int rollingDays = 7}) {
     final minutesPerDay = (value / rollingDays).round();
@@ -23,27 +17,17 @@ class RollingDailyGoal {
   }
 }
 
-class RollingDailyPainter extends CustomPainter {
-  RollingDailyPainter({
-    required this.points,
-    required this.goals,
-    required this.lineColor,
-    required this.formatValue,
-    this.displayStart,
-    this.displayEnd,
-    this.hoverPosition,
-  });
-
+class RollingDailyPainter({
+  required final List<RollingDailyPoint> points,
+  required final List<RollingDailyGoal> goals,
+  required final Color lineColor,
+  required final String Function(double value) formatValue,
+  final DateTime? displayStart,
+  final DateTime? displayEnd,
+  final Offset? hoverPosition,
+}) extends CustomPainter {
   static const leftPadding = 36.0;
   static const rightPadding = 12.0;
-
-  final List<RollingDailyPoint> points;
-  final List<RollingDailyGoal> goals;
-  final Color lineColor;
-  final String Function(double value) formatValue;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
-  final Offset? hoverPosition;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -286,11 +270,7 @@ class RollingDailyPainter extends CustomPainter {
       hoverPosition != oldDelegate.hoverPosition;
 }
 
-class RollingDailyScale {
-  const RollingDailyScale({required this.maxValue});
-
-  final double maxValue;
-
+class const RollingDailyScale({required final double maxValue}) {
   double yForValue(double value, ChartDateLayout layout) {
     final valueFraction = (value / maxValue).clamp(0.0, 1.0);
     return layout.bottom - valueFraction * layout.height;

@@ -1,22 +1,14 @@
 const poundsPerKilogram = 2.2046226218;
 
-enum WeightUnit {
+enum WeightUnit({required final String label}) {
   pounds(label: 'lb'),
-  kilograms(label: 'kg');
-
-  const WeightUnit({required this.label});
-
-  final String label;
+  kilograms(label: 'kg'),
 }
 
-class Weight {
-  const Weight.kilograms(this.kilograms);
-
-  factory Weight.pounds(double pounds) {
+class const Weight.kilograms(final double kilograms) {
+  factory pounds(double pounds) {
     return Weight.kilograms(pounds / poundsPerKilogram);
   }
-
-  final double kilograms;
 
   double get pounds => kilograms * poundsPerKilogram;
 

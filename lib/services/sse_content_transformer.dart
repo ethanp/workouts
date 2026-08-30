@@ -4,7 +4,7 @@ import 'dart:convert';
 /// Transforms a raw SSE byte stream into content-token strings.
 /// Each emitted string is the content delta from one SSE chunk.
 /// Closes when `[DONE]` is received.
-class SseContentTransformer extends StreamTransformerBase<List<int>, String> {
+class SseContentTransformer() extends StreamTransformerBase<List<int>, String> {
   @override
   Stream<String> bind(Stream<List<int>> byteStream) {
     final controller = StreamController<String>();

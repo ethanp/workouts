@@ -4,12 +4,10 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
-class SessionSetLogRow extends StatelessWidget {
-  const SessionSetLogRow({required this.log, required this.exercise});
-
-  final SessionSetLog log;
-  final WorkoutExercise exercise;
-
+class const SessionSetLogRow({
+  required final SessionSetLog log,
+  required final WorkoutExercise exercise,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

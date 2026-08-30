@@ -32,7 +32,7 @@ Stream<List<BackgroundNote>> notesForGoalStream(Ref ref, String goalId) {
 }
 
 @Riverpod(keepAlive: true)
-class BackgroundNotesController extends _$BackgroundNotesController {
+class BackgroundNotesController() extends _$BackgroundNotesController {
   @override
   FutureOr<void> build() {}
 

@@ -1,29 +1,27 @@
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 
-class CardioWorkout {
-  const CardioWorkout({
-    required this.id,
-    required this.externalWorkoutId,
-    required this.activityType,
-    required this.startedAt,
-    required this.endedAt,
-    required this.durationSeconds,
-    required this.distanceMeters,
-    this.energyKcal,
-    this.averageHeartRateBpm,
-    this.maxHeartRateBpm,
-    this.zoneTime = HrZoneTime.zero,
-    this.hasHrSamples = false,
-    required this.routeAvailable,
-    required this.sourceName,
-    this.sourceBundleId,
-    this.deviceModel,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory CardioWorkout.fromRow(Map<String, dynamic> workoutRow) {
+class const CardioWorkout({
+  required final String id,
+  required final String externalWorkoutId,
+  required final CardioType activityType,
+  required final DateTime startedAt,
+  required final DateTime endedAt,
+  required final int durationSeconds,
+  required final double distanceMeters,
+  final double? energyKcal,
+  final double? averageHeartRateBpm,
+  final double? maxHeartRateBpm,
+  final HrZoneTime zoneTime = HrZoneTime.zero,
+  final bool hasHrSamples = false,
+  required final bool routeAvailable,
+  required final String sourceName,
+  final String? sourceBundleId,
+  final String? deviceModel,
+  final DateTime? createdAt,
+  final DateTime? updatedAt,
+}) {
+  factory fromRow(Map<String, dynamic> workoutRow) {
     return CardioWorkout(
       id: workoutRow['id'] as String,
       externalWorkoutId: workoutRow['external_workout_id'] as String,
@@ -47,25 +45,6 @@ class CardioWorkout {
       updatedAt: _asDateTime(workoutRow['updated_at']),
     );
   }
-
-  final String id;
-  final String externalWorkoutId;
-  final CardioType activityType;
-  final DateTime startedAt;
-  final DateTime endedAt;
-  final int durationSeconds;
-  final double distanceMeters;
-  final double? energyKcal;
-  final double? averageHeartRateBpm;
-  final double? maxHeartRateBpm;
-  final HrZoneTime zoneTime;
-  final bool hasHrSamples;
-  final bool routeAvailable;
-  final String sourceName;
-  final String? sourceBundleId;
-  final String? deviceModel;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 }
 
 double? _asDouble(Object? rawValue) {

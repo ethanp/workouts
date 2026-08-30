@@ -8,11 +8,7 @@ const _log = ELogger('SessionMetricsStore');
 
 /// Manages the `session_computed_metrics` local-only table: computing,
 /// storing, backfilling, and recomputing zone times for individual sessions.
-class SessionMetricsStore {
-  SessionMetricsStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class SessionMetricsStore(final PowerSyncDatabase _powerSync) {
   Future<void> computeAndStore(String sessionId) async {
     final hrSamples = await loadHrSamples(sessionId);
     final HrZoneTime zone;

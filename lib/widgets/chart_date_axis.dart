@@ -20,16 +20,16 @@ const _months = [
   'Dec',
 ];
 
-class ChartDateLayout {
-  ChartDateLayout({
-    required Size size,
-    required double leftPadding,
-    required double rightPadding,
-    required double topPadding,
-    required double bottomPadding,
-    required this.minDate,
-    required this.maxDate,
-  }) {
+class ChartDateLayout({
+  required Size size,
+  required double leftPadding,
+  required double rightPadding,
+  required double topPadding,
+  required double bottomPadding,
+  required final DateTime minDate,
+  required final DateTime maxDate,
+}) {
+  this {
     left = leftPadding;
     right = size.width - rightPadding;
     top = topPadding;
@@ -39,8 +39,6 @@ class ChartDateLayout {
     _dateRangeSeconds = maxDate.difference(minDate).inSeconds.toDouble();
   }
 
-  final DateTime minDate;
-  final DateTime maxDate;
   late final double left, right, top, bottom, width, height;
   late final double _dateRangeSeconds;
 

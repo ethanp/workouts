@@ -13,9 +13,7 @@ import 'package:workouts/utils/json_parsing.dart';
 
 const _log = ELogger('LlmResponseParser');
 
-class LlmResponseParser {
-  const LlmResponseParser();
-
+class const LlmResponseParser() {
   LlmWorkoutResponse parseWorkoutResponse(String body) {
     final content = _messageContent(body);
     _log.fine('Raw LLM content: $content');

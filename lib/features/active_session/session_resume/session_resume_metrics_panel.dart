@@ -6,25 +6,15 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
-class SessionResumeMetricsPanel extends StatelessWidget {
-  const SessionResumeMetricsPanel({
-    required this.session,
-    required this.heartRateSamples,
-    required this.watchConnected,
-    required this.onPreviousBlock,
-    required this.onNextBlock,
-    required this.onTogglePause,
-    required this.onAddNote,
-  });
-
-  final Session session;
-  final List<HeartRateSample> heartRateSamples;
-  final bool watchConnected;
-  final VoidCallback? onPreviousBlock;
-  final VoidCallback? onNextBlock;
-  final VoidCallback onTogglePause;
-  final VoidCallback onAddNote;
-
+class const SessionResumeMetricsPanel({
+  required final Session session,
+  required final List<HeartRateSample> heartRateSamples,
+  required final bool watchConnected,
+  required final VoidCallback? onPreviousBlock,
+  required final VoidCallback? onNextBlock,
+  required final VoidCallback onTogglePause,
+  required final VoidCallback onAddNote,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(

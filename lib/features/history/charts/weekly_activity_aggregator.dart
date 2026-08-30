@@ -6,7 +6,7 @@ import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 
-class WeeklyActivityAggregator {
+class WeeklyActivityAggregator() {
   List<WeekAggregate> aggregate(
     List<ActivityCalendarDay> days,
     List<CardioWorkout> workouts,
@@ -85,18 +85,12 @@ class WeeklyActivityAggregator {
   }
 }
 
-class WeekAggregate {
-  WeekAggregate({
-    required this.label,
-    required this.weekStart,
-    this.isCurrent = false,
-    this.beforeData = false,
-  });
-
-  final String label;
-  final DateTime weekStart;
-  final bool isCurrent;
-  final bool beforeData;
+class WeekAggregate({
+  required final String label,
+  required final DateTime weekStart,
+  final bool isCurrent = false,
+  final bool beforeData = false,
+}) {
   double outdoorRunMeters = 0;
   HrZoneTime zoneTime = HrZoneTime.zero;
   int activeDays = 0;

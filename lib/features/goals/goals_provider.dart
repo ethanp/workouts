@@ -20,7 +20,7 @@ Stream<List<FitnessGoal>> activeGoalsStream(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
-class GoalsController extends _$GoalsController {
+class GoalsController() extends _$GoalsController {
   @override
   FutureOr<void> build() {}
 

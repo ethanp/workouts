@@ -4,21 +4,13 @@ import 'package:workouts/widgets/chart_date_axis.dart';
 import 'package:workouts/widgets/chart_tooltip.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-class CardioTrendPainter extends CustomPainter {
-  CardioTrendPainter({
-    required this.visibleSeries,
-    this.displayStart,
-    this.displayEnd,
-    this.hoverPosition,
-    this.highlightDate,
-  });
-
-  final List<TrendSeries> visibleSeries;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
-  final Offset? hoverPosition;
-  final DateTime? highlightDate;
-
+class CardioTrendPainter({
+  required final List<TrendSeries> visibleSeries,
+  final DateTime? displayStart,
+  final DateTime? displayEnd,
+  final Offset? hoverPosition,
+  final DateTime? highlightDate,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final layout = _buildLayout(size);

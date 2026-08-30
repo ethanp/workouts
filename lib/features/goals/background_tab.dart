@@ -9,14 +9,12 @@ import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class BackgroundTab extends ConsumerStatefulWidget {
-  const BackgroundTab();
-
+class const BackgroundTab() extends ConsumerStatefulWidget {
   @override
   ConsumerState<BackgroundTab> createState() => _BackgroundTabState();
 }
 
-class _BackgroundTabState extends ConsumerState<BackgroundTab> {
+class _BackgroundTabState() extends ConsumerState<BackgroundTab> {
   bool _showArchived = false;
 
   @override
@@ -75,23 +73,14 @@ class _BackgroundTabState extends ConsumerState<BackgroundTab> {
   }
 }
 
-class BackgroundNotesList extends StatelessWidget {
-  const BackgroundNotesList({
-    required this.activeNotes,
-    required this.archivedNotes,
-    required this.allGoals,
-    required this.showArchived,
-    required this.onToggleArchived,
-    required this.onAddNote,
-  });
-
-  final List<BackgroundNote> activeNotes;
-  final List<BackgroundNote> archivedNotes;
-  final List<FitnessGoal> allGoals;
-  final bool showArchived;
-  final VoidCallback onToggleArchived;
-  final VoidCallback onAddNote;
-
+class const BackgroundNotesList({
+  required final List<BackgroundNote> activeNotes,
+  required final List<BackgroundNote> archivedNotes,
+  required final List<FitnessGoal> allGoals,
+  required final bool showArchived,
+  required final VoidCallback onToggleArchived,
+  required final VoidCallback onAddNote,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.symmetric(
@@ -140,11 +129,8 @@ class BackgroundNotesList extends StatelessWidget {
   );
 }
 
-class _BackgroundEmptyState extends StatelessWidget {
-  const _BackgroundEmptyState({required this.onAddNote});
-
-  final VoidCallback onAddNote;
-
+class const _BackgroundEmptyState({required final VoidCallback onAddNote})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(

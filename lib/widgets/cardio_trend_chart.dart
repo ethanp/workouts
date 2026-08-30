@@ -4,30 +4,22 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_trend_painter.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-class CardioTrendChart extends StatefulWidget {
-  const CardioTrendChart({
-    required this.title,
-    required this.series,
-    this.displayStart,
-    this.displayEnd,
-    this.highlightDate,
-  });
-
-  final String title;
-  final List<TrendSeries> series;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
+class const CardioTrendChart({
+  required final String title,
+  required final List<TrendSeries> series,
+  final DateTime? displayStart,
+  final DateTime? displayEnd,
 
   /// If non-null, points whose date falls on the same day get a ring
   /// drawn around them so the user can spot a specific session in a
   /// trend line.
-  final DateTime? highlightDate;
-
+  final DateTime? highlightDate,
+}) extends StatefulWidget {
   @override
   State<CardioTrendChart> createState() => _CardioTrendChartState();
 }
 
-class _CardioTrendChartState extends State<CardioTrendChart> {
+class _CardioTrendChartState() extends State<CardioTrendChart> {
   final Set<String> _hiddenSeries = {};
   Offset? _hoverPosition;
 

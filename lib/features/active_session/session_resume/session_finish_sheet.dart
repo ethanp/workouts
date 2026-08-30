@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 
-enum SessionFinishAction { cancel, save, discard }
+enum SessionFinishAction() {
+  cancel,
+  save,
+  discard,
+}
 
-class SessionFinishSheet {
-  const SessionFinishSheet._();
-
+class const SessionFinishSheet._() {
   static Future<SessionFinishAction?> show(BuildContext context) {
     return showCupertinoModalPopup<SessionFinishAction>(
       context: context,

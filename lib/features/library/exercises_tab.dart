@@ -10,16 +10,13 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
-class ExercisesTab extends ConsumerStatefulWidget {
-  const ExercisesTab({required this.onGenerateAllBenefits});
-
-  final VoidCallback onGenerateAllBenefits;
-
+class const ExercisesTab({required final VoidCallback onGenerateAllBenefits})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<ExercisesTab> createState() => _ExercisesTabState();
 }
 
-class _ExercisesTabState extends ConsumerState<ExercisesTab> {
+class _ExercisesTabState() extends ConsumerState<ExercisesTab> {
   @override
   Widget build(BuildContext context) {
     final exercisesAsync = ref.watch(allExercisesProvider);
@@ -42,17 +39,11 @@ class _ExercisesTabState extends ConsumerState<ExercisesTab> {
   }
 }
 
-class _ExercisesBody extends ConsumerWidget {
-  const _ExercisesBody({
-    required this.exercises,
-    required this.bulkProgress,
-    required this.onGenerateAll,
-  });
-
-  final List<WorkoutExercise> exercises;
-  final BulkBenefitsProgress? bulkProgress;
-  final VoidCallback onGenerateAll;
-
+class const _ExercisesBody({
+  required final List<WorkoutExercise> exercises,
+  required final BulkBenefitsProgress? bulkProgress,
+  required final VoidCallback onGenerateAll,
+}) extends ConsumerWidget {
   bool get _hasMissingBenefits =>
       exercises.any((exercise) => exercise.benefits.isEmpty);
 
@@ -98,7 +89,9 @@ class _ExercisesBody extends ConsumerWidget {
     }
     if (_hasMissingBenefits && !isOffline) {
       return [
-        SliverToBoxAdapter(child: _GenerateAllBanner(onGenerateAllBenefits: onGenerateAll)),
+        SliverToBoxAdapter(
+          child: _GenerateAllBanner(onGenerateAllBenefits: onGenerateAll),
+        ),
       ];
     }
     return [];
@@ -123,7 +116,7 @@ class _ExercisesBody extends ConsumerWidget {
       ),
       sliver: SliverList.separated(
         itemCount: filteredExercises.length,
-        separatorBuilder: (_, __) => Container(
+        separatorBuilder: (_, _) => Container(
           height: 1,
           margin: const EdgeInsets.only(left: 48),
           color: AppColors.borderDepth1,
@@ -135,11 +128,9 @@ class _ExercisesBody extends ConsumerWidget {
   }
 }
 
-class _GenerateAllBanner extends StatelessWidget {
-  const _GenerateAllBanner({required this.onGenerateAllBenefits});
-
-  final VoidCallback onGenerateAllBenefits;
-
+class const _GenerateAllBanner({
+  required final VoidCallback onGenerateAllBenefits,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -211,11 +202,9 @@ class _GenerateAllBanner extends StatelessWidget {
   }
 }
 
-class _GeneratingProgressBanner extends ConsumerWidget {
-  const _GeneratingProgressBanner({required this.progress});
-
-  final BulkBenefitsProgress progress;
-
+class const _GeneratingProgressBanner({
+  required final BulkBenefitsProgress progress,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -274,11 +263,8 @@ class _GeneratingProgressBanner extends ConsumerWidget {
   }
 }
 
-class _ExerciseRow extends ConsumerWidget {
-  const _ExerciseRow({required this.exercise});
-
-  final WorkoutExercise exercise;
-
+class const _ExerciseRow({required final WorkoutExercise exercise})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return CupertinoButton(
@@ -371,11 +357,8 @@ class _ExerciseRow extends ConsumerWidget {
 /// next session honors the change. Kept compact — label + small switch — so
 /// it doesn't dominate the row, but still recognizable so users can fix
 /// catalog rows without an extra "edit exercise" sheet.
-class _UnilateralToggle extends ConsumerWidget {
-  const _UnilateralToggle({required this.exercise});
-
-  final WorkoutExercise exercise;
-
+class const _UnilateralToggle({required final WorkoutExercise exercise})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -411,11 +394,8 @@ class _UnilateralToggle extends ConsumerWidget {
   }
 }
 
-class _SetMetricsPill extends StatelessWidget {
-  const _SetMetricsPill({required this.label});
-
-  final String label;
-
+class const _SetMetricsPill({required final String label})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -436,11 +416,8 @@ class _SetMetricsPill extends StatelessWidget {
   }
 }
 
-class _ModalityIcon extends StatelessWidget {
-  const _ModalityIcon({required this.modality});
-
-  final ExerciseModality modality;
-
+class const _ModalityIcon({required final ExerciseModality modality})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -471,11 +448,8 @@ class _ModalityIcon extends StatelessWidget {
   };
 }
 
-class _ModalityPill extends StatelessWidget {
-  const _ModalityPill({required this.modality});
-
-  final ExerciseModality modality;
-
+class const _ModalityPill({required final ExerciseModality modality})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

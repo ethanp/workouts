@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-class AppColors {
+class AppColors() {
   static const backgroundDepth1 = Color(0xFF0E0E11);
   static const backgroundDepth2 = Color(0xFF15151A);
   static const backgroundDepth3 = Color(0xFF1E1E24);
@@ -25,12 +25,10 @@ class AppColors {
   static const error = Color(0xFFE15A64);
 }
 
-class AppTypography {
+class AppTypography() {
   static TextStyle displayLarge(BuildContext context) =>
-      CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle.copyWith(
-        color: AppColors.textColor1,
-        fontWeight: FontWeight.w600,
-      );
+      CupertinoTheme.of(context).textTheme.navLargeTitleTextStyle
+          .copyWith(color: AppColors.textColor1, fontWeight: FontWeight.w600);
 
   static const TextStyle title = TextStyle(
     fontSize: 22,
@@ -63,7 +61,7 @@ class AppTypography {
   );
 }
 
-class AppSpacing {
+class AppSpacing() {
   static const double xs = 4;
   static const double sm = 8;
   static const double md = 12;
@@ -72,7 +70,7 @@ class AppSpacing {
   static const double xxl = 32;
 }
 
-class AppRadius {
+class AppRadius() {
   static const double sm = 10;
   static const double md = 16;
   static const double lg = 22;

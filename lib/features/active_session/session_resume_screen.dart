@@ -4,11 +4,8 @@ import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/session_resume/session_resume_body.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SessionResumeScreen extends ConsumerWidget {
-  const SessionResumeScreen({required this.sessionId});
-
-  final String sessionId;
-
+class const SessionResumeScreen({required final String sessionId})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sessionAsync = ref.watch(activeSessionProvider);

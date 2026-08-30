@@ -22,9 +22,7 @@ import 'package:workouts/features/history/charts/weekly_activity_aggregator.dart
 import 'package:workouts/features/history/charts/weekly_bar_chart.dart';
 import 'package:workouts/widgets/zoomable_chart_area.dart';
 
-class HistoryChartsTab extends ConsumerWidget {
-  const HistoryChartsTab();
-
+class const HistoryChartsTab() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final calendarAsync = ref.watch(activityCalendarDaysProvider);
@@ -241,26 +239,18 @@ class HistoryChartsTab extends ConsumerWidget {
   }
 }
 
-class _OutdoorRunningCharts extends StatefulWidget {
-  const _OutdoorRunningCharts({
-    required this.weeks,
-    required this.workouts,
-    required this.bestEfforts,
-    this.displayStart,
-    this.displayEnd,
-  });
-
-  final List<WeekData> weeks;
-  final List<CardioWorkout> workouts;
-  final List<CardioBestEffort> bestEfforts;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
-
+class const _OutdoorRunningCharts({
+  required final List<WeekData> weeks,
+  required final List<CardioWorkout> workouts,
+  required final List<CardioBestEffort> bestEfforts,
+  final DateTime? displayStart,
+  final DateTime? displayEnd,
+}) extends StatefulWidget {
   @override
   State<_OutdoorRunningCharts> createState() => _OutdoorRunningChartsState();
 }
 
-class _OutdoorRunningChartsState extends State<_OutdoorRunningCharts> {
+class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
   bool _expanded = false;
 
   @override

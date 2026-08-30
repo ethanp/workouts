@@ -3,23 +3,14 @@ import 'package:workouts/features/workout_generation/options/workout_option_card
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WorkoutOptionsList extends StatelessWidget {
-  const WorkoutOptionsList({
-    required this.response,
-    required this.expandedOptionId,
-    required this.onToggleOption,
-    required this.onSelectOption,
-    this.showExplanation = true,
-    this.footer,
-  });
-
-  final LlmWorkoutResponse response;
-  final String? expandedOptionId;
-  final void Function(String optionId) onToggleOption;
-  final void Function(LlmWorkoutOption option) onSelectOption;
-  final bool showExplanation;
-  final Widget? footer;
-
+class const WorkoutOptionsList({
+  required final LlmWorkoutResponse response,
+  required final String? expandedOptionId,
+  required final void Function(String optionId) onToggleOption,
+  required final void Function(LlmWorkoutOption option) onSelectOption,
+  final bool showExplanation = true,
+  final Widget? footer,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(

@@ -16,11 +16,7 @@ SessionNotesRepository sessionNotesRepositoryPowerSync(Ref ref) {
   return SessionNotesRepository(powerSyncDatabase);
 }
 
-class SessionNotesRepository {
-  final PowerSyncDatabase _powerSync;
-
-  SessionNotesRepository(this._powerSync);
-
+class SessionNotesRepository(final PowerSyncDatabase _powerSync) {
   /// Watch all notes for a session.
   Stream<List<SessionNote>> watchNotesForSession(String sessionId) {
     return _powerSync

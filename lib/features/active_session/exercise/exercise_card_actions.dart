@@ -2,33 +2,21 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class ExerciseCardActions extends StatelessWidget {
-  const ExerciseCardActions({
-    required this.completedSetCount,
-    required this.plannedSetCount,
-    required this.nextPlannedSet,
-    required this.onLogSet,
-    required this.onUnlogSet,
-    this.onAddWarmupSet,
-    this.onRemoveWarmupSet,
-    this.sidesPerSet = 1,
-    this.currentSide = 1,
-  });
-
-  final int completedSetCount;
-  final int plannedSetCount;
-  final PlannedSet? nextPlannedSet;
-  final VoidCallback onLogSet;
-  final VoidCallback? onUnlogSet;
-  final VoidCallback? onAddWarmupSet;
-  final VoidCallback? onRemoveWarmupSet;
+class const ExerciseCardActions({
+  required final int completedSetCount,
+  required final int plannedSetCount,
+  required final PlannedSet? nextPlannedSet,
+  required final VoidCallback onLogSet,
+  required final VoidCallback? onUnlogSet,
+  final VoidCallback? onAddWarmupSet,
+  final VoidCallback? onRemoveWarmupSet,
 
   /// Number of sides logged per planned set (2 for unilateral). When > 1 the
   /// log button labels itself "Log Side N" so the user knows which side they
   /// are recording.
-  final int sidesPerSet;
-  final int currentSide;
-
+  final int sidesPerSet = 1,
+  final int currentSide = 1,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isComplete =

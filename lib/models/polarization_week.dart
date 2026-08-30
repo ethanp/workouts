@@ -7,22 +7,16 @@ import 'package:workouts/models/hr_zone_time.dart';
 /// Aerobic Base (Z1+Z2): mitochondrial efficiency, fat oxidation, metabolic health.
 /// Gray Zone (Z3): minimize — high fatigue, poor adaptation specificity.
 /// VO₂max Stimulus (Z4+Z5): maintains VO₂max, the strongest all-cause mortality predictor.
-class PolarizationWeek {
-  const PolarizationWeek({
-    required this.aerobicBaseSeconds,
-    required this.grayZoneSeconds,
-    required this.vo2maxSeconds,
-  });
-
+class const PolarizationWeek({
+  required final int aerobicBaseSeconds,
+  required final int grayZoneSeconds,
+  required final int vo2maxSeconds,
+}) {
   static const zero = PolarizationWeek(
     aerobicBaseSeconds: 0,
     grayZoneSeconds: 0,
     vo2maxSeconds: 0,
   );
-
-  final int aerobicBaseSeconds;
-  final int grayZoneSeconds;
-  final int vo2maxSeconds;
 
   int get totalZoneSeconds =>
       aerobicBaseSeconds + grayZoneSeconds + vo2maxSeconds;
@@ -41,14 +35,13 @@ class PolarizationWeek {
   int get vo2maxMinutes => vo2maxSeconds ~/ 60;
   int get totalZoneMinutes => totalZoneSeconds ~/ 60;
 
-  factory PolarizationWeek.fromHrZoneTime(HrZoneTime zoneTime) =>
-      PolarizationWeek(
-        aerobicBaseSeconds: zoneTime.zone1 + zoneTime.zone2,
-        grayZoneSeconds: zoneTime.zone3,
-        vo2maxSeconds: zoneTime.zone4 + zoneTime.zone5,
-      );
+  factory fromHrZoneTime(HrZoneTime zoneTime) => PolarizationWeek(
+    aerobicBaseSeconds: zoneTime.zone1 + zoneTime.zone2,
+    grayZoneSeconds: zoneTime.zone3,
+    vo2maxSeconds: zoneTime.zone4 + zoneTime.zone5,
+  );
 
-  factory PolarizationWeek.fromWeekOfDays(List<ActivityCalendarDay> days) {
+  factory fromWeekOfDays(List<ActivityCalendarDay> days) {
     var zone1 = 0;
     var zone2 = 0;
     var zone3 = 0;

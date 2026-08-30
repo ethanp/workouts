@@ -23,11 +23,7 @@ const _needsMetricsSql = '''
 
 /// Manages the `cardio_computed_metrics` local-only table: computing,
 /// storing, backfilling, and recomputing zone times for individual workouts.
-class CardioMetricsStore {
-  CardioMetricsStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
   Future<void> computeAndStore(String workoutId) async {
     final hrSamples = await loadHrSamples(workoutId);
     if (hrSamples.isEmpty) {

@@ -7,9 +7,7 @@ import 'package:workouts/utils/run_formatting.dart';
 /// the conversation for the LLM. Kept as a class (not a free function) so a
 /// future variant — e.g. seeding with the user's fitness goals — can extend
 /// it without changing call sites.
-class ExerciseChatPromptBuilder {
-  const ExerciseChatPromptBuilder();
-
+class const ExerciseChatPromptBuilder() {
   String buildSystemPrompt(WorkoutExercise exercise) {
     final lines = <String>[
       'You are a knowledgeable strength and conditioning coach.',

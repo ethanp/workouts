@@ -7,7 +7,7 @@ import 'package:workouts/services/repositories/templates/template_repository_pow
 part 'exercise_benefits_provider.g.dart';
 
 @riverpod
-class ExerciseBenefitsController extends _$ExerciseBenefitsController {
+class ExerciseBenefitsController() extends _$ExerciseBenefitsController {
   @override
   FutureOr<void> build() {}
 

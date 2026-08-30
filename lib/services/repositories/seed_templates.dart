@@ -14,8 +14,7 @@ WorkoutTemplate _fullGymSession() {
     id: 'seed-template-full-gym-session-0001',
     name: 'At-home Warmup + Gym Strength + Zone 2',
     goal: 'Activation, machine strength, aerobic base, and cooldown',
-    notes:
-        'Full session: 8-10 min at-home activation, gym strength, 25-30 min Zone 2, cooldown, and optional sauna.',
+    notes: 'Full session: 8-10 min at-home activation, gym strength, 25-30 min Zone 2, cooldown, and optional sauna.',
     blocks: [
       _warmupActivationBlock(),
       _gymStrengthBlock(),
@@ -109,8 +108,7 @@ WorkoutBlock _gymStrengthBlock() {
     title: 'Gym Strength Block',
     type: WorkoutBlockType.strength,
     targetDuration: const Duration(minutes: 45),
-    description:
-        'Machine and cable strength work with controlled tempo and setup buffer.',
+    description: 'Machine and cable strength work with controlled tempo and setup buffer.',
     exercises: [
       _repsExercise(
         id: 'seed-full-ex-chest-supported-row-machine-0001',

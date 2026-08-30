@@ -10,9 +10,7 @@ import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class InfluencesTab extends ConsumerWidget {
-  const InfluencesTab();
-
+class const InfluencesTab() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final influencesAsync = ref.watch(influencesProvider);
@@ -32,9 +30,7 @@ class InfluencesTab extends ConsumerWidget {
   }
 }
 
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
+class const _EmptyView() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -50,11 +46,8 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-class _InfluencesList extends StatelessWidget {
-  const _InfluencesList({required this.influences});
-
-  final List<TrainingInfluence> influences;
-
+class const _InfluencesList({required final List<TrainingInfluence> influences})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -92,16 +85,13 @@ class _InfluencesList extends StatelessWidget {
   }
 }
 
-class _InfluenceCard extends ConsumerStatefulWidget {
-  const _InfluenceCard({required this.influence});
-
-  final TrainingInfluence influence;
-
+class const _InfluenceCard({required final TrainingInfluence influence})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<_InfluenceCard> createState() => _InfluenceCardState();
 }
 
-class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
+class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
   bool _isExpanded = false;
 
   void _toggleExpanded() => setState(() => _isExpanded = !_isExpanded);
@@ -305,16 +295,13 @@ class _InfluenceCardState extends ConsumerState<_InfluenceCard> {
   }
 }
 
-class InfluenceFormSheet extends ConsumerStatefulWidget {
-  const InfluenceFormSheet({this.existing});
-
-  final TrainingInfluence? existing;
-
+class const InfluenceFormSheet({final TrainingInfluence? existing})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<InfluenceFormSheet> createState() => _InfluenceFormSheetState();
 }
 
-class _InfluenceFormSheetState extends ConsumerState<InfluenceFormSheet> {
+class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _principleControllers = <TextEditingController>[];

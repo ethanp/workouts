@@ -17,21 +17,17 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 /// - Tap a benefit to toggle goal links
 /// - Add a benefit manually
 /// - Tap "Apply" to persist or "Cancel" to discard
-class ExerciseBenefitsSheet extends ConsumerStatefulWidget {
-  const ExerciseBenefitsSheet({
-    required this.exercise,
-    this.autoGenerate = false,
-  });
-
-  final WorkoutExercise exercise;
-  final bool autoGenerate;
-
+class const ExerciseBenefitsSheet({
+  required final WorkoutExercise exercise,
+  final bool autoGenerate = false,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ExerciseBenefitsSheet> createState() =>
       _ExerciseBenefitsSheetState();
 }
 
-class _ExerciseBenefitsSheetState extends ConsumerState<ExerciseBenefitsSheet> {
+class _ExerciseBenefitsSheetState()
+    extends ConsumerState<ExerciseBenefitsSheet> {
   late List<ExerciseBenefit> _editableBenefits;
   bool _isGenerating = false;
   bool _hasAutoTriggered = false;

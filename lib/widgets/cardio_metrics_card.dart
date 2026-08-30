@@ -10,12 +10,10 @@ import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class CardioMetricsCard extends ConsumerWidget {
-  const CardioMetricsCard({required this.samples, this.routePoints = const []});
-
-  final List<HeartRateSample> samples;
-  final List<CardioRoutePoint> routePoints;
-
+class const CardioMetricsCard({
+  required final List<HeartRateSample> samples,
+  final List<CardioRoutePoint> routePoints = const [],
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final speedSamples = SpeedSample.fromRoutePoints(routePoints);
@@ -40,12 +38,10 @@ class CardioMetricsCard extends ConsumerWidget {
   }
 }
 
-class _MetricsHeader extends StatelessWidget {
-  const _MetricsHeader({required this.samples, required this.speedSamples});
-
-  final List<HeartRateSample> samples;
-  final List<SpeedSample> speedSamples;
-
+class const _MetricsHeader({
+  required final List<HeartRateSample> samples,
+  required final List<SpeedSample> speedSamples,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -104,11 +100,7 @@ class _MetricsHeader extends StatelessWidget {
   }
 }
 
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({required this.color});
-
-  final Color color;
-
+class const _LegendDot({required final Color color}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -119,12 +111,10 @@ class _LegendDot extends StatelessWidget {
   }
 }
 
-class _TimelinePreview extends StatelessWidget {
-  const _TimelinePreview({required this.samples, required this.speedSamples});
-
-  final List<HeartRateSample> samples;
-  final List<SpeedSample> speedSamples;
-
+class const _TimelinePreview({
+  required final List<HeartRateSample> samples,
+  required final List<SpeedSample> speedSamples,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -134,12 +124,10 @@ class _TimelinePreview extends StatelessWidget {
   }
 }
 
-class MetricsMiniChart extends StatelessWidget {
-  const MetricsMiniChart({required this.samples, this.speedSamples = const []});
-
-  final List<HeartRateSample> samples;
-  final List<SpeedSample> speedSamples;
-
+class const MetricsMiniChart({
+  required final List<HeartRateSample> samples,
+  final List<SpeedSample> speedSamples = const [],
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (samples.length < 2) {
@@ -178,18 +166,16 @@ class MetricsMiniChart extends StatelessWidget {
 const _hrColor = AppColors.error;
 const _speedColor = AppColors.success;
 
-class _DualMetricPainter extends CustomPainter {
-  _DualMetricPainter({required this.samples, required this.speedSamples});
-
+class _DualMetricPainter({
+  required final List<HeartRateSample> samples,
+  required final List<SpeedSample> speedSamples,
+}) extends CustomPainter {
   static const _leftAxisWidth = 38.0;
   static const _rightPadding = 8.0;
   static const _topPadding = 8.0;
   static const _bottomAxisHeight = 22.0;
   static const _axisLabelFontSize = 10.0;
   static const _heartRateSmoothingWindowSize = 5;
-
-  final List<HeartRateSample> samples;
-  final List<SpeedSample> speedSamples;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -336,9 +322,8 @@ class _DualMetricPainter extends CustomPainter {
           : TextAlign.center;
       _drawAxisLabel(
         canvas,
-        Duration(
-          milliseconds: elapsedTick.elapsedMilliseconds,
-        ).formattedElapsed,
+        Duration(milliseconds: elapsedTick.elapsedMilliseconds)
+            .formattedElapsed,
         Offset(elapsedTick.x, chartLayout.bottom + 7),
         textAlign: textAlign,
         anchor: anchor,
@@ -510,24 +495,30 @@ class _DualMetricPainter extends CustomPainter {
   }
 }
 
-enum _LabelAnchor { centerRight, topLeft, topCenter, topRight }
-
-enum _ElapsedTickPosition { start, middle, end }
-
-class _ElapsedTimeTick {
-  const _ElapsedTimeTick({
-    required this.x,
-    required this.elapsedMilliseconds,
-    required this.position,
-  });
-
-  final double x;
-  final int elapsedMilliseconds;
-  final _ElapsedTickPosition position;
+enum _LabelAnchor() {
+  centerRight,
+  topLeft,
+  topCenter,
+  topRight,
 }
 
-class _MetricChartLayout {
-  _MetricChartLayout({required Size size, required this.timeDomain}) {
+enum _ElapsedTickPosition() {
+  start,
+  middle,
+  end,
+}
+
+class const _ElapsedTimeTick({
+  required final double x,
+  required final int elapsedMilliseconds,
+  required final _ElapsedTickPosition position,
+});
+
+class _MetricChartLayout({
+  required Size size,
+  required final _TimeDomain timeDomain,
+}) {
+  this {
     left = _DualMetricPainter._leftAxisWidth;
     right = size.width - _DualMetricPainter._rightPadding;
     top = _DualMetricPainter._topPadding;
@@ -540,7 +531,6 @@ class _MetricChartLayout {
   static const _minimumElapsedLabelGapWidth = 44.0;
   static const _minuteSteps = [1, 2, 5, 10, 15, 20, 30, 60, 90, 120];
 
-  final _TimeDomain timeDomain;
   late final double left;
   late final double right;
   late final double top;
@@ -613,12 +603,10 @@ class _MetricChartLayout {
   }
 }
 
-class _HeartRateScale {
-  const _HeartRateScale({required this.minBpm, required this.maxBpm});
-
-  final int minBpm;
-  final int maxBpm;
-
+class const _HeartRateScale({
+  required final int minBpm,
+  required final int maxBpm,
+}) {
   List<int> get tickBpms {
     final bpmRange = maxBpm - minBpm;
     final tickStep = bpmRange <= 30 ? 10 : 20;
@@ -653,44 +641,30 @@ class _HeartRateScale {
   }
 }
 
-class _VisibleHeartRateZoneBand {
-  const _VisibleHeartRateZoneBand({
-    required this.lowerBpm,
-    required this.upperBpm,
-  });
+class const _VisibleHeartRateZoneBand({
+  required final int lowerBpm,
+  required final int upperBpm,
+});
 
-  final int lowerBpm;
-  final int upperBpm;
-}
+class const _SmoothedHeartRatePoint({
+  required final DateTime timestamp,
+  required final double bpm,
+});
 
-class _SmoothedHeartRatePoint {
-  const _SmoothedHeartRatePoint({required this.timestamp, required this.bpm});
-
-  final DateTime timestamp;
-  final double bpm;
-}
-
-class _TimeDomain {
-  const _TimeDomain({
-    required this.startTime,
-    required this.durationMilliseconds,
-  });
-
-  final DateTime startTime;
-  final int durationMilliseconds;
-
+class const _TimeDomain({
+  required final DateTime startTime,
+  required final int durationMilliseconds,
+}) {
   double normalizedTime(DateTime sampleTime) {
     return sampleTime.difference(startTime).inMilliseconds /
         durationMilliseconds;
   }
 }
 
-class SpeedSample {
-  const SpeedSample({required this.timestamp, required this.speedKmh});
-
-  final DateTime timestamp;
-  final double speedKmh;
-
+class const SpeedSample({
+  required final DateTime timestamp,
+  required final double speedKmh,
+}) {
   static List<SpeedSample> fromRoutePoints(List<CardioRoutePoint> points) {
     final timedPoints = points.whereL(
       (routePoint) => routePoint.recordedAt != null,

@@ -14,17 +14,11 @@ import 'package:workouts/widgets/trend_series.dart';
 /// sessions is the focal element; this session's point is ringed via
 /// [sessionDate]. Cues are intentionally absent — the user lives this
 /// session, the chart situates it within their progress.
-class ExerciseProgressCard extends ConsumerWidget {
-  const ExerciseProgressCard({
-    required this.exercise,
-    required this.exerciseLogs,
-    required this.sessionDate,
-  });
-
-  final WorkoutExercise exercise;
-  final List<SessionSetLog> exerciseLogs;
-  final DateTime sessionDate;
-
+class const ExerciseProgressCard({
+  required final WorkoutExercise exercise,
+  required final List<SessionSetLog> exerciseLogs,
+  required final DateTime sessionDate,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(exerciseHistoryProvider(exercise.id));
@@ -73,7 +67,7 @@ class ExerciseProgressCard extends ConsumerWidget {
     return historyAsync.when(
       data: _chartFromHistory,
       loading: () => const _ChartPlaceholder(),
-      error: (_, __) => const _ChartPlaceholder(label: 'Could not load trend'),
+      error: (_, _) => const _ChartPlaceholder(label: 'Could not load trend'),
     );
   }
 
@@ -117,11 +111,7 @@ class ExerciseProgressCard extends ConsumerWidget {
   }
 }
 
-class _ChartPlaceholder extends StatelessWidget {
-  const _ChartPlaceholder({this.label});
-
-  final String? label;
-
+class const _ChartPlaceholder({final String? label}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

@@ -20,9 +20,7 @@ const _log = ELogger('TimerNotif');
 /// matching HealthKit/Watch guards used elsewhere) and to silently no-op
 /// when the user denies notification permission, so the in-app countdown
 /// is never gated on the alert.
-class TimerNotificationService {
-  TimerNotificationService();
-
+class TimerNotificationService() {
   static const int _notificationId = 1001;
 
   final FlutterLocalNotificationsPlugin _plugin =

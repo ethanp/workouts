@@ -3,27 +3,20 @@ import 'package:workouts/features/workout_generation/options/workout_followup_an
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
-enum RefinementMode { refine, ask }
+enum RefinementMode() {
+  refine,
+  ask,
+}
 
-class WorkoutRefinementPanel extends StatelessWidget {
-  const WorkoutRefinementPanel({
-    required this.mode,
-    required this.feedbackController,
-    required this.onModeChanged,
-    required this.onFeedbackChanged,
-    required this.onAsk,
-    required this.onRefine,
-    this.followupAnswer,
-  });
-
-  final RefinementMode mode;
-  final TextEditingController feedbackController;
-  final ValueChanged<RefinementMode> onModeChanged;
-  final VoidCallback onFeedbackChanged;
-  final ValueChanged<String> onAsk;
-  final ValueChanged<String> onRefine;
-  final String? followupAnswer;
-
+class const WorkoutRefinementPanel({
+  required final RefinementMode mode,
+  required final TextEditingController feedbackController,
+  required final ValueChanged<RefinementMode> onModeChanged,
+  required final VoidCallback onFeedbackChanged,
+  required final ValueChanged<String> onAsk,
+  required final ValueChanged<String> onRefine,
+  final String? followupAnswer,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ConnectionGatedWidget(child: _panel());

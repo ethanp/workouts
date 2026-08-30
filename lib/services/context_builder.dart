@@ -14,19 +14,12 @@ import 'package:workouts/services/repositories/templates/template_repository_pow
 part 'context_builder.g.dart';
 
 /// Per-session preferences the user sets before generating a workout.
-class WorkoutPreferences {
-  final int? durationMinutes;
-  final List<FitnessGoal> focusGoals;
-  final TrainingLocation? location;
-  final String? notes;
-
-  const WorkoutPreferences({
-    this.durationMinutes,
-    this.focusGoals = const [],
-    this.location,
-    this.notes,
-  });
-
+class const WorkoutPreferences({
+  final int? durationMinutes,
+  final List<FitnessGoal> focusGoals = const [],
+  final TrainingLocation? location,
+  final String? notes,
+}) {
   bool get isEmpty =>
       durationMinutes == null &&
       focusGoals.isEmpty &&
@@ -35,42 +28,25 @@ class WorkoutPreferences {
 }
 
 /// Context gathered for LLM workout generation.
-class WorkoutContext {
-  final List<FitnessGoal> goals;
-  final List<BackgroundNote> backgroundNotes;
-  final List<Session> recentSessions;
-  final List<TrainingInfluence> influences;
-  final List<String> knownExerciseNames;
-  final WorkoutPreferences? preferences;
-
-  WorkoutContext({
-    required this.goals,
-    required this.backgroundNotes,
-    required this.recentSessions,
-    required this.influences,
-    required this.knownExerciseNames,
-    this.preferences,
-  });
-
+class WorkoutContext({
+  required final List<FitnessGoal> goals,
+  required final List<BackgroundNote> backgroundNotes,
+  required final List<Session> recentSessions,
+  required final List<TrainingInfluence> influences,
+  required final List<String> knownExerciseNames,
+  final WorkoutPreferences? preferences,
+}) {
   bool get isEmpty =>
       goals.isEmpty && backgroundNotes.isEmpty && influences.isEmpty;
 }
 
-class ContextBuilder {
-  final GoalsRepositoryPowerSync goalsRepo;
-  final BackgroundNotesRepositoryPowerSync notesRepo;
-  final SessionRepositoryPowerSync sessionRepo;
-  final InfluencesRepositoryPowerSync influencesRepo;
-  final TemplateRepositoryPowerSync templateRepo;
-
-  ContextBuilder({
-    required this.goalsRepo,
-    required this.notesRepo,
-    required this.sessionRepo,
-    required this.influencesRepo,
-    required this.templateRepo,
-  });
-
+class ContextBuilder({
+  required final GoalsRepositoryPowerSync goalsRepo,
+  required final BackgroundNotesRepositoryPowerSync notesRepo,
+  required final SessionRepositoryPowerSync sessionRepo,
+  required final InfluencesRepositoryPowerSync influencesRepo,
+  required final TemplateRepositoryPowerSync templateRepo,
+}) {
   Future<WorkoutContext> build() async {
     // Fetch active goals, sorted by priority
     final goals = await goalsRepo.fetchGoals();

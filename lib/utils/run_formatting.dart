@@ -3,16 +3,12 @@ import 'package:ethan_utils/ethan_utils.dart';
 const metersPerMile = 1609.344;
 const _kmhToMph = 0.621371;
 
-enum DistanceBucket {
+enum DistanceBucket(final double meters, final String label) {
   fourHundredMeters(400, '400m'),
   halfMile(metersPerMile / 2, '1/2 mi'),
   oneMile(metersPerMile, '1 mi'),
   fiveK(5000, '5k'),
   fiveMiles(metersPerMile * 5, '5 mi');
-
-  const DistanceBucket(this.meters, this.label);
-  final double meters;
-  final String label;
 
   static DistanceBucket? fromMeters(double meters) {
     for (final bucket in values) {
@@ -22,9 +18,7 @@ enum DistanceBucket {
   }
 }
 
-class Format {
-  Format._();
-
+class Format._() {
   /// "3.21 mi".
   static String distance(double meters) =>
       '${(meters / metersPerMile).toStringAsFixed(2)} mi';

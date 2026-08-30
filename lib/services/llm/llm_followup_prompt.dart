@@ -1,15 +1,10 @@
 import 'package:workouts/models/llm_workout_option.dart';
 
-class LlmFollowupPrompt {
-  const LlmFollowupPrompt({
-    required this.systemPrompt,
-    required this.userPrompt,
-  });
-
-  final String systemPrompt;
-  final String userPrompt;
-
-  factory LlmFollowupPrompt.forQuestion({
+class const LlmFollowupPrompt({
+  required final String systemPrompt,
+  required final String userPrompt,
+}) {
+  factory forQuestion({
     required LlmWorkoutResponse workoutResponse,
     required String question,
   }) {

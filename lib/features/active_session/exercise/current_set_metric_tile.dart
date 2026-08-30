@@ -1,29 +1,17 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class CurrentSetMetricTile extends StatelessWidget {
-  const CurrentSetMetricTile({
-    required this.label,
-    required this.controller,
-    required this.focusNode,
-    required this.placeholder,
-    required this.keyboardType,
-    required this.onChanged,
-    required this.onDecrement,
-    required this.onIncrement,
-    this.suffix,
-  });
-
-  final String label;
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final String placeholder;
-  final TextInputType keyboardType;
-  final ValueChanged<String> onChanged;
-  final VoidCallback onDecrement;
-  final VoidCallback onIncrement;
-  final String? suffix;
-
+class const CurrentSetMetricTile({
+  required final String label,
+  required final TextEditingController controller,
+  required final FocusNode focusNode,
+  required final String placeholder,
+  required final TextInputType keyboardType,
+  required final ValueChanged<String> onChanged,
+  required final VoidCallback onDecrement,
+  required final VoidCallback onIncrement,
+  final String? suffix,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.all(AppSpacing.sm),

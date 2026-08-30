@@ -1,6 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
 
-enum CardioType {
+enum CardioType() {
   outdoorRun,
   indoorRun,
   outdoorWalk,

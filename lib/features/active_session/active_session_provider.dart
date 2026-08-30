@@ -22,7 +22,7 @@ const _uuid = Uuid();
 const _watchBridge = WatchConnectivityBridge();
 
 @riverpod
-class ActiveSessionNotifier extends _$ActiveSessionNotifier {
+class ActiveSessionNotifier() extends _$ActiveSessionNotifier {
   @override
   Future<Session?> build() async {
     // If build() is re-triggered while a session is already active (e.g. due
@@ -319,7 +319,7 @@ class ActiveSessionNotifier extends _$ActiveSessionNotifier {
 }
 
 @riverpod
-class SessionUIVisibilityNotifier extends _$SessionUIVisibilityNotifier {
+class SessionUIVisibilityNotifier() extends _$SessionUIVisibilityNotifier {
   @override
   bool build() => false;
 

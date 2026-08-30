@@ -20,8 +20,11 @@ part 'session_repository_powersync.g.dart';
 
 const _log = ELogger('SessionRepository');
 
-class SessionRepositoryPowerSync {
-  SessionRepositoryPowerSync(this._powerSync, this._templateRepository) {
+class SessionRepositoryPowerSync(
+  final PowerSyncDatabase _powerSync,
+  final TemplateRepositoryPowerSync _templateRepository,
+) {
+  this {
     _sessionHydrator = SessionHydrator(_powerSync);
     _setLogStore = SessionSetLogStore(_powerSync);
     _exerciseStore = SessionExerciseStore(
@@ -32,8 +35,6 @@ class SessionRepositoryPowerSync {
     _materializer = SessionMaterializer(_powerSync, _templateRepository);
   }
 
-  final PowerSyncDatabase _powerSync;
-  final TemplateRepositoryPowerSync _templateRepository;
   late final SessionHydrator _sessionHydrator;
   late final SessionSetLogStore _setLogStore;
   late final SessionExerciseStore _exerciseStore;

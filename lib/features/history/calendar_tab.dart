@@ -12,14 +12,12 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/features/history/activity_calendar.dart';
 
-class HistoryCalendarTab extends ConsumerStatefulWidget {
-  const HistoryCalendarTab();
-
+class const HistoryCalendarTab() extends ConsumerStatefulWidget {
   @override
   ConsumerState<HistoryCalendarTab> createState() => _HistoryCalendarTabState();
 }
 
-class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
+class _HistoryCalendarTabState() extends ConsumerState<HistoryCalendarTab> {
   final _scrollController = ScrollController();
   bool _hasScrolledToBottom = false;
 
@@ -76,11 +74,8 @@ class _HistoryCalendarTabState extends ConsumerState<HistoryCalendarTab> {
   }
 }
 
-class DayDetailSheet extends ConsumerWidget {
-  const DayDetailSheet({required this.date});
-
-  final DateTime date;
-
+class const DayDetailSheet({required final DateTime date})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(activityForDateProvider(date));
@@ -97,7 +92,7 @@ class DayDetailSheet extends ConsumerWidget {
                 ),
               ),
         loading: () => const CupertinoActivityIndicator(),
-        error: (_, __) => const Text('Unable to load'),
+        error: (_, _) => const Text('Unable to load'),
       ),
       cancelButton: CupertinoActionSheetAction(
         onPressed: () => Navigator.of(context).pop(),
@@ -107,11 +102,8 @@ class DayDetailSheet extends ConsumerWidget {
   }
 }
 
-class DayDetailItemList extends StatelessWidget {
-  const DayDetailItemList({required this.items});
-
-  final List<ActivityItem> items;
-
+class const DayDetailItemList({required final List<ActivityItem> items})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -141,11 +133,8 @@ class DayDetailItemList extends StatelessWidget {
   }
 }
 
-class DayDetailCardioRow extends StatelessWidget {
-  const DayDetailCardioRow({required this.workout});
-
-  final CardioWorkout workout;
-
+class const DayDetailCardioRow({required final CardioWorkout workout})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -177,11 +166,8 @@ class DayDetailCardioRow extends StatelessWidget {
   }
 }
 
-class DayDetailSessionRow extends ConsumerWidget {
-  const DayDetailSessionRow({required this.session});
-
-  final Session session;
-
+class const DayDetailSessionRow({required final Session session})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesMapAsync = ref.watch(templatesMapProvider);
@@ -207,7 +193,7 @@ class DayDetailSessionRow extends ConsumerWidget {
                   );
                 },
                 loading: () => const Text('…', style: AppTypography.body),
-                error: (_, __) =>
+                error: (_, _) =>
                     const Text('Session', style: AppTypography.body),
               ),
             ],

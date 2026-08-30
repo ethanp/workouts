@@ -11,23 +11,14 @@ import 'package:workouts/theme/app_theme.dart';
 /// Each action is opt-in: pass `null` for the callback to hide the row.
 /// The "Ask AI Coach" row is additionally hidden whenever the backend is
 /// unreachable (mirrors the gating used by other AI affordances).
-class ExerciseCardMenuButton extends ConsumerWidget {
-  const ExerciseCardMenuButton({
-    required this.exerciseName,
-    this.onExerciseHistoryRequested,
-    this.onAiCoachRequested,
-    this.onExerciseSwapRequested,
-    this.onToggleStoppedEarly,
-    this.isStoppedEarly = false,
-  });
-
-  final String exerciseName;
-  final VoidCallback? onExerciseHistoryRequested;
-  final VoidCallback? onAiCoachRequested;
-  final VoidCallback? onExerciseSwapRequested;
-  final VoidCallback? onToggleStoppedEarly;
-  final bool isStoppedEarly;
-
+class const ExerciseCardMenuButton({
+  required final String exerciseName,
+  final VoidCallback? onExerciseHistoryRequested,
+  final VoidCallback? onAiCoachRequested,
+  final VoidCallback? onExerciseSwapRequested,
+  final VoidCallback? onToggleStoppedEarly,
+  final bool isStoppedEarly = false,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isOffline = ref.watch(isOfflineProvider);
@@ -115,16 +106,9 @@ class ExerciseCardMenuButton extends ConsumerWidget {
   );
 }
 
-class _MenuItem {
-  const _MenuItem({
-    required this.icon,
-    required this.label,
-    required this.onActivated,
-    this.iconColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color? iconColor;
-  final VoidCallback onActivated;
-}
+class const _MenuItem({
+  required final IconData icon,
+  required final String label,
+  required final VoidCallback onActivated,
+  final Color? iconColor,
+});

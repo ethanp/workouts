@@ -7,9 +7,7 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/trend_series.dart';
 
-class CardioTrendSeriesFactory {
-  const CardioTrendSeriesFactory();
-
+class const CardioTrendSeriesFactory() {
   List<TrendSeries> build({
     required List<CardioWorkout> workouts,
     required List<CardioBestEffort> bestEfforts,

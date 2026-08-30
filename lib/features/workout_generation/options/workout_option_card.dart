@@ -2,19 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WorkoutOptionCard extends StatelessWidget {
-  const WorkoutOptionCard({
-    required this.option,
-    required this.isExpanded,
-    required this.onExpansionToggled,
-    required this.onWorkoutSelected,
-  });
-
-  final LlmWorkoutOption option;
-  final bool isExpanded;
-  final VoidCallback onExpansionToggled;
-  final VoidCallback onWorkoutSelected;
-
+class const WorkoutOptionCard({
+  required final LlmWorkoutOption option,
+  required final bool isExpanded,
+  required final VoidCallback onExpansionToggled,
+  required final VoidCallback onWorkoutSelected,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -160,11 +153,8 @@ class WorkoutOptionCard extends StatelessWidget {
   }
 }
 
-class _BlockSection extends StatelessWidget {
-  const _BlockSection({required this.block});
-
-  final LlmWorkoutBlock block;
-
+class const _BlockSection({required final LlmWorkoutBlock block})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -209,11 +199,8 @@ class _BlockSection extends StatelessWidget {
   }
 }
 
-class _ExerciseRow extends StatelessWidget {
-  const _ExerciseRow({required this.exercise});
-
-  final LlmExercise exercise;
-
+class const _ExerciseRow({required final LlmExercise exercise})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final prescription = exercise.prescription;

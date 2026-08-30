@@ -2,50 +2,36 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-enum TimerPhase { idle, setup, work, rest, complete }
+enum TimerPhase() {
+  idle,
+  setup,
+  work,
+  rest,
+  complete,
+}
 
-class ExerciseTimerPanel extends StatelessWidget {
-  const ExerciseTimerPanel({
-    required this.phase,
-    required this.remaining,
-    this.phaseLength,
-    required this.isPaused,
-    required this.onStart,
-    required this.onPause,
-    required this.onResume,
-    required this.onReset,
-    required this.onAdjustTime,
-    required this.canPause,
-    required this.canResume,
-    required this.canStart,
-    required this.canReset,
-    required this.canAdjust,
-    required this.hasSetupPhase,
-    required this.hasWorkPhase,
-    required this.hasRestPhase,
-  });
-
-  final TimerPhase phase;
-  final Duration? remaining;
+class const ExerciseTimerPanel({
+  required final TimerPhase phase,
+  required final Duration? remaining,
 
   /// The current phase's configured full length. Shown alongside the live
   /// countdown so the target duration stays visible while it ticks down.
-  final Duration? phaseLength;
-  final bool isPaused;
-  final VoidCallback onStart;
-  final VoidCallback onPause;
-  final VoidCallback onResume;
-  final VoidCallback onReset;
-  final void Function(int seconds) onAdjustTime;
-  final bool canPause;
-  final bool canResume;
-  final bool canStart;
-  final bool canReset;
-  final bool canAdjust;
-  final bool hasSetupPhase;
-  final bool hasWorkPhase;
-  final bool hasRestPhase;
-
+  final Duration? phaseLength,
+  required final bool isPaused,
+  required final VoidCallback onStart,
+  required final VoidCallback onPause,
+  required final VoidCallback onResume,
+  required final VoidCallback onReset,
+  required final void Function(int seconds) onAdjustTime,
+  required final bool canPause,
+  required final bool canResume,
+  required final bool canStart,
+  required final bool canReset,
+  required final bool canAdjust,
+  required final bool hasSetupPhase,
+  required final bool hasWorkPhase,
+  required final bool hasRestPhase,
+}) extends StatelessWidget {
   String get _phaseLabel => switch (phase) {
     TimerPhase.setup => 'Setup',
     TimerPhase.work => 'Work',

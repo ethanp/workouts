@@ -7,11 +7,10 @@ import 'package:workouts/services/repositories/templates/template_repository_pow
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class TemplatesTab extends ConsumerWidget {
-  const TemplatesTab({super.key, required this.onTemplateAddRequested});
-
-  final VoidCallback onTemplateAddRequested;
-
+class const TemplatesTab({
+  super.key,
+  required final VoidCallback onTemplateAddRequested,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesAsync = ref.watch(workoutTemplatesProvider);
@@ -31,11 +30,8 @@ class TemplatesTab extends ConsumerWidget {
   }
 }
 
-class _TemplateList extends StatelessWidget {
-  const _TemplateList({required this.templates});
-
-  final List<WorkoutTemplate> templates;
-
+class const _TemplateList({required final List<WorkoutTemplate> templates})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
@@ -44,18 +40,15 @@ class _TemplateList extends StatelessWidget {
         vertical: AppSpacing.md,
       ),
       itemCount: templates.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, templateIndex) =>
           _TemplateCard(template: templates[templateIndex]),
     );
   }
 }
 
-class _TemplateCard extends ConsumerWidget {
-  const _TemplateCard({required this.template});
-
-  final WorkoutTemplate template;
-
+class const _TemplateCard({required final WorkoutTemplate template})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final blockCount = template.blocks.length;
@@ -194,11 +187,8 @@ class _TemplateCard extends ConsumerWidget {
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.onTemplateAddRequested});
-
-  final VoidCallback onTemplateAddRequested;
-
+class const _EmptyState({required final VoidCallback onTemplateAddRequested})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(

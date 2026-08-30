@@ -1,12 +1,10 @@
 import 'package:workouts/models/hr_zone_time.dart';
 
 /// A heart rate reading at a point in time, without persistence metadata.
-class TimestampedHeartRate {
-  const TimestampedHeartRate({required this.timestamp, required this.bpm});
-
-  final DateTime timestamp;
-  final int bpm;
-}
+class const TimestampedHeartRate({
+  required final DateTime timestamp,
+  required final int bpm,
+});
 
 /// Buckets a continuous HR series into the 5-zone model and reports total
 /// seconds spent in each zone.
@@ -18,9 +16,7 @@ class TimestampedHeartRate {
 /// Stateless — call [HrZoneClassifier.compute] directly. Zone boundaries
 /// are exposed as static constants so settings UI can render the same
 /// numbers without instantiating anything.
-class HrZoneClassifier {
-  const HrZoneClassifier._();
-
+class const HrZoneClassifier._() {
   /// Zone lower bounds: [zone1, zone2, zone3, zone4, zone5].
   static const List<int> zoneBoundaries = [93, 115, 146, 163, 176];
 

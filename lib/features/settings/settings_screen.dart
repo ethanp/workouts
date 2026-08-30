@@ -7,9 +7,7 @@ import 'package:workouts/features/settings/debug_tiles.dart';
 import 'package:workouts/features/settings/settings_section.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SettingsScreen extends ConsumerWidget {
-  const SettingsScreen();
-
+class const SettingsScreen() extends ConsumerWidget {
   static const AppLogViewerStyle _logViewerStyle = AppLogViewerStyle(
     surface: AppColors.backgroundDepth2,
     surfaceElevated: AppColors.backgroundDepth3,

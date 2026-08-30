@@ -1,26 +1,21 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WorkoutGenerationPreparingView extends StatelessWidget {
-  const WorkoutGenerationPreparingView();
-
+class const WorkoutGenerationPreparingView() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('Preparing...', style: AppTypography.body));
   }
 }
 
-class WorkoutGenerationStreamingView extends StatefulWidget {
-  const WorkoutGenerationStreamingView({required this.partialText});
-
-  final String partialText;
-
+class const WorkoutGenerationStreamingView({required final String partialText})
+    extends StatefulWidget {
   @override
   State<WorkoutGenerationStreamingView> createState() =>
       _WorkoutGenerationStreamingViewState();
 }
 
-class _WorkoutGenerationStreamingViewState
+class _WorkoutGenerationStreamingViewState()
     extends State<WorkoutGenerationStreamingView> {
   final _scrollController = ScrollController();
 

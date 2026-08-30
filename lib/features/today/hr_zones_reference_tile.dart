@@ -6,9 +6,7 @@ import 'package:workouts/utils/hr_zone_classifier.dart';
 /// Read-only reference table showing the fixed 5-zone bpm boundaries.
 /// Surfaced on the Today tab so the bpm cutoffs are visible at a glance
 /// alongside the day's planned/active workout.
-class HrZonesReferenceTile extends StatelessWidget {
-  const HrZonesReferenceTile();
-
+class const HrZonesReferenceTile() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

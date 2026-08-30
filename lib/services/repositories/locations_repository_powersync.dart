@@ -6,11 +6,7 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 part 'locations_repository_powersync.g.dart';
 
-class LocationsRepositoryPowerSync {
-  LocationsRepositoryPowerSync(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class LocationsRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   Future<List<TrainingLocation>> fetchLocations() async {
     final locationRows = await _powerSync.getAll(
       'SELECT * FROM training_locations ORDER BY name ASC',

@@ -3,12 +3,10 @@ import 'package:workouts/features/history/charts/polarization_formatting.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
-class PolarizationLegend extends StatelessWidget {
-  const PolarizationLegend({required this.isExpanded, required this.onToggle});
-
-  final bool isExpanded;
-  final VoidCallback onToggle;
-
+class const PolarizationLegend({
+  required final bool isExpanded,
+  required final VoidCallback onToggle,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(

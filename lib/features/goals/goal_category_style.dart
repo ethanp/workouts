@@ -1,11 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/fitness_goal.dart';
 
-class GoalCategoryStyle {
-  const GoalCategoryStyle(this.category);
-
-  final GoalCategory category;
-
+class const GoalCategoryStyle(final GoalCategory category) {
   String get label => category.name
       .replaceAllMapped(
         RegExp(r'([a-z])([A-Z])'),

@@ -11,11 +11,7 @@ import 'package:workouts/models/workout_exercise.dart';
 /// active-session path (when an AI suggestion proposes a brand-new exercise
 /// during mid-session replacement). Centralising the upsert avoids divergence
 /// between the two paths.
-class LibraryExerciseStore {
-  LibraryExerciseStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class LibraryExerciseStore(final PowerSyncDatabase _powerSync) {
   /// Ensures [exercise] exists in the `exercises` table and returns the
   /// canonical id to use when referencing it.
   ///

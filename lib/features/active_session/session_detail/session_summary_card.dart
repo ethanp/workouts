@@ -3,12 +3,10 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class SessionSummaryCard extends StatelessWidget {
-  const SessionSummaryCard({required this.session, this.onEditDuration});
-
-  final Session session;
-  final VoidCallback? onEditDuration;
-
+class const SessionSummaryCard({
+  required final Session session,
+  final VoidCallback? onEditDuration,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

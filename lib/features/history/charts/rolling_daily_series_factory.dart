@@ -15,9 +15,7 @@ import 'package:workouts/models/activity_calendar_day.dart';
 ///
 /// The metric is supplied by [dailyValue] so the same logic drives different
 /// charts (e.g. Z2-5 minutes, active-day counts).
-class RollingDailySeriesFactory {
-  const RollingDailySeriesFactory();
-
+class const RollingDailySeriesFactory() {
   /// Days on each side of a point included in each smoothing average. Three on
   /// each side plus the point itself is a centered 7-day window.
   static const _smoothingHalfWindow = 3;

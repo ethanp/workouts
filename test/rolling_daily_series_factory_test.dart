@@ -108,25 +108,22 @@ void main() {
       expect(_pointOn(points, DateTime(2026, 1, 20)).smoothedValue, 70);
     });
 
-    test(
-      'repeated smoothing attenuates an isolated spike below its raw peak',
-      () {
-        // A lone workout day creates a narrow 7-day plateau in the raw series;
-        // the two centered averaging passes pull in the surrounding zeros, so the
-        // smoothed peak is strictly below the 70-minute raw peak.
-        final points = factory.build(
-          days: [_activityDay(DateTime(2026, 1, 10), gteZone2Seconds: 4200)],
-          endDate: DateTime(2026, 1, 31),
-          dailyValue: _z2LoadMinutes,
-        );
+    test('repeated smoothing attenuates an isolated spike below its raw peak', () {
+      // A lone workout day creates a narrow 7-day plateau in the raw series;
+      // the two centered averaging passes pull in the surrounding zeros, so the
+      // smoothed peak is strictly below the 70-minute raw peak.
+      final points = factory.build(
+        days: [_activityDay(DateTime(2026, 1, 10), gteZone2Seconds: 4200)],
+        endDate: DateTime(2026, 1, 31),
+        dailyValue: _z2LoadMinutes,
+      );
 
-        final smoothedPeak = points
-            .map((point) => point.smoothedValue)
-            .reduce(math.max);
-        expect(smoothedPeak, greaterThan(0));
-        expect(smoothedPeak, lessThan(70));
-      },
-    );
+      final smoothedPeak = points
+          .map((point) => point.smoothedValue)
+          .reduce(math.max);
+      expect(smoothedPeak, greaterThan(0));
+      expect(smoothedPeak, lessThan(70));
+    });
 
     test('counts post-transition activity when series starts before '
         'spring-forward DST', () {

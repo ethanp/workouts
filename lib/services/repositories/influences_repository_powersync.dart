@@ -8,11 +8,7 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 part 'influences_repository_powersync.g.dart';
 
-class InfluencesRepositoryPowerSync {
-  InfluencesRepositoryPowerSync(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class InfluencesRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   Future<List<TrainingInfluence>> fetchInfluences() async {
     await _ensureSeeded();
     final influenceRows = await _powerSync.getAll(

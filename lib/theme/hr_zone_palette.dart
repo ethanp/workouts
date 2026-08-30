@@ -1,9 +1,7 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 
-class HrZonePalette {
-  const HrZonePalette._();
-
+class const HrZonePalette._() {
   static const zone1 = Color(0xFF5BB5EA);
   static const zone2 = Color(0xFF36BF7E);
   static const zone3 = Color(0xFFECC048);

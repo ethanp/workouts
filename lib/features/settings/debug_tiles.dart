@@ -9,29 +9,21 @@ import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class CardioImportSnapshot {
-  const CardioImportSnapshot({
-    required this.localWorkouts,
-    required this.importedWorkouts,
-    required this.healthKitWorkouts,
-    required this.fetchedAt,
-  });
+class const CardioImportSnapshot({
+  required final int localWorkouts,
+  required final int importedWorkouts,
+  required final int healthKitWorkouts,
+  required final DateTime fetchedAt,
+});
 
-  final int localWorkouts;
-  final int importedWorkouts;
-  final int healthKitWorkouts;
-  final DateTime fetchedAt;
-}
-
-class CardioImportDebugTile extends ConsumerStatefulWidget {
-  const CardioImportDebugTile();
-
+class const CardioImportDebugTile() extends ConsumerStatefulWidget {
   @override
   ConsumerState<CardioImportDebugTile> createState() =>
       _CardioImportDebugTileState();
 }
 
-class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
+class _CardioImportDebugTileState()
+    extends ConsumerState<CardioImportDebugTile> {
   bool _expanded = false;
   AsyncValue<CardioImportSnapshot>? _snapshot;
 
@@ -204,14 +196,12 @@ class _CardioImportDebugTileState extends ConsumerState<CardioImportDebugTile> {
   }
 }
 
-class SyncDebugTile extends ConsumerStatefulWidget {
-  const SyncDebugTile();
-
+class const SyncDebugTile() extends ConsumerStatefulWidget {
   @override
   ConsumerState<SyncDebugTile> createState() => _SyncDebugTileState();
 }
 
-class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
+class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
   bool _expanded = false;
   bool _reconnecting = false;
   bool _resettingSync = false;
@@ -425,21 +415,13 @@ class _SyncDebugTileState extends ConsumerState<SyncDebugTile> {
   }
 }
 
-class _DebugAction extends StatelessWidget {
-  const _DebugAction({
-    required this.title,
-    required this.description,
-    required this.onActivated,
-    this.inProgress = false,
-    this.accent,
-  });
-
-  final String title;
-  final String description;
-  final VoidCallback? onActivated;
-  final bool inProgress;
-  final Color? accent;
-
+class const _DebugAction({
+  required final String title,
+  required final String description,
+  required final VoidCallback? onActivated,
+  final bool inProgress = false,
+  final Color? accent,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final buttonColor = accent ?? AppColors.textColor1;
@@ -470,12 +452,8 @@ class _DebugAction extends StatelessWidget {
   }
 }
 
-class DebugRow extends StatelessWidget {
-  const DebugRow(this.label, this.value);
-
-  final String label;
-  final String value;
-
+class const DebugRow(final String label, final String value)
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(

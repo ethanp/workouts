@@ -7,11 +7,7 @@ import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 import 'package:workouts/utils/json_parsing.dart';
 
-class TemplateHydrator {
-  TemplateHydrator(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class TemplateHydrator(final PowerSyncDatabase _powerSync) {
   Future<List<String>> fetchExerciseNames() async {
     final exerciseNameRows = await _powerSync.getAll(
       'SELECT DISTINCT name FROM exercises ORDER BY name',

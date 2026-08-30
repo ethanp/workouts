@@ -6,9 +6,7 @@ import 'package:workouts/theme/app_theme.dart';
 
 /// Single tile that drives the two-step Apple Health workflow: import recent
 /// cardio workouts, then compute heart rate zones for any that are missing.
-class AppleHealthSyncTile extends ConsumerWidget {
-  const AppleHealthSyncTile();
-
+class const AppleHealthSyncTile() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final importAsync = ref.watch(cardioImportControllerProvider);

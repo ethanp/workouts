@@ -13,38 +13,26 @@ part 'workout_generation_provider.g.dart';
 
 const _log = ELogger('WorkoutGeneration');
 
-sealed class WorkoutGenerationState {}
+sealed class WorkoutGenerationState();
 
-class GenerationIdle extends WorkoutGenerationState {}
+class GenerationIdle() extends WorkoutGenerationState;
 
-class GenerationStreaming extends WorkoutGenerationState {
-  final String partialText;
-  GenerationStreaming(this.partialText);
-}
+class GenerationStreaming(final String partialText)
+    extends WorkoutGenerationState;
 
-class GenerationComplete extends WorkoutGenerationState {
-  final LlmWorkoutResponse response;
-  GenerationComplete(this.response);
-}
+class GenerationComplete(final LlmWorkoutResponse response)
+    extends WorkoutGenerationState;
 
-class GenerationFailed extends WorkoutGenerationState {
-  final Object error;
-  GenerationFailed(this.error);
-}
+class GenerationFailed(final Object error) extends WorkoutGenerationState;
 
-class GenerationFollowup extends WorkoutGenerationState {
-  final LlmWorkoutResponse response;
-  final String partialAnswer;
-  final bool answering;
-  GenerationFollowup(
-    this.response,
-    this.partialAnswer, {
-    this.answering = true,
-  });
-}
+class GenerationFollowup(
+  final LlmWorkoutResponse response,
+  final String partialAnswer, {
+  final bool answering = true,
+}) extends WorkoutGenerationState;
 
 @riverpod
-class WorkoutGenerationNotifier extends _$WorkoutGenerationNotifier {
+class WorkoutGenerationNotifier() extends _$WorkoutGenerationNotifier {
   http.Client? _activeClient;
   WorkoutPreferences? _lastPreferences;
   StreamSubscription<String>? _tokenSubscription;

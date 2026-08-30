@@ -7,6 +7,12 @@
 
 # The following line activates a set of recommended lints for Flutter apps,
 # packages, and plugins designed to encourage good coding practices.
+analyzer:
+  exclude:
+    - build/**
+    - ios/**
+    - "**/*.freezed.dart"
+    - "**/*.g.dart"
 include: package:flutter_lints/flutter.yaml
 
 linter:
@@ -21,6 +27,14 @@ linter:
   # `// ignore_for_file: name_of_lint` syntax on the line or in the file
   # producing the lint.
   rules:
+    prefer_initializing_formals: true
+    use_primary_constructors: true
+    use_declaring_parameters: true
+    empty_container_bodies: true
+    initialize_in_field_declaration: true
+    unnecessary_const_in_enum_constructor: true
+    unnecessary_primary_constructor_body: true
+    unnecessary_type_name_in_constructor: true
     avoid_print: false
     use_key_in_widget_constructors: false
 

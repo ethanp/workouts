@@ -4,17 +4,11 @@ import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
-class SessionHeartRateCard extends StatelessWidget {
-  const SessionHeartRateCard({
-    required this.samples,
-    required this.averageHeartRate,
-    required this.maxHeartRate,
-  });
-
-  final List<HeartRateSample> samples;
-  final int? averageHeartRate;
-  final int? maxHeartRate;
-
+class const SessionHeartRateCard({
+  required final List<HeartRateSample> samples,
+  required final int? averageHeartRate,
+  required final int? maxHeartRate,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

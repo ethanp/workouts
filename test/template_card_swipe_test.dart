@@ -8,8 +8,9 @@ import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/features/library/templates_tab.dart';
 
-class _MockTemplateRepository extends Mock
-    implements TemplateRepositoryPowerSync {}
+class _MockTemplateRepository()
+    extends Mock
+    implements TemplateRepositoryPowerSync;
 
 const _fakeTemplate = WorkoutTemplate(
   id: 'test-template-id',

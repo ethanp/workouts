@@ -10,11 +10,8 @@ import 'package:workouts/services/repositories/session/session_repository_powers
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class ExerciseHistoryScreen extends ConsumerWidget {
-  const ExerciseHistoryScreen({required this.exercise});
-
-  final WorkoutExercise exercise;
-
+class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(exerciseHistoryProvider(exercise.id));
@@ -64,24 +61,22 @@ class ExerciseHistoryScreen extends ConsumerWidget {
         vertical: AppSpacing.md,
       ),
       itemCount: entries.length,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (_, index) =>
           _SessionSection(entry: entries[index], exercise: exercise),
     );
   }
 }
 
-class _SessionSection extends ConsumerStatefulWidget {
-  const _SessionSection({required this.entry, required this.exercise});
-
-  final ExerciseHistoryEntry entry;
-  final WorkoutExercise exercise;
-
+class const _SessionSection({
+  required final ExerciseHistoryEntry entry,
+  required final WorkoutExercise exercise,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_SessionSection> createState() => _SessionSectionState();
 }
 
-class _SessionSectionState extends ConsumerState<_SessionSection> {
+class _SessionSectionState() extends ConsumerState<_SessionSection> {
   bool _isOpening = false;
 
   @override

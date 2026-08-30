@@ -16,9 +16,7 @@ import 'package:workouts/services/repositories/cardio_repository_powersync.dart'
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class HistoryActivityListTab extends ConsumerWidget {
-  const HistoryActivityListTab();
-
+class const HistoryActivityListTab() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final activityAsync = ref.watch(activityListProvider);
@@ -36,8 +34,7 @@ class HistoryActivityListTab extends ConsumerWidget {
           : ListView.separated(
               padding: const EdgeInsets.all(AppSpacing.lg),
               itemCount: items.length,
-              separatorBuilder: (_, __) =>
-                  const SizedBox(height: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
               itemBuilder: (context, index) =>
                   _buildActivityTile(context, ref, items[index]),
             ),

@@ -8,31 +8,23 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
-class CurrentSetEditor extends StatefulWidget {
-  const CurrentSetEditor({
-    super.key,
-    required this.exercise,
-    required this.plannedSet,
-    required this.initialInput,
-    required this.onChanged,
-    this.currentSide = 1,
-  });
-
-  final WorkoutExercise exercise;
-  final PlannedSet? plannedSet;
-  final SetLogInput initialInput;
-  final ValueChanged<SetLogInput> onChanged;
+class const CurrentSetEditor({
+  super.key,
+  required final WorkoutExercise exercise,
+  required final PlannedSet? plannedSet,
+  required final SetLogInput initialInput,
+  required final ValueChanged<SetLogInput> onChanged,
 
   /// 1-based index of the side currently being prepared for unilateral
   /// exercises. Drives the "Side N of 2" header annotation. Ignored when
   /// `exercise.isUnilateral` is false.
-  final int currentSide;
-
+  final int currentSide = 1,
+}) extends StatefulWidget {
   @override
   State<CurrentSetEditor> createState() => _CurrentSetEditorState();
 }
 
-class _CurrentSetEditorState extends State<CurrentSetEditor> {
+class _CurrentSetEditorState() extends State<CurrentSetEditor> {
   late final TextEditingController _repsController;
   late final TextEditingController _weightController;
   late final TextEditingController _durationController;

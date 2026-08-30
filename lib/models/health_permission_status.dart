@@ -1,4 +1,4 @@
-enum HealthPermissionStatus {
+enum HealthPermissionStatus() {
   unknown,
   authorized,
   limited,

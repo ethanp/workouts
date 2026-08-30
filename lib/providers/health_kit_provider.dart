@@ -15,7 +15,7 @@ HealthKitBridge healthKitBridge(Ref ref) {
 }
 
 @riverpod
-class HealthKitPermissionNotifier extends _$HealthKitPermissionNotifier {
+class HealthKitPermissionNotifier() extends _$HealthKitPermissionNotifier {
   @override
   Future<HealthPermissionStatus> build() async {
     final bridge = ref.watch(healthKitBridgeProvider);
@@ -43,7 +43,7 @@ class HealthKitPermissionNotifier extends _$HealthKitPermissionNotifier {
 }
 
 @riverpod
-class HeartRateTimelineNotifier extends _$HeartRateTimelineNotifier {
+class HeartRateTimelineNotifier() extends _$HeartRateTimelineNotifier {
   StreamSubscription<HeartRateSample>? _subscription;
 
   @override

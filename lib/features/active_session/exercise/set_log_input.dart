@@ -2,14 +2,12 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
-class SetLogInput {
-  const SetLogInput({
-    this.weight,
-    this.reps,
-    this.duration,
-    this.unitRemaining,
-  });
-
+class const SetLogInput({
+  final Weight? weight,
+  final int? reps,
+  final Duration? duration,
+  final int? unitRemaining,
+}) {
   /// Default editor values for the *next* set on an exercise.
   ///
   /// Once the user has dialed in real values for a set, the next set
@@ -18,7 +16,7 @@ class SetLogInput {
   /// only field that stays plan-driven is [unitRemaining], which is a
   /// rep-style countdown read off the prescription, not something the user
   /// adjusts per-set.
-  factory SetLogInput.forNextSet({
+  factory forNextSet({
     required WorkoutExercise exercise,
     PlannedSet? plannedSet,
     SessionSetLog? priorLog,
@@ -37,9 +35,4 @@ class SetLogInput {
       unitRemaining: plannedSet?.unitRemaining,
     );
   }
-
-  final Weight? weight;
-  final int? reps;
-  final Duration? duration;
-  final int? unitRemaining;
 }

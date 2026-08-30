@@ -7,19 +7,12 @@ import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class GoalCard extends ConsumerWidget {
-  const GoalCard({
-    required this.goal,
-    required this.allGoals,
-    this.isArchived = false,
-    this.showCategoryPill = true,
-  });
-
-  final FitnessGoal goal;
-  final List<FitnessGoal> allGoals;
-  final bool isArchived;
-  final bool showCategoryPill;
-
+class const GoalCard({
+  required final FitnessGoal goal,
+  required final List<FitnessGoal> allGoals,
+  final bool isArchived = false,
+  final bool showCategoryPill = true,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoryStyle = GoalCategoryStyle(goal.category);
@@ -253,17 +246,11 @@ class GoalCard extends ConsumerWidget {
   }
 }
 
-class _CategoryPill extends StatelessWidget {
-  const _CategoryPill({
-    required this.label,
-    required this.color,
-    this.isArchived = false,
-  });
-
-  final String label;
-  final Color color;
-  final bool isArchived;
-
+class const _CategoryPill({
+  required final String label,
+  required final Color color,
+  final bool isArchived = false,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final effectiveColor = isArchived ? color.withValues(alpha: 0.4) : color;

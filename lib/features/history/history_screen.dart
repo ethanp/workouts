@@ -10,16 +10,18 @@ import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
-enum HistoryTab { charts, list, calendar }
+enum HistoryTab() {
+  charts,
+  list,
+  calendar,
+}
 
-class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen();
-
+class const HistoryScreen() extends ConsumerStatefulWidget {
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends ConsumerState<HistoryScreen> {
+class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
   HistoryTab _selectedTab = HistoryTab.charts;
 
   @override
@@ -110,11 +112,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 }
 
-class ImportProgressBanner extends StatelessWidget {
-  const ImportProgressBanner({required this.importProgress});
-
-  final CardioImportProgress importProgress;
-
+class const ImportProgressBanner({
+  required final CardioImportProgress importProgress,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

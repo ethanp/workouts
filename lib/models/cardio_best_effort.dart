@@ -1,13 +1,11 @@
 import 'package:workouts/utils/run_formatting.dart';
 
-class CardioBestEffort {
-  const CardioBestEffort({
-    required this.bucket,
-    required this.elapsedSeconds,
-    this.workoutStartedAt,
-  });
-
-  factory CardioBestEffort.fromRow(Map<String, dynamic> row) {
+class const CardioBestEffort({
+  required final DistanceBucket bucket,
+  required final double elapsedSeconds,
+  final DateTime? workoutStartedAt,
+}) {
+  factory fromRow(Map<String, dynamic> row) {
     final distanceMeters = (row['distance_meters'] as num).toDouble();
     final bucket = DistanceBucket.fromMeters(distanceMeters);
     if (bucket == null) {
@@ -21,10 +19,6 @@ class CardioBestEffort {
           : null,
     );
   }
-
-  final DistanceBucket bucket;
-  final double elapsedSeconds;
-  final DateTime? workoutStartedAt;
 
   double paceSecondsPerUnit(double metersPerUnit) =>
       elapsedSeconds / (bucket.meters / metersPerUnit);

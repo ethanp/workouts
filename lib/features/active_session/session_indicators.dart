@@ -1,11 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WatchConnectionIndicator extends StatelessWidget {
-  const WatchConnectionIndicator({required this.isConnected});
-
-  final bool isConnected;
-
+class const WatchConnectionIndicator({required final bool isConnected})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = isConnected ? AppColors.success : AppColors.textColor3;

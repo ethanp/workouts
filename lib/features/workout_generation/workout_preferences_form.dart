@@ -9,17 +9,15 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 
 const _durationPresets = [5, 10, 15, 30, 45, 60];
 
-class WorkoutPreferencesForm extends ConsumerStatefulWidget {
-  const WorkoutPreferencesForm({required this.onPreferencesSubmitted});
-
-  final ValueChanged<WorkoutPreferences> onPreferencesSubmitted;
-
+class const WorkoutPreferencesForm({
+  required final ValueChanged<WorkoutPreferences> onPreferencesSubmitted,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<WorkoutPreferencesForm> createState() =>
       _WorkoutPreferencesFormState();
 }
 
-class _WorkoutPreferencesFormState
+class _WorkoutPreferencesFormState()
     extends ConsumerState<WorkoutPreferencesForm> {
   int? _selectedDuration;
   final Set<String> _selectedGoalIds = {};
@@ -169,7 +167,7 @@ class _WorkoutPreferencesFormState
         );
       },
       loading: () => const CupertinoActivityIndicator(),
-      error: (_, __) => Text(
+      error: (_, _) => Text(
         'Could not load goals.',
         style: AppTypography.body.copyWith(color: AppColors.textColor3),
       ),
@@ -231,7 +229,7 @@ class _WorkoutPreferencesFormState
         );
       },
       loading: () => const CupertinoActivityIndicator(),
-      error: (_, __) => Text(
+      error: (_, _) => Text(
         'Could not load locations.',
         style: AppTypography.body.copyWith(color: AppColors.textColor3),
       ),

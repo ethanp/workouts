@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalsModalLabeledField extends StatelessWidget {
-  const GoalsModalLabeledField({required this.label, required this.child});
-
-  final String label;
-  final Widget child;
-
+class const GoalsModalLabeledField({
+  required final String label,
+  required final Widget child,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(

@@ -1,17 +1,15 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class ExpandableCues extends StatefulWidget {
-  const ExpandableCues({required this.cues, this.isInitiallyExpanded = true});
-
-  final List<String> cues;
-  final bool isInitiallyExpanded;
-
+class const ExpandableCues({
+  required final List<String> cues,
+  final bool isInitiallyExpanded = true,
+}) extends StatefulWidget {
   @override
   State<ExpandableCues> createState() => _ExpandableCuesState();
 }
 
-class _ExpandableCuesState extends State<ExpandableCues> {
+class _ExpandableCuesState() extends State<ExpandableCues> {
   late bool _isExpanded;
 
   @override

@@ -18,10 +18,7 @@ part 'cardio_repository_powersync.g.dart';
 
 const _log = ELogger('CardioRepository');
 
-class CardioRepositoryPowerSync {
-  CardioRepositoryPowerSync(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
+class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   late final CardioMetricsStore _metricsStore = CardioMetricsStore(_powerSync);
   late final BestEffortStore _bestEffortStore = BestEffortStore(_powerSync);
   late final CardioImporter _importer = CardioImporter(
@@ -49,23 +46,21 @@ class CardioRepositoryPowerSync {
       )
       .map((workoutRows) => workoutRows.mapL(CardioWorkout.fromRow));
 
-  Stream<List<CardioRoutePoint>> watchRoutePoints(
-    String workoutId,
-  ) => _powerSync
-      .watch(
-        'SELECT * FROM cardio_route_points WHERE workout_id = ? ORDER BY point_index ASC',
-        parameters: [workoutId],
-      )
-      .map((pointRows) => pointRows.mapL(CardioRoutePoint.fromRow));
+  Stream<List<CardioRoutePoint>> watchRoutePoints(String workoutId) =>
+      _powerSync
+          .watch(
+            'SELECT * FROM cardio_route_points WHERE workout_id = ? ORDER BY point_index ASC',
+            parameters: [workoutId],
+          )
+          .map((pointRows) => pointRows.mapL(CardioRoutePoint.fromRow));
 
-  Stream<List<CardioHeartRateSample>> watchHeartRateSamples(
-    String workoutId,
-  ) => _powerSync
-      .watch(
-        'SELECT * FROM cardio_heart_rate_samples WHERE workout_id = ? ORDER BY timestamp ASC',
-        parameters: [workoutId],
-      )
-      .map((sampleRows) => sampleRows.mapL(CardioHeartRateSample.fromRow));
+  Stream<List<CardioHeartRateSample>> watchHeartRateSamples(String workoutId) =>
+      _powerSync
+          .watch(
+            'SELECT * FROM cardio_heart_rate_samples WHERE workout_id = ? ORDER BY timestamp ASC',
+            parameters: [workoutId],
+          )
+          .map((sampleRows) => sampleRows.mapL(CardioHeartRateSample.fromRow));
 
   Stream<List<CardioBestEffort>> watchBestEfforts() => _powerSync
       .watch(

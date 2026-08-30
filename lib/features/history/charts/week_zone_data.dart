@@ -1,17 +1,9 @@
 import 'package:workouts/models/hr_zone_time.dart';
 
-class WeekZoneData {
-  const WeekZoneData({
-    required this.label,
-    required this.weekStart,
-    required this.zoneTime,
-    this.isCurrent = false,
-    this.includeInAverage = true,
-  });
-
-  final String label;
-  final DateTime weekStart;
-  final HrZoneTime zoneTime;
-  final bool isCurrent;
-  final bool includeInAverage;
-}
+class const WeekZoneData({
+  required final String label,
+  required final DateTime weekStart,
+  required final HrZoneTime zoneTime,
+  final bool isCurrent = false,
+  final bool includeInAverage = true,
+});

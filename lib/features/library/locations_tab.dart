@@ -10,9 +10,7 @@ import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
-class LocationsTab extends ConsumerWidget {
-  const LocationsTab();
-
+class const LocationsTab() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locationsAsync = ref.watch(locationsProvider);
@@ -32,9 +30,7 @@ class LocationsTab extends ConsumerWidget {
   }
 }
 
-class _EmptyView extends StatelessWidget {
-  const _EmptyView();
-
+class const _EmptyView() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -71,11 +67,8 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-class _LocationsList extends StatelessWidget {
-  const _LocationsList({required this.locations});
-
-  final List<TrainingLocation> locations;
-
+class const _LocationsList({required final List<TrainingLocation> locations})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -113,11 +106,8 @@ class _LocationsList extends StatelessWidget {
   }
 }
 
-class _LocationCard extends ConsumerWidget {
-  const _LocationCard({required this.location});
-
-  final TrainingLocation location;
-
+class const _LocationCard({required final TrainingLocation location})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Dismissible(
@@ -229,16 +219,13 @@ class _LocationCard extends ConsumerWidget {
   }
 }
 
-class LocationFormSheet extends ConsumerStatefulWidget {
-  const LocationFormSheet({this.existing});
-
-  final TrainingLocation? existing;
-
+class const LocationFormSheet({final TrainingLocation? existing})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<LocationFormSheet> createState() => _LocationFormSheetState();
 }
 
-class _LocationFormSheetState extends ConsumerState<LocationFormSheet> {
+class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
   final _nameController = TextEditingController();
   final _equipmentController = TextEditingController();
   bool _generating = false;

@@ -16,16 +16,13 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SessionResumeBody extends ConsumerStatefulWidget {
-  const SessionResumeBody({required this.session});
-
-  final Session session;
-
+class const SessionResumeBody({required final Session session})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<SessionResumeBody> createState() => _SessionResumeBodyState();
 }
 
-class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
+class _SessionResumeBodyState() extends ConsumerState<SessionResumeBody> {
   late final PageController _pageController;
   Timer? _timer;
   late int _currentBlockIndex;
@@ -116,8 +113,9 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
                     session: session,
                     heartRateSamples: heartRateSamples,
                     watchConnected: watchConnected,
-                    onPreviousBlock:
-                        _canGoPrevious ? () => _goToBlock(_currentBlockIndex - 1) : null,
+                    onPreviousBlock: _canGoPrevious
+                        ? () => _goToBlock(_currentBlockIndex - 1)
+                        : null,
                     onNextBlock: _canGoNext(session)
                         ? () => _goToBlock(_currentBlockIndex + 1)
                         : null,
@@ -128,7 +126,9 @@ class _SessionResumeBodyState extends ConsumerState<SessionResumeBody> {
               ],
             ),
             if (keyboardVisible)
-              KeyboardEnterAccessory(onKeyboardDismissRequested: _dismissKeyboard),
+              KeyboardEnterAccessory(
+                onKeyboardDismissRequested: _dismissKeyboard,
+              ),
           ],
         ),
       ),

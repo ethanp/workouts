@@ -5,23 +5,14 @@ import 'package:workouts/features/goals/goals_list_chrome.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalsList extends StatelessWidget {
-  const GoalsList({
-    required this.activeGoals,
-    required this.archivedGoals,
-    required this.allGoals,
-    required this.showArchived,
-    required this.onToggleArchived,
-    required this.onAddGoal,
-  });
-
-  final List<FitnessGoal> activeGoals;
-  final List<FitnessGoal> archivedGoals;
-  final List<FitnessGoal> allGoals;
-  final bool showArchived;
-  final VoidCallback onToggleArchived;
-  final VoidCallback onAddGoal;
-
+class const GoalsList({
+  required final List<FitnessGoal> activeGoals,
+  required final List<FitnessGoal> archivedGoals,
+  required final List<FitnessGoal> allGoals,
+  required final bool showArchived,
+  required final VoidCallback onToggleArchived,
+  required final VoidCallback onAddGoal,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.symmetric(
@@ -113,9 +104,9 @@ class GoalsList extends StatelessWidget {
       goalCategories.add(fitnessGoal.category);
     }
     goalCategories.sort(
-      (firstCategory, secondCategory) => GoalCategoryStyle(
-        firstCategory,
-      ).label.compareTo(GoalCategoryStyle(secondCategory).label),
+      (firstCategory, secondCategory) =>
+          GoalCategoryStyle(firstCategory).label
+              .compareTo(GoalCategoryStyle(secondCategory).label),
     );
     return goalCategories;
   }
@@ -165,12 +156,10 @@ class GoalsList extends StatelessWidget {
   }
 }
 
-class _GoalPriorityGroup extends StatelessWidget {
-  const _GoalPriorityGroup({required this.priority, required this.children});
-
-  final int priority;
-  final List<Widget> children;
-
+class const _GoalPriorityGroup({
+  required final int priority,
+  required final List<Widget> children,
+}) extends StatelessWidget {
   Color get _priorityColor => switch (priority) {
     1 => CupertinoColors.systemYellow,
     2 => CupertinoColors.systemBlue,
@@ -189,12 +178,10 @@ class _GoalPriorityGroup extends StatelessWidget {
   );
 }
 
-class _GoalPriorityHeader extends StatelessWidget {
-  const _GoalPriorityHeader({required this.priority, required this.color});
-
-  final int priority;
-  final Color color;
-
+class const _GoalPriorityHeader({
+  required final int priority,
+  required final Color color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [
@@ -214,11 +201,9 @@ class _GoalPriorityHeader extends StatelessWidget {
   );
 }
 
-class _GoalCategoryHeader extends StatelessWidget {
-  const _GoalCategoryHeader({required this.categoryStyle});
-
-  final GoalCategoryStyle categoryStyle;
-
+class const _GoalCategoryHeader({
+  required final GoalCategoryStyle categoryStyle,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(top: AppSpacing.xs),

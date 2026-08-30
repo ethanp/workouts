@@ -9,11 +9,7 @@ import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 /// avoid coupling: the inputs are different (exercise id vs session id),
 /// the output shape is different (slim entries vs full aggregates), and
 /// hydrating full sessions just to filter their logs would be wasteful.
-class ExerciseHistoryStore {
-  ExerciseHistoryStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class ExerciseHistoryStore(final PowerSyncDatabase _powerSync) {
   /// Returns the most recent completed sessions in which [exerciseId] was
   /// logged, newest first, capped at [limit]. Each entry carries only the
   /// matching set logs and a small amount of session metadata; the caller
@@ -89,9 +85,8 @@ class ExerciseHistoryStore {
     final sessionId = sessionRow['session_id'] as String;
     return ExerciseHistoryEntry(
       sessionId: sessionId,
-      completedAt: DateTime.parse(
-        sessionRow['completed_at'] as String,
-      ).toLocal(),
+      completedAt: DateTime.parse(sessionRow['completed_at'] as String)
+          .toLocal(),
       templateName: sessionRow['template_name'] as String?,
       sets: logsBySessionId[sessionId] ?? const [],
     );

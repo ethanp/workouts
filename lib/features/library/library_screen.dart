@@ -18,21 +18,13 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 /// One Library destination: label, icon, and whether the section page shows +.
-class LibrarySection {
-  const LibrarySection({
-    required this.id,
-    required this.label,
-    required this.icon,
-    required this.subtitle,
-    required this.canAdd,
-  });
-
-  final String id;
-  final String label;
-  final IconData icon;
-  final String subtitle;
-  final bool canAdd;
-}
+class const LibrarySection({
+  required final String id,
+  required final String label,
+  required final IconData icon,
+  required final String subtitle,
+  required final bool canAdd,
+});
 
 const librarySections = <LibrarySection>[
   LibrarySection(
@@ -79,9 +71,7 @@ const librarySections = <LibrarySection>[
   ),
 ];
 
-class LibraryScreen extends ConsumerWidget {
-  const LibraryScreen();
-
+class const LibraryScreen() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return CupertinoPageScaffold(
@@ -99,7 +89,7 @@ class LibraryScreen extends ConsumerWidget {
             vertical: AppSpacing.md,
           ),
           itemCount: librarySections.length,
-          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
           itemBuilder: (context, sectionIndex) {
             final section = librarySections[sectionIndex];
             return _LibraryIndexRow(
@@ -117,12 +107,10 @@ class LibraryScreen extends ConsumerWidget {
   }
 }
 
-class _LibraryIndexRow extends StatelessWidget {
-  const _LibraryIndexRow({required this.section, required this.onActivated});
-
-  final LibrarySection section;
-  final VoidCallback onActivated;
-
+class const _LibraryIndexRow({
+  required final LibrarySection section,
+  required final VoidCallback onActivated,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -187,11 +175,8 @@ class _LibraryIndexRow extends StatelessWidget {
   }
 }
 
-class LibrarySectionPage extends ConsumerWidget {
-  const LibrarySectionPage({required this.section});
-
-  final LibrarySection section;
-
+class const LibrarySectionPage({required final LibrarySection section})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return CupertinoPageScaffold(
@@ -297,14 +282,12 @@ class LibrarySectionPage extends ConsumerWidget {
   }
 }
 
-class _NewTemplateSheet extends ConsumerStatefulWidget {
-  const _NewTemplateSheet();
-
+class const _NewTemplateSheet() extends ConsumerStatefulWidget {
   @override
   ConsumerState<_NewTemplateSheet> createState() => _NewTemplateSheetState();
 }
 
-class _NewTemplateSheetState extends ConsumerState<_NewTemplateSheet> {
+class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
   final _nameController = TextEditingController();
   final _goalController = TextEditingController();
 

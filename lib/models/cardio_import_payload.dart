@@ -1,40 +1,22 @@
 import 'package:workouts/models/cardio_type.dart';
 
-class CardioImportPayload {
-  const CardioImportPayload({
-    required this.externalWorkoutId,
-    required this.activityType,
-    required this.startedAt,
-    required this.endedAt,
-    required this.durationSeconds,
-    required this.distanceMeters,
-    required this.energyKcal,
-    required this.avgHeartRateBpm,
-    required this.maxHeartRateBpm,
-    required this.routeAvailable,
-    required this.sourceName,
-    required this.sourceBundleId,
-    required this.deviceModel,
-    required this.routePoints,
-    required this.heartRateSamples,
-  });
-
-  final String externalWorkoutId;
-  final CardioType activityType;
-  final String startedAt;
-  final String endedAt;
-  final int durationSeconds;
-  final double distanceMeters;
-  final double? energyKcal;
-  final double? avgHeartRateBpm;
-  final double? maxHeartRateBpm;
-  final bool routeAvailable;
-  final String sourceName;
-  final String? sourceBundleId;
-  final String? deviceModel;
-  final List<RoutePointPayload> routePoints;
-  final List<HeartRateSamplePayload> heartRateSamples;
-
+class const CardioImportPayload({
+  required final String externalWorkoutId,
+  required final CardioType activityType,
+  required final String startedAt,
+  required final String endedAt,
+  required final int durationSeconds,
+  required final double distanceMeters,
+  required final double? energyKcal,
+  required final double? avgHeartRateBpm,
+  required final double? maxHeartRateBpm,
+  required final bool routeAvailable,
+  required final String sourceName,
+  required final String? sourceBundleId,
+  required final String? deviceModel,
+  required final List<RoutePointPayload> routePoints,
+  required final List<HeartRateSamplePayload> heartRateSamples,
+}) {
   static CardioImportPayload? tryParse(Map<String, dynamic> payload) {
     final String? externalWorkoutId = payload['externalWorkoutId'] as String?;
     final String? startedAt = payload['startDate'] as String?;
@@ -68,19 +50,12 @@ class CardioImportPayload {
   }
 }
 
-class RoutePointPayload {
-  const RoutePointPayload({
-    required this.lat,
-    required this.lng,
-    required this.altitudeMeters,
-    required this.timestamp,
-  });
-
-  final double lat;
-  final double lng;
-  final double? altitudeMeters;
-  final String? timestamp;
-
+class const RoutePointPayload({
+  required final double lat,
+  required final double lng,
+  required final double? altitudeMeters,
+  required final String? timestamp,
+}) {
   static List<RoutePointPayload> parseList(Object? raw) {
     if (raw is! List) return const [];
     final parsedPoints = <RoutePointPayload>[];
@@ -103,12 +78,10 @@ class RoutePointPayload {
   }
 }
 
-class HeartRateSamplePayload {
-  const HeartRateSamplePayload({required this.timestamp, required this.bpm});
-
-  final String timestamp;
-  final int bpm;
-
+class const HeartRateSamplePayload({
+  required final String timestamp,
+  required final int bpm,
+}) {
   static List<HeartRateSamplePayload> parseList(Object? raw) {
     if (raw is! List) return const [];
     final parsedSamples = <HeartRateSamplePayload>[];

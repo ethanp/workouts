@@ -10,13 +10,11 @@ const _uuid = Uuid();
 final _workoutIdNamespace = Namespace.url.value;
 
 /// Orchestrates importing HealthKit cardio workouts into the local database.
-class CardioImporter {
-  CardioImporter(this._powerSync, this._metricsStore, this._bestEffortStore);
-
-  final PowerSyncDatabase _powerSync;
-  final CardioMetricsStore _metricsStore;
-  final BestEffortStore _bestEffortStore;
-
+class CardioImporter(
+  final PowerSyncDatabase _powerSync,
+  final CardioMetricsStore _metricsStore,
+  final BestEffortStore _bestEffortStore,
+) {
   Future<int> upsertAll(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,

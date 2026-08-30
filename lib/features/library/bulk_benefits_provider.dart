@@ -11,17 +11,11 @@ part 'bulk_benefits_provider.g.dart';
 
 const _log = ELogger('BulkBenefits');
 
-class BulkBenefitsProgress {
-  const BulkBenefitsProgress({
-    required this.completed,
-    required this.total,
-    this.failed = 0,
-  });
-
-  final int completed;
-  final int total;
-  final int failed;
-
+class const BulkBenefitsProgress({
+  required final int completed,
+  required final int total,
+  final int failed = 0,
+}) {
   bool get isDone => completed + failed >= total;
 
   String get label {
@@ -33,7 +27,7 @@ class BulkBenefitsProgress {
 }
 
 @riverpod
-class BulkBenefitsController extends _$BulkBenefitsController {
+class BulkBenefitsController() extends _$BulkBenefitsController {
   bool _cancelled = false;
 
   @override

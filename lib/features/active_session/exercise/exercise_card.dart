@@ -15,32 +15,22 @@ import 'package:workouts/models/session_rounds.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/widgets/replace_confirmation_dialog.dart';
 
-class ExerciseCard extends ConsumerStatefulWidget {
-  const ExerciseCard({
-    required this.block,
-    required this.exercise,
-    required this.isNextRecommended,
-    required this.onSetLogged,
-    this.dragHandle,
-  });
-
-  final SessionBlock block;
-  final WorkoutExercise exercise;
-  final bool isNextRecommended;
-  final VoidCallback onSetLogged;
-  final Widget? dragHandle;
-
+class const ExerciseCard({
+  required final SessionBlock block,
+  required final WorkoutExercise exercise,
+  required final bool isNextRecommended,
+  required final VoidCallback onSetLogged,
+  final Widget? dragHandle,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ExerciseCard> createState() => _ExerciseCardState();
 }
 
-class _ExerciseCardState extends ConsumerState<ExerciseCard> {
+class _ExerciseCardState() extends ConsumerState<ExerciseCard> {
   final _currentSetDraftController = CurrentSetDraftController();
 
-  ExerciseSetPlanContext get _planContext => ExerciseSetPlanContext(
-        block: widget.block,
-        exercise: widget.exercise,
-      );
+  ExerciseSetPlanContext get _planContext =>
+      ExerciseSetPlanContext(block: widget.block, exercise: widget.exercise);
 
   @override
   void initState() {
@@ -59,10 +49,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
     final ExerciseSetPlanContext planContext = _syncedPlanContext();
     final isStoppedEarly = ref
         .watch(earlyStoppedProvider)
-        .includes(
-          blockId: widget.block.id,
-          exerciseId: widget.exercise.id,
-        );
+        .includes(blockId: widget.block.id, exerciseId: widget.exercise.id);
     return ExerciseCardContent(
       timerIdentity: _timerIdentity(),
       planContext: planContext,
@@ -103,10 +90,7 @@ class _ExerciseCardState extends ConsumerState<ExerciseCard> {
   void _toggleStoppedEarly() {
     ref
         .read(earlyStoppedProvider.notifier)
-        .toggle(
-          blockId: widget.block.id,
-          exerciseId: widget.exercise.id,
-        );
+        .toggle(blockId: widget.block.id, exerciseId: widget.exercise.id);
   }
 
   void _openHistory() {

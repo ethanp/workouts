@@ -1,0 +1,10 @@
+# Freezed parses class-named constructors. Primary-constructor lints rewrite
+# those into a form the generator cannot read.
+include: ../../analysis_options.yaml
+
+linter:
+  rules:
+    use_primary_constructors: false
+    use_declaring_parameters: false
+    unnecessary_type_name_in_constructor: false
+    unnecessary_const_in_enum_constructor: false

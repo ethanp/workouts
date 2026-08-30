@@ -3,11 +3,8 @@ import 'package:workouts/models/session_note.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class SessionNotesCard extends StatelessWidget {
-  const SessionNotesCard({required this.notes});
-
-  final List<SessionNote> notes;
-
+class const SessionNotesCard({required final List<SessionNote> notes})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (notes.isEmpty) return const SizedBox.shrink();

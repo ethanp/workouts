@@ -3,28 +3,19 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WeeklyBarChart extends StatefulWidget {
-  const WeeklyBarChart({
-    required this.title,
-    required this.weeks,
-    this.barColor,
-    this.goalLine,
-    this.valueSuffix = '',
-    this.formatValue,
-  });
-
-  final String title;
-  final List<WeekData> weeks;
-  final Color? barColor;
-  final ChartGoalLine? goalLine;
-  final String valueSuffix;
-  final String Function(double value)? formatValue;
-
+class const WeeklyBarChart({
+  required final String title,
+  required final List<WeekData> weeks,
+  final Color? barColor,
+  final ChartGoalLine? goalLine,
+  final String valueSuffix = '',
+  final String Function(double value)? formatValue,
+}) extends StatefulWidget {
   @override
   State<WeeklyBarChart> createState() => _WeeklyBarChartState();
 }
 
-class _WeeklyBarChartState extends State<WeeklyBarChart> {
+class _WeeklyBarChartState() extends State<WeeklyBarChart> {
   int? _activeIndex;
 
   String _formatValue(double value) => widget.formatValue != null
@@ -187,7 +178,11 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        for (var weekIndex = 0; weekIndex < widget.weeks.length; weekIndex++) ...[
+        for (
+          var weekIndex = 0;
+          weekIndex < widget.weeks.length;
+          weekIndex++
+        ) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(child: _interactiveBar(weekIndex, maxValue, color)),
         ],
@@ -333,7 +328,8 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
             clipBehavior: Clip.none,
             children: [
               for (var weekIndex = 0; weekIndex < count; weekIndex++)
-                if (weekIndex % labelStride == 0 || widget.weeks[weekIndex].isCurrent)
+                if (weekIndex % labelStride == 0 ||
+                    widget.weeks[weekIndex].isCurrent)
                   Positioned(
                     left:
                         weekIndex * (barWidth + barSpacing) + barWidth / 2 - 20,
@@ -364,32 +360,17 @@ class _WeeklyBarChartState extends State<WeeklyBarChart> {
   }
 }
 
-class ChartGoalLine {
-  const ChartGoalLine({
-    required this.target,
-    required this.label,
-    required this.color,
-  });
+class const ChartGoalLine({
+  required final double target,
+  required final String label,
+  required final Color color,
+});
 
-  final double target;
-  final String label;
-  final Color color;
-}
-
-class WeekData {
-  const WeekData({
-    required this.label,
-    required this.value,
-    required this.weekStart,
-    this.accentColors = const [],
-    this.isCurrent = false,
-    this.includeInAverage = true,
-  });
-
-  final String label;
-  final double value;
-  final DateTime weekStart;
-  final List<Color> accentColors;
-  final bool isCurrent;
-  final bool includeInAverage;
-}
+class const WeekData({
+  required final String label,
+  required final double value,
+  required final DateTime weekStart,
+  final List<Color> accentColors = const [],
+  final bool isCurrent = false,
+  final bool includeInAverage = true,
+});

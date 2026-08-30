@@ -9,17 +9,14 @@ import 'package:workouts/services/repositories/session/session_set_log_store.dar
 
 const _uuid = Uuid();
 
-class SessionExerciseStore {
-  SessionExerciseStore(
-    this._powerSync,
-    this._sessionHydrator,
-    this._setLogStore,
-  ) : _libraryExerciseStore = LibraryExerciseStore(_powerSync);
-
-  final PowerSyncDatabase _powerSync;
-  final SessionHydrator _sessionHydrator;
-  final SessionSetLogStore _setLogStore;
-  final LibraryExerciseStore _libraryExerciseStore;
+class SessionExerciseStore(
+  final PowerSyncDatabase _powerSync,
+  final SessionHydrator _sessionHydrator,
+  final SessionSetLogStore _setLogStore,
+) {
+  final LibraryExerciseStore _libraryExerciseStore = LibraryExerciseStore(
+    _powerSync,
+  );
 
   Future<Session> addExercise(
     Session session,

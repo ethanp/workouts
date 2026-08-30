@@ -8,7 +8,14 @@ import 'package:powersync/powersync.dart';
 /// below adapt that status into the shapes the UI renders.
 
 /// Detailed sync state for UI display.
-enum SyncState { connecting, downloading, uploading, synced, offline, error }
+enum SyncState() {
+  connecting,
+  downloading,
+  uploading,
+  synced,
+  offline,
+  error,
+}
 
 final syncStateProvider = Provider<SyncState>((ref) {
   return ref
@@ -28,7 +35,7 @@ final syncStateProvider = Provider<SyncState>((ref) {
           return SyncState.offline;
         },
         loading: () => SyncState.connecting,
-        error: (_, __) => SyncState.error,
+        error: (_, _) => SyncState.error,
       );
 });
 

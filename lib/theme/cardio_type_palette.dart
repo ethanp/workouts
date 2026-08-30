@@ -2,9 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class CardioTypePalette {
-  const CardioTypePalette._();
-
+class const CardioTypePalette._() {
   static Color colorFor(CardioType cardioType) => switch (cardioType) {
     CardioType.outdoorRun => AppColors.accentPrimary,
     CardioType.indoorRun => AppColors.accentSecondary,

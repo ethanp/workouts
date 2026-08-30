@@ -210,7 +210,7 @@ Future<List<ActivityItem>> activityForDate(Ref ref, DateTime date) async {
 }
 
 @riverpod
-class MetricsBackfillController extends _$MetricsBackfillController {
+class MetricsBackfillController() extends _$MetricsBackfillController {
   bool _disposed = false;
 
   @override
@@ -258,8 +258,8 @@ class MetricsBackfillController extends _$MetricsBackfillController {
 }
 
 class MetricsBackfillStatus {
-  const MetricsBackfillStatus({this.inProgress = false, this.label = ''});
-  const MetricsBackfillStatus.idle() : inProgress = false, label = '';
+  const new({this.inProgress = false, this.label = ''});
+  const new idle() : inProgress = false, label = '';
 
   final bool inProgress;
   final String label;

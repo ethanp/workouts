@@ -9,16 +9,13 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class ExerciseChatScreen extends ConsumerStatefulWidget {
-  const ExerciseChatScreen({required this.exercise});
-
-  final WorkoutExercise exercise;
-
+class const ExerciseChatScreen({required final WorkoutExercise exercise})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<ExerciseChatScreen> createState() => _ExerciseChatScreenState();
 }
 
-class _ExerciseChatScreenState extends ConsumerState<ExerciseChatScreen> {
+class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
   late final String _systemPrompt;
   final List<ChatMessage> _messages = [];
   String? _streamingDraft;

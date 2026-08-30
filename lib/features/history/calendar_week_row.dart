@@ -5,26 +5,16 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class CalendarWeekRow extends StatelessWidget {
+class const CalendarWeekRow({
+  required final DateTime monthDate,
+  required final int daysInMonth,
+  required final int week,
+  required final int firstWeekday,
+  required final WeekMax globalMax,
+  required final Map<DateTime, ActivityCalendarDay> activityData,
+  required final void Function(DateTime date) onDateSelected,
+}) extends StatelessWidget {
   static const summaryWidth = 74.0;
-
-  const CalendarWeekRow({
-    required this.monthDate,
-    required this.daysInMonth,
-    required this.week,
-    required this.firstWeekday,
-    required this.globalMax,
-    required this.activityData,
-    required this.onDateSelected,
-  });
-
-  final DateTime monthDate;
-  final int daysInMonth;
-  final int week;
-  final int firstWeekday;
-  final WeekMax globalMax;
-  final Map<DateTime, ActivityCalendarDay> activityData;
-  final void Function(DateTime date) onDateSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -77,25 +67,16 @@ class CalendarWeekRow extends StatelessWidget {
   }
 }
 
-class _WeekSummary extends StatelessWidget {
+class const _WeekSummary({
+  required final bool ownsWeek,
+  required final int week,
+  required final int firstWeekday,
+  required final DateTime monthDate,
+  required final Map<DateTime, ActivityCalendarDay> activityData,
+  required final WeekMax globalMax,
+}) extends StatelessWidget {
   static const _summaryFontSize = 10.0;
   static const _daysBadgeWidth = 18.0;
-
-  const _WeekSummary({
-    required this.ownsWeek,
-    required this.week,
-    required this.firstWeekday,
-    required this.monthDate,
-    required this.activityData,
-    required this.globalMax,
-  });
-
-  final bool ownsWeek;
-  final int week;
-  final int firstWeekday;
-  final DateTime monthDate;
-  final Map<DateTime, ActivityCalendarDay> activityData;
-  final WeekMax globalMax;
 
   @override
   Widget build(BuildContext context) {
@@ -223,18 +204,10 @@ class _WeekSummary extends StatelessWidget {
   }
 }
 
-class _WeekStats {
-  const _WeekStats({
-    required this.activeDays,
-    required this.cardioMeters,
-    required this.totalMinutes,
-    required this.gteZone2Minutes,
-    required this.hasHrData,
-  });
-
-  final int activeDays;
-  final double cardioMeters;
-  final int totalMinutes;
-  final int gteZone2Minutes;
-  final bool hasHrData;
-}
+class const _WeekStats({
+  required final int activeDays,
+  required final double cardioMeters,
+  required final int totalMinutes,
+  required final int gteZone2Minutes,
+  required final bool hasHrData,
+});

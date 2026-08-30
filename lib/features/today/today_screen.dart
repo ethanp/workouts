@@ -16,9 +16,7 @@ import 'package:workouts/widgets/sync_status_icon.dart';
 import 'package:workouts/features/today/today_template_card.dart';
 import 'package:workouts/features/workout_generation/options/workout_options_sheet.dart';
 
-class TodayScreen extends ConsumerWidget {
-  const TodayScreen();
-
+class const TodayScreen() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.listen<AsyncValue<List<WorkoutTemplate>>>(todayTemplatesProvider, (
@@ -30,8 +28,9 @@ class TodayScreen extends ConsumerWidget {
     });
     final templates = ref.watch(todayTemplatesProvider);
     final activeSession = ref.watch(activeSessionProvider).value;
-    final inProgressSession =
-        activeSession?.isInProgress == true ? activeSession : null;
+    final inProgressSession = activeSession?.isInProgress == true
+        ? activeSession
+        : null;
 
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
@@ -92,15 +91,10 @@ class TodayScreen extends ConsumerWidget {
   );
 }
 
-class _SavedTemplatesSection extends StatelessWidget {
-  const _SavedTemplatesSection({
-    required this.templates,
-    required this.onStartTemplate,
-  });
-
-  final List<WorkoutTemplate> templates;
-  final ValueChanged<WorkoutTemplate> onStartTemplate;
-
+class const _SavedTemplatesSection({
+  required final List<WorkoutTemplate> templates,
+  required final ValueChanged<WorkoutTemplate> onStartTemplate,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,11 +126,8 @@ class _SavedTemplatesSection extends StatelessWidget {
   );
 }
 
-class _ResumeWorkoutCard extends ConsumerWidget {
-  const _ResumeWorkoutCard({required this.session});
-
-  final Session session;
-
+class const _ResumeWorkoutCard({required final Session session})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final templatesMap = ref.watch(templatesMapProvider).value ?? {};
@@ -200,11 +191,9 @@ class _ResumeWorkoutCard extends ConsumerWidget {
   }
 }
 
-class _GenerateWorkoutButton extends StatelessWidget {
-  const _GenerateWorkoutButton({required this.onSelected});
-
-  final void Function(LlmWorkoutOption option) onSelected;
-
+class const _GenerateWorkoutButton({
+  required final void Function(LlmWorkoutOption option) onSelected,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CupertinoButton(

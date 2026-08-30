@@ -1,7 +1,7 @@
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 
-class CurrentSetDraftController {
+class CurrentSetDraftController() {
   SetLogInput? _setLogInput;
   String? _setDraftKey;
 

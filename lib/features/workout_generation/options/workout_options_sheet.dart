@@ -12,9 +12,7 @@ import 'package:workouts/services/llm/llm_errors.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
-class WorkoutOptionsSheet extends ConsumerStatefulWidget {
-  const WorkoutOptionsSheet();
-
+class const WorkoutOptionsSheet() extends ConsumerStatefulWidget {
   static Future<LlmWorkoutOption?> show(BuildContext context) {
     return Navigator.of(context).push<LlmWorkoutOption>(
       CupertinoPageRoute(builder: (_) => const WorkoutOptionsSheet()),
@@ -26,7 +24,7 @@ class WorkoutOptionsSheet extends ConsumerStatefulWidget {
       _WorkoutOptionsSheetState();
 }
 
-class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
+class _WorkoutOptionsSheetState() extends ConsumerState<WorkoutOptionsSheet> {
   final _feedbackController = TextEditingController();
   String? _expandedOptionId;
   bool _showingForm = true;
@@ -59,7 +57,9 @@ class _WorkoutOptionsSheetState extends ConsumerState<WorkoutOptionsSheet> {
       ),
       child: SafeArea(
         child: _showingForm
-            ? WorkoutPreferencesForm(onPreferencesSubmitted: _generateFromPreferences)
+            ? WorkoutPreferencesForm(
+                onPreferencesSubmitted: _generateFromPreferences,
+              )
             : switch (generationState) {
                 GenerationIdle() => const WorkoutGenerationPreparingView(),
                 GenerationStreaming(:final partialText) =>

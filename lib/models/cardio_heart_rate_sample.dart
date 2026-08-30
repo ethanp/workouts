@@ -1,14 +1,12 @@
-class CardioHeartRateSample {
-  const CardioHeartRateSample({
-    required this.id,
-    required this.workoutId,
-    required this.timestamp,
-    required this.bpm,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory CardioHeartRateSample.fromRow(Map<String, dynamic> sampleRow) {
+class const CardioHeartRateSample({
+  required final String id,
+  required final String workoutId,
+  required final DateTime timestamp,
+  required final int bpm,
+  final DateTime? createdAt,
+  final DateTime? updatedAt,
+}) {
+  factory fromRow(Map<String, dynamic> sampleRow) {
     return CardioHeartRateSample(
       id: sampleRow['id'] as String,
       workoutId: sampleRow['workout_id'] as String,
@@ -18,13 +16,6 @@ class CardioHeartRateSample {
       updatedAt: _asDateTime(sampleRow['updated_at']),
     );
   }
-
-  final String id;
-  final String workoutId;
-  final DateTime timestamp;
-  final int bpm;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 }
 
 DateTime? _asDateTime(Object? rawValue) {

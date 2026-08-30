@@ -6,11 +6,9 @@ import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 
 /// Shows the 5-zone heart-rate breakdown for a single cardio workout.
-class WorkoutPolarizationCard extends StatelessWidget {
-  const WorkoutPolarizationCard({required this.samples});
-
-  final List<CardioHeartRateSample> samples;
-
+class const WorkoutPolarizationCard({
+  required final List<CardioHeartRateSample> samples,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (samples.isEmpty) return const SizedBox.shrink();

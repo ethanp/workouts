@@ -6,11 +6,7 @@ import 'package:workouts/models/session.dart';
 /// The set of (block, exercise) pairs the user has explicitly flagged as
 /// "I'm done with this one" during the active session. Hides the
 /// composite-key encoding so callers only deal in domain ids.
-class EarlyStopped {
-  EarlyStopped([this._keys = const <String>{}]);
-
-  final Set<String> _keys;
-
+class EarlyStopped([final Set<String> _keys = const <String>{}]) {
   bool includes({required String blockId, required String exerciseId}) =>
       _keys.contains(_keyFor(blockId: blockId, exerciseId: exerciseId));
 
@@ -35,7 +31,7 @@ class EarlyStopped {
 /// resume of a different session), the set resets. Markers don't survive
 /// app restart — the user can re-flag in one tap, and that's a deliberate
 /// trade-off to avoid a schema migration for what is essentially a UI hint.
-class EarlyStoppedNotifier extends Notifier<EarlyStopped> {
+class EarlyStoppedNotifier() extends Notifier<EarlyStopped> {
   @override
   EarlyStopped build() {
     ref.listen<AsyncValue<Session?>>(activeSessionProvider, (previous, next) {

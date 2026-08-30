@@ -1,8 +1,6 @@
 import 'package:workouts/services/context_builder.dart';
 
-class LlmWorkoutPromptBuilder {
-  const LlmWorkoutPromptBuilder();
-
+class const LlmWorkoutPromptBuilder() {
   String buildSystemPrompt() {
     return '''You are a personal fitness coach. Based on the user's goals, constraints, training influences, and recent training history, suggest 2-3 workout options for today.
 

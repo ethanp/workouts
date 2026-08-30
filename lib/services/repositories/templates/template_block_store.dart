@@ -1,11 +1,7 @@
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/workout_block.dart';
 
-class TemplateBlockStore {
-  TemplateBlockStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class TemplateBlockStore(final PowerSyncDatabase _powerSync) {
   Future<void> insertBlock(
     String templateId,
     String blockId,

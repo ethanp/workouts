@@ -7,12 +7,10 @@ import 'package:workouts/services/repositories/templates/template_repository_pow
 
 const _uuid = Uuid();
 
-class SessionMaterializer {
-  SessionMaterializer(this._powerSync, this._templateRepository);
-
-  final PowerSyncDatabase _powerSync;
-  final TemplateRepositoryPowerSync _templateRepository;
-
+class SessionMaterializer(
+  final PowerSyncDatabase _powerSync,
+  final TemplateRepositoryPowerSync _templateRepository,
+) {
   Future<Session> startSession(String templateId) async {
     final templates = await _templateRepository.fetchTemplates();
     final template = templates.firstWhere(

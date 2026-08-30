@@ -4,7 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'background_note.freezed.dart';
 part 'background_note.g.dart';
 
-enum NoteCategory {
+enum NoteCategory({required final String icon}) {
   injuryHistory(icon: '🩹'),
   preference(icon: '💜'),
   equipment(icon: '🏋️'),
@@ -12,10 +12,6 @@ enum NoteCategory {
   avoid(icon: '⚠️'),
   medical(icon: '🏥'),
   philosophy(icon: '📚');
-
-  const NoteCategory({required this.icon});
-
-  final String icon;
 
   String get dbKey => name.snakeCase;
 

@@ -5,8 +5,8 @@ import 'package:uuid/uuid.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 
-class HealthKitBridge {
-  HealthKitBridge()
+class HealthKitBridge() {
+  this
     : _methodChannel = const MethodChannel('com.workouts/health_kit'),
       _heartRateChannel = const EventChannel('com.workouts/heart_rate_stream');
 
@@ -75,13 +75,15 @@ class HealthKitBridge {
     bool includeHeartRateSeries = true,
   }) async {
     try {
-      final payload = await _methodChannel
-          .invokeMethod<List<Object?>>('fetchRecentCardioWorkouts', {
-            'maxWorkouts': maxWorkouts,
-            'includeRoute': includeRoute,
-            'maxRoutePoints': maxRoutePoints,
-            'includeHeartRateSeries': includeHeartRateSeries,
-          });
+      final payload = await _methodChannel.invokeMethod<List<Object?>>(
+        'fetchRecentCardioWorkouts',
+        {
+          'maxWorkouts': maxWorkouts,
+          'includeRoute': includeRoute,
+          'maxRoutePoints': maxRoutePoints,
+          'includeHeartRateSeries': includeHeartRateSeries,
+        },
+      );
       if (payload == null) {
         return const [];
       }

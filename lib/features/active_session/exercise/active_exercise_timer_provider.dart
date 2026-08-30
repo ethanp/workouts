@@ -11,7 +11,7 @@ part 'active_exercise_timer_provider.g.dart';
 /// identity (`identical(...)`) determines ownership without any need for the
 /// timer to know about peers.
 @Riverpod(keepAlive: true)
-class ActiveExerciseTimer extends _$ActiveExerciseTimer {
+class ActiveExerciseTimer() extends _$ActiveExerciseTimer {
   @override
   Object? build() => null;
 

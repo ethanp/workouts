@@ -1,15 +1,10 @@
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/utils/weight_display.dart';
 
-class CurrentSetPlannedLabel {
-  const CurrentSetPlannedLabel({
-    required this.plannedSet,
-    required this.exercise,
-  });
-
-  final PlannedSet? plannedSet;
-  final WorkoutExercise exercise;
-
+class const CurrentSetPlannedLabel({
+  required final PlannedSet? plannedSet,
+  required final WorkoutExercise exercise,
+}) {
   String? get text {
     final PlannedSet? currentPlannedSet = plannedSet;
     if (currentPlannedSet == null) return null;

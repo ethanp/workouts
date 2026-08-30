@@ -9,17 +9,11 @@ const _prefsKey = 'active_interval_timer';
 
 /// Identifies which exercise card a persisted timer record belongs to.
 /// Encoded into the store record on write and compared on restore.
-class TimerIdentity {
-  const TimerIdentity({
-    required this.sessionId,
-    required this.blockId,
-    required this.exerciseId,
-  });
-
-  final String sessionId;
-  final String blockId;
-  final String exerciseId;
-
+class const TimerIdentity({
+  required final String sessionId,
+  required final String blockId,
+  required final String exerciseId,
+}) {
   bool matches(ActiveTimerRecord record) =>
       record.sessionId == sessionId &&
       record.blockId == blockId &&
@@ -41,23 +35,14 @@ class TimerIdentity {
 /// [pausedRemaining] should be populated:
 /// - while running, [endsAt] is the wall-clock instant the phase ends
 /// - while paused, [pausedRemaining] is what was left at pause time
-class ActiveTimerRecord {
-  const ActiveTimerRecord({
-    required this.sessionId,
-    required this.blockId,
-    required this.exerciseId,
-    required this.phase,
-    this.endsAt,
-    this.pausedRemaining,
-  });
-
-  final String sessionId;
-  final String blockId;
-  final String exerciseId;
-  final TimerPhase phase;
-  final DateTime? endsAt;
-  final Duration? pausedRemaining;
-
+class const ActiveTimerRecord({
+  required final String sessionId,
+  required final String blockId,
+  required final String exerciseId,
+  required final TimerPhase phase,
+  final DateTime? endsAt,
+  final Duration? pausedRemaining,
+}) {
   bool get isPaused => pausedRemaining != null;
 
   Map<String, dynamic> toJson() => {
@@ -101,11 +86,7 @@ class ActiveTimerRecord {
 /// `ExerciseIntervalTimer.initState` needs to know within the same frame
 /// whether a quit-survived timer should be restored — async would force
 /// a flicker through `idle` first.
-class ActiveTimerStore {
-  ActiveTimerStore(this._prefs);
-
-  final SharedPreferences _prefs;
-
+class ActiveTimerStore(final SharedPreferences _prefs) {
   ActiveTimerRecord? read() {
     final raw = _prefs.getString(_prefsKey);
     if (raw == null) return null;

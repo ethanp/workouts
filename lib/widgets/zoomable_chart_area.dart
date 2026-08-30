@@ -8,7 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 part 'zoomable_chart_area.g.dart';
 
 @riverpod
-class ChartZoomNotifier extends _$ChartZoomNotifier {
+class ChartZoomNotifier() extends _$ChartZoomNotifier {
   static const _minVisibleDays = 14;
   static const _defaultVisibleMonths = 3;
 
@@ -105,17 +105,15 @@ class ChartZoomNotifier extends _$ChartZoomNotifier {
   void reset() => state = null;
 }
 
-class ZoomableChartArea extends ConsumerStatefulWidget {
-  const ZoomableChartArea({required this.fullRange, required this.child});
-
-  final DateTimeRange fullRange;
-  final Widget child;
-
+class const ZoomableChartArea({
+  required final DateTimeRange fullRange,
+  required final Widget child,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<ZoomableChartArea> createState() => _ZoomableChartAreaState();
 }
 
-class _ZoomableChartAreaState extends ConsumerState<ZoomableChartArea> {
+class _ZoomableChartAreaState() extends ConsumerState<ZoomableChartArea> {
   double _lastScale = 1.0;
   Offset _lastFocalPoint = Offset.zero;
 

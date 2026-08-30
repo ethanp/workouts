@@ -6,28 +6,19 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class DismissibleExerciseCard extends ConsumerWidget {
-  const DismissibleExerciseCard({
-    required this.block,
-    required this.exercise,
-    required this.isNextRecommended,
-    required this.onSetLogged,
-    this.dragHandle,
-    this.wrapperKey,
-  });
-
-  final SessionBlock block;
-  final WorkoutExercise exercise;
-  final bool isNextRecommended;
-  final VoidCallback onSetLogged;
-  final Widget? dragHandle;
+class const DismissibleExerciseCard({
+  required final SessionBlock block,
+  required final WorkoutExercise exercise,
+  required final bool isNextRecommended,
+  required final VoidCallback onSetLogged,
+  final Widget? dragHandle,
 
   /// Key attached to an inner subtree (not to the widget itself). The host
   /// list owns the outer `key:` (e.g. ReorderableListView's required item
   /// key); `wrapperKey` lets `Scrollable.ensureVisible` still target the
   /// card via a stable per-exercise GlobalKey.
-  final Key? wrapperKey;
-
+  final Key? wrapperKey,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasLogs = block.logs.any(

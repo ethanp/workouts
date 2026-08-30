@@ -4,12 +4,10 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
-class ExerciseSetPlanContext {
-  const ExerciseSetPlanContext({required this.block, required this.exercise});
-
-  final SessionBlock block;
-  final WorkoutExercise exercise;
-
+class const ExerciseSetPlanContext({
+  required final SessionBlock block,
+  required final WorkoutExercise exercise,
+}) {
   List<SessionSetLog> get exerciseLogs => block.logs.whereL(
     (sessionSetLog) => sessionSetLog.exerciseId == exercise.id,
   );

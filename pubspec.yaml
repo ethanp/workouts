@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.0
+  sdk: ^3.13.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -38,10 +38,10 @@ dependencies:
     path: ../ethan_sync
 
   cupertino_icons: ^1.0.8
-  flutter_riverpod: ^3.0.0
-  riverpod_annotation: ^3.0.0
-  freezed_annotation: ^3.0.0
-  json_annotation: ^4.9.0
+  flutter_riverpod: ^3.4.2
+  riverpod_annotation: ^4.0.6
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
   powersync: ^1.18.0
   dart_jsonwebtoken: ^2.14.0
   http: ^1.2.0
@@ -65,10 +65,10 @@ dev_dependencies:
     sdk: flutter
 
   flutter_lints: ^5.0.0
-  build_runner: ^2.4.12
-  freezed: ^3.0.0
-  json_serializable: ^6.9.3
-  riverpod_generator: ^3.0.0
+  build_runner: ^2.16.0
+  freezed: ^4.0.1
+  json_serializable: ^6.14.1
+  riverpod_generator: ^4.0.8
   mocktail: ^1.0.5
 
 dependency_overrides:

@@ -14,15 +14,10 @@ import 'package:workouts/widgets/connection_gated_widget.dart';
 /// list. Returns the chosen [WorkoutExercise] via `Navigator.pop`. The caller
 /// cannot tell whether the result came from the library or was an AI-proposed
 /// new movement — that detail belongs to the picker.
-class ReplaceExercisePickerScreen extends ConsumerWidget {
-  const ReplaceExercisePickerScreen({
-    required this.originalExercise,
-    required this.excludeIds,
-  });
-
-  final WorkoutExercise originalExercise;
-  final Set<String> excludeIds;
-
+class const ReplaceExercisePickerScreen({
+  required final WorkoutExercise originalExercise,
+  required final Set<String> excludeIds,
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(allExercisesProvider);
@@ -65,22 +60,16 @@ class ReplaceExercisePickerScreen extends ConsumerWidget {
   }
 }
 
-class _ReplacePickerBody extends ConsumerStatefulWidget {
-  const _ReplacePickerBody({
-    required this.originalExercise,
-    required this.excludeIds,
-    required this.libraryExercises,
-  });
-
-  final WorkoutExercise originalExercise;
-  final Set<String> excludeIds;
-  final List<WorkoutExercise> libraryExercises;
-
+class const _ReplacePickerBody({
+  required final WorkoutExercise originalExercise,
+  required final Set<String> excludeIds,
+  required final List<WorkoutExercise> libraryExercises,
+}) extends ConsumerStatefulWidget {
   @override
   ConsumerState<_ReplacePickerBody> createState() => _ReplacePickerBodyState();
 }
 
-class _ReplacePickerBodyState extends ConsumerState<_ReplacePickerBody> {
+class _ReplacePickerBodyState() extends ConsumerState<_ReplacePickerBody> {
   ExerciseModality? _selectedModality;
   List<ExerciseReplacementSuggestion>? _suggestions;
   bool _isLoadingSuggestions = false;

@@ -6,38 +6,24 @@ import 'package:workouts/theme/app_theme.dart';
 /// A smoothed trailing-7-day line chart with goal reference lines and a
 /// drag-to-inspect readout. Driven entirely by configuration so it can render
 /// any daily metric (Z2-5 minutes, active days, etc.).
-class RollingDailyChart extends StatefulWidget {
-  const RollingDailyChart({
-    required this.title,
-    required this.points,
-    required this.goals,
-    required this.lineColor,
-    required this.formatValue,
-    this.summarySuffix = '',
-    this.inspectHint = 'Drag to inspect the trailing 7-day total',
-    this.emptySummaryLabel = 'No data yet',
-    this.showGoalDailyPace = false,
-    this.displayStart,
-    this.displayEnd,
-  });
-
-  final String title;
-  final List<RollingDailyPoint> points;
-  final List<RollingDailyGoal> goals;
-  final Color lineColor;
-  final String Function(double value) formatValue;
-  final String summarySuffix;
-  final String inspectHint;
-  final String emptySummaryLabel;
-  final bool showGoalDailyPace;
-  final DateTime? displayStart;
-  final DateTime? displayEnd;
-
+class const RollingDailyChart({
+  required final String title,
+  required final List<RollingDailyPoint> points,
+  required final List<RollingDailyGoal> goals,
+  required final Color lineColor,
+  required final String Function(double value) formatValue,
+  final String summarySuffix = '',
+  final String inspectHint = 'Drag to inspect the trailing 7-day total',
+  final String emptySummaryLabel = 'No data yet',
+  final bool showGoalDailyPace = false,
+  final DateTime? displayStart,
+  final DateTime? displayEnd,
+}) extends StatefulWidget {
   @override
   State<RollingDailyChart> createState() => _RollingDailyChartState();
 }
 
-class _RollingDailyChartState extends State<RollingDailyChart> {
+class _RollingDailyChartState() extends State<RollingDailyChart> {
   Offset? _hoverPosition;
   RollingDailyPoint? _hoveredPoint;
 
@@ -263,12 +249,8 @@ class _RollingDailyChartState extends State<RollingDailyChart> {
   String _formatDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
 }
 
-class _GoalChip extends StatelessWidget {
-  const _GoalChip({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
+class const _GoalChip({required final String label, required final Color color})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(

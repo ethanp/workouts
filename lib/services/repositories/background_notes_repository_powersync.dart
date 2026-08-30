@@ -10,11 +10,7 @@ part 'background_notes_repository_powersync.g.dart';
 
 const _uuid = Uuid();
 
-class BackgroundNotesRepositoryPowerSync {
-  BackgroundNotesRepositoryPowerSync(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class BackgroundNotesRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   Future<List<BackgroundNote>> fetchNotes() async {
     final noteRows = await _powerSync.getAll(
       'SELECT * FROM background_notes ORDER BY created_at DESC',

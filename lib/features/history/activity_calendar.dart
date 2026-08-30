@@ -6,12 +6,10 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/features/history/calendar_week_row.dart';
 
-class ActivityCalendar extends StatelessWidget {
-  const ActivityCalendar({required this.activityData, required this.onDateSelected});
-
-  final Map<DateTime, ActivityCalendarDay> activityData;
-  final void Function(DateTime date) onDateSelected;
-
+class const ActivityCalendar({
+  required final Map<DateTime, ActivityCalendarDay> activityData,
+  required final void Function(DateTime date) onDateSelected,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

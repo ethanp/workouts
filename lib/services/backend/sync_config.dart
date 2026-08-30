@@ -141,11 +141,7 @@ const _conflictColumns = <String, String>{
 /// Resolves the workouts-specific PostgREST 409 conflicts: re-homing exercises
 /// by name after a reinstall, recovering cardio rows whose `external_workout_id`
 /// collides, and discarding orphaned child rows.
-class WorkoutsConflictResolver extends ConflictResolver {
-  const WorkoutsConflictResolver();
-
-  // Child tables: if the parent row is gone server-side, discard the op rather
-  // than retrying forever.
+class const WorkoutsConflictResolver() extends ConflictResolver {
   static const _childTables = {
     'cardio_route_points',
     'cardio_heart_rate_samples',

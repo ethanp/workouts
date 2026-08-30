@@ -1,11 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalsEmptyState extends StatelessWidget {
-  const GoalsEmptyState({required this.onAddGoal});
-
-  final VoidCallback onAddGoal;
-
+class const GoalsEmptyState({required final VoidCallback onAddGoal})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(

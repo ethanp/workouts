@@ -9,17 +9,11 @@ import 'package:workouts/models/workout_exercise.dart';
 /// logged set are immutable (the predicates and mutators only ever touch the
 /// unlogged tail). This is the single source of truth for warmup-list rules
 /// — no other code should reason about warmup add/remove directly.
-class WarmupSets {
-  const WarmupSets({
-    required this.plannedSets,
-    required this.exercise,
-    required this.loggedSetCount,
-  });
-
-  final List<PlannedSet> plannedSets;
-  final WorkoutExercise exercise;
-  final int loggedSetCount;
-
+class const WarmupSets({
+  required final List<PlannedSet> plannedSets,
+  required final WorkoutExercise exercise,
+  required final int loggedSetCount,
+}) {
   /// True when there is at least one unlogged set in front. A new warmup
   /// will be inserted at index [loggedSetCount], pushing the rest back.
   bool get canAdd => loggedSetCount < plannedSets.length;

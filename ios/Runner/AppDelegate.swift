@@ -3,7 +3,7 @@ import UIKit
 import UserNotifications
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let healthKitBridge = HealthKitBridge()
   private let heartRateStreamHandler = HeartRateStreamHandler()
   private let watchConnectivityStreamHandler = WatchConnectivityStreamHandler()
@@ -19,58 +19,57 @@ import UserNotifications
     if #available(iOS 10.0, *) {
       UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     }
-    GeneratedPluginRegistrant.register(with: self)
     let didFinish = super.application(application, didFinishLaunchingWithOptions: launchOptions)
-
-    if let controller = window?.rootViewController as? FlutterViewController {
-      let messenger = controller.binaryMessenger
-      let methodChannel = FlutterMethodChannel(
-        name: "com.workouts/health_kit",
-        binaryMessenger: messenger
-      )
-      methodChannel.setMethodCallHandler { [weak self] call, result in
-        guard let self else {
-          result(FlutterError(code: "bridge_missing", message: "HealthKit bridge missing", details: nil))
-          return
-        }
-        self.handleHealthKitMethodCall(call: call, result: result)
-      }
-
-      FlutterEventChannel(
-        name: "com.workouts/heart_rate_stream",
-        binaryMessenger: messenger
-      ).setStreamHandler(heartRateStreamHandler)
-
-      FlutterEventChannel(
-        name: "com.workouts/watch_connectivity",
-        binaryMessenger: messenger
-      ).setStreamHandler(watchConnectivityStreamHandler)
-
-      FlutterEventChannel(
-        name: "com.workouts/watch_commands",
-        binaryMessenger: messenger
-      ).setStreamHandler(watchCommandStreamHandler)
-      
-      // Watch workout control channel
-      let watchChannel = FlutterMethodChannel(
-        name: "com.workouts/watch_workout",
-        binaryMessenger: messenger
-      )
-      watchChannel.setMethodCallHandler { [weak self] call, result in
-        guard let self else {
-          result(FlutterError(code: "bridge_missing", message: "Watch bridge missing", details: nil))
-          return
-        }
-        self.handleWatchMethodCall(call: call, result: result)
-      }
-    }
-
     WatchSessionManager.shared.configureSession(
       connectivityHandler: watchConnectivityStreamHandler,
       heartRateHandler: heartRateStreamHandler,
       watchCommandHandler: watchCommandStreamHandler
     )
     return didFinish
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    let messenger = engineBridge.applicationRegistrar.messenger()
+
+    let methodChannel = FlutterMethodChannel(
+      name: "com.workouts/health_kit",
+      binaryMessenger: messenger
+    )
+    methodChannel.setMethodCallHandler { [weak self] call, result in
+      guard let self else {
+        result(FlutterError(code: "bridge_missing", message: "HealthKit bridge missing", details: nil))
+        return
+      }
+      self.handleHealthKitMethodCall(call: call, result: result)
+    }
+
+    FlutterEventChannel(
+      name: "com.workouts/heart_rate_stream",
+      binaryMessenger: messenger
+    ).setStreamHandler(heartRateStreamHandler)
+
+    FlutterEventChannel(
+      name: "com.workouts/watch_connectivity",
+      binaryMessenger: messenger
+    ).setStreamHandler(watchConnectivityStreamHandler)
+
+    FlutterEventChannel(
+      name: "com.workouts/watch_commands",
+      binaryMessenger: messenger
+    ).setStreamHandler(watchCommandStreamHandler)
+
+    let watchChannel = FlutterMethodChannel(
+      name: "com.workouts/watch_workout",
+      binaryMessenger: messenger
+    )
+    watchChannel.setMethodCallHandler { [weak self] call, result in
+      guard let self else {
+        result(FlutterError(code: "bridge_missing", message: "Watch bridge missing", details: nil))
+        return
+      }
+      self.handleWatchMethodCall(call: call, result: result)
+    }
   }
 
   private func handleHealthKitMethodCall(call: FlutterMethodCall, result: @escaping FlutterResult) {

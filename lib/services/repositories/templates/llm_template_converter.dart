@@ -5,9 +5,7 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 
-class LlmTemplateConverter {
-  LlmTemplateConverter._();
-
+class LlmTemplateConverter._() {
   static const _uuid = Uuid();
 
   static WorkoutTemplate fromOption(LlmWorkoutOption option) {

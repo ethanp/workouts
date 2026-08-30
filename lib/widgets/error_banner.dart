@@ -1,4 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
+
 import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
@@ -12,16 +13,12 @@ const _recentLogLineCount = 75;
 
 const _log = ELogger('ErrorBanner');
 
-class ErrorBanner extends StatefulWidget {
-  const ErrorBanner({required this.child});
-
-  final Widget child;
-
+class const ErrorBanner({required final Widget child}) extends StatefulWidget {
   @override
   State<ErrorBanner> createState() => _ErrorBannerState();
 }
 
-class _ErrorBannerState extends State<ErrorBanner> {
+class _ErrorBannerState() extends State<ErrorBanner> {
   StreamSubscription<String>? _subscription;
   String? _currentError;
 
@@ -63,12 +60,10 @@ class _ErrorBannerState extends State<ErrorBanner> {
   }
 }
 
-class _ErrorToast extends StatelessWidget {
-  const _ErrorToast({required this.message, required this.onDismiss});
-
-  final String message;
-  final VoidCallback onDismiss;
-
+class const _ErrorToast({
+  required final String message,
+  required final VoidCallback onDismiss,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

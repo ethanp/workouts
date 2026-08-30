@@ -7,11 +7,8 @@ import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
-class ExercisePickerScreen extends ConsumerWidget {
-  const ExercisePickerScreen({required this.excludeIds});
-
-  final Set<String> excludeIds;
-
+class const ExercisePickerScreen({required final Set<String> excludeIds})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(allExercisesProvider);
@@ -43,20 +40,15 @@ class ExercisePickerScreen extends ConsumerWidget {
   }
 }
 
-class _ExercisePickerBody extends StatefulWidget {
-  const _ExercisePickerBody({
-    required this.exercises,
-    required this.excludeIds,
-  });
-
-  final List<WorkoutExercise> exercises;
-  final Set<String> excludeIds;
-
+class const _ExercisePickerBody({
+  required final List<WorkoutExercise> exercises,
+  required final Set<String> excludeIds,
+}) extends StatefulWidget {
   @override
   State<_ExercisePickerBody> createState() => _ExercisePickerBodyState();
 }
 
-class _ExercisePickerBodyState extends State<_ExercisePickerBody> {
+class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   ExerciseModality? _selectedModality;
 
   List<WorkoutExercise> get filteredExercises {

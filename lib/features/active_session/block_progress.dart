@@ -13,11 +13,8 @@ import 'package:workouts/models/workout_exercise.dart';
 /// Construct once per (block, earlyStopped) snapshot — the constructor
 /// builds the count map eagerly. Cheap, but don't construct in a tight
 /// inner loop if you can hoist it.
-class BlockProgress {
-  BlockProgress(SessionBlock block, EarlyStopped earlyStopped)
-    : exerciseProgress = _build(block, earlyStopped);
-
-  final List<ExerciseProgress> exerciseProgress;
+class BlockProgress(SessionBlock block, EarlyStopped earlyStopped) {
+  final List<ExerciseProgress> exerciseProgress = _build(block, earlyStopped);
 
   static List<ExerciseProgress> _build(
     SessionBlock block,
@@ -56,20 +53,12 @@ class BlockProgress {
 /// Per-exercise slice of [BlockProgress]. Knows how many sets have been
 /// logged for [exercise] and whether the user explicitly flagged it as
 /// early-stopped, and answers the questions that derive from those two.
-class ExerciseProgress {
-  ExerciseProgress._({
-    required this.exercise,
-    required String blockId,
-    required this.loggedCount,
-    required EarlyStopped earlyStopped,
-  }) : _blockId = blockId,
-       _earlyStopped = earlyStopped;
-
-  final WorkoutExercise exercise;
-  final int loggedCount;
-  final String _blockId;
-  final EarlyStopped _earlyStopped;
-
+class ExerciseProgress._({
+  required final WorkoutExercise exercise,
+  required final String _blockId,
+  required final int loggedCount,
+  required final EarlyStopped _earlyStopped,
+}) {
   /// True when this exercise actually has scheduled sets to do.
   bool get hasScheduledWork => exercise.effectiveTargetSets > 0;
 

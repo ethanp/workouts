@@ -5,23 +5,21 @@ import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class NoteFormSheet extends StatefulWidget {
-  const NoteFormSheet({
-    required this.availableGoals,
-    this.initialNote,
-    required this.onSave,
-  });
-
-  final List<FitnessGoal> availableGoals;
-  final BackgroundNote? initialNote;
-  final void Function(String content, NoteCategory category, String? goalId)
-  onSave;
-
+class const NoteFormSheet({
+  required final List<FitnessGoal> availableGoals,
+  final BackgroundNote? initialNote,
+  required final void Function(
+    String content,
+    NoteCategory category,
+    String? goalId,
+  )
+  onSave,
+}) extends StatefulWidget {
   @override
   State<NoteFormSheet> createState() => _NoteFormSheetState();
 }
 
-class _NoteFormSheetState extends State<NoteFormSheet> {
+class _NoteFormSheetState() extends State<NoteFormSheet> {
   late final TextEditingController _contentController;
   late NoteCategory _selectedCategory;
   String? _selectedGoalId;

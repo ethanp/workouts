@@ -3,23 +3,21 @@ import 'package:workouts/features/goals/goals_modal_labeled_field.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalFormSheet extends StatefulWidget {
-  const GoalFormSheet({this.initialGoal, required this.onSave});
-
-  final FitnessGoal? initialGoal;
-  final Future<void> Function(
+class const GoalFormSheet({
+  final FitnessGoal? initialGoal,
+  required final Future<void> Function(
     String title,
     GoalCategory category,
     String description,
     int priority,
   )
-  onSave;
-
+  onSave,
+}) extends StatefulWidget {
   @override
   State<GoalFormSheet> createState() => _GoalFormSheetState();
 }
 
-class _GoalFormSheetState extends State<GoalFormSheet> {
+class _GoalFormSheetState() extends State<GoalFormSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late GoalCategory _selectedCategory;

@@ -1,17 +1,15 @@
-class CardioRoutePoint {
-  const CardioRoutePoint({
-    required this.id,
-    required this.workoutId,
-    required this.pointIndex,
-    required this.latitude,
-    required this.longitude,
-    this.altitudeMeters,
-    this.recordedAt,
-    this.createdAt,
-    this.updatedAt,
-  });
-
-  factory CardioRoutePoint.fromRow(Map<String, dynamic> routePointRow) {
+class const CardioRoutePoint({
+  required final String id,
+  required final String workoutId,
+  required final int pointIndex,
+  required final double latitude,
+  required final double longitude,
+  final double? altitudeMeters,
+  final DateTime? recordedAt,
+  final DateTime? createdAt,
+  final DateTime? updatedAt,
+}) {
+  factory fromRow(Map<String, dynamic> routePointRow) {
     return CardioRoutePoint(
       id: routePointRow['id'] as String,
       workoutId: routePointRow['workout_id'] as String,
@@ -24,16 +22,6 @@ class CardioRoutePoint {
       updatedAt: _asDateTime(routePointRow['updated_at']),
     );
   }
-
-  final String id;
-  final String workoutId;
-  final int pointIndex;
-  final double latitude;
-  final double longitude;
-  final double? altitudeMeters;
-  final DateTime? recordedAt;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
 }
 
 double? _asDouble(Object? rawValue) {

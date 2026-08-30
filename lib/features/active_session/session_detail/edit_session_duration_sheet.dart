@@ -5,17 +5,14 @@ import 'package:workouts/services/repositories/session/session_repository_powers
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 
-class EditSessionDurationSheet extends ConsumerStatefulWidget {
-  const EditSessionDurationSheet({required this.session});
-
-  final Session session;
-
+class const EditSessionDurationSheet({required final Session session})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<EditSessionDurationSheet> createState() =>
       _EditSessionDurationSheetState();
 }
 
-class _EditSessionDurationSheetState
+class _EditSessionDurationSheetState()
     extends ConsumerState<EditSessionDurationSheet> {
   late Duration _duration;
   bool _saving = false;

@@ -1,5 +1,6 @@
 import 'package:ethan_sync/ethan_sync.dart' show syncStatusProvider;
 import 'package:ethan_utils/ethan_utils.dart';
+
 import 'dart:async';
 
 import 'package:powersync/powersync.dart';
@@ -19,7 +20,7 @@ part 'cardio_provider.g.dart';
 const _log = ELogger('CardioImportController');
 
 class CardioImportProgress {
-  const CardioImportProgress({
+  const new({
     required this.totalWorkouts,
     required this.processedWorkouts,
     required this.inProgress,
@@ -28,7 +29,7 @@ class CardioImportProgress {
     this.status = '',
   });
 
-  const CardioImportProgress.idle()
+  const new idle()
     : totalWorkouts = 0,
       processedWorkouts = 0,
       newWorkouts = 0,
@@ -141,7 +142,7 @@ Future<void> cardioMetricsBackfill(Ref ref) async {
 }
 
 @riverpod
-class CardioImportController extends _$CardioImportController {
+class CardioImportController() extends _$CardioImportController {
   @override
   Future<CardioImportProgress> build() async {
     return const CardioImportProgress.idle();

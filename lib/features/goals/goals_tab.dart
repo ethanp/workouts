@@ -6,14 +6,12 @@ import 'package:workouts/features/goals/goals_list.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalsTab extends ConsumerStatefulWidget {
-  const GoalsTab();
-
+class const GoalsTab() extends ConsumerStatefulWidget {
   @override
   ConsumerState<GoalsTab> createState() => _GoalsTabState();
 }
 
-class _GoalsTabState extends ConsumerState<GoalsTab> {
+class _GoalsTabState() extends ConsumerState<GoalsTab> {
   bool _showArchived = false;
 
   @override

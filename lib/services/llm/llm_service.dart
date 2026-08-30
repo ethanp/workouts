@@ -1,4 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -24,20 +25,14 @@ part 'llm_service.g.dart';
 
 const _log = ELogger('LlmService');
 
-class LlmService {
-  final String proxyUrl;
-  final String appName;
-  final String appSecret;
-  final String clientId;
-  final http.Client client;
-
-  LlmService({
-    required this.proxyUrl,
-    required this.appName,
-    required this.appSecret,
-    required this.clientId,
-    http.Client? client,
-  }) : client = client ?? http.Client();
+class LlmService({
+  required final String proxyUrl,
+  required final String appName,
+  required final String appSecret,
+  required final String clientId,
+  http.Client? client,
+}) {
+  final http.Client client = client ?? http.Client();
 
   Future<LlmWorkoutResponse> generateWorkoutOptions({
     required WorkoutContext context,

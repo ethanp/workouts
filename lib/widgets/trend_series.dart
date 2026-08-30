@@ -2,35 +2,23 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 
-class TrendPoint {
-  const TrendPoint({required this.date, required this.value});
+class const TrendPoint({
+  required final DateTime date,
+  required final double value,
+});
 
-  final DateTime date;
-  final double value;
-}
+class const TrendSeries({
+  required final String label,
+  required final Color color,
+  required final List<TrendPoint> points,
+  required final String Function(double) formatValue,
+  final bool invertY = false,
+});
 
-class TrendSeries {
-  const TrendSeries({
-    required this.label,
-    required this.color,
-    required this.points,
-    required this.formatValue,
-    this.invertY = false,
-  });
-
-  final String label;
-  final Color color;
-  final List<TrendPoint> points;
-  final String Function(double) formatValue;
-  final bool invertY;
-}
-
-class TrendLine {
-  const TrendLine({required this.slope, required this.intercept});
-
-  final double slope;
-  final double intercept;
-
+class const TrendLine({
+  required final double slope,
+  required final double intercept,
+}) {
   static const _secondsPerMonth = 30.44 * 24 * 3600;
 
   double get slopePerMonth => slope * _secondsPerMonth;
@@ -41,8 +29,8 @@ class TrendLine {
 /// Computes padded min/max from the data points so values don't touch the
 /// chart edges. When [invertY] is true (e.g. pace, where lower is better),
 /// the mapping is flipped so that "better" values appear higher on the chart.
-class SeriesValueScale {
-  SeriesValueScale(List<TrendPoint> points, {required this.invertY}) {
+class SeriesValueScale(List<TrendPoint> points, {required final bool invertY}) {
+  this {
     var lo = double.infinity;
     var hi = -double.infinity;
     for (final trendPoint in points) {
@@ -56,8 +44,6 @@ class SeriesValueScale {
 
   late final double min;
   late final double max;
-  final bool invertY;
-
   double normalize(double value) {
     final range = max - min;
     if (range <= 0) return 0.5;

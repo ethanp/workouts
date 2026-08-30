@@ -20,14 +20,13 @@ part 'template_repository_powersync.g.dart';
 const _log = ELogger('TemplateRepo');
 const _uuid = Uuid();
 
-class TemplateRepositoryPowerSync {
-  TemplateRepositoryPowerSync(this._powerSync) {
+class TemplateRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
+  this {
     _hydrator = TemplateHydrator(_powerSync);
     _blockStore = TemplateBlockStore(_powerSync);
     _exerciseStore = TemplateExerciseStore(_powerSync);
   }
 
-  final PowerSyncDatabase _powerSync;
   late final TemplateHydrator _hydrator;
   late final TemplateBlockStore _blockStore;
   late final TemplateExerciseStore _exerciseStore;

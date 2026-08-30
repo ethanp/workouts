@@ -5,17 +5,15 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class TodayTemplateCard extends StatefulWidget {
-  const TodayTemplateCard({required this.template, required this.onStart});
-
-  final WorkoutTemplate template;
-  final VoidCallback onStart;
-
+class const TodayTemplateCard({
+  required final WorkoutTemplate template,
+  required final VoidCallback onStart,
+}) extends StatefulWidget {
   @override
   State<TodayTemplateCard> createState() => _TodayTemplateCardState();
 }
 
-class _TodayTemplateCardState extends State<TodayTemplateCard> {
+class _TodayTemplateCardState() extends State<TodayTemplateCard> {
   bool _isExpanded = false;
 
   int get totalDuration => widget.template.blocks

@@ -1,4 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
+
 import 'dart:ui' as ui;
 
 import 'package:flutter/foundation.dart';
@@ -13,8 +14,9 @@ const _log = ELogger('TileProxy');
 ///
 /// On construction it logs once whether the proxy URL or the direct-OSM
 /// fallback is being used.
-class LoggingCacheTileProvider extends TileProvider {
-  LoggingCacheTileProvider(this._tileProxyUrl) {
+class LoggingCacheTileProvider(final String _tileProxyUrl)
+    extends TileProvider {
+  this {
     if (_tileProxyUrl.contains('openstreetmap.org')) {
       _log.warn(
         'TILE_PROXY_URL unset — fetching tiles directly from OSM (no cache).',
@@ -24,19 +26,14 @@ class LoggingCacheTileProvider extends TileProvider {
     }
   }
 
-  final String _tileProxyUrl;
-
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
     return _LoggedTileImage(url: getTileUrl(coordinates, options));
   }
 }
 
-class _LoggedTileImage extends ImageProvider<_LoggedTileImage> {
-  const _LoggedTileImage({required this.url});
-
-  final String url;
-
+class const _LoggedTileImage({required final String url})
+    extends ImageProvider<_LoggedTileImage> {
   @override
   Future<_LoggedTileImage> obtainKey(ImageConfiguration configuration) =>
       SynchronousFuture(this);

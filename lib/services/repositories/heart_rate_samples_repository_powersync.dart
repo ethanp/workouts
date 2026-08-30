@@ -15,11 +15,7 @@ HeartRateSamplesRepository heartRateSamplesRepositoryPowerSync(Ref ref) {
   return HeartRateSamplesRepository(powerSyncDatabase);
 }
 
-class HeartRateSamplesRepository {
-  HeartRateSamplesRepository(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class HeartRateSamplesRepository(final PowerSyncDatabase _powerSync) {
   Stream<List<HeartRateSample>> watchSamplesForSession(String sessionId) {
     return _powerSync
         .watch(

@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class WorkoutFollowupAnswer extends StatelessWidget {
-  const WorkoutFollowupAnswer({required this.answer, required this.answering});
-
-  final String answer;
-  final bool answering;
-
+class const WorkoutFollowupAnswer({
+  required final String answer,
+  required final bool answering,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(

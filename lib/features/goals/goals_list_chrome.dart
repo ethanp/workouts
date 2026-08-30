@@ -1,17 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class GoalsSectionHeader extends StatelessWidget {
-  const GoalsSectionHeader({
-    required this.icon,
-    required this.title,
-    this.action,
-  });
-
-  final IconData icon;
-  final String title;
-  final Widget? action;
-
+class const GoalsSectionHeader({
+  required final IconData icon,
+  required final String title,
+  final Widget? action,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
@@ -33,17 +27,11 @@ class GoalsSectionHeader extends StatelessWidget {
   }
 }
 
-class GoalsArchivedToggleRow extends StatelessWidget {
-  const GoalsArchivedToggleRow({
-    required this.count,
-    required this.isExpanded,
-    required this.onArchivedSectionToggled,
-  });
-
-  final int count;
-  final bool isExpanded;
-  final VoidCallback onArchivedSectionToggled;
-
+class const GoalsArchivedToggleRow({
+  required final int count,
+  required final bool isExpanded,
+  required final VoidCallback onArchivedSectionToggled,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -73,11 +61,8 @@ class GoalsArchivedToggleRow extends StatelessWidget {
   }
 }
 
-class GoalsQuickAddRow extends StatelessWidget {
-  const GoalsQuickAddRow({required this.onAddGoal});
-
-  final VoidCallback onAddGoal;
-
+class const GoalsQuickAddRow({required final VoidCallback onAddGoal})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(

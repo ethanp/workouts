@@ -1,9 +1,7 @@
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
-class WeightDisplay {
-  const WeightDisplay._();
-
+class const WeightDisplay._() {
   static WeightUnit unitForExercise(WorkoutExercise exercise) {
     final exerciseText = '${exercise.name} ${exercise.equipment ?? ''}'
         .toLowerCase();

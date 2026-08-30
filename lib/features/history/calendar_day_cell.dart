@@ -3,17 +3,17 @@ import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class WeekMax {
-  const WeekMax({
-    required this.maxCardioMeters,
-    required this.maxSessionMinutes,
-  });
+class const WeekMax({
+  required final double maxCardioMeters,
+  required final int maxSessionMinutes,
+});
 
-  final double maxCardioMeters;
-  final int maxSessionMinutes;
-}
-
-class CalendarDayCell extends StatelessWidget {
+class const CalendarDayCell({
+  required final DateTime date,
+  required final ActivityCalendarDay? entry,
+  required final WeekMax globalMax,
+  required final VoidCallback onActivated,
+}) extends StatelessWidget {
   static const cellSize = 39.0;
   static const cellMargin = 2.0;
   static const cellExtent = cellSize + cellMargin * 2;
@@ -40,18 +40,6 @@ class CalendarDayCell extends StatelessWidget {
     }
     return 0.0;
   }
-
-  const CalendarDayCell({
-    required this.date,
-    required this.entry,
-    required this.globalMax,
-    required this.onActivated,
-  });
-
-  final DateTime date;
-  final ActivityCalendarDay? entry;
-  final WeekMax globalMax;
-  final VoidCallback onActivated;
 
   @override
   Widget build(BuildContext context) {
@@ -174,9 +162,7 @@ class CalendarDayCell extends StatelessWidget {
   }
 }
 
-class EmptyDayCell extends StatelessWidget {
-  const EmptyDayCell();
-
+class const EmptyDayCell() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const SizedBox(

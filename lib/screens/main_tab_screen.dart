@@ -11,24 +11,14 @@ import 'package:workouts/features/settings/settings_screen.dart';
 import 'package:workouts/features/today/today_screen.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class MainTab {
-  const MainTab({
-    required this.icon,
-    required this.label,
-    required this.screen,
-  });
-
-  final IconData icon;
-  final String label;
-  final Widget screen;
-}
+class const MainTab({
+  required final IconData icon,
+  required final String label,
+  required final Widget screen,
+});
 
 const _mainTabs = <MainTab>[
-  MainTab(
-    icon: Icons.history,
-    label: 'History',
-    screen: HistoryScreen(),
-  ),
+  MainTab(icon: Icons.history, label: 'History', screen: HistoryScreen()),
   MainTab(
     icon: Icons.play_circle_outline,
     label: 'Start Workout',
@@ -46,14 +36,12 @@ const _mainTabs = <MainTab>[
   ),
 ];
 
-class MainTabScreen extends ConsumerStatefulWidget {
-  const MainTabScreen();
-
+class const MainTabScreen() extends ConsumerStatefulWidget {
   @override
   ConsumerState<MainTabScreen> createState() => _MainTabScreenState();
 }
 
-class _MainTabScreenState extends ConsumerState<MainTabScreen> {
+class _MainTabScreenState() extends ConsumerState<MainTabScreen> {
   int _selectedTabIndex = 0;
   final _navigatorKeys = List<GlobalKey<NavigatorState>>.generate(
     _mainTabs.length,
@@ -84,7 +72,9 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
         ],
         onSelected: (index) {
           if (index == _selectedTabIndex) {
-            _navigatorKeys[index].currentState?.popUntil((route) => route.isFirst);
+            _navigatorKeys[index].currentState?.popUntil(
+              (route) => route.isFirst,
+            );
             return;
           }
           setState(() => _selectedTabIndex = index);
@@ -98,9 +88,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
               key: _navigatorKeys[tabIndex],
               onGenerateRoute: (settings) => MaterialPageRoute<void>(
                 settings: settings,
-                builder: (_) => _ActiveSessionWrapper(
-                  child: _mainTabs[tabIndex].screen,
-                ),
+                builder: (_) =>
+                    _ActiveSessionWrapper(child: _mainTabs[tabIndex].screen),
               ),
             ),
         ],
@@ -109,11 +98,8 @@ class _MainTabScreenState extends ConsumerState<MainTabScreen> {
   }
 }
 
-class _ActiveSessionWrapper extends ConsumerWidget {
-  const _ActiveSessionWrapper({required this.child});
-
-  final Widget child;
-
+class const _ActiveSessionWrapper({required final Widget child})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(activeSessionProvider).value;

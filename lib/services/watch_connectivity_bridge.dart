@@ -3,9 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
-class WatchConnectivityBridge {
-  const WatchConnectivityBridge();
-
+class const WatchConnectivityBridge() {
   static const EventChannel _connectivityChannel = EventChannel(
     'com.workouts/watch_connectivity',
   );

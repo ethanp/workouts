@@ -10,11 +10,7 @@ part 'goals_repository_powersync.g.dart';
 
 const _uuid = Uuid();
 
-class GoalsRepositoryPowerSync {
-  GoalsRepositoryPowerSync(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class GoalsRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   Future<List<FitnessGoal>> fetchGoals() async {
     final goalRows = await _powerSync.getAll(
       'SELECT * FROM fitness_goals ORDER BY priority ASC, created_at DESC',

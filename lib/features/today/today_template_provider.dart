@@ -11,7 +11,7 @@ Stream<List<WorkoutTemplate>> todayTemplates(Ref ref) async* {
 }
 
 @riverpod
-class ExpandedTemplates extends _$ExpandedTemplates {
+class ExpandedTemplates() extends _$ExpandedTemplates {
   @override
   Set<String> build() => {};
 

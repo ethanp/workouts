@@ -5,11 +5,7 @@ import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
 
-class SessionHydrator {
-  SessionHydrator(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class SessionHydrator(final PowerSyncDatabase _powerSync) {
   Future<Session> fetchSessionById(String sessionId) async {
     final sessionRows = await _powerSync.getAll(
       'SELECT * FROM sessions WHERE id = ?',

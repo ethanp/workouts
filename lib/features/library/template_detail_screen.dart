@@ -9,17 +9,14 @@ import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class TemplateDetailScreen extends ConsumerStatefulWidget {
-  const TemplateDetailScreen({required this.templateId});
-
-  final String templateId;
-
+class const TemplateDetailScreen({required final String templateId})
+    extends ConsumerStatefulWidget {
   @override
   ConsumerState<TemplateDetailScreen> createState() =>
       _TemplateDetailScreenState();
 }
 
-class _TemplateDetailScreenState extends ConsumerState<TemplateDetailScreen> {
+class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
   final Set<String> _expandedBlockIds = {};
   bool _initializedExpanded = false;
 
@@ -402,11 +399,8 @@ class _TemplateDetailScreenState extends ConsumerState<TemplateDetailScreen> {
   }
 }
 
-class _BlockTypeBadge extends StatelessWidget {
-  const _BlockTypeBadge({required this.type});
-
-  final WorkoutBlockType type;
-
+class const _BlockTypeBadge({required final WorkoutBlockType type})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class KeyboardEnterAccessory extends StatelessWidget {
-  const KeyboardEnterAccessory({required this.onKeyboardDismissRequested});
-
-  final VoidCallback onKeyboardDismissRequested;
-
+class const KeyboardEnterAccessory({
+  required final VoidCallback onKeyboardDismissRequested,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Positioned(
     left: 0,

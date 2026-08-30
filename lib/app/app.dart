@@ -7,9 +7,7 @@ import 'package:workouts/screens/main_tab_screen.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/widgets/error_banner.dart';
 
-class WorkoutsApp extends ConsumerWidget {
-  const WorkoutsApp();
-
+class const WorkoutsApp() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(powerSyncDatabaseProvider);

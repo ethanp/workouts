@@ -4,17 +4,15 @@ import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
-class SetCaptureSheet extends StatefulWidget {
-  const SetCaptureSheet({required this.exercise, required this.plannedSet});
-
-  final WorkoutExercise exercise;
-  final PlannedSet? plannedSet;
-
+class const SetCaptureSheet({
+  required final WorkoutExercise exercise,
+  required final PlannedSet? plannedSet,
+}) extends StatefulWidget {
   @override
   State<SetCaptureSheet> createState() => SetCaptureSheetState();
 }
 
-class SetCaptureSheetState extends State<SetCaptureSheet> {
+class SetCaptureSheetState() extends State<SetCaptureSheet> {
   late final TextEditingController _repsController;
   late final TextEditingController _weightController;
 

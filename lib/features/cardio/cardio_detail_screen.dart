@@ -14,11 +14,8 @@ import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
 
-class CardioDetailScreen extends ConsumerWidget {
-  const CardioDetailScreen({required this.workout});
-
-  final CardioWorkout workout;
-
+class const CardioDetailScreen({required final CardioWorkout workout})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final routePointsAsync = ref.watch(cardioRoutePointsProvider(workout.id));
@@ -92,11 +89,8 @@ class CardioDetailScreen extends ConsumerWidget {
   }
 }
 
-class _WorkoutSummaryCard extends StatelessWidget {
-  const _WorkoutSummaryCard({required this.workout});
-
-  final CardioWorkout workout;
-
+class const _WorkoutSummaryCard({required final CardioWorkout workout})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -139,11 +133,8 @@ class _WorkoutSummaryCard extends StatelessWidget {
   }
 }
 
-class _RouteCard extends ConsumerWidget {
-  const _RouteCard({required this.routePoints});
-
-  final List<CardioRoutePoint> routePoints;
-
+class const _RouteCard({required final List<CardioRoutePoint> routePoints})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (routePoints.length < 2) {

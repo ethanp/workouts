@@ -4,17 +4,11 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SessionDetailBlockCard extends StatelessWidget {
-  const SessionDetailBlockCard({
-    required this.block,
-    required this.index,
-    required this.sessionDate,
-  });
-
-  final SessionBlock block;
-  final int index;
-  final DateTime sessionDate;
-
+class const SessionDetailBlockCard({
+  required final SessionBlock block,
+  required final int index,
+  required final DateTime sessionDate,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(

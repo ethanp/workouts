@@ -6,15 +6,10 @@ import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 ///
 /// Use this to gate any UI that depends on the backend being reachable —
 /// most notably AI-powered features that call the LLM proxy.
-class ConnectionGatedWidget extends ConsumerWidget {
-  const ConnectionGatedWidget({
-    required this.child,
-    this.offlinePlaceholder = const SizedBox.shrink(),
-  });
-
-  final Widget child;
-  final Widget offlinePlaceholder;
-
+class const ConnectionGatedWidget({
+  required final Widget child,
+  final Widget offlinePlaceholder = const SizedBox.shrink(),
+}) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isOffline = ref.watch(isOfflineProvider);

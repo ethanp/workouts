@@ -279,12 +279,14 @@ class _PlannedSetLabelFormatter {
 
   String _baseLabel() {
     final groupedLabels = <String>[];
-    final warmupCount =
-        plannedSets.where((plannedSet) => plannedSet.isWarmup).length;
+    final warmupCount = plannedSets
+        .where((plannedSet) => plannedSet.isWarmup)
+        .length;
     if (warmupCount > 0) groupedLabels.add('$warmupCount warmup');
 
-    final workingSets =
-        plannedSets.where((plannedSet) => plannedSet.isWorking).toList();
+    final workingSets = plannedSets
+        .where((plannedSet) => plannedSet.isWorking)
+        .toList();
     if (workingSets.isNotEmpty) {
       groupedLabels.add(_workingSetsLabel(workingSets));
     }

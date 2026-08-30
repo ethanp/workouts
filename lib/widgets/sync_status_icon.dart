@@ -11,9 +11,7 @@ import 'package:workouts/providers/sync_provider.dart';
 /// - Gray wifi-off when offline
 ///
 /// Long press shows detailed sync status.
-class SyncStatusIcon extends ConsumerWidget {
-  const SyncStatusIcon();
-
+class const SyncStatusIcon() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final syncState = ref.watch(syncStateProvider);

@@ -4,15 +4,11 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'session_note.freezed.dart';
 part 'session_note.g.dart';
 
-enum SessionNoteType {
+enum SessionNoteType({required final String icon}) {
   observation(icon: '👀'),
   modification(icon: '🔧'),
   painSignal(icon: '⚠️'),
   breakthrough(icon: '🎉');
-
-  const SessionNoteType({required this.icon});
-
-  final String icon;
 
   String get displayName => nameAsCapitalizedWords;
 }

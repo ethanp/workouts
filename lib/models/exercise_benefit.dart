@@ -9,17 +9,15 @@ import 'package:workouts/utils/json_parsing.dart';
 /// on [WorkoutExercise.benefits] at read time. The goal links drive the
 /// Training Balance Strip — a session dot appears in a goal's row iff the
 /// session contains any exercise with a benefit referencing that goal.
-class ExerciseBenefit {
-  const ExerciseBenefit({required this.name, required this.goalIds});
-
+class const ExerciseBenefit({
   /// Human-readable benefit label, e.g. "spinal stability", "quad drive".
-  final String name;
+  required final String name,
 
   /// IDs of [FitnessGoal] records this benefit serves.
   /// An empty list means the benefit is informational only (no goal link).
-  final List<String> goalIds;
-
-  factory ExerciseBenefit.fromJson(Map<String, dynamic> json) {
+  required final List<String> goalIds,
+}) {
+  factory fromJson(Map<String, dynamic> json) {
     final name = json['name'] as String?;
     if (name == null || name.isEmpty) {
       throw const FormatException('ExerciseBenefit requires a name');

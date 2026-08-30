@@ -2,19 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/active_session/session_indicators.dart';
 import 'package:workouts/theme/app_theme.dart';
 
-class SessionResumeActionRow extends StatelessWidget {
-  const SessionResumeActionRow({
-    required this.isPaused,
-    required this.watchConnected,
-    required this.onTogglePause,
-    required this.onAddNote,
-  });
-
-  final bool isPaused;
-  final bool watchConnected;
-  final VoidCallback onTogglePause;
-  final VoidCallback onAddNote;
-
+class const SessionResumeActionRow({
+  required final bool isPaused,
+  required final bool watchConnected,
+  required final VoidCallback onTogglePause,
+  required final VoidCallback onAddNote,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
     children: [

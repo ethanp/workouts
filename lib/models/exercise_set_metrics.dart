@@ -1,15 +1,11 @@
-enum ExerciseSetMetricsStyle {
+enum ExerciseSetMetricsStyle() {
   repsOnly,
   repsAndWeight,
   durationOnly,
   repsAndDuration,
 }
 
-class ExerciseSetMetrics {
-  const ExerciseSetMetrics(this.style);
-
-  final ExerciseSetMetricsStyle style;
-
+class const ExerciseSetMetrics(final ExerciseSetMetricsStyle style) {
   bool get tracksReps =>
       style == ExerciseSetMetricsStyle.repsOnly ||
       style == ExerciseSetMetricsStyle.repsAndWeight ||

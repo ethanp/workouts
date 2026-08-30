@@ -8,11 +8,8 @@ import 'package:workouts/theme/cardio_type_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
-class CardioWorkoutListTile extends ConsumerWidget {
-  const CardioWorkoutListTile({required this.workout});
-
-  final CardioWorkout workout;
-
+class const CardioWorkoutListTile({required final CardioWorkout workout})
+    extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return CupertinoButton(

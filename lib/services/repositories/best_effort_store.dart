@@ -13,10 +13,7 @@ const _uuid = Uuid();
 ///
 /// Entries are keyed by `workout_id` + `distance_meters`; workout modality
 /// (for example, run vs bike) is derived from the parent workout record.
-class BestEffortStore {
-  BestEffortStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
+class BestEffortStore(final PowerSyncDatabase _powerSync) {
   final _calculator = BestEffortCalculator();
 
   Future<void> computeAndStore(String workoutId) async {

@@ -2,11 +2,7 @@ import 'package:powersync/powersync.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
-class SessionSetLogStore {
-  SessionSetLogStore(this._powerSync);
-
-  final PowerSyncDatabase _powerSync;
-
+class SessionSetLogStore(final PowerSyncDatabase _powerSync) {
   Future<void> logSet({
     required Session session,
     required SessionSetLog setLog,

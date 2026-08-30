@@ -3,19 +3,17 @@
 /// This is the single value type for HR zone data throughout the app.
 /// Stored at second-granularity (the finest available); minute-based
 /// accessors are derived for display.
-class HrZoneTime {
-  const HrZoneTime({
-    this.zone1 = 0,
-    this.zone2 = 0,
-    this.zone3 = 0,
-    this.zone4 = 0,
-    this.zone5 = 0,
-  });
-
+class const HrZoneTime({
+  final int zone1 = 0,
+  final int zone2 = 0,
+  final int zone3 = 0,
+  final int zone4 = 0,
+  final int zone5 = 0,
+}) {
   static const zero = HrZoneTime();
 
   /// Constructs from a SQL row using column prefix, e.g. `total_zone1_seconds`.
-  factory HrZoneTime.fromRow(
+  factory fromRow(
     Map<String, dynamic> row, {
     String prefix = 'total_zone',
     String suffix = '_seconds',
@@ -26,12 +24,6 @@ class HrZoneTime {
     zone4: (row['${prefix}4$suffix'] as int?) ?? 0,
     zone5: (row['${prefix}5$suffix'] as int?) ?? 0,
   );
-
-  final int zone1;
-  final int zone2;
-  final int zone3;
-  final int zone4;
-  final int zone5;
 
   List<int> get asList => [zone1, zone2, zone3, zone4, zone5];
 

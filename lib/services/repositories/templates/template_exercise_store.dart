@@ -6,12 +6,10 @@ import 'package:workouts/services/repositories/library_exercise_store.dart';
 
 const _uuid = Uuid();
 
-class TemplateExerciseStore {
-  TemplateExerciseStore(this._powerSync)
-    : _libraryExerciseStore = LibraryExerciseStore(_powerSync);
-
-  final PowerSyncDatabase _powerSync;
-  final LibraryExerciseStore _libraryExerciseStore;
+class TemplateExerciseStore(final PowerSyncDatabase _powerSync) {
+  final LibraryExerciseStore _libraryExerciseStore = LibraryExerciseStore(
+    _powerSync,
+  );
 
   Future<void> insertBlockExercises(
     String blockId,

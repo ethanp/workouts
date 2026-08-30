@@ -4,11 +4,8 @@ import 'package:workouts/features/history/charts/week_zone_data.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
-class PolarizationScrubDetailPanel extends StatelessWidget {
-  const PolarizationScrubDetailPanel({required this.week});
-
-  final WeekZoneData? week;
-
+class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
+    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (week == null) return _emptyState();
