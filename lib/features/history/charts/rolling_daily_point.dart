@@ -1,5 +1,5 @@
-/// A single plotted day in a rolling daily series: the trailing 7-day total
-/// ([rollingValue]) and its smoothed counterpart ([smoothedValue]).
+/// A single plotted day: the trailing 7-day total ([rollingValue]) and its
+/// double-smoothed counterpart ([smoothedValue]).
 class const RollingDailyPoint({
   required final DateTime date,
   required final double rollingValue,

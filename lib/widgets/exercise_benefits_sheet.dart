@@ -87,7 +87,7 @@ class _ExerciseBenefitsSheetState()
       ),
       trailing: CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: isSaving ? null : () => _apply(context),
+        onPressed: isSaving ? null : () => _persistBenefitEdits(context),
         child: Text(
           'Apply',
           style: TextStyle(
@@ -384,7 +384,7 @@ class _ExerciseBenefitsSheetState()
     return '$baseName $benefitNumber';
   }
 
-  Future<void> _apply(BuildContext context) async {
+  Future<void> _persistBenefitEdits(BuildContext context) async {
     final benefitsController = ref.read(
       exerciseBenefitsControllerProvider.notifier,
     );

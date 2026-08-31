@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/background_note_row.dart';
 import 'package:workouts/features/goals/background_notes_provider.dart';
-import 'package:workouts/features/goals/goals_list_chrome.dart';
+import 'package:workouts/features/goals/goals_list_rows.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/models/background_note.dart';

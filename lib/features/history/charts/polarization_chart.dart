@@ -160,13 +160,13 @@ class _PolarizationChartState() extends State<PolarizationChart> {
             widget.weeks.length;
 
         return GestureDetector(
-          onHorizontalDragStart: (details) => _updateScrubFromOffset(
+          onHorizontalDragStart: (details) => _scrubWeekUnderFinger(
             details.localPosition.dx,
             barWidth,
             barSpacing,
             widget.weeks.length,
           ),
-          onHorizontalDragUpdate: (details) => _updateScrubFromOffset(
+          onHorizontalDragUpdate: (details) => _scrubWeekUnderFinger(
             details.localPosition.dx,
             barWidth,
             barSpacing,
@@ -178,14 +178,14 @@ class _PolarizationChartState() extends State<PolarizationChart> {
             children: [
               _barsRow(zoneTimes, effectiveMax, barSpacing),
               if (aerobicBaseFraction <= 1.0)
-                _referenceLine(
+                _weeklyMinuteGoal(
                   aerobicBaseFraction,
                   constraints.maxHeight,
                   '90m aerobic base',
                   HrZonePalette.zone2,
                 ),
               if (priorityTwoFraction <= 1.0)
-                _referenceLine(
+                _weeklyMinuteGoal(
                   priorityTwoFraction,
                   constraints.maxHeight,
                   '150m priority 2',
@@ -221,7 +221,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     );
   }
 
-  Widget _referenceLine(
+  Widget _weeklyMinuteGoal(
     double referenceFraction,
     double chartHeight,
     String label,
@@ -257,7 +257,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     );
   }
 
-  void _updateScrubFromOffset(
+  void _scrubWeekUnderFinger(
     double dx,
     double barWidth,
     double barSpacing,

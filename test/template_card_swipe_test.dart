@@ -28,7 +28,7 @@ Widget _buildFullContext({required _MockTemplateRepository mockRepository}) {
       templateRepositoryPowerSyncProvider.overrideWith((_) => mockRepository),
     ],
     child: MaterialApp(
-      theme: ETheme.build(),
+      theme: ETheme.material3Dark,
       home: EScaffoldShell(
         contentMaxWidth: double.infinity,
         bottomBar: ETabBar(

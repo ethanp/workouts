@@ -31,7 +31,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     ),
     child: Row(
       children: [
-        _typeStripe(),
+        _activityTypeColorBar(),
         const SizedBox(width: AppSpacing.sm),
         Expanded(child: _workoutInfo()),
         ..._trailingIcons(),
@@ -39,7 +39,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     ),
   );
 
-  Widget _typeStripe() => Container(
+  Widget _activityTypeColorBar() => Container(
     width: 3,
     height: 42,
     decoration: BoxDecoration(

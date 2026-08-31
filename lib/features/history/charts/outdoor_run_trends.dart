@@ -5,25 +5,25 @@ import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/trend_series.dart';
+import 'package:workouts/widgets/metric_trend.dart';
 
-class const CardioTrendSeriesFactory() {
-  List<TrendSeries> build({
+class const OutdoorRunTrends() {
+  List<MetricTrend> build({
     required List<CardioWorkout> workouts,
     required List<CardioBestEffort> bestEfforts,
   }) {
-    final chronologicalWorkouts = _chronologicalWorkouts(workouts);
+    final chronologicalWorkouts = _outdoorRunsInStartOrder(workouts);
     return [
-      ..._bestEffortSeries(bestEfforts),
-      _distanceSeries(chronologicalWorkouts),
-      _avgHrSeries(chronologicalWorkouts),
-      _maxHrSeries(chronologicalWorkouts),
-      _caloriesSeries(chronologicalWorkouts),
-      _durationSeries(chronologicalWorkouts),
+      ..._bestEffortPaces(bestEfforts),
+      _runDistances(chronologicalWorkouts),
+      _averageHeartRates(chronologicalWorkouts),
+      _maxHeartRates(chronologicalWorkouts),
+      _calories(chronologicalWorkouts),
+      _durations(chronologicalWorkouts),
     ];
   }
 
-  List<CardioWorkout> _chronologicalWorkouts(List<CardioWorkout> workouts) {
+  List<CardioWorkout> _outdoorRunsInStartOrder(List<CardioWorkout> workouts) {
     return workouts
         .whereL(
           (workout) =>
@@ -41,7 +41,7 @@ class const CardioTrendSeriesFactory() {
     DistanceBucket.fiveMiles: Color(0xFF64D2FF),
   };
 
-  List<TrendSeries> _bestEffortSeries(List<CardioBestEffort> bestEfforts) {
+  List<MetricTrend> _bestEffortPaces(List<CardioBestEffort> bestEfforts) {
     final byBucket = <DistanceBucket, List<CardioBestEffort>>{};
     for (final effort in bestEfforts) {
       (byBucket[effort.bucket] ??= []).add(effort);
@@ -50,10 +50,10 @@ class const CardioTrendSeriesFactory() {
     return [
       for (final bucket in DistanceBucket.values)
         if (byBucket[bucket] != null && byBucket[bucket]!.length >= 2)
-          TrendSeries(
+          MetricTrend(
             label: bucket.label,
             color: _bucketColors[bucket] ?? AppColors.accentPrimary,
-            invertY: true,
+            lowerIsBetter: true,
             points: byBucket[bucket]!
                 .where((bestEffort) => bestEffort.workoutStartedAt != null)
                 .map(
@@ -68,8 +68,8 @@ class const CardioTrendSeriesFactory() {
     ];
   }
 
-  TrendSeries _distanceSeries(List<CardioWorkout> workouts) {
-    return TrendSeries(
+  MetricTrend _runDistances(List<CardioWorkout> workouts) {
+    return MetricTrend(
       label: 'Distance',
       color: const Color(0xFF30D158),
       points: workouts
@@ -84,8 +84,8 @@ class const CardioTrendSeriesFactory() {
     );
   }
 
-  TrendSeries _avgHrSeries(List<CardioWorkout> workouts) {
-    return TrendSeries(
+  MetricTrend _averageHeartRates(List<CardioWorkout> workouts) {
+    return MetricTrend(
       label: 'Avg HR',
       color: const Color(0xFFFF453A),
       points: workouts
@@ -101,8 +101,8 @@ class const CardioTrendSeriesFactory() {
     );
   }
 
-  TrendSeries _maxHrSeries(List<CardioWorkout> workouts) {
-    return TrendSeries(
+  MetricTrend _maxHeartRates(List<CardioWorkout> workouts) {
+    return MetricTrend(
       label: 'Max HR',
       color: const Color(0xFFFF6961),
       points: workouts
@@ -118,8 +118,8 @@ class const CardioTrendSeriesFactory() {
     );
   }
 
-  TrendSeries _caloriesSeries(List<CardioWorkout> workouts) {
-    return TrendSeries(
+  MetricTrend _calories(List<CardioWorkout> workouts) {
+    return MetricTrend(
       label: 'Calories',
       color: const Color(0xFFFFD60A),
       points: workouts
@@ -133,8 +133,8 @@ class const CardioTrendSeriesFactory() {
     );
   }
 
-  TrendSeries _durationSeries(List<CardioWorkout> workouts) {
-    return TrendSeries(
+  MetricTrend _durations(List<CardioWorkout> workouts) {
+    return MetricTrend(
       label: 'Duration',
       color: const Color(0xFF64D2FF),
       points: workouts

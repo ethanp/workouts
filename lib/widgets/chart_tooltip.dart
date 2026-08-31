@@ -2,16 +2,16 @@ import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/chart_date_axis.dart';
-import 'package:workouts/widgets/trend_series.dart';
+import 'package:workouts/widgets/chart_date_plot.dart';
+import 'package:workouts/widgets/metric_trend.dart';
 
 class ChartTooltip({
   required final Canvas canvas,
-  required final ChartDateLayout layout,
+  required final ChartDatePlot plot,
   required final Offset hoverPosition,
-  required final List<TrendSeries> visibleSeries,
+  required final List<MetricTrend> visibleTrends,
 }) {
-  final double _clampedX = hoverPosition.dx.clamp(layout.left, layout.right);
+  final double _clampedX = hoverPosition.dx.clamp(plot.left, plot.right);
 
   static const _fontSize = 10.0;
   static const _lineHeight = 14.0;
@@ -19,26 +19,26 @@ class ChartTooltip({
   static const _paddingV = 6.0;
 
   void paint() {
-    _drawCrosshairLine();
-    final lines = _buildLines();
-    _drawTooltipBox(lines);
+    _strokeHoverDateCrosshair();
+    final lines = _leastSquaresValuesAtHoverDate();
+    _paintHoverReadout(lines);
   }
 
-  void _drawCrosshairLine() {
+  void _strokeHoverDateCrosshair() {
     final linePaint = Paint()
       ..color = AppColors.textColor3.withValues(alpha: 0.5)
       ..strokeWidth = 1;
     canvas.drawLine(
-      Offset(_clampedX, layout.top),
-      Offset(_clampedX, layout.bottom),
+      Offset(_clampedX, plot.top),
+      Offset(_clampedX, plot.bottom),
       linePaint,
     );
   }
 
-  List<_TooltipLine> _buildLines() {
-    final hoverDate = layout.dateForX(_clampedX);
+  List<_TooltipLine> _leastSquaresValuesAtHoverDate() {
+    final hoverDate = plot.dateForX(_clampedX);
     final secondsFromOrigin = hoverDate
-        .difference(layout.minDate)
+        .difference(plot.minDate)
         .inSeconds
         .toDouble();
 
@@ -46,14 +46,14 @@ class ChartTooltip({
       _TooltipLine(text: _formatDate(hoverDate), color: AppColors.textColor3),
     ];
 
-    for (final series in visibleSeries) {
-      if (series.points.length < 2) continue;
-      final trend = computeTrendLine(series.points, layout.minDate);
+    for (final metricTrend in visibleTrends) {
+      if (metricTrend.points.length < 2) continue;
+      final trend = leastSquaresTrend(metricTrend.points, plot.minDate);
       final yHat = trend.intercept + trend.slope * secondsFromOrigin;
       lines.add(
         _TooltipLine(
-          text: '${series.label}: ${series.formatValue(yHat.abs())}',
-          color: series.color,
+          text: '${metricTrend.label}: ${metricTrend.formatValue(yHat.abs())}',
+          color: metricTrend.color,
         ),
       );
     }
@@ -61,14 +61,14 @@ class ChartTooltip({
     return lines;
   }
 
-  void _drawTooltipBox(List<_TooltipLine> lines) {
-    final painters = _layoutText(lines);
-    final boxRect = _computeRect(painters, lines.length);
-    _drawBackground(boxRect);
-    _drawText(boxRect, painters);
+  void _paintHoverReadout(List<_TooltipLine> lines) {
+    final painters = _measureReadoutLines(lines);
+    final boxRect = _readoutCardAvoidingRightEdge(painters, lines.length);
+    _paintReadoutCard(boxRect);
+    _paintReadoutLines(boxRect, painters);
   }
 
-  List<TextPainter> _layoutText(List<_TooltipLine> lines) {
+  List<TextPainter> _measureReadoutLines(List<_TooltipLine> lines) {
     return lines.map((line) {
       return TextPainter(
         text: TextSpan(
@@ -80,21 +80,24 @@ class ChartTooltip({
     }).toList();
   }
 
-  RRect _computeRect(List<TextPainter> painters, int lineCount) {
+  RRect _readoutCardAvoidingRightEdge(
+    List<TextPainter> painters,
+    int lineCount,
+  ) {
     final maxTextWidth = painters.fold(0.0, (w, p) => math.max(w, p.width));
     final boxWidth = maxTextWidth + _paddingH * 2;
     final boxHeight = _lineHeight * lineCount + _paddingV * 2;
 
-    final anchorRight = _clampedX + boxWidth + 12 > layout.right;
+    final anchorRight = _clampedX + boxWidth + 12 > plot.right;
     final boxLeft = anchorRight ? _clampedX - boxWidth - 8 : _clampedX + 8;
 
     return RRect.fromRectAndRadius(
-      Rect.fromLTWH(boxLeft, layout.top, boxWidth, boxHeight),
+      Rect.fromLTWH(boxLeft, plot.top, boxWidth, boxHeight),
       const Radius.circular(6),
     );
   }
 
-  void _drawBackground(RRect rect) {
+  void _paintReadoutCard(RRect rect) {
     canvas.drawRRect(
       rect,
       Paint()..color = AppColors.backgroundDepth2.withValues(alpha: 0.92),
@@ -108,7 +111,7 @@ class ChartTooltip({
     );
   }
 
-  void _drawText(RRect rect, List<TextPainter> painters) {
+  void _paintReadoutLines(RRect rect, List<TextPainter> painters) {
     for (var lineIndex = 0; lineIndex < painters.length; lineIndex++) {
       painters[lineIndex].paint(
         canvas,

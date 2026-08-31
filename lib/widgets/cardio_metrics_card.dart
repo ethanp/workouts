@@ -119,12 +119,15 @@ class const _TimelinePreview({
   Widget build(BuildContext context) {
     return SizedBox(
       height: 150,
-      child: MetricsMiniChart(samples: samples, speedSamples: speedSamples),
+      child: HeartRateAndSpeedChart(
+        samples: samples,
+        speedSamples: speedSamples,
+      ),
     );
   }
 }
 
-class const MetricsMiniChart({
+class const HeartRateAndSpeedChart({
   required final List<HeartRateSample> samples,
   final List<SpeedSample> speedSamples = const [],
 }) extends StatelessWidget {
@@ -153,7 +156,7 @@ class const MetricsMiniChart({
         border: Border.all(color: AppColors.borderDepth1),
       ),
       child: CustomPaint(
-        painter: _DualMetricPainter(
+        painter: _HeartRateAndSpeedPainter(
           samples: samples,
           speedSamples: speedSamples,
         ),
@@ -166,7 +169,7 @@ class const MetricsMiniChart({
 const _hrColor = AppColors.error;
 const _speedColor = AppColors.success;
 
-class _DualMetricPainter({
+class _HeartRateAndSpeedPainter({
   required final List<HeartRateSample> samples,
   required final List<SpeedSample> speedSamples,
 }) extends CustomPainter {
@@ -182,13 +185,21 @@ class _DualMetricPainter({
     final timeDomain = _resolveTimeDomain();
     if (timeDomain == null) return;
 
-    final chartLayout = _MetricChartLayout(size: size, timeDomain: timeDomain);
+    final plot = _ElapsedTimePlot(size: size, timeDomain: timeDomain);
     final heartRateScale = _heartRateScale();
     if (heartRateScale == null) return;
 
-    _drawChartBackground(canvas, chartLayout, heartRateScale);
-    _drawHeartRateSeries(canvas, chartLayout, heartRateScale);
-    _drawSpeedSeries(canvas, chartLayout);
+    _paintHeartRateZonesAndElapsedTimeAxes(
+      canvas,
+      plot,
+      heartRateScale,
+    );
+    _strokeSmoothedHeartRateOverElapsedTime(
+      canvas,
+      plot,
+      heartRateScale,
+    );
+    _strokeSpeedOverElapsedTime(canvas, plot);
   }
 
   _TimeDomain? _resolveTimeDomain() {
@@ -229,12 +240,12 @@ class _DualMetricPainter({
     );
   }
 
-  void _drawChartBackground(
+  void _paintHeartRateZonesAndElapsedTimeAxes(
     Canvas canvas,
-    _MetricChartLayout chartLayout,
+    _ElapsedTimePlot plot,
     _HeartRateScale heartRateScale,
   ) {
-    _drawHeartRateZoneBands(canvas, chartLayout, heartRateScale);
+    _paintHeartRateZonesAsFaintBands(canvas, plot, heartRateScale);
 
     final gridPaint = Paint()
       ..color = AppColors.borderDepth1.withValues(alpha: 0.6)
@@ -245,41 +256,41 @@ class _DualMetricPainter({
       ..strokeWidth = 1;
 
     for (final tickBpm in heartRateScale.tickBpms) {
-      final gridLineY = chartLayout.yForNormalizedValue(
+      final gridLineY = plot.yForNormalizedValue(
         heartRateScale.normalize(tickBpm),
       );
       canvas.drawLine(
-        Offset(chartLayout.left, gridLineY),
-        Offset(chartLayout.right, gridLineY),
+        Offset(plot.left, gridLineY),
+        Offset(plot.right, gridLineY),
         gridPaint,
       );
-      _drawAxisLabel(
+      _paintElapsedTimeOrBpmLabel(
         canvas,
         '$tickBpm',
-        Offset(chartLayout.left - 6, gridLineY),
+        Offset(plot.left - 6, gridLineY),
         textAlign: TextAlign.right,
         anchor: _LabelAnchor.centerRight,
       );
     }
 
     canvas.drawLine(
-      Offset(chartLayout.left, chartLayout.bottom),
-      Offset(chartLayout.right, chartLayout.bottom),
+      Offset(plot.left, plot.bottom),
+      Offset(plot.right, plot.bottom),
       axisPaint,
     );
     canvas.drawLine(
-      Offset(chartLayout.left, chartLayout.top),
-      Offset(chartLayout.left, chartLayout.bottom),
+      Offset(plot.left, plot.top),
+      Offset(plot.left, plot.bottom),
       axisPaint,
     );
 
-    _drawElapsedTimeTickMarks(canvas, chartLayout, axisPaint);
-    _drawElapsedTimeLabels(canvas, chartLayout);
+    _paintElapsedTimeTickMarks(canvas, plot, axisPaint);
+    _paintElapsedTimeLabels(canvas, plot);
   }
 
-  void _drawHeartRateZoneBands(
+  void _paintHeartRateZonesAsFaintBands(
     Canvas canvas,
-    _MetricChartLayout chartLayout,
+    _ElapsedTimePlot plot,
     _HeartRateScale heartRateScale,
   ) {
     for (
@@ -290,16 +301,16 @@ class _DualMetricPainter({
       final zoneBand = heartRateScale.visibleZoneBand(zoneIndex);
       if (zoneBand == null) continue;
 
-      final bandTop = chartLayout.yForNormalizedValue(
+      final bandTop = plot.yForNormalizedValue(
         heartRateScale.normalize(zoneBand.upperBpm),
       );
-      final bandBottom = chartLayout.yForNormalizedValue(
+      final bandBottom = plot.yForNormalizedValue(
         heartRateScale.normalize(zoneBand.lowerBpm),
       );
       final bandRect = Rect.fromLTRB(
-        chartLayout.left,
+        plot.left,
         bandTop,
-        chartLayout.right,
+        plot.right,
         bandBottom,
       );
       canvas.drawRect(
@@ -310,8 +321,8 @@ class _DualMetricPainter({
     }
   }
 
-  void _drawElapsedTimeLabels(Canvas canvas, _MetricChartLayout chartLayout) {
-    for (final elapsedTick in chartLayout.elapsedTimeTicks) {
+  void _paintElapsedTimeLabels(Canvas canvas, _ElapsedTimePlot plot) {
+    for (final elapsedTick in plot.elapsedTimeTicks) {
       final anchor = switch (elapsedTick.position) {
         _ElapsedTickPosition.start => _LabelAnchor.topLeft,
         _ElapsedTickPosition.middle => _LabelAnchor.topCenter,
@@ -320,33 +331,33 @@ class _DualMetricPainter({
       final textAlign = elapsedTick.position == _ElapsedTickPosition.end
           ? TextAlign.right
           : TextAlign.center;
-      _drawAxisLabel(
+      _paintElapsedTimeOrBpmLabel(
         canvas,
         Duration(milliseconds: elapsedTick.elapsedMilliseconds)
             .formattedElapsed,
-        Offset(elapsedTick.x, chartLayout.bottom + 7),
+        Offset(elapsedTick.x, plot.bottom + 7),
         textAlign: textAlign,
         anchor: anchor,
       );
     }
   }
 
-  void _drawElapsedTimeTickMarks(
+  void _paintElapsedTimeTickMarks(
     Canvas canvas,
-    _MetricChartLayout chartLayout,
+    _ElapsedTimePlot plot,
     Paint axisPaint,
   ) {
-    for (final elapsedTick in chartLayout.elapsedTimeTicks) {
+    for (final elapsedTick in plot.elapsedTimeTicks) {
       if (elapsedTick.position != _ElapsedTickPosition.middle) continue;
       canvas.drawLine(
-        Offset(elapsedTick.x, chartLayout.bottom),
-        Offset(elapsedTick.x, chartLayout.bottom + 4),
+        Offset(elapsedTick.x, plot.bottom),
+        Offset(elapsedTick.x, plot.bottom + 4),
         axisPaint,
       );
     }
   }
 
-  void _drawAxisLabel(
+  void _paintElapsedTimeOrBpmLabel(
     Canvas canvas,
     String text,
     Offset anchorPoint, {
@@ -383,17 +394,9 @@ class _DualMetricPainter({
     textPainter.paint(canvas, labelOffset);
   }
 
-  void _drawHeartRateSeries(
+  void _strokeSmoothedHeartRateOverElapsedTime(
     Canvas canvas,
-    _MetricChartLayout chartLayout,
-    _HeartRateScale heartRateScale,
-  ) {
-    _drawHeartRatePath(canvas, chartLayout, heartRateScale);
-  }
-
-  void _drawHeartRatePath(
-    Canvas canvas,
-    _MetricChartLayout chartLayout,
+    _ElapsedTimePlot plot,
     _HeartRateScale heartRateScale,
   ) {
     final heartRatePaint = Paint()
@@ -409,8 +412,8 @@ class _DualMetricPainter({
       pointIndex++
     ) {
       final smoothedHeartRatePoint = smoothedHeartRatePoints[pointIndex];
-      final pointX = chartLayout.xForTime(smoothedHeartRatePoint.timestamp);
-      final pointY = chartLayout.yForNormalizedValue(
+      final pointX = plot.xForTime(smoothedHeartRatePoint.timestamp);
+      final pointY = plot.yForNormalizedValue(
         heartRateScale.normalize(smoothedHeartRatePoint.bpm),
       );
       if (pointIndex == 0) {
@@ -453,7 +456,7 @@ class _DualMetricPainter({
     });
   }
 
-  void _drawSpeedSeries(Canvas canvas, _MetricChartLayout chartLayout) {
+  void _strokeSpeedOverElapsedTime(Canvas canvas, _ElapsedTimePlot plot) {
     if (speedSamples.length < 2) return;
 
     final minSpeed = speedSamples
@@ -476,9 +479,9 @@ class _DualMetricPainter({
       sampleIndex++
     ) {
       final speedSample = speedSamples[sampleIndex];
-      final pointX = chartLayout.xForTime(speedSample.timestamp);
+      final pointX = plot.xForTime(speedSample.timestamp);
       final normalizedSpeed = (speedSample.speedKmh - minSpeed) / speedRange;
-      final pointY = chartLayout.yForNormalizedValue(normalizedSpeed);
+      final pointY = plot.yForNormalizedValue(normalizedSpeed);
       if (sampleIndex == 0) {
         speedPath.moveTo(pointX, pointY);
       } else {
@@ -489,7 +492,7 @@ class _DualMetricPainter({
   }
 
   @override
-  bool shouldRepaint(covariant _DualMetricPainter oldDelegate) {
+  bool shouldRepaint(covariant _HeartRateAndSpeedPainter oldDelegate) {
     return oldDelegate.samples != samples ||
         oldDelegate.speedSamples != speedSamples;
   }
@@ -514,15 +517,15 @@ class const _ElapsedTimeTick({
   required final _ElapsedTickPosition position,
 });
 
-class _MetricChartLayout({
+class _ElapsedTimePlot({
   required Size size,
   required final _TimeDomain timeDomain,
 }) {
   this {
-    left = _DualMetricPainter._leftAxisWidth;
-    right = size.width - _DualMetricPainter._rightPadding;
-    top = _DualMetricPainter._topPadding;
-    bottom = size.height - _DualMetricPainter._bottomAxisHeight;
+    left = _HeartRateAndSpeedPainter._leftAxisWidth;
+    right = size.width - _HeartRateAndSpeedPainter._rightPadding;
+    top = _HeartRateAndSpeedPainter._topPadding;
+    bottom = size.height - _HeartRateAndSpeedPainter._bottomAxisHeight;
     width = right - left;
     height = bottom - top;
   }

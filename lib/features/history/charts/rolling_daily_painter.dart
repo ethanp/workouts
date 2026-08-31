@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/chart_date_axis.dart';
+import 'package:workouts/widgets/chart_date_plot.dart';
 
 class const RollingDailyGoal({
   required final double value,
@@ -34,18 +34,21 @@ class RollingDailyPainter({
     final visiblePoints = _visiblePoints();
     if (visiblePoints.length < 2) return;
 
-    final layout = _layout(size, visiblePoints);
+    final plot = _plotAcrossVisibleDates(size, visiblePoints);
     final scale = _valueScale(visiblePoints);
-    _drawBackground(canvas, layout);
-    _drawGoalLines(canvas, layout, scale);
-    _drawSeriesLine(canvas, layout, scale, visiblePoints);
-    _drawSeriesPoints(canvas, layout, scale, visiblePoints);
-    _drawHoverMarker(canvas, layout, scale, visiblePoints);
-    _drawAxisLabels(canvas, layout, scale);
+    _paintDateGridAndYearBoundaries(canvas, plot);
+    _strokeTrailingWindowGoals(canvas, plot, scale);
+    _strokeSmoothedTrailingSevenDayTotal(canvas, plot, scale, visiblePoints);
+    _paintDayDotsWhenUnderNinetyPoints(canvas, plot, scale, visiblePoints);
+    _paintScrubCrosshairOnNearestDay(canvas, plot, scale, visiblePoints);
+    _paintZeroAndMaxLoad(canvas, plot, scale);
   }
 
-  ChartDateLayout _layout(Size size, List<RollingDailyPoint> visiblePoints) {
-    return ChartDateLayout(
+  ChartDatePlot _plotAcrossVisibleDates(
+    Size size,
+    List<RollingDailyPoint> visiblePoints,
+  ) {
+    return ChartDatePlot(
       size: size,
       leftPadding: leftPadding,
       rightPadding: rightPadding,
@@ -57,7 +60,7 @@ class RollingDailyPainter({
   }
 
   RollingDailyScale _valueScale(List<RollingDailyPoint> visiblePoints) {
-    final highestSeriesValue = visiblePoints.fold(
+    final highestSmoothedValue = visiblePoints.fold(
       0.0,
       (highest, point) => math.max(highest, point.smoothedValue),
     );
@@ -65,18 +68,18 @@ class RollingDailyPainter({
       0.0,
       (highest, goal) => math.max(highest, goal.value),
     );
-    final maxValue = math.max(highestSeriesValue, highestGoalValue);
+    final maxValue = math.max(highestSmoothedValue, highestGoalValue);
     return RollingDailyScale(maxValue: math.max(1, maxValue * 1.12));
   }
 
-  void _drawBackground(Canvas canvas, ChartDateLayout layout) {
-    _drawHorizontalGrid(canvas, layout);
-    layout.drawAxes(canvas);
-    layout.drawYearBoundaries(canvas);
-    layout.drawDateLabels(canvas, labelColor: AppColors.textColor4);
+  void _paintDateGridAndYearBoundaries(Canvas canvas, ChartDatePlot plot) {
+    _strokeQuarterHeightGuides(canvas, plot);
+    plot.strokeLeftAndBottomEdges(canvas);
+    plot.drawYearBoundaries(canvas);
+    plot.paintMonthOrDayLabels(canvas, labelColor: AppColors.textColor4);
   }
 
-  void _drawHorizontalGrid(Canvas canvas, ChartDateLayout layout) {
+  void _strokeQuarterHeightGuides(Canvas canvas, ChartDatePlot plot) {
     final gridPaint = Paint()
       ..color = AppColors.borderDepth1.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -84,35 +87,43 @@ class RollingDailyPainter({
     const lineCount = 4;
     for (var lineIndex = 0; lineIndex <= lineCount; lineIndex++) {
       final lineFraction = lineIndex / lineCount;
-      final lineY = layout.top + lineFraction * layout.height;
+      final lineY = plot.top + lineFraction * plot.height;
       canvas.drawLine(
-        Offset(layout.left, lineY),
-        Offset(layout.right, lineY),
+        Offset(plot.left, lineY),
+        Offset(plot.right, lineY),
         gridPaint,
       );
     }
   }
 
-  void _drawGoalLines(
+  void _strokeTrailingWindowGoals(
     Canvas canvas,
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     RollingDailyScale scale,
   ) {
     for (final goal in goals) {
-      final goalY = scale.yForValue(goal.value, layout);
+      final goalY = scale.yForValue(goal.value, plot);
       final goalPaint = Paint()
         ..color = goal.color.withValues(alpha: 0.35)
         ..strokeWidth = 1;
       canvas.drawLine(
-        Offset(layout.left, goalY),
-        Offset(layout.right, goalY),
+        Offset(plot.left, goalY),
+        Offset(plot.right, goalY),
         goalPaint,
       );
-      _drawGoalLabel(canvas, goal, Offset(layout.right - 2, goalY - 12));
+      _paintTrailingWindowGoalLabel(
+        canvas,
+        goal,
+        Offset(plot.right - 2, goalY - 12),
+      );
     }
   }
 
-  void _drawGoalLabel(Canvas canvas, RollingDailyGoal goal, Offset position) {
+  void _paintTrailingWindowGoalLabel(
+    Canvas canvas,
+    RollingDailyGoal goal,
+    Offset position,
+  ) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: goal.label,
@@ -131,23 +142,23 @@ class RollingDailyPainter({
     );
   }
 
-  void _drawSeriesLine(
+  void _strokeSmoothedTrailingSevenDayTotal(
     Canvas canvas,
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
-    final seriesPath = Path();
+    final loadPath = Path();
     for (var pointIndex = 0; pointIndex < visiblePoints.length; pointIndex++) {
       final point = visiblePoints[pointIndex];
       final pointOffset = Offset(
-        layout.xForDate(point.date),
-        scale.yForValue(point.smoothedValue, layout),
+        plot.xForDate(point.date),
+        scale.yForValue(point.smoothedValue, plot),
       );
       if (pointIndex == 0) {
-        seriesPath.moveTo(pointOffset.dx, pointOffset.dy);
+        loadPath.moveTo(pointOffset.dx, pointOffset.dy);
       } else {
-        seriesPath.lineTo(pointOffset.dx, pointOffset.dy);
+        loadPath.lineTo(pointOffset.dx, pointOffset.dy);
       }
     }
 
@@ -157,12 +168,12 @@ class RollingDailyPainter({
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round;
-    canvas.drawPath(seriesPath, linePaint);
+    canvas.drawPath(loadPath, linePaint);
   }
 
-  void _drawSeriesPoints(
+  void _paintDayDotsWhenUnderNinetyPoints(
     Canvas canvas,
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
@@ -172,8 +183,8 @@ class RollingDailyPainter({
     for (final point in visiblePoints) {
       canvas.drawCircle(
         Offset(
-          layout.xForDate(point.date),
-          scale.yForValue(point.smoothedValue, layout),
+          plot.xForDate(point.date),
+          scale.yForValue(point.smoothedValue, plot),
         ),
         2,
         pointPaint,
@@ -181,17 +192,17 @@ class RollingDailyPainter({
     }
   }
 
-  void _drawHoverMarker(
+  void _paintScrubCrosshairOnNearestDay(
     Canvas canvas,
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
-    final hoveredPoint = _pointNearestHover(layout, visiblePoints);
+    final hoveredPoint = _pointNearestHover(plot, visiblePoints);
     if (hoveredPoint == null) return;
 
-    final hoveredX = layout.xForDate(hoveredPoint.date);
-    final hoveredY = scale.yForValue(hoveredPoint.smoothedValue, layout);
+    final hoveredX = plot.xForDate(hoveredPoint.date);
+    final hoveredY = scale.yForValue(hoveredPoint.smoothedValue, plot);
     final markerPaint = Paint()
       ..color = AppColors.textColor3.withValues(alpha: 0.6)
       ..strokeWidth = 1;
@@ -201,23 +212,23 @@ class RollingDailyPainter({
       ..strokeWidth = 2;
 
     canvas.drawLine(
-      Offset(hoveredX, layout.top),
-      Offset(hoveredX, layout.bottom),
+      Offset(hoveredX, plot.top),
+      Offset(hoveredX, plot.bottom),
       markerPaint,
     );
     canvas.drawCircle(Offset(hoveredX, hoveredY), 5, ringPaint);
   }
 
-  void _drawAxisLabels(
+  void _paintZeroAndMaxLoad(
     Canvas canvas,
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     RollingDailyScale scale,
   ) {
-    _drawAxisLabel(canvas, formatValue(scale.maxValue), Offset(2, layout.top));
-    _drawAxisLabel(canvas, formatValue(0), Offset(10, layout.bottom - 10));
+    _paintLoadLabel(canvas, formatValue(scale.maxValue), Offset(2, plot.top));
+    _paintLoadLabel(canvas, formatValue(0), Offset(10, plot.bottom - 10));
   }
 
-  void _drawAxisLabel(Canvas canvas, String text, Offset position) {
+  void _paintLoadLabel(Canvas canvas, String text, Offset position) {
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
@@ -229,13 +240,13 @@ class RollingDailyPainter({
   }
 
   RollingDailyPoint? _pointNearestHover(
-    ChartDateLayout layout,
+    ChartDatePlot plot,
     List<RollingDailyPoint> visiblePoints,
   ) {
     final position = hoverPosition;
     if (position == null || visiblePoints.isEmpty) return null;
 
-    final hoverDate = layout.dateForX(position.dx);
+    final hoverDate = plot.dateForX(position.dx);
     return visiblePoints.reduce(
       (nearestPoint, point) =>
           _dateDistance(point, hoverDate) <
@@ -271,8 +282,8 @@ class RollingDailyPainter({
 }
 
 class const RollingDailyScale({required final double maxValue}) {
-  double yForValue(double value, ChartDateLayout layout) {
+  double yForValue(double value, ChartDatePlot plot) {
     final valueFraction = (value / maxValue).clamp(0.0, 1.0);
-    return layout.bottom - valueFraction * layout.height;
+    return plot.bottom - valueFraction * plot.height;
   }
 }

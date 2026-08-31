@@ -7,12 +7,12 @@ class const TrendPoint({
   required final double value,
 });
 
-class const TrendSeries({
+class const MetricTrend({
   required final String label,
   required final Color color,
   required final List<TrendPoint> points,
   required final String Function(double) formatValue,
-  final bool invertY = false,
+  final bool lowerIsBetter = false,
 });
 
 class const TrendLine({
@@ -24,12 +24,10 @@ class const TrendLine({
   double get slopePerMonth => slope * _secondsPerMonth;
 }
 
-/// Maps a series' raw values to the [0, 1] range for chart rendering.
-///
-/// Computes padded min/max from the data points so values don't touch the
-/// chart edges. When [invertY] is true (e.g. pace, where lower is better),
-/// the mapping is flipped so that "better" values appear higher on the chart.
-class SeriesValueScale(List<TrendPoint> points, {required final bool invertY}) {
+class PaddedMetricScale(
+  List<TrendPoint> points, {
+  required final bool lowerIsBetter,
+}) {
   this {
     var lo = double.infinity;
     var hi = -double.infinity;
@@ -48,11 +46,11 @@ class SeriesValueScale(List<TrendPoint> points, {required final bool invertY}) {
     final range = max - min;
     if (range <= 0) return 0.5;
     final fraction = (value - min) / range;
-    return invertY ? 1.0 - fraction : fraction;
+    return lowerIsBetter ? 1.0 - fraction : fraction;
   }
 }
 
-TrendLine computeTrendLine(List<TrendPoint> points, DateTime origin) {
+TrendLine leastSquaresTrend(List<TrendPoint> points, DateTime origin) {
   final pointCount = points.length;
   var sumX = 0.0;
   var sumY = 0.0;

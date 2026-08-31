@@ -137,7 +137,7 @@ class TemplateRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     required String templateId,
     required String blockId,
     required WorkoutExercise exercise,
-  }) => _applyWarmupChange(
+  }) => _persistMutatedWarmupSets(
     templateId: templateId,
     blockId: blockId,
     exercise: exercise,
@@ -148,14 +148,14 @@ class TemplateRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     required String templateId,
     required String blockId,
     required WorkoutExercise exercise,
-  }) => _applyWarmupChange(
+  }) => _persistMutatedWarmupSets(
     templateId: templateId,
     blockId: blockId,
     exercise: exercise,
     mutate: (warmupSets) => warmupSets.withOneRemoved(),
   );
 
-  Future<void> _applyWarmupChange({
+  Future<void> _persistMutatedWarmupSets({
     required String templateId,
     required String blockId,
     required WorkoutExercise exercise,

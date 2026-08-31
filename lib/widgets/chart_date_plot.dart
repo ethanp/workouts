@@ -20,7 +20,7 @@ const _months = [
   'Dec',
 ];
 
-class ChartDateLayout({
+class ChartDatePlot({
   required Size size,
   required double leftPadding,
   required double rightPadding,
@@ -84,7 +84,7 @@ class ChartDateLayout({
     return ticks;
   }
 
-  void drawDateLabels(Canvas canvas, {Color? labelColor}) {
+  void paintMonthOrDayLabels(Canvas canvas, {Color? labelColor}) {
     final spanDays = maxDate.difference(minDate).inDays;
     final color = labelColor ?? AppColors.textColor4;
 
@@ -110,7 +110,11 @@ class ChartDateLayout({
     }
   }
 
-  void drawAxes(Canvas canvas, {bool xAxis = true, bool yAxis = true}) {
+  void strokeLeftAndBottomEdges(
+    Canvas canvas, {
+    bool xAxis = true,
+    bool yAxis = true,
+  }) {
     final axisPaint = Paint()
       ..color = AppColors.textColor4.withValues(alpha: 0.5)
       ..strokeWidth = 1;

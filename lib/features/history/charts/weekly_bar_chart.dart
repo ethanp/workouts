@@ -150,7 +150,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
       0.0,
       (maxSoFar, weekData) => math.max(maxSoFar, weekData.value),
     );
-    final chartMax = _chartMaxValue(highestWeekValue);
+    final chartMax = _maxIncludingGoalHeadroom(highestWeekValue);
     final color = widget.barColor ?? AppColors.accentPrimary;
     final barSpacing = _barSpacing();
 
@@ -167,7 +167,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
     );
   }
 
-  double _chartMaxValue(double highestWeekValue) {
+  double _maxIncludingGoalHeadroom(double highestWeekValue) {
     final goalLine = widget.goalLine;
     final baselineMax = highestWeekValue > 0 ? highestWeekValue : 1.0;
     if (goalLine == null) return baselineMax;
@@ -259,7 +259,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
                           ),
                         ),
                         if (week.accentColors.isNotEmpty)
-                          _accentColorRug(week.accentColors, isActive),
+                          _colorsAlongBarBase(week.accentColors, isActive),
                       ],
                     ),
                   ),
@@ -289,7 +289,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
     );
   }
 
-  Widget _accentColorRug(List<Color> accentColors, bool isActive) {
+  Widget _colorsAlongBarBase(List<Color> accentColors, bool isActive) {
     return Positioned(
       left: 0,
       right: 0,

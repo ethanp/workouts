@@ -41,7 +41,7 @@ class const SessionHeartRateCard({
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          MetricsMiniChart(samples: samples),
+          HeartRateAndSpeedChart(samples: samples),
           if (samples.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.md),
             ZoneDistributionSection(samples: samples),

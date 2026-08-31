@@ -15,7 +15,7 @@ class const WorkoutsApp() extends ConsumerWidget {
 
     return MaterialApp(
       title: AppIdentity.displayName,
-      theme: ETheme.build(),
+      theme: ETheme.material3Dark,
       debugShowCheckedModeBanner: false,
       home: const ErrorBanner(child: MainTabScreen()),
     );

@@ -4,24 +4,8 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 
-/// Builds a daily series where each point is the trailing 7-day total of a
-/// per-day metric, then smooths it so the line reads as a trend rather than a
-/// jagged day-to-day signal.
-///
-/// Smoothing applies a centered 7-day moving average twice. Each pass looks
-/// both forward and backward, and repeating it approximates a Gaussian blur:
-/// it erases the day-to-day ripples that come from a single workout entering
-/// or leaving the trailing window, without shifting the curve in time.
-///
-/// The metric is supplied by [dailyValue] so the same logic drives different
-/// charts (e.g. Z2-5 minutes, active-day counts).
-class const RollingDailySeriesFactory() {
-  /// Days on each side of a point included in each smoothing average. Three on
-  /// each side plus the point itself is a centered 7-day window.
+class const TrailingSevenDayTotals() {
   static const _smoothingHalfWindow = 3;
-
-  /// How many times the centered moving average is applied. A second pass
-  /// removes the residual ripples a single pass leaves behind.
   static const _smoothingPasses = 2;
 
   List<RollingDailyPoint> build({
@@ -44,7 +28,7 @@ class const RollingDailySeriesFactory() {
       ),
     );
 
-    return _smoothedPoints(rawPoints);
+    return _doubleSmoothedPoints(rawPoints);
   }
 
   Map<DateTime, double> _valueByDate(
@@ -97,7 +81,9 @@ class const RollingDailySeriesFactory() {
     return rollingTotal;
   }
 
-  List<RollingDailyPoint> _smoothedPoints(List<RollingDailyPoint> rawPoints) {
+  List<RollingDailyPoint> _doubleSmoothedPoints(
+    List<RollingDailyPoint> rawPoints,
+  ) {
     var smoothedValues = rawPoints.mapL((point) => point.rollingValue);
     for (var pass = 0; pass < _smoothingPasses; pass++) {
       smoothedValues = _centeredMovingAverage(smoothedValues);

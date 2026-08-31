@@ -122,11 +122,11 @@ class const ExerciseCardActions({
     child: Icon(icon, size: 18, color: AppColors.textColor2),
   );
 
-  /// Combined log / unlog pill, mirroring the structure of the warmup group:
-  /// a single rounded chrome with the primary "Log" tap region on the left
-  /// and a secondary undo icon on the right when there's a logged set to
-  /// remove. Single piece of chrome avoids the previous overflow caused by
-  /// pairing an independent filled "Log" button with a separate "Unlog" pill.
+  /// Combined log / unlog pill, mirroring the warmup group: one rounded
+  /// control with the primary "Log" tap region on the left and a secondary
+  /// undo icon on the right when there's a logged set to remove. One pill
+  /// avoids the overflow from pairing a filled "Log" button with a separate
+  /// "Unlog" control.
   Widget _logGroup({required bool isComplete}) {
     return Container(
       decoration: BoxDecoration(

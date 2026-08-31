@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_card.dart';
-import 'package:workouts/features/goals/goals_list_chrome.dart';
+import 'package:workouts/features/goals/goals_list_rows.dart';
 import 'package:workouts/models/fitness_goal.dart';
 import 'package:workouts/theme/app_theme.dart';
 

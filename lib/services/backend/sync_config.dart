@@ -29,7 +29,7 @@ SyncConfig buildWorkoutsSyncConfig(SharedPreferences preferences) {
       candidates: _hostCandidates(),
       labels: _hostLabels(),
       probePort: _postgrestPort,
-      unreachablePolicy: const ParkOnLastCandidatePolicy(),
+      unreachablePolicy: const KeepCurrentHostPolicy(),
     ),
     ports: const SyncPorts(
       powersync: _powersyncPort,

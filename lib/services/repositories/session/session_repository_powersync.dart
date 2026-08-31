@@ -258,7 +258,7 @@ class SessionRepositoryPowerSync(
     required Session session,
     required SessionBlock block,
     required WorkoutExercise exercise,
-  }) => _applyWarmupChange(
+  }) => _persistMutatedWarmupSets(
     session: session,
     block: block,
     exercise: exercise,
@@ -269,14 +269,14 @@ class SessionRepositoryPowerSync(
     required Session session,
     required SessionBlock block,
     required WorkoutExercise exercise,
-  }) => _applyWarmupChange(
+  }) => _persistMutatedWarmupSets(
     session: session,
     block: block,
     exercise: exercise,
     mutate: (warmupSets) => warmupSets.withOneRemoved(),
   );
 
-  Future<Session> _applyWarmupChange({
+  Future<Session> _persistMutatedWarmupSets({
     required Session session,
     required SessionBlock block,
     required WorkoutExercise exercise,

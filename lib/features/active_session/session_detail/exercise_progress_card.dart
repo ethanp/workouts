@@ -7,8 +7,8 @@ import 'package:workouts/models/exercise_history_entry.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/cardio_trend_chart.dart';
-import 'package:workouts/widgets/trend_series.dart';
+import 'package:workouts/widgets/metric_trend.dart';
+import 'package:workouts/widgets/metric_trend_chart.dart';
 
 /// Per-exercise card on the session detail screen. The chart of recent
 /// sessions is the focal element; this session's point is ringed via
@@ -34,10 +34,10 @@ class const ExerciseProgressCard({
         children: [
           _header(),
           const SizedBox(height: AppSpacing.sm),
-          _chartSlot(historyAsync),
+          _progressChart(historyAsync),
           if (exerciseLogs.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            _setStrip(),
+            _loggedSets(),
           ],
         ],
       ),
@@ -63,7 +63,7 @@ class const ExerciseProgressCard({
     );
   }
 
-  Widget _chartSlot(AsyncValue<List<ExerciseHistoryEntry>> historyAsync) {
+  Widget _progressChart(AsyncValue<List<ExerciseHistoryEntry>> historyAsync) {
     return historyAsync.when(
       data: _chartFromHistory,
       loading: () => const _ChartPlaceholder(),
@@ -74,11 +74,11 @@ class const ExerciseProgressCard({
   Widget _chartFromHistory(List<ExerciseHistoryEntry> entries) {
     final metrics = ExerciseProgressMetrics(exercise);
     final points = metrics.pointsFromHistory(entries);
-    return CardioTrendChart(
+    return MetricTrendChart(
       title: 'Progress',
       highlightDate: sessionDate,
-      series: [
-        TrendSeries(
+      trends: [
+        MetricTrend(
           label: 'Top set',
           color: AppColors.accentPrimary,
           formatValue: metrics.formatTopSet,
@@ -87,7 +87,7 @@ class const ExerciseProgressCard({
               TrendPoint(date: point.date, value: point.topSet),
           ],
         ),
-        TrendSeries(
+        MetricTrend(
           label: 'Volume',
           color: AppColors.success,
           formatValue: metrics.formatVolume,
@@ -100,7 +100,7 @@ class const ExerciseProgressCard({
     );
   }
 
-  Widget _setStrip() {
+  Widget _loggedSets() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

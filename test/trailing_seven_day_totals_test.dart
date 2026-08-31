@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
-import 'package:workouts/features/history/charts/rolling_daily_series_factory.dart';
+import 'package:workouts/features/history/charts/trailing_seven_day_totals.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 
@@ -33,12 +33,12 @@ double _z2LoadMinutes(ActivityCalendarDay day) =>
 double _activeDay(ActivityCalendarDay day) => day.hasActivity ? 1.0 : 0.0;
 
 void main() {
-  const factory = RollingDailySeriesFactory();
+  const trailingSevenDayTotals = TrailingSevenDayTotals();
 
-  group('RollingDailySeriesFactory (Z2-5 load minutes)', () {
+  group('TrailingSevenDayTotals (Z2-5 load minutes)', () {
     test('returns empty when there are no days', () {
       expect(
-        factory.build(
+        trailingSevenDayTotals.build(
           days: [],
           endDate: DateTime(2026, 1, 20),
           dailyValue: _z2LoadMinutes,
@@ -48,7 +48,7 @@ void main() {
     });
 
     test('returns empty when no day has activity', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5))],
         endDate: DateTime(2026, 1, 20),
         dailyValue: _z2LoadMinutes,
@@ -57,7 +57,7 @@ void main() {
     });
 
     test('one active day contributes to the trailing 7-day window', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 3600)],
         endDate: DateTime(2026, 1, 20),
         dailyValue: _z2LoadMinutes,
@@ -69,7 +69,7 @@ void main() {
     });
 
     test('multiple active days inside the window are summed', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [
           _activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 1800),
           _activityDay(DateTime(2026, 1, 7), gteZone2Seconds: 1200),
@@ -82,7 +82,7 @@ void main() {
     });
 
     test('converts seconds to minutes', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 90)],
         endDate: DateTime(2026, 1, 6),
         dailyValue: _z2LoadMinutes,
@@ -99,7 +99,7 @@ void main() {
         for (var dayOfMonth = 1; dayOfMonth <= 25; dayOfMonth++)
           _activityDay(DateTime(2026, 1, dayOfMonth), gteZone2Seconds: 600),
       ];
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: steadyDays,
         endDate: DateTime(2026, 1, 25),
         dailyValue: _z2LoadMinutes,
@@ -109,10 +109,10 @@ void main() {
     });
 
     test('repeated smoothing attenuates an isolated spike below its raw peak', () {
-      // A lone workout day creates a narrow 7-day plateau in the raw series;
+      // A lone workout day creates a narrow 7-day plateau in the raw totals;
       // the two centered averaging passes pull in the surrounding zeros, so the
       // smoothed peak is strictly below the 70-minute raw peak.
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 10), gteZone2Seconds: 4200)],
         endDate: DateTime(2026, 1, 31),
         dailyValue: _z2LoadMinutes,
@@ -125,9 +125,9 @@ void main() {
       expect(smoothedPeak, lessThan(70));
     });
 
-    test('counts post-transition activity when series starts before '
+    test('counts post-transition activity when the window starts before '
         'spring-forward DST', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [
           _activityDay(DateTime(2026, 2, 1), gteZone2Seconds: 1800),
           _activityDay(DateTime(2026, 3, 20), gteZone2Seconds: 3600),
@@ -139,9 +139,9 @@ void main() {
       expect(_pointOn(points, DateTime(2026, 3, 22)).rollingValue, 60);
     });
 
-    test('counts post-transition activity when series starts before '
+    test('counts post-transition activity when the window starts before '
         'fall-back DST', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [
           _activityDay(DateTime(2025, 10, 1), gteZone2Seconds: 1800),
           _activityDay(DateTime(2025, 11, 10), gteZone2Seconds: 3600),
@@ -154,9 +154,9 @@ void main() {
     });
   });
 
-  group('RollingDailySeriesFactory (active days)', () {
+  group('TrailingSevenDayTotals (active days)', () {
     test('rolling window counts the number of active days in the last 7', () {
-      final points = factory.build(
+      final points = trailingSevenDayTotals.build(
         days: [
           _activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 600),
           _activityDay(DateTime(2026, 1, 6), gteZone2Seconds: 600),

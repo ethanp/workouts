@@ -1,12 +1,12 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:workouts/theme/app_theme.dart';
-import 'package:workouts/widgets/cardio_trend_painter.dart';
-import 'package:workouts/widgets/trend_series.dart';
+import 'package:workouts/widgets/metric_trend.dart';
+import 'package:workouts/widgets/metric_trend_painter.dart';
 
-class const CardioTrendChart({
+class const MetricTrendChart({
   required final String title,
-  required final List<TrendSeries> series,
+  required final List<MetricTrend> trends,
   final DateTime? displayStart,
   final DateTime? displayEnd,
 
@@ -16,33 +16,33 @@ class const CardioTrendChart({
   final DateTime? highlightDate,
 }) extends StatefulWidget {
   @override
-  State<CardioTrendChart> createState() => _CardioTrendChartState();
+  State<MetricTrendChart> createState() => _MetricTrendChartState();
 }
 
-class _CardioTrendChartState() extends State<CardioTrendChart> {
-  final Set<String> _hiddenSeries = {};
+class _MetricTrendChartState() extends State<MetricTrendChart> {
+  final Set<String> _hiddenTrendLabels = {};
   Offset? _hoverPosition;
 
-  List<TrendSeries> _visibleSeries() {
-    return widget.series
-        .where((trendSeries) => !_hiddenSeries.contains(trendSeries.label))
+  List<MetricTrend> _visibleTrends() {
+    return widget.trends
+        .where((metricTrend) => !_hiddenTrendLabels.contains(metricTrend.label))
         .toList();
   }
 
   bool _hasEnoughData() {
-    return widget.series.any((trendSeries) => trendSeries.points.length >= 2);
+    return widget.trends.any((metricTrend) => metricTrend.points.length >= 2);
   }
 
   @override
   Widget build(BuildContext context) {
-    final visibleSeries = _visibleSeries();
+    final visibleTrends = _visibleTrends();
     return _chartCard(
       children: [
         _title(),
         const SizedBox(height: AppSpacing.sm),
         _legend(),
         const SizedBox(height: AppSpacing.md),
-        _chartArea(visibleSeries),
+        _chartArea(visibleTrends),
       ],
     );
   }
@@ -74,34 +74,38 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
         1: IntrinsicColumnWidth(),
         2: IntrinsicColumnWidth(),
       },
-      children: widget.series.mapL(_legendRow),
+      children: widget.trends.mapL(_legendRow),
     );
   }
 
-  TableRow _legendRow(TrendSeries series) {
-    final isHidden = _hiddenSeries.contains(series.label);
-    final trend = _seriesTrend(series);
+  TableRow _legendRow(MetricTrend metricTrend) {
+    final isHidden = _hiddenTrendLabels.contains(metricTrend.label);
+    final latestAndSlope = _latestValueAndMonthlySlope(metricTrend);
 
     return TableRow(
       children: [
-        _labelCell(series, isHidden),
-        _latestValueCell(series.label, isHidden, trend.latest),
-        _slopeCell(series.label, isHidden, trend.slope),
+        _labelCell(metricTrend, isHidden),
+        _latestValueCell(
+          metricTrend.label,
+          isHidden,
+          latestAndSlope.latest,
+        ),
+        _slopeCell(metricTrend.label, isHidden, latestAndSlope.slope),
       ],
     );
   }
 
-  Widget _labelCell(TrendSeries series, bool isHidden) {
+  Widget _labelCell(MetricTrend metricTrend, bool isHidden) {
     return _tappableCell(
-      series.label,
+      metricTrend.label,
       isHidden,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _colorDot(series.color),
+          _colorDot(metricTrend.color),
           const SizedBox(width: 6),
           Text(
-            series.label,
+            metricTrend.label,
             style: AppTypography.caption.copyWith(
               color: AppColors.textColor3,
               fontSize: 10,
@@ -148,7 +152,7 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
 
   Widget _tappableCell(String label, bool isHidden, {required Widget child}) {
     return GestureDetector(
-      onTap: () => _toggleSeries(label),
+      onTap: () => _toggleTrendVisibility(label),
       behavior: HitTestBehavior.opaque,
       child: Opacity(
         opacity: isHidden ? 0.3 : 1.0,
@@ -160,12 +164,12 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
     );
   }
 
-  void _toggleSeries(String label) {
+  void _toggleTrendVisibility(String label) {
     setState(() {
-      if (_hiddenSeries.contains(label)) {
-        _hiddenSeries.remove(label);
+      if (_hiddenTrendLabels.contains(label)) {
+        _hiddenTrendLabels.remove(label);
       } else {
-        _hiddenSeries.add(label);
+        _hiddenTrendLabels.add(label);
       }
     });
   }
@@ -178,19 +182,33 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
     );
   }
 
-  ({String latest, String slope}) _seriesTrend(TrendSeries series) {
-    if (series.points.isEmpty) return (latest: '', slope: '');
-    final latestFormatted = series.formatValue(series.points.last.value);
-    if (series.points.length < 2) return (latest: latestFormatted, slope: '');
+  _LegendLatestAndMonthlySlope _latestValueAndMonthlySlope(
+    MetricTrend metricTrend,
+  ) {
+    if (metricTrend.points.isEmpty) {
+      return const _LegendLatestAndMonthlySlope(latest: '', slope: '');
+    }
+    final latestFormatted = metricTrend.formatValue(
+      metricTrend.points.last.value,
+    );
+    if (metricTrend.points.length < 2) {
+      return _LegendLatestAndMonthlySlope(latest: latestFormatted, slope: '');
+    }
 
-    final trend = computeTrendLine(series.points, series.points.first.date);
+    final trend = leastSquaresTrend(
+      metricTrend.points,
+      metricTrend.points.first.date,
+    );
     final sign = trend.slopePerMonth >= 0 ? '+' : '-';
     final slopeFormatted =
-        '$sign${series.formatValue(trend.slopePerMonth.abs())}/mo';
-    return (latest: latestFormatted, slope: slopeFormatted);
+        '$sign${metricTrend.formatValue(trend.slopePerMonth.abs())}/mo';
+    return _LegendLatestAndMonthlySlope(
+      latest: latestFormatted,
+      slope: slopeFormatted,
+    );
   }
 
-  Widget _chartArea(List<TrendSeries> visibleSeries) {
+  Widget _chartArea(List<MetricTrend> visibleTrends) {
     if (!_hasEnoughData()) {
       return const SizedBox(
         height: 180,
@@ -218,8 +236,8 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
               onTapCancel: () => setState(() => _hoverPosition = null),
               child: CustomPaint(
                 size: Size(constraints.maxWidth, constraints.maxHeight),
-                painter: CardioTrendPainter(
-                  visibleSeries: visibleSeries,
+                painter: MetricTrendPainter(
+                  visibleTrends: visibleTrends,
                   displayStart: widget.displayStart,
                   displayEnd: widget.displayEnd,
                   hoverPosition: _hoverPosition,
@@ -233,3 +251,8 @@ class _CardioTrendChartState() extends State<CardioTrendChart> {
     );
   }
 }
+
+class const _LegendLatestAndMonthlySlope({
+  required final String latest,
+  required final String slope,
+});

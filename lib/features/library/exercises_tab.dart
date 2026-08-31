@@ -50,19 +50,19 @@ class const _ExercisesBody({
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bool isOffline = ref.watch(isOfflineProvider);
-    return CustomScrollView(slivers: _slivers(context, isOffline));
+    return CustomScrollView(slivers: _librarySections(context, isOffline));
   }
 
-  List<Widget> _slivers(BuildContext context, bool isOffline) {
+  List<Widget> _librarySections(BuildContext context, bool isOffline) {
     return [
-      _headerSliver(),
-      ..._bannerSlivers(isOffline),
-      if (exercises.isEmpty) _emptySliver() else _exerciseListSliver(exercises),
+      _exerciseCountHeader(),
+      ..._benefitsGenerationBanners(isOffline),
+      if (exercises.isEmpty) _emptyLibrary() else _exerciseRows(exercises),
       const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
     ];
   }
 
-  Widget _headerSliver() {
+  Widget _exerciseCountHeader() {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -79,7 +79,7 @@ class const _ExercisesBody({
     );
   }
 
-  List<Widget> _bannerSlivers(bool isOffline) {
+  List<Widget> _benefitsGenerationBanners(bool isOffline) {
     if (bulkProgress != null) {
       return [
         SliverToBoxAdapter(
@@ -97,7 +97,7 @@ class const _ExercisesBody({
     return [];
   }
 
-  Widget _emptySliver() {
+  Widget _emptyLibrary() {
     return SliverFillRemaining(
       child: Center(
         child: Text(
@@ -108,7 +108,7 @@ class const _ExercisesBody({
     );
   }
 
-  Widget _exerciseListSliver(List<WorkoutExercise> filteredExercises) {
+  Widget _exerciseRows(List<WorkoutExercise> filteredExercises) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,

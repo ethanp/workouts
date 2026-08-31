@@ -6,7 +6,7 @@ class const TimestampedHeartRate({
   required final int bpm,
 });
 
-/// Buckets a continuous HR series into the 5-zone model and reports total
+/// Buckets continuous heart-rate samples into the 5-zone model and reports total
 /// seconds spent in each zone.
 ///
 /// Fixed boundaries (bpm):

@@ -10,13 +10,13 @@ import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
-import 'package:workouts/widgets/cardio_trend_chart.dart';
-import 'package:workouts/features/history/charts/cardio_trend_series_factory.dart';
+import 'package:workouts/widgets/metric_trend_chart.dart';
+import 'package:workouts/features/history/charts/outdoor_run_trends.dart';
 import 'package:workouts/features/history/charts/polarization_chart.dart';
 import 'package:workouts/features/history/charts/rolling_daily_chart.dart';
 import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
-import 'package:workouts/features/history/charts/rolling_daily_series_factory.dart';
+import 'package:workouts/features/history/charts/trailing_seven_day_totals.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
 import 'package:workouts/features/history/charts/weekly_activity_aggregator.dart';
 import 'package:workouts/features/history/charts/weekly_bar_chart.dart';
@@ -79,13 +79,13 @@ class const HistoryChartsTab() extends ConsumerWidget {
         : weeklyAggregates;
     final now = DateTime.now();
     final List<RollingDailyPoint> rollingZ2LoadPoints =
-        const RollingDailySeriesFactory().build(
+        const TrailingSevenDayTotals().build(
           days: days,
           endDate: now,
           dailyValue: (day) => day.totalZoneTime.gteZone2 / 60,
         );
     final List<RollingDailyPoint> rollingActiveDaysPoints =
-        const RollingDailySeriesFactory().build(
+        const TrailingSevenDayTotals().build(
           days: days,
           endDate: now,
           dailyValue: (day) => day.hasActivity ? 1.0 : 0.0,
@@ -273,9 +273,9 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
             formatValue: (value) => '${value.toStringAsFixed(1)}mi',
           ),
           const SizedBox(height: AppSpacing.lg),
-          CardioTrendChart(
+          MetricTrendChart(
             title: 'Outdoor Run Trends',
-            series: const CardioTrendSeriesFactory().build(
+            trends: const OutdoorRunTrends().build(
               workouts: widget.workouts,
               bestEfforts: widget.bestEfforts,
             ),

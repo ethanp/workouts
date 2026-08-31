@@ -1,7 +1,7 @@
 import 'package:workouts/models/session.dart';
 
-/// Helpers for reasoning about exercise placement across the multi-round
-/// structure of a session. A "round" here is a block; a multi-round
+/// Exercise placement across the multi-round structure of a session.
+/// A "round" here is a block; a multi-round
 /// template materializes into N blocks of the same `type` and `totalRounds`,
 /// and any add/remove/replace/reorder mutation applies to *every* round of
 /// that group so the rounds stay in lock-step.

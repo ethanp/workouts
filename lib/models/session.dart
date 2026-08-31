@@ -98,7 +98,7 @@ abstract class Session with _$Session {
 }
 
 /// Derives which fitness goals a session covers based on the benefits
-/// annotated on its exercises. Used by the Training Balance Strip.
+/// annotated on its exercises. Used by Training Balance.
 extension SessionComposition on Session {
   Set<String> get coveredGoalIds => blocks
       .expand((block) => block.exercises)

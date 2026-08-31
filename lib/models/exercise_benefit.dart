@@ -7,7 +7,7 @@ import 'package:workouts/utils/json_parsing.dart';
 ///
 /// Benefits are stored as a JSON array on the `exercises` table and surfaced
 /// on [WorkoutExercise.benefits] at read time. The goal links drive the
-/// Training Balance Strip — a session dot appears in a goal's row iff the
+/// Training Balance — a session dot appears in a goal's row iff the
 /// session contains any exercise with a benefit referencing that goal.
 class const ExerciseBenefit({
   /// Human-readable benefit label, e.g. "spinal stability", "quad drive".
