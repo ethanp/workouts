@@ -18,14 +18,6 @@ class const CalendarDayCell({
   static const cellMargin = 2.0;
   static const cellExtent = cellSize + cellMargin * 2;
 
-  static Color intensityColor(double intensity) {
-    return Color.lerp(
-      EColors.accent.withValues(alpha: 0.15),
-      EColors.accent.withValues(alpha: 0.9),
-      intensity,
-    )!;
-  }
-
   static double intensityForDay({
     required double cardioMeters,
     required int sessionMinutes,
@@ -56,8 +48,8 @@ class const CalendarDayCell({
           )
         : 0.0;
     final cellColor = hasActivity
-        ? intensityColor(intensity)
-        : EColors.surface.withValues(alpha: 0.8);
+        ? EHeatmapIntensity.colorAt(intensity)
+        : EHeatmapIntensity.none.color;
 
     return GestureDetector(
       onTap: onActivated,
@@ -70,11 +62,11 @@ class const CalendarDayCell({
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isToday
-                ? EColors.accent
+                ? EHeatmapIntensity.todayRing
                 : hasActivity
-                ? intensityColor(intensity).withValues(alpha: 0.6)
-                : EColors.border.withValues(alpha: 0.4),
-            width: isToday ? 1.5 : 0.5,
+                ? cellColor.withValues(alpha: 0.6)
+                : EHeatmapIntensity.cellHairline.color,
+            width: isToday ? 1.5 : EHeatmapIntensity.cellHairline.width,
           ),
           boxShadow: hasActivity
               ? [
@@ -105,13 +97,13 @@ class const CalendarDayCell({
   }
 
   Widget _activeContent(double intensity) {
-    const textColor = Color.fromARGB(255, 234, 221, 209);
+    final Color labelInk = EHeatmapIntensity.inkAt(intensity);
 
     return Stack(
       children: [
-        Positioned(left: 3, top: 2, child: _dayNumber(textColor)),
-        Positioned(right: 2, top: 12, child: _activityLabel(textColor)),
-        Positioned(right: 2, bottom: 2, child: _zoneLabel(textColor)),
+        Positioned(left: 3, top: 2, child: _dayNumber(labelInk)),
+        Positioned(right: 2, top: 12, child: _activityLabel(labelInk)),
+        Positioned(right: 2, bottom: 2, child: _zoneLabel(labelInk)),
       ],
     );
   }

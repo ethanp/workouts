@@ -3,7 +3,6 @@ import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:flutter/material.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
-import 'package:workouts/widgets/chart_date_plot.dart';
 
 class const RollingDailyGoal({
   required final double value,
@@ -44,18 +43,23 @@ class RollingDailyPainter({
     _paintZeroAndMaxLoad(canvas, plot, scale);
   }
 
-  ChartDatePlot _plotAcrossVisibleDates(
+  EChartPlot _plotAcrossVisibleDates(
     Size size,
     List<RollingDailyPoint> visiblePoints,
   ) {
-    return ChartDatePlot(
+    return EChartPlot(
       size: size,
       leftPadding: leftPadding,
       rightPadding: rightPadding,
       topPadding: 8,
       bottomPadding: 24,
-      minDate: displayStart ?? visiblePoints.first.date,
-      maxDate: displayEnd ?? visiblePoints.last.date,
+      start: displayStart ?? visiblePoints.first.date,
+      end: displayEnd ?? visiblePoints.last.date,
+      valueScale: EChartValueScale.fixed(
+        min: 0,
+        max: 1,
+        ticks: const [0, 1],
+      ),
     );
   }
 
@@ -72,14 +76,15 @@ class RollingDailyPainter({
     return RollingDailyScale(maxValue: math.max(1, maxValue * 1.12));
   }
 
-  void _paintDateGridAndYearBoundaries(Canvas canvas, ChartDatePlot plot) {
+  void _paintDateGridAndYearBoundaries(Canvas canvas, EChartPlot plot) {
     _strokeQuarterHeightGuides(canvas, plot);
-    plot.strokeLeftAndBottomEdges(canvas);
-    plot.drawYearBoundaries(canvas);
-    plot.paintMonthOrDayLabels(canvas, labelColor: EColors.textMuted);
+    final chrome = EChartChrome(plot);
+    chrome.strokePlotEdges(canvas);
+    chrome.paintYearBoundaryGuides(canvas);
+    chrome.paintDateTicks(canvas);
   }
 
-  void _strokeQuarterHeightGuides(Canvas canvas, ChartDatePlot plot) {
+  void _strokeQuarterHeightGuides(Canvas canvas, EChartPlot plot) {
     final gridPaint = Paint()
       ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -98,7 +103,7 @@ class RollingDailyPainter({
 
   void _strokeTrailingWindowGoals(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     RollingDailyScale scale,
   ) {
     for (final goal in goals) {
@@ -144,7 +149,7 @@ class RollingDailyPainter({
 
   void _strokeSmoothedTrailingSevenDayTotal(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
@@ -173,7 +178,7 @@ class RollingDailyPainter({
 
   void _paintDayDotsWhenUnderNinetyPoints(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
@@ -194,7 +199,7 @@ class RollingDailyPainter({
 
   void _paintScrubCrosshairOnNearestDay(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
@@ -221,7 +226,7 @@ class RollingDailyPainter({
 
   void _paintZeroAndMaxLoad(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     RollingDailyScale scale,
   ) {
     _paintLoadLabel(canvas, formatValue(scale.maxValue), Offset(2, plot.top));
@@ -240,7 +245,7 @@ class RollingDailyPainter({
   }
 
   RollingDailyPoint? _pointNearestHover(
-    ChartDatePlot plot,
+    EChartPlot plot,
     List<RollingDailyPoint> visiblePoints,
   ) {
     final position = hoverPosition;
@@ -282,7 +287,7 @@ class RollingDailyPainter({
 }
 
 class const RollingDailyScale({required final double maxValue}) {
-  double yForValue(double value, ChartDatePlot plot) {
+  double yForValue(double value, EChartPlot plot) {
     final valueFraction = (value / maxValue).clamp(0.0, 1.0);
     return plot.bottom - valueFraction * plot.height;
   }

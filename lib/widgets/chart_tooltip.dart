@@ -2,12 +2,11 @@ import 'dart:math' as math;
 import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:flutter/material.dart';
-import 'package:workouts/widgets/chart_date_plot.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
 class ChartTooltip({
   required final Canvas canvas,
-  required final ChartDatePlot plot,
+  required final EChartPlot plot,
   required final Offset hoverPosition,
   required final List<MetricTrend> visibleTrends,
 }) {
@@ -38,7 +37,7 @@ class ChartTooltip({
   List<_TooltipLine> _leastSquaresValuesAtHoverDate() {
     final hoverDate = plot.dateForX(_clampedX);
     final secondsFromOrigin = hoverDate
-        .difference(plot.minDate)
+        .difference(plot.start)
         .inSeconds
         .toDouble();
 
@@ -48,7 +47,7 @@ class ChartTooltip({
 
     for (final metricTrend in visibleTrends) {
       if (metricTrend.points.length < 2) continue;
-      final trend = leastSquaresTrend(metricTrend.points, plot.minDate);
+      final trend = leastSquaresTrend(metricTrend.points, plot.start);
       final yHat = trend.intercept + trend.slope * secondsFromOrigin;
       lines.add(
         _TooltipLine(

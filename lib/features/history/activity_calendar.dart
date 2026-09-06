@@ -42,32 +42,13 @@ class const ActivityCalendar({
       children: [
         Text('Less', style: EText.caption),
         const SizedBox(width: ELayout.spaceSm),
-        ..._intensitySquares(),
+        ...EHeatmapIntensity.legendSwatches,
         const SizedBox(width: ELayout.spaceSm),
         Text('More', style: EText.caption),
         const Spacer(),
         Text('mi · min', style: EText.caption),
       ],
     );
-  }
-
-  List<Widget> _intensitySquares() {
-    return List.generate(5, (index) {
-      final intensity = (index + 1) / 5;
-      return Container(
-        width: 12,
-        height: 12,
-        margin: const EdgeInsets.only(right: 2),
-        decoration: BoxDecoration(
-          color: Color.lerp(
-            EColors.accent.withValues(alpha: 0.15),
-            EColors.accent.withValues(alpha: 0.9),
-            intensity,
-          ),
-          borderRadius: BorderRadius.circular(2),
-        ),
-      );
-    });
   }
 
   Widget _grid() {

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:workouts/widgets/chart_date_plot.dart';
 import 'package:workouts/widgets/chart_tooltip.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
@@ -32,7 +31,7 @@ class MetricTrendPainter({
 
   void _paintPerMetricMinMaxAtPlotCorners(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
   ) {
     const double rowHeight = 11;
     const double horizontalInset = 4;
@@ -86,7 +85,7 @@ class MetricTrendPainter({
     textPainter.paint(canvas, position);
   }
 
-  ChartDatePlot _plotAcrossVisibleDates(Size size) {
+  EChartPlot _plotAcrossVisibleDates(Size size) {
     final allDates = visibleTrends
         .expand((metricTrend) => metricTrend.points)
         .map((trendPoint) => trendPoint.date);
@@ -103,25 +102,31 @@ class MetricTrendPainter({
                 earlierDate.isAfter(laterDate) ? earlierDate : laterDate,
           );
 
-    return ChartDatePlot(
+    return EChartPlot(
       size: size,
       leftPadding: 12,
       rightPadding: 12,
       topPadding: 8,
       bottomPadding: 24,
-      minDate: displayStart ?? fallbackStart,
-      maxDate: displayEnd ?? fallbackEnd,
+      start: displayStart ?? fallbackStart,
+      end: displayEnd ?? fallbackEnd,
+      valueScale: EChartValueScale.fixed(
+        min: 0,
+        max: 1,
+        ticks: const [0, 1],
+      ),
     );
   }
 
-  void _paintDateGridAndYearBoundaries(Canvas canvas, ChartDatePlot plot) {
+  void _paintDateGridAndYearBoundaries(Canvas canvas, EChartPlot plot) {
     _strokeQuarterHeightGuides(canvas, plot);
-    plot.strokeLeftAndBottomEdges(canvas);
-    plot.drawYearBoundaries(canvas);
-    plot.paintMonthOrDayLabels(canvas, labelColor: EColors.textMuted);
+    final chrome = EChartChrome(plot);
+    chrome.strokePlotEdges(canvas);
+    chrome.paintYearBoundaryGuides(canvas);
+    chrome.paintDateTicks(canvas);
   }
 
-  void _strokeQuarterHeightGuides(Canvas canvas, ChartDatePlot plot) {
+  void _strokeQuarterHeightGuides(Canvas canvas, EChartPlot plot) {
     final gridPaint = Paint()
       ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -140,7 +145,7 @@ class MetricTrendPainter({
 
   void _paintDayDotsAndLeastSquaresTrend(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     MetricTrend metricTrend,
   ) {
     final range = PaddedMetricScale(
@@ -168,7 +173,7 @@ class MetricTrendPainter({
 
   void _paintDayDotsWithSessionHighlightRing(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     MetricTrend metricTrend,
     PaddedMetricScale range,
   ) {
@@ -199,23 +204,23 @@ class MetricTrendPainter({
 
   void _strokeLeastSquaresTrendAcrossVisibleDates(
     Canvas canvas,
-    ChartDatePlot plot,
+    EChartPlot plot,
     MetricTrend metricTrend,
     PaddedMetricScale range,
   ) {
     final visiblePoints = metricTrend.points
         .where(
           (point) =>
-              !point.date.isBefore(plot.minDate) &&
-              !point.date.isAfter(plot.maxDate),
+              !point.date.isBefore(plot.start) &&
+              !point.date.isAfter(plot.end),
         )
         .toList();
 
     if (visiblePoints.length < 2) return;
 
-    final trend = leastSquaresTrend(visiblePoints, plot.minDate);
-    final dateRangeSeconds = plot.maxDate
-        .difference(plot.minDate)
+    final trend = leastSquaresTrend(visiblePoints, plot.start);
+    final dateRangeSeconds = plot.end
+        .difference(plot.start)
         .inSeconds
         .toDouble();
 

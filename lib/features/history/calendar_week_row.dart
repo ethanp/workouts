@@ -187,14 +187,14 @@ class const _WeekSummary({
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         decoration: BoxDecoration(
-          color: CalendarDayCell.intensityColor(intensity * 0.7),
+          color: EHeatmapIntensity.colorAt(intensity * 0.7),
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
           '$activeDays',
           textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: EHeatmapIntensity.inkAt(intensity * 0.7),
             fontSize: _summaryFontSize,
             fontWeight: FontWeight.w600,
           ),
