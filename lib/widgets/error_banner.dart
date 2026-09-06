@@ -1,12 +1,12 @@
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:url_launcher/url_launcher.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 
 const _recentLogLineCount = 75;
@@ -67,17 +67,17 @@ class const _ErrorToast({
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.all(AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.all(ELayout.spaceMd),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: _toastDecoration(),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           _messageBody(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _actions(),
         ],
       ),
@@ -87,13 +87,11 @@ class const _ErrorToast({
   BoxDecoration _toastDecoration() {
     return BoxDecoration(
       color: const Color(0xFF2C1010),
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: Border.all(
-        color: CupertinoColors.destructiveRed.withValues(alpha: 0.5),
-      ),
+      borderRadius: ELayout.borderRadiusMd,
+      border: Border.all(color: EColors.danger.withValues(alpha: 0.5)),
       boxShadow: [
         BoxShadow(
-          color: CupertinoColors.black.withValues(alpha: 0.4),
+          color: Colors.black.withValues(alpha: 0.4),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -104,40 +102,26 @@ class const _ErrorToast({
   Widget _header() {
     return Row(
       children: [
-        const Icon(
-          CupertinoIcons.exclamationmark_triangle_fill,
-          color: CupertinoColors.destructiveRed,
-          size: 18,
-        ),
-        const SizedBox(width: AppSpacing.sm),
-        Text(
-          'Error',
-          style: AppTypography.subtitle.copyWith(
-            color: CupertinoColors.destructiveRed,
-          ),
-        ),
+        const Icon(Icons.warning, color: EColors.danger, size: 18),
+        const SizedBox(width: ELayout.spaceSm),
+        Text('Error', style: EText.section.danger),
         const Spacer(),
-        CupertinoButton(
+        IconButton(
+          tooltip: 'Dismiss',
           padding: EdgeInsets.zero,
-          minimumSize: const Size(24, 24),
+          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
           onPressed: onDismiss,
-          child: const Icon(
-            CupertinoIcons.xmark,
-            color: AppColors.textColor3,
-            size: 16,
-          ),
+          icon: const Icon(Icons.close, color: EColors.textTertiary, size: 16),
         ),
       ],
     );
   }
 
   Widget _messageBody() {
-    return SelectableRegion(
-      focusNode: FocusNode(),
-      selectionControls: cupertinoTextSelectionHandleControls,
+    return SelectionArea(
       child: Text(
         message,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor2),
+        style: EText.caption.secondary,
         maxLines: 4,
         overflow: TextOverflow.ellipsis,
       ),
@@ -145,40 +129,41 @@ class const _ErrorToast({
   }
 
   Widget _actions() {
-    const buttonTextStyle = TextStyle(
-      color: CupertinoColors.white,
-      fontSize: 14,
-      fontWeight: FontWeight.w600,
-    );
-    const buttonPadding = EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
+    final buttonStyle = FilledButton.styleFrom(
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(
+        horizontal: ELayout.spaceMd,
+        vertical: ELayout.spaceSm,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: ELayout.borderRadiusSm,
+      ),
     );
 
     return Row(
       children: [
-        CupertinoButton(
-          padding: buttonPadding,
-          color: CupertinoColors.destructiveRed,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+        FilledButton(
+          style: buttonStyle.copyWith(
+            backgroundColor: const WidgetStatePropertyAll(EColors.danger),
+          ),
           onPressed: () => _emailError(message),
-          child: const Text('Email to me', style: buttonTextStyle),
+          child: const Text('Email to me'),
         ),
-        const SizedBox(width: AppSpacing.sm),
-        CupertinoButton(
-          padding: buttonPadding,
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+        const SizedBox(width: ELayout.spaceSm),
+        FilledButton(
+          style: buttonStyle.copyWith(
+            backgroundColor: const WidgetStatePropertyAll(EColors.surface),
+          ),
           onPressed: () => Clipboard.setData(ClipboardData(text: message)),
-          child: const Text('Copy', style: buttonTextStyle),
+          child: const Text('Copy'),
         ),
-        const SizedBox(width: AppSpacing.sm),
-        CupertinoButton(
-          padding: buttonPadding,
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+        const SizedBox(width: ELayout.spaceSm),
+        FilledButton(
+          style: buttonStyle.copyWith(
+            backgroundColor: const WidgetStatePropertyAll(EColors.surface),
+          ),
           onPressed: onDismiss,
-          child: const Text('Dismiss', style: buttonTextStyle),
+          child: const Text('Dismiss'),
         ),
       ],
     );

@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/goal_form_sheet.dart';
 import 'package:workouts/features/goals/goals_empty_state.dart';
 import 'package:workouts/features/goals/goals_list.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const GoalsTab() extends ConsumerStatefulWidget {
   @override
@@ -41,11 +41,11 @@ class _GoalsTabState() extends ConsumerState<GoalsTab> {
           onAddGoal: () => _showAddGoalSheet(context),
         );
       },
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Error: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
@@ -53,7 +53,7 @@ class _GoalsTabState() extends ConsumerState<GoalsTab> {
 
   void _showAddGoalSheet(BuildContext context) {
     final goalsNotifier = ref.read(goalsControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         onSave: (title, category, description, priority) async {

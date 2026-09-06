@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/providers/sync_provider.dart';
 
@@ -19,97 +20,97 @@ class const SyncStatusIcon() extends ConsumerWidget {
 
     return GestureDetector(
       onLongPress: () => _showStatusPopup(context, description),
-      child: _buildIcon(syncState),
+      child: _icon(syncState),
     );
   }
 
-  Widget _buildIcon(SyncState state) {
+  Widget _icon(SyncState state) {
     return switch (state) {
       SyncState.synced => const Icon(
-        CupertinoIcons.cloud_fill,
+        Icons.cloud,
         size: 20,
-        color: CupertinoColors.systemGreen,
+        color: EColors.success,
       ),
-      SyncState.downloading => _buildSyncing(isDownloading: true),
-      SyncState.uploading => _buildSyncing(isUploading: true),
-      SyncState.connecting => _buildConnecting(),
+      SyncState.downloading => _syncing(isDownloading: true),
+      SyncState.uploading => _syncing(isUploading: true),
+      SyncState.connecting => _connecting(),
       SyncState.offline => const Icon(
-        CupertinoIcons.wifi_slash,
+        Icons.wifi_off,
         size: 20,
-        color: CupertinoColors.systemGrey,
+        color: EColors.textMuted,
       ),
       SyncState.error => const Icon(
-        CupertinoIcons.exclamationmark_circle,
+        Icons.error_outline,
         size: 20,
-        color: CupertinoColors.systemRed,
+        color: EColors.danger,
       ),
     };
   }
 
-  Widget _buildSyncing({bool isDownloading = false, bool isUploading = false}) {
+  Widget _syncing({bool isDownloading = false, bool isUploading = false}) {
     return SizedBox(
       width: 20,
       height: 20,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          const CupertinoActivityIndicator(radius: 8),
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
           if (isUploading)
-            Positioned(
+            const Positioned(
               right: 0,
               bottom: 0,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: CupertinoColors.systemOrange,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              child: _Dot(color: EColors.warning),
             ),
           if (isDownloading)
-            Positioned(
+            const Positioned(
               right: 0,
               bottom: 0,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: const BoxDecoration(
-                  color: CupertinoColors.systemBlue,
-                  shape: BoxShape.circle,
-                ),
-              ),
+              child: _Dot(color: EColors.accent),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildConnecting() {
+  Widget _connecting() {
     return const SizedBox(
       width: 20,
       height: 20,
-      child: CupertinoActivityIndicator(radius: 8),
+      child: CircularProgressIndicator(strokeWidth: 2),
     );
   }
 
   void _showStatusPopup(BuildContext context, String description) {
-    showCupertinoDialog<void>(
+    showDialog<void>(
       context: context,
-      builder: (context) => CupertinoAlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sync Status'),
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(description),
         ),
         actions: [
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            onPressed: () => Navigator.pop(context),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('OK'),
           ),
         ],
       ),
+    );
+  }
+}
+
+class const _Dot({required final Color color}) extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
     );
   }
 }

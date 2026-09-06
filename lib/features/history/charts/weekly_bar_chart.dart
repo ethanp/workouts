@@ -1,7 +1,7 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 
 class const WeeklyBarChart({
   required final String title,
@@ -28,17 +28,17 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
       onTap: () => setState(() => _activeIndex = null),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
             _barsWithYearBoundaries(),
           ],
         ),
@@ -48,7 +48,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
 
   Widget _header() {
     if (widget.weeks.isEmpty) {
-      return Text(widget.title, style: AppTypography.subtitle);
+      return Text(widget.title, style: EText.section);
     }
 
     final averageableWeeks = widget.weeks
@@ -65,10 +65,10 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(widget.title, style: AppTypography.subtitle),
+        Text(widget.title, style: EText.section),
         Text(
           'avg ${_formatValue(avg)}/wk',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          style: EText.caption.copyWith(color: EColors.textTertiary),
         ),
       ],
     );
@@ -99,13 +99,13 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: AppColors.textColor4.withValues(alpha: 0.5),
+                color: EColors.textMuted.withValues(alpha: 0.5),
               ),
             ),
           ),
           child: SizedBox(height: 140, child: _bars()),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         _labels(),
       ],
     );
@@ -130,7 +130,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
                 bottom: 0,
                 child: Container(
                   width: 1,
-                  color: AppColors.textColor4.withValues(alpha: 0.3),
+                  color: EColors.textMuted.withValues(alpha: 0.3),
                 ),
               ),
           ],
@@ -141,8 +141,8 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
 
   Widget _bars() {
     if (widget.weeks.isEmpty) {
-      return const Center(
-        child: Text('No data yet', style: AppTypography.caption),
+      return Center(
+        child: Text('No data yet', style: EText.caption),
       );
     }
 
@@ -151,7 +151,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
       (maxSoFar, weekData) => math.max(maxSoFar, weekData.value),
     );
     final chartMax = _maxIncludingGoalHeadroom(highestWeekValue);
-    final color = widget.barColor ?? AppColors.accentPrimary;
+    final color = widget.barColor ?? EColors.accent;
     final barSpacing = _barSpacing();
 
     return LayoutBuilder(
@@ -273,7 +273,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
                       _formatValue(week.value),
                       style: TextStyle(
                         fontSize: 9,
-                        color: AppColors.textColor2,
+                        color: EColors.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                       textAlign: TextAlign.center,
@@ -342,8 +342,8 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
                         style: TextStyle(
                           fontSize: 9,
                           color: widget.weeks[weekIndex].isCurrent
-                              ? AppColors.accentPrimary
-                              : AppColors.textColor4,
+                              ? EColors.accent
+                              : EColors.textMuted,
                           fontWeight: widget.weeks[weekIndex].isCurrent
                               ? FontWeight.w600
                               : FontWeight.normal,

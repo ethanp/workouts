@@ -1,13 +1,13 @@
 import 'dart:async';
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/features/active_session/exercise_chat/exercise_chat_prompt.dart';
 import 'package:workouts/models/chat_message.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/llm/llm_service.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const ExerciseChatScreen({required final WorkoutExercise exercise})
     extends ConsumerStatefulWidget {
@@ -49,11 +49,10 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('Ask about: ${widget.exercise.name}'),
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(title: 'Ask about: ${widget.exercise.name}'),
+      body: SafeArea(
         child: Column(
           children: [
             Expanded(child: _conversation()),
@@ -70,7 +69,7 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
     }
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       itemCount: _conversationItemCount,
       itemBuilder: (context, index) => _conversationItem(index),
     );
@@ -90,12 +89,12 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
   }
 
   Widget _emptyState() => Padding(
-    padding: const EdgeInsets.all(AppSpacing.lg),
+    padding: const EdgeInsets.all(ELayout.spaceLg),
     child: Center(
       child: Text(
         "Ask about form, benefits, modifications, or any aches you're feeling.",
         textAlign: TextAlign.center,
-        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+        style: EText.body.medium.copyWith(color: EColors.textTertiary),
       ),
     ),
   );
@@ -103,7 +102,7 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
   Widget _bubble(ChatMessage message) {
     final isUser = message.role == ChatRole.user;
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: Row(
         mainAxisAlignment: isUser
             ? MainAxisAlignment.end
@@ -116,7 +115,7 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
   }
 
   Widget _streamingBubble() => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -131,24 +130,24 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
   );
 
   Widget _errorBubble() => Padding(
-    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
     child: Row(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Flexible(
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              horizontal: ELayout.spaceMd,
+              vertical: ELayout.spaceSm,
             ),
             decoration: BoxDecoration(
-              color: AppColors.error.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.error.withValues(alpha: 0.4)),
+              color: EColors.danger.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(ELayout.radiusMd),
+              border: Border.all(color: EColors.danger.withValues(alpha: 0.4)),
             ),
             child: Text(
               _streamError!,
-              style: AppTypography.body.copyWith(color: AppColors.error),
+              style: EText.body.medium.copyWith(color: EColors.danger),
             ),
           ),
         ),
@@ -158,62 +157,50 @@ class _ExerciseChatScreenState() extends ConsumerState<ExerciseChatScreen> {
 
   Widget _bubbleContainer(String text, {required bool isUser}) => Container(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
+      horizontal: ELayout.spaceMd,
+      vertical: ELayout.spaceSm,
     ),
     decoration: BoxDecoration(
-      color: isUser ? AppColors.accentPrimary : AppColors.backgroundDepth2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: isUser ? null : Border.all(color: AppColors.borderDepth1),
+      color: isUser ? EColors.accent : EColors.backgroundLift,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
+      border: isUser ? null : Border.all(color: EColors.border),
     ),
     child: Text(
       text,
-      style: AppTypography.body.copyWith(
-        color: isUser ? CupertinoColors.white : AppColors.textColor1,
+      style: EText.body.medium.copyWith(
+        color: isUser ? Colors.white : EColors.textPrimary,
       ),
     ),
   );
 
   Widget _composerRow() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
+    padding: const EdgeInsets.all(ELayout.spaceMd),
     decoration: BoxDecoration(
-      color: AppColors.backgroundDepth2,
-      border: Border(top: BorderSide(color: AppColors.borderDepth1)),
+      color: EColors.backgroundLift,
+      border: Border(top: BorderSide(color: EColors.border)),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
-          child: CupertinoTextField(
+          child: TextField(
             controller: _composer,
             focusNode: _composerFocus,
-            placeholder: 'Ask anything…',
-            placeholderStyle: AppTypography.body.copyWith(
-              color: AppColors.textColor4,
-            ),
-            style: AppTypography.body.copyWith(color: AppColors.textColor1),
-            padding: const EdgeInsets.all(AppSpacing.sm),
             minLines: 1,
             maxLines: 4,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _send(),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundDepth3,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              border: Border.all(color: AppColors.borderDepth1),
-            ),
+            style: EText.body.medium.copyWith(color: EColors.textPrimary),
+            decoration: EInput.filledMd(hintText: 'Ask anything…'),
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
+        const SizedBox(width: ELayout.spaceSm),
+        IconButton(
           onPressed: _isStreaming ? null : _send,
-          child: Icon(
-            CupertinoIcons.arrow_up_circle_fill,
+          icon: Icon(
+            Icons.arrow_circle_up,
             size: 32,
-            color: _isStreaming
-                ? AppColors.textColor4
-                : AppColors.accentPrimary,
+            color: _isStreaming ? EColors.textMuted : EColors.accent,
           ),
         ),
       ],

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/exercise/active_exercise_timer_provider.dart';
 import 'package:workouts/features/active_session/exercise/active_timer_store.dart';

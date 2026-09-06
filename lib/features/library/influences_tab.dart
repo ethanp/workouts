@@ -1,11 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/features/library/influences_provider.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
@@ -19,11 +19,11 @@ class const InfluencesTab() extends ConsumerWidget {
       data: (influences) => influences.isEmpty
           ? const _EmptyView()
           : _InfluencesList(influences: influences),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Unable to load influences: $error',
-          style: AppTypography.body,
+          style: EText.body.medium,
         ),
       ),
     );
@@ -35,10 +35,10 @@ class const _EmptyView() extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Text(
           'No training influences available.',
-          style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          style: EText.body.medium.copyWith(color: EColors.textTertiary),
           textAlign: TextAlign.center,
         ),
       ),
@@ -51,7 +51,7 @@ class const _InfluencesList({required final List<TrainingInfluence> influences})
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       children: [
         _explanationBanner(),
         ...influences.map((influence) => _InfluenceCard(influence: influence)),
@@ -61,22 +61,22 @@ class const _InfluencesList({required final List<TrainingInfluence> influences})
 
   Widget _explanationBanner() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Row(
         children: [
-          Icon(CupertinoIcons.lightbulb, color: AppColors.textColor2, size: 20),
-          const SizedBox(width: AppSpacing.sm),
+          Icon(Icons.lightbulb_outline, color: EColors.textSecondary, size: 20),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Text(
               'Select coaches and philosophies to incorporate their '
               'training principles into your generated workouts.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor2),
+              style: EText.body.medium.copyWith(color: EColors.textSecondary),
             ),
           ),
         ],
@@ -119,30 +119,30 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
   );
 
   Widget _deleteBackground() => Container(
-    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
     decoration: BoxDecoration(
-      color: AppColors.error,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      color: EColors.danger,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
     ),
     alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    padding: const EdgeInsets.only(right: ELayout.spaceLg),
     child: const Icon(
-      CupertinoIcons.trash,
-      color: CupertinoColors.white,
+      Icons.delete,
+      color: Colors.white,
       size: 22,
     ),
   );
 
   Widget _card(TrainingInfluence influence) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
         border: Border.all(
           color: influence.isActive
-              ? AppColors.accentPrimary.withValues(alpha: 0.5)
-              : AppColors.borderDepth1,
+              ? EColors.accent.withValues(alpha: 0.5)
+              : EColors.border,
         ),
       ),
       child: Column(
@@ -151,7 +151,7 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
           _header(influence),
           _expandToggle(),
           if (_isExpanded) ...[
-            Container(height: 1, color: AppColors.borderDepth1),
+            Container(height: 1, color: EColors.border),
             _principlesList(influence.principles),
           ],
         ],
@@ -161,7 +161,7 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
 
   Widget _header(TrainingInfluence influence) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       child: Row(
         children: [
           Expanded(
@@ -171,31 +171,31 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(influence.name, style: AppTypography.subtitle),
-                  const SizedBox(height: AppSpacing.xs),
+                  Text(influence.name, style: EText.section),
+                  const SizedBox(height: ELayout.spaceXs),
                   Text(
                     influence.description,
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor2,
+                    style: EText.body.medium.copyWith(
+                      color: EColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          IconButton(
+            tooltip: 'Edit',
             onPressed: () => _openEditSheet(context),
-            child: const Icon(
-              CupertinoIcons.pencil,
+            icon: const Icon(
+              Icons.edit,
               size: 20,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
           ),
-          CupertinoSwitch(
+          Switch(
             value: influence.isActive,
             onChanged: _toggleInfluence,
-            activeTrackColor: AppColors.accentPrimary,
+            activeTrackColor: EColors.accent,
           ),
         ],
       ),
@@ -203,7 +203,7 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
   }
 
   void _openEditSheet(BuildContext context) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => InfluenceFormSheet(existing: widget.influence),
     );
@@ -215,23 +215,23 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          horizontal: ELayout.spaceMd,
+          vertical: ELayout.spaceSm,
         ),
         child: Row(
           children: [
             Icon(
               _isExpanded
-                  ? CupertinoIcons.chevron_up
-                  : CupertinoIcons.chevron_down,
+                  ? Icons.expand_less
+                  : Icons.expand_more,
               size: 16,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             Text(
               _isExpanded ? 'Hide principles' : 'Show principles',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
+              style: EText.caption.copyWith(
+                color: EColors.textTertiary,
               ),
             ),
           ],
@@ -242,36 +242,36 @@ class _InfluenceCardState() extends ConsumerState<_InfluenceCard> {
 
   Widget _principlesList(List<String> principles) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Key Principles',
-            style: AppTypography.body.copyWith(
+            style: EText.body.medium.copyWith(
               fontWeight: FontWeight.bold,
-              color: AppColors.textColor1,
+              color: EColors.textPrimary,
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           ...principles.map(
             (principle) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              padding: const EdgeInsets.only(bottom: ELayout.spaceXs),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '•',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.accentPrimary,
+                    style: EText.body.medium.copyWith(
+                      color: EColors.accent,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.sm),
+                  const SizedBox(width: ELayout.spaceSm),
                   Expanded(
                     child: Text(
                       principle,
-                      style: AppTypography.body.copyWith(
-                        color: AppColors.textColor2,
+                      style: EText.body.medium.copyWith(
+                        color: EColors.textSecondary,
                       ),
                     ),
                   ),
@@ -349,8 +349,8 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(top: false, child: _sheetContent()),
     );
@@ -359,33 +359,33 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
   Widget _sheetContent() {
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _dragHandle(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           Text(
             _isEditing ? 'Edit Influence' : 'Add Influence',
-            style: AppTypography.title,
+            style: EText.title,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: ELayout.spaceXl),
           _nameField(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           if (_hasFields) ...[
             _descriptionField(),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
             _principlesFields(),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
           ],
           if (_errorMessage != null) ...[
             _errorBanner(),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
           ],
           _actionButtons(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _cancelButton(),
         ],
       ),
@@ -397,7 +397,7 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.borderDepth3,
+        color: EColors.borderStrong,
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -409,24 +409,18 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
       children: [
         Text(
           'Name',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        CupertinoTextField(
+        const SizedBox(height: ELayout.spaceSm),
+        TextField(
           controller: _nameController,
-          placeholder: 'e.g., Pavel Tsatsouline, Starting Strength',
           onChanged: (_) => setState(() {}),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth3,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
-          placeholderStyle: AppTypography.body.copyWith(
-            color: AppColors.textColor4,
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'e.g., Pavel Tsatsouline, Starting Strength',
           ),
         ),
       ],
@@ -439,24 +433,18 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
       children: [
         Text(
           'Description',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        CupertinoTextField(
+        const SizedBox(height: ELayout.spaceSm),
+        TextField(
           controller: _descriptionController,
-          placeholder: 'One-sentence description',
           maxLines: 2,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth3,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
-          placeholderStyle: AppTypography.body.copyWith(
-            color: AppColors.textColor4,
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'One-sentence description',
           ),
         ),
       ],
@@ -471,25 +459,25 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
           children: [
             Text(
               'Key Principles',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
+              style: EText.caption.copyWith(
+                color: EColors.textTertiary,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const Spacer(),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(0, 0),
+            IconButton(
+              tooltip: 'Add principle',
               onPressed: _addPrinciple,
-              child: const Icon(
-                CupertinoIcons.add_circled,
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(
+                Icons.add_circle_outline,
                 size: 20,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ...List.generate(_principleControllers.length, _principleRow),
       ],
     );
@@ -497,43 +485,36 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
 
   Widget _principleRow(int principleIndex) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.md),
+            padding: const EdgeInsets.only(top: ELayout.spaceMd),
             child: Text(
               '•',
-              style: AppTypography.body.copyWith(
-                color: AppColors.accentPrimary,
+              style: EText.body.medium.copyWith(
+                color: EColors.accent,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
-            child: CupertinoTextField(
+            child: TextField(
               controller: _principleControllers[principleIndex],
               maxLines: null,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundDepth3,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              style: AppTypography.body.copyWith(color: AppColors.textColor1),
-              placeholderStyle: AppTypography.body.copyWith(
-                color: AppColors.textColor4,
-              ),
+              style: EText.body.medium.copyWith(color: EColors.textPrimary),
+              decoration: const InputDecoration(),
             ),
           ),
-          CupertinoButton(
-            padding: const EdgeInsets.only(left: AppSpacing.xs),
-            minimumSize: const Size(0, 0),
+          IconButton(
+            tooltip: 'Remove principle',
             onPressed: () => _removePrinciple(principleIndex),
-            child: const Icon(
-              CupertinoIcons.minus_circle,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(
+              Icons.remove_circle_outline,
               size: 18,
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
             ),
           ),
         ],
@@ -556,14 +537,14 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
 
   Widget _errorBanner() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.danger.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
       ),
       child: Text(
         _errorMessage!,
-        style: AppTypography.body.copyWith(color: AppColors.error),
+        style: EText.body.medium.copyWith(color: EColors.danger),
       ),
     );
   }
@@ -579,49 +560,48 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_hasFields)
-          CupertinoButton.filled(
+          FilledButton(
             onPressed: canSave ? _save : null,
-            child: Text(
-              _isEditing ? 'Save' : 'Add Influence',
-              style: const TextStyle(
-                color: CupertinoColors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            child: Text(_isEditing ? 'Save' : 'Add Influence'),
           ),
-        if (_hasFields) const SizedBox(height: AppSpacing.sm),
+        if (_hasFields) const SizedBox(height: ELayout.spaceSm),
         ConnectionGatedWidget(
-          child: CupertinoButton(
-            color: _hasFields ? null : AppColors.accentPrimary,
-            onPressed: canGenerate ? _generate : null,
-            child: _generating
-                ? const CupertinoActivityIndicator(color: CupertinoColors.white)
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(CupertinoIcons.sparkles, size: 16),
-                      const SizedBox(width: AppSpacing.xs),
-                      Text(
-                        _hasFields ? 'Revise with AI' : 'Generate with AI',
-                        style: TextStyle(
-                          color: _hasFields
-                              ? AppColors.accentPrimary
-                              : CupertinoColors.white,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
+          child: _hasFields
+              ? TextButton(
+                  onPressed: canGenerate ? _generate : null,
+                  child: _generateButtonChild(),
+                )
+              : FilledButton(
+                  onPressed: canGenerate ? _generate : null,
+                  child: _generateButtonChild(),
+                ),
         ),
       ],
     );
   }
 
+  Widget _generateButtonChild() {
+    if (_generating) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.auto_awesome, size: 16),
+        const SizedBox(width: ELayout.spaceXs),
+        Text(_hasFields ? 'Revise with AI' : 'Generate with AI'),
+      ],
+    );
+  }
+
   Widget _cancelButton() {
-    return CupertinoButton(
+    return TextButton(
       onPressed: () => Navigator.of(context).pop(),
-      child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+      child: Text('Cancel', style: TextStyle(color: EColors.textTertiary)),
     );
   }
 

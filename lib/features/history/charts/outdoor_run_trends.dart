@@ -1,9 +1,9 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
@@ -36,7 +36,7 @@ class const OutdoorRunTrends() {
   static const _bucketColors = <DistanceBucket, Color>{
     DistanceBucket.fourHundredMeters: Color(0xFFFF9F0A),
     DistanceBucket.halfMile: Color(0xFFFF6482),
-    DistanceBucket.oneMile: AppColors.accentPrimary,
+    DistanceBucket.oneMile: EColors.accent,
     DistanceBucket.fiveK: Color(0xFF30D158),
     DistanceBucket.fiveMiles: Color(0xFF64D2FF),
   };
@@ -52,7 +52,7 @@ class const OutdoorRunTrends() {
         if (byBucket[bucket] != null && byBucket[bucket]!.length >= 2)
           MetricTrend(
             label: bucket.label,
-            color: _bucketColors[bucket] ?? AppColors.accentPrimary,
+            color: _bucketColors[bucket] ?? EColors.accent,
             lowerIsBetter: true,
             points: byBucket[bucket]!
                 .where((bestEffort) => bestEffort.workoutStartedAt != null)

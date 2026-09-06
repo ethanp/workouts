@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/background_notes_provider.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class const BackgroundNoteRow({
@@ -20,7 +20,7 @@ class const BackgroundNoteRow({
     final categoryColor = _categoryColor(note.category);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: GestureDetector(
         onTap: () => _showActions(context, ref),
         child: Dismissible(
@@ -33,22 +33,22 @@ class const BackgroundNoteRow({
           background: _deleteBackground(),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              horizontal: ELayout.spaceMd,
+              vertical: ELayout.spaceSm,
             ),
             decoration: BoxDecoration(
-              color: AppColors.backgroundDepth2,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              color: EColors.backgroundLift,
+              borderRadius: BorderRadius.circular(ELayout.radiusSm),
               border: Border.all(
                 color: isArchived
-                    ? AppColors.borderDepth1.withValues(alpha: 0.4)
-                    : AppColors.borderDepth1,
+                    ? EColors.border.withValues(alpha: 0.4)
+                    : EColors.border,
               ),
             ),
             child: Row(
               children: [
                 Text(note.category.icon, style: const TextStyle(fontSize: 18)),
-                const SizedBox(width: AppSpacing.md),
+                const SizedBox(width: ELayout.spaceMd),
                 Expanded(child: _noteContent(linkedGoal, categoryColor)),
               ],
             ),
@@ -66,14 +66,14 @@ class const BackgroundNoteRow({
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(
-      color: AppColors.error,
-      borderRadius: BorderRadius.circular(AppRadius.sm),
+      color: EColors.danger,
+      borderRadius: BorderRadius.circular(ELayout.radiusSm),
     ),
     alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    padding: const EdgeInsets.only(right: ELayout.spaceLg),
     child: const Icon(
-      CupertinoIcons.trash,
-      color: CupertinoColors.white,
+      Icons.delete,
+      color: Colors.white,
       size: 22,
     ),
   );
@@ -93,8 +93,8 @@ class const BackgroundNoteRow({
     note.content,
     maxLines: 2,
     overflow: TextOverflow.ellipsis,
-    style: AppTypography.body.copyWith(
-      color: isArchived ? AppColors.textColor3 : AppColors.textColor2,
+    style: EText.body.medium.copyWith(
+      color: isArchived ? EColors.textTertiary : EColors.textSecondary,
       fontSize: 14,
     ),
   );
@@ -111,7 +111,7 @@ class const BackgroundNoteRow({
   Widget _categoryTag(Color categoryColor) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.xs + 2,
+        horizontal: ELayout.spaceXs + 2,
         vertical: 1,
       ),
       decoration: BoxDecoration(
@@ -130,15 +130,15 @@ class const BackgroundNoteRow({
   }
 
   List<Widget> _linkedGoalIndicator(FitnessGoal linkedGoal) => [
-    const SizedBox(width: AppSpacing.sm),
-    const Icon(CupertinoIcons.link, size: 11, color: AppColors.textColor4),
+    const SizedBox(width: ELayout.spaceSm),
+    const Icon(Icons.link, size: 11, color: EColors.textMuted),
     const SizedBox(width: 2),
     Flexible(
       child: Text(
         linkedGoal.title,
-        style: AppTypography.caption.copyWith(
+        style: EText.caption.copyWith(
           fontSize: 11,
-          color: AppColors.textColor4,
+          color: EColors.textMuted,
         ),
         overflow: TextOverflow.ellipsis,
       ),
@@ -150,63 +150,67 @@ class const BackgroundNoteRow({
     final preview = note.content.length > 50
         ? '${note.content.substring(0, 50)}…'
         : note.content;
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (sheetCtx) => CupertinoActionSheet(
-        title: Text(preview),
-        actions: _noteActionSheetActions(sheetCtx, context, ref, notesNotifier),
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(sheetCtx).pop(),
-          child: const Text('Cancel'),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(preview)),
+            ..._noteActionSheetActions(sheetCtx, context, ref, notesNotifier),
+            ListTile(
+              title: const Text('Cancel'),
+              onTap: () => Navigator.of(sheetCtx).pop(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  List<CupertinoActionSheetAction> _noteActionSheetActions(
+  List<Widget> _noteActionSheetActions(
     BuildContext sheetCtx,
     BuildContext parentCtx,
     WidgetRef ref,
     BackgroundNotesController notesNotifier,
   ) {
     return [
-      CupertinoActionSheetAction(
-        onPressed: () {
+      ListTile(
+        title: const Text('Edit'),
+        onTap: () {
           Navigator.of(sheetCtx).pop();
           _showEditSheet(parentCtx, ref);
         },
-        child: const Text('Edit'),
       ),
       if (note.isActive)
-        CupertinoActionSheetAction(
-          onPressed: () {
+        ListTile(
+          title: const Text('Archive'),
+          onTap: () {
             Navigator.of(sheetCtx).pop();
             notesNotifier.archiveNote(note.id);
           },
-          child: const Text('Archive'),
         ),
       if (!note.isActive)
-        CupertinoActionSheetAction(
-          onPressed: () {
+        ListTile(
+          title: const Text('Reactivate'),
+          onTap: () {
             Navigator.of(sheetCtx).pop();
             notesNotifier.activateNote(note.id);
           },
-          child: const Text('Reactivate'),
         ),
-      CupertinoActionSheetAction(
-        isDestructiveAction: true,
-        onPressed: () {
+      ListTile(
+        title: Text('Delete', style: TextStyle(color: EColors.danger)),
+        onTap: () {
           Navigator.of(sheetCtx).pop();
           notesNotifier.deleteNote(note.id);
         },
-        child: const Text('Delete'),
       ),
     ];
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {
     final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => NoteFormSheet(
         availableGoals: allGoals,
@@ -223,13 +227,13 @@ class const BackgroundNoteRow({
 
   Color _categoryColor(NoteCategory category) {
     return switch (category) {
-      NoteCategory.injuryHistory => AppColors.error,
-      NoteCategory.avoid => AppColors.warning,
-      NoteCategory.medical => AppColors.error,
-      NoteCategory.preference => AppColors.accentSecondary,
-      NoteCategory.equipment => AppColors.accentPrimary,
-      NoteCategory.constraint => AppColors.warning,
-      NoteCategory.philosophy => AppColors.success,
+      NoteCategory.injuryHistory => EColors.danger,
+      NoteCategory.avoid => EColors.warning,
+      NoteCategory.medical => EColors.danger,
+      NoteCategory.preference => EColors.warning,
+      NoteCategory.equipment => EColors.accent,
+      NoteCategory.constraint => EColors.warning,
+      NoteCategory.philosophy => EColors.success,
     };
   }
 }

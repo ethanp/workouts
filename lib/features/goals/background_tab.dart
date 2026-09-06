@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/background_note_row.dart';
 import 'package:workouts/features/goals/background_notes_provider.dart';
@@ -7,7 +8,6 @@ import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const BackgroundTab() extends ConsumerStatefulWidget {
   @override
@@ -44,11 +44,11 @@ class _BackgroundTabState() extends ConsumerState<BackgroundTab> {
           onAddNote: () => _showAddNoteSheet(context, goals),
         );
       },
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Error: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
@@ -56,7 +56,7 @@ class _BackgroundTabState() extends ConsumerState<BackgroundTab> {
 
   void _showAddNoteSheet(BuildContext context, List<FitnessGoal> goals) {
     final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => NoteFormSheet(
         availableGoals: goals,
@@ -84,28 +84,27 @@ class const BackgroundNotesList({
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.md,
+      horizontal: ELayout.spaceLg,
+      vertical: ELayout.spaceMd,
     ),
     children: [
       if (activeNotes.isNotEmpty) ...[
         GoalsSectionHeader(
-          icon: CupertinoIcons.doc_text_fill,
+          icon: Icons.description,
           title: 'BACKGROUND',
-          action: CupertinoButton(
-            padding: EdgeInsets.zero,
+          action: TextButton(
             onPressed: onAddNote,
             child: const Text(
               'Add',
-              style: TextStyle(fontSize: 14, color: AppColors.accentPrimary),
+              style: TextStyle(fontSize: 14, color: EColors.accent),
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ...activeNotes.map(
           (note) => BackgroundNoteRow(note: note, allGoals: allGoals),
         ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: ELayout.spaceXl),
       ],
       if (archivedNotes.isNotEmpty) ...[
         GoalsArchivedToggleRow(
@@ -114,7 +113,7 @@ class const BackgroundNotesList({
           onArchivedSectionToggled: onToggleArchived,
         ),
         if (showArchived) ...[
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           ...archivedNotes.map(
             (note) => BackgroundNoteRow(
               note: note,
@@ -124,7 +123,7 @@ class const BackgroundNotesList({
           ),
         ],
       ],
-      const SizedBox(height: AppSpacing.xxl),
+      const SizedBox(height: 32),
     ],
   );
 }
@@ -135,7 +134,7 @@ class const _BackgroundEmptyState({required final VoidCallback onAddNote})
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -143,30 +142,30 @@ class const _BackgroundEmptyState({required final VoidCallback onAddNote})
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.12),
+                color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
-                CupertinoIcons.doc_text_fill,
+                Icons.description,
                 size: 32,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const Text('No Background Notes', style: AppTypography.title),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceXl),
+            Text('No Background Notes', style: EText.title),
+            const SizedBox(height: ELayout.spaceSm),
             Text(
               'Capture context the LLM should know — injuries, preferences, equipment, schedule.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.xxl),
-            CupertinoButton.filled(
+            const SizedBox(height: 32),
+            FilledButton(
               onPressed: onAddNote,
               child: const Text(
                 'Add Background Note',
                 style: TextStyle(
-                  color: CupertinoColors.white,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),

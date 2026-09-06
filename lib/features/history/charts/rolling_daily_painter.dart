@@ -1,8 +1,8 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/chart_date_plot.dart';
 
 class const RollingDailyGoal({
@@ -76,12 +76,12 @@ class RollingDailyPainter({
     _strokeQuarterHeightGuides(canvas, plot);
     plot.strokeLeftAndBottomEdges(canvas);
     plot.drawYearBoundaries(canvas);
-    plot.paintMonthOrDayLabels(canvas, labelColor: AppColors.textColor4);
+    plot.paintMonthOrDayLabels(canvas, labelColor: EColors.textMuted);
   }
 
   void _strokeQuarterHeightGuides(Canvas canvas, ChartDatePlot plot) {
     final gridPaint = Paint()
-      ..color = AppColors.borderDepth1.withValues(alpha: 0.4)
+      ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
 
     const lineCount = 4;
@@ -204,7 +204,7 @@ class RollingDailyPainter({
     final hoveredX = plot.xForDate(hoveredPoint.date);
     final hoveredY = scale.yForValue(hoveredPoint.smoothedValue, plot);
     final markerPaint = Paint()
-      ..color = AppColors.textColor3.withValues(alpha: 0.6)
+      ..color = EColors.textTertiary.withValues(alpha: 0.6)
       ..strokeWidth = 1;
     final ringPaint = Paint()
       ..color = lineColor
@@ -232,7 +232,7 @@ class RollingDailyPainter({
     final textPainter = TextPainter(
       text: TextSpan(
         text: text,
-        style: const TextStyle(color: AppColors.textColor4, fontSize: 9),
+        style: const TextStyle(color: EColors.textMuted, fontSize: 9),
       ),
       textDirection: TextDirection.ltr,
     )..layout();

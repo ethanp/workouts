@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/history/charts/polarization_formatting.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
@@ -16,7 +16,7 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
   Widget _emptyState() {
     return Text(
       'Drag to inspect a week',
-      style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+      style: EText.caption.copyWith(color: EColors.textMuted),
     );
   }
 
@@ -26,15 +26,15 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       children: [
         Text(
           'Week of ${week.label}',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           'No HR data — manual activity or HR not recorded.',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ],
     );
@@ -47,7 +47,7 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _weekHeader(week, totalSeconds ~/ 60),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
           if (zoneIndex > 0) const SizedBox(height: 2),
           _zoneRow(
@@ -67,15 +67,15 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       children: [
         Text(
           'Week of ${week.label}',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         Text(
           '· Total zone time: ${formatPolarizationMinutes(totalMinutes)}',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ],
     );
@@ -94,9 +94,9 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       children: [
         _zoneLabel(label, range),
         Expanded(child: _fractionBar(color, fraction)),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         _percentLabel(percent),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         _minutesLabel(seconds ~/ 60),
       ],
     );
@@ -111,11 +111,11 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
         children: [
           Text(
             label,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
           Text(
             range,
-            style: const TextStyle(fontSize: 8, color: AppColors.textColor4),
+            style: const TextStyle(fontSize: 8, color: EColors.textMuted),
           ),
         ],
       ),
@@ -128,7 +128,7 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
         Container(
           height: 4,
           decoration: BoxDecoration(
-            color: AppColors.backgroundDepth4,
+            color: EColors.surfaceRaised,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -152,7 +152,7 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       child: Text(
         '$percent%',
         textAlign: TextAlign.right,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -163,7 +163,7 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
       child: Text(
         formatPolarizationMinutes(minutes),
         textAlign: TextAlign.right,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
@@ -165,7 +165,7 @@ class const _WeekSummary({
       style: TextStyle(
         fontSize: _summaryFontSize,
         fontWeight: intensity > 0.5 ? FontWeight.w600 : FontWeight.normal,
-        color: CupertinoColors.white.withValues(alpha: 0.4 + intensity * 0.6),
+        color: Colors.white.withValues(alpha: 0.4 + intensity * 0.6),
       ),
     );
   }
@@ -175,7 +175,7 @@ class const _WeekSummary({
       '${gteZone2Minutes}z2-5',
       style: TextStyle(
         fontSize: _summaryFontSize - 1,
-        color: AppColors.textColor4,
+        color: EColors.textMuted,
       ),
     );
   }
@@ -194,7 +194,7 @@ class const _WeekSummary({
           '$activeDays',
           textAlign: TextAlign.center,
           style: const TextStyle(
-            color: CupertinoColors.white,
+            color: Colors.white,
             fontSize: _summaryFontSize,
             fontWeight: FontWeight.w600,
           ),

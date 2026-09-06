@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 
@@ -18,19 +18,19 @@ class const WorkoutPolarizationCard({
     final representedZoneIndexes = _representedZoneIndexes(zoneTime);
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(zoneTime),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _proportionalBar(zoneTime),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _zoneLabels(zoneTime, representedZoneIndexes),
         ],
       ),
@@ -42,26 +42,26 @@ class const WorkoutPolarizationCard({
     return Row(
       children: [
         const Icon(
-          CupertinoIcons.waveform_path,
+          Icons.graphic_eq,
           size: 18,
-          color: AppColors.textColor2,
+          color: EColors.textSecondary,
         ),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(child: Text('Zone Distribution', style: AppTypography.title)),
+        const SizedBox(width: ELayout.spaceSm),
+        Expanded(child: Text('Zone Distribution', style: EText.title)),
         Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
+            horizontal: ELayout.spaceSm,
+            vertical: ELayout.spaceXs,
           ),
           decoration: BoxDecoration(
             color: HrZonePalette.zoneColors[dominantZoneIndex].withValues(
               alpha: 0.15,
             ),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(ELayout.radiusSm),
           ),
           child: Text(
             HrZonePalette.zoneNames[dominantZoneIndex],
-            style: AppTypography.caption.copyWith(
+            style: EText.caption.copyWith(
               color: HrZonePalette.zoneColors[dominantZoneIndex],
               fontWeight: FontWeight.w600,
             ),
@@ -138,7 +138,7 @@ class const WorkoutPolarizationCard({
         children: [
           Text(
             '$percent%',
-            style: AppTypography.subtitle.copyWith(
+            style: EText.section.copyWith(
               color: HrZonePalette.zoneColors[zoneIndex],
               fontSize: 14,
             ),
@@ -146,13 +146,13 @@ class const WorkoutPolarizationCard({
           const SizedBox(height: 2),
           Text(
             _formatZoneDuration(seconds),
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: 1),
           Text(
             HrZonePalette.zoneNames[zoneIndex],
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
+            style: EText.caption.copyWith(
+              color: EColors.textMuted,
               fontSize: 10,
             ),
             textAlign: TextAlign.center,

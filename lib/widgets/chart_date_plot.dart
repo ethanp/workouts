@@ -1,8 +1,8 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/painting.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 const _months = [
   '',
@@ -86,7 +86,7 @@ class ChartDatePlot({
 
   void paintMonthOrDayLabels(Canvas canvas, {Color? labelColor}) {
     final spanDays = maxDate.difference(minDate).inDays;
-    final color = labelColor ?? AppColors.textColor4;
+    final color = labelColor ?? EColors.textMuted;
 
     String formatLabel(DateTime date) {
       if (spanDays > 60) return _months[date.month];
@@ -116,7 +116,7 @@ class ChartDatePlot({
     bool yAxis = true,
   }) {
     final axisPaint = Paint()
-      ..color = AppColors.textColor4.withValues(alpha: 0.5)
+      ..color = EColors.textMuted.withValues(alpha: 0.5)
       ..strokeWidth = 1;
 
     if (xAxis) {
@@ -131,7 +131,7 @@ class ChartDatePlot({
     if (minDate.year == maxDate.year) return;
 
     final linePaint = Paint()
-      ..color = AppColors.textColor4.withValues(alpha: 0.3)
+      ..color = EColors.textMuted.withValues(alpha: 0.3)
       ..strokeWidth = 1;
 
     for (var year = minDate.year + 1; year <= maxDate.year; year++) {
@@ -147,7 +147,7 @@ class ChartDatePlot({
         text: TextSpan(
           text: '$year',
           style: TextStyle(
-            color: AppColors.textColor4.withValues(alpha: 0.6),
+            color: EColors.textMuted.withValues(alpha: 0.6),
             fontSize: 10,
             fontWeight: FontWeight.w600,
           ),

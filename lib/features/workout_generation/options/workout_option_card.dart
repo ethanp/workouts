@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/llm_workout_option.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const WorkoutOptionCard({
   required final LlmWorkoutOption option,
@@ -11,11 +11,11 @@ class const WorkoutOptionCard({
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,14 +29,14 @@ class const WorkoutOptionCard({
       onTap: onExpansionToggled,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _titleRow(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _rationale(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _expandToggle(),
           ],
         ),
@@ -48,11 +48,11 @@ class const WorkoutOptionCard({
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: Text(option.title, style: AppTypography.subtitle)),
+        Expanded(child: Text(option.title, style: EText.section)),
         Row(
           children: [
             _goalBadge(),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             _timeBadge(),
           ],
         ),
@@ -62,21 +62,21 @@ class const WorkoutOptionCard({
 
   Widget _rationale() => Text(
     option.rationale,
-    style: AppTypography.body.copyWith(color: AppColors.textColor2),
+    style: EText.body.medium.copyWith(color: EColors.textSecondary),
   );
 
   Widget _expandToggle() {
     return Row(
       children: [
         Icon(
-          isExpanded ? CupertinoIcons.chevron_up : CupertinoIcons.chevron_down,
+          isExpanded ? Icons.expand_less : Icons.expand_more,
           size: 16,
-          color: AppColors.textColor3,
+          color: EColors.textTertiary,
         ),
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: ELayout.spaceXs),
         Text(
           isExpanded ? 'Hide exercises' : 'Show exercises',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          style: EText.caption.copyWith(color: EColors.textTertiary),
         ),
       ],
     );
@@ -86,14 +86,14 @@ class const WorkoutOptionCard({
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(height: 1, color: AppColors.borderDepth1),
+        Container(height: 1, color: EColors.border),
         Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(ELayout.spaceMd),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ...option.blocks.map((block) => _BlockSection(block: block)),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: ELayout.spaceMd),
               _startButton(),
             ],
           ),
@@ -105,7 +105,7 @@ class const WorkoutOptionCard({
   Widget _startButton() {
     return SizedBox(
       width: double.infinity,
-      child: CupertinoButton.filled(
+      child: FilledButton(
         onPressed: onWorkoutSelected,
         child: const Text('Start This Workout'),
       ),
@@ -115,17 +115,17 @@ class const WorkoutOptionCard({
   Widget _goalBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.surface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
+        border: Border.all(color: EColors.border),
       ),
       child: Text(
         option.goal.toUpperCase(),
-        style: AppTypography.caption.copyWith(
+        style: EText.caption.copyWith(
           fontWeight: FontWeight.bold,
           fontSize: 10,
           letterSpacing: 0.5,
@@ -141,14 +141,14 @@ class const WorkoutOptionCard({
     );
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
-      child: Text('${totalMinutes}m', style: AppTypography.caption),
+      child: Text('${totalMinutes}m', style: EText.caption),
     );
   }
 }
@@ -161,21 +161,21 @@ class const _BlockSection({required final LlmWorkoutBlock block})
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
           child: Row(
             children: [
               Text(
                 block.title,
-                style: AppTypography.body.copyWith(
+                style: EText.body.medium.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textColor1,
+                  color: EColors.textPrimary,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: ELayout.spaceSm),
               Text(
                 '${block.estimatedMinutes}m',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor3,
+                style: EText.caption.copyWith(
+                  color: EColors.textTertiary,
                 ),
               ),
             ],
@@ -183,17 +183,17 @@ class const _BlockSection({required final LlmWorkoutBlock block})
         ),
         if (block.description != null && block.description!.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
             child: Text(
               block.description!,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor2,
+              style: EText.caption.copyWith(
+                color: EColors.textSecondary,
                 fontStyle: FontStyle.italic,
               ),
             ),
           ),
         ...block.exercises.map((exercise) => _ExerciseRow(exercise: exercise)),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
       ],
     );
   }
@@ -206,14 +206,14 @@ class const _ExerciseRow({required final LlmExercise exercise})
     final prescription = exercise.prescription;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(exercise.name, style: AppTypography.body)),
+          Expanded(child: Text(exercise.name, style: EText.body.medium)),
           Text(
             prescription,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
         ],
       ),

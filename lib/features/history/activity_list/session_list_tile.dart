@@ -1,12 +1,12 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const SessionListTile({required final Session session})
@@ -17,18 +17,17 @@ class const SessionListTile({required final Session session})
     final displayDate = session.completedAt ?? session.startedAt;
     final templatesMapAsync = ref.watch(templatesMapProvider);
 
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => _resumeOrOpenSession(context, ref),
+    return InkWell(
+      onTap: () => _resumeOrOpenSession(context, ref),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: const EdgeInsets.all(ELayout.spaceLg),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusXl),
           border: Border.all(
             color: isComplete
-                ? AppColors.borderDepth1
-                : AppColors.accentPrimary,
+                ? EColors.border
+                : EColors.accent,
             width: isComplete ? 1 : 2,
           ),
         ),
@@ -36,15 +35,15 @@ class const SessionListTile({required final Session session})
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _headerRow(displayDate, isComplete),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _templateName(templatesMapAsync),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _durationLabel(isComplete),
             if (session.notes?.isNotEmpty ?? false) ...[
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: ELayout.spaceSm),
               Text(
                 session.notes!,
-                style: AppTypography.caption,
+                style: EText.caption,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -60,7 +59,7 @@ class const SessionListTile({required final Session session})
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(Format.dateRelative(displayDate), style: AppTypography.subtitle),
+        Text(Format.dateRelative(displayDate), style: EText.section),
         _statusBadge(isComplete),
       ],
     );
@@ -74,16 +73,16 @@ class const SessionListTile({required final Session session})
         final template = templatesMap[session.templateId];
         return Text(
           template?.name ?? 'Unknown Template',
-          style: AppTypography.title.copyWith(color: AppColors.textColor1),
+          style: EText.title.copyWith(color: EColors.textPrimary),
         );
       },
       loading: () => const SizedBox(
         height: 24,
-        child: CupertinoActivityIndicator(radius: 8),
+        child: CircularProgressIndicator(strokeWidth: 2),
       ),
       error: (_, _) => Text(
         'Unknown Template',
-        style: AppTypography.title.copyWith(color: AppColors.textColor3),
+        style: EText.title.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -95,8 +94,8 @@ class const SessionListTile({required final Session session})
               '${session.duration!.inSeconds % 60}s';
     return Text(
       text,
-      style: AppTypography.body.copyWith(
-        color: isComplete ? AppColors.textColor3 : AppColors.accentPrimary,
+      style: EText.body.medium.copyWith(
+        color: isComplete ? EColors.textTertiary : EColors.accent,
         fontWeight: isComplete ? FontWeight.w400 : FontWeight.w500,
       ),
     );
@@ -105,17 +104,17 @@ class const SessionListTile({required final Session session})
   Widget _statusBadge(bool isComplete) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: isComplete ? AppColors.success : AppColors.accentPrimary,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: isComplete ? EColors.success : EColors.accent,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         isComplete ? 'Completed' : 'In Progress',
         style: const TextStyle(
-          color: CupertinoColors.white,
+          color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
@@ -125,19 +124,19 @@ class const SessionListTile({required final Session session})
 
   Widget _resumeHint() {
     return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.md),
+      padding: const EdgeInsets.only(top: ELayout.spaceMd),
       child: Row(
         children: [
           Icon(
-            CupertinoIcons.play_circle,
-            color: AppColors.accentPrimary,
+            Icons.play_circle_outline,
+            color: EColors.accent,
             size: 20,
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: ELayout.spaceXs),
           Text(
             'Tap to resume workout',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.accentPrimary,
+            style: EText.caption.copyWith(
+              color: EColors.accent,
               fontWeight: FontWeight.w500,
             ),
           ),

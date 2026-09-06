@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
 class const SessionSetLogRow({
@@ -11,22 +11,22 @@ class const SessionSetLogRow({
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceXs),
       child: Row(
         children: [
           Container(
             width: 6,
             height: 6,
             decoration: const BoxDecoration(
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Text(
               'Set ${log.setIndex + 1}: ${_details().join(' · ')}',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
             ),
           ),
         ],

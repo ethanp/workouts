@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_detail/exercise_progress_card.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const SessionDetailBlockCard({
   required final SessionBlock block,
@@ -12,17 +12,17 @@ class const SessionDetailBlockCard({
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _blockHeader(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           for (
             var exerciseIndex = 0;
             exerciseIndex < block.exercises.length;
@@ -30,7 +30,7 @@ class const SessionDetailBlockCard({
           ) ...[
             _exerciseCard(block.exercises[exerciseIndex]),
             if (exerciseIndex < block.exercises.length - 1)
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: ELayout.spaceSm),
           ],
         ],
       ),
@@ -43,12 +43,12 @@ class const SessionDetailBlockCard({
       children: [
         Text(
           'Block ${index + 1}: ${_titleCase(block.type.name)}',
-          style: AppTypography.title,
+          style: EText.title,
         ),
         if (block.totalRounds != null)
           Text(
             'Round ${block.roundIndex}/${block.totalRounds}',
-            style: AppTypography.caption,
+            style: EText.caption,
           ),
       ],
     );

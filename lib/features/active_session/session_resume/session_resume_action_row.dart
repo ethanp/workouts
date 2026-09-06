@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_indicators.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const SessionResumeActionRow({
   required final bool isPaused,
@@ -12,8 +12,8 @@ class const SessionResumeActionRow({
   Widget build(BuildContext context) => Row(
     children: [
       _pauseButton(),
-      if (isPaused) ...[const SizedBox(width: AppSpacing.md), _pausedPill()],
-      const SizedBox(width: AppSpacing.md),
+      if (isPaused) ...[const SizedBox(width: ELayout.spaceMd), _pausedPill()],
+      const SizedBox(width: ELayout.spaceMd),
       _addNoteButton(),
       if (!isPaused) ...[
         const Spacer(),
@@ -22,78 +22,34 @@ class const SessionResumeActionRow({
     ],
   );
 
-  Widget _pauseButton() => CupertinoButton.filled(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.sm,
-    ),
+  Widget _pauseButton() => FilledButton.icon(
     onPressed: onTogglePause,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          isPaused ? CupertinoIcons.play_fill : CupertinoIcons.pause_fill,
-          color: CupertinoColors.white,
-          size: 16,
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          isPaused ? 'Resume' : 'Pause',
-          style: const TextStyle(
-            color: CupertinoColors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    ),
+    icon: Icon(isPaused ? Icons.play_arrow : Icons.pause, size: 16),
+    label: Text(isPaused ? 'Resume' : 'Pause'),
   );
 
   Widget _pausedPill() => Container(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
+      horizontal: ELayout.spaceMd,
+      vertical: ELayout.spaceSm,
     ),
     decoration: BoxDecoration(
-      color: AppColors.warning.withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(AppRadius.sm),
-      border: Border.all(color: AppColors.warning),
+      color: EColors.warning.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(ELayout.radiusSm),
+      border: Border.all(color: EColors.warning),
     ),
     child: Text(
       'Paused',
-      style: AppTypography.caption.copyWith(
-        color: AppColors.warning,
+      style: EText.caption.copyWith(
+        color: EColors.warning,
         fontWeight: FontWeight.w500,
       ),
     ),
   );
 
-  Widget _addNoteButton() => CupertinoButton(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
-    ),
-    color: AppColors.backgroundDepth2,
-    borderRadius: BorderRadius.circular(AppRadius.sm),
+  Widget _addNoteButton() => FilledButton.tonalIcon(
     onPressed: onAddNote,
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          CupertinoIcons.pencil_outline,
-          color: AppColors.textColor2,
-          size: 16,
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          'Note',
-          style: TextStyle(
-            color: AppColors.textColor2,
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    ),
+    icon: const Icon(Icons.edit_outlined, size: 16),
+    label: const Text('Note'),
   );
 }

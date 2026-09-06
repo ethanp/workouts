@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const WorkoutFollowupAnswer({
   required final String answer,
@@ -11,8 +11,8 @@ class const WorkoutFollowupAnswer({
       children: [
         if (answer.isNotEmpty) _answerCard(),
         if (answering) ...[
-          if (answer.isNotEmpty) const SizedBox(height: AppSpacing.md),
-          const Center(child: CupertinoActivityIndicator()),
+          if (answer.isNotEmpty) const SizedBox(height: ELayout.spaceMd),
+          const Center(child: CircularProgressIndicator()),
         ],
       ],
     );
@@ -21,15 +21,15 @@ class const WorkoutFollowupAnswer({
   Widget _answerCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Text(
         answer,
-        style: AppTypography.body.copyWith(color: AppColors.textColor2),
+        style: EText.body.medium.copyWith(color: EColors.textSecondary),
       ),
     );
   }

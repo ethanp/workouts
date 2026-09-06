@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_item.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class const DismissibleActivityTile({
@@ -12,15 +12,17 @@ class const DismissibleActivityTile({
 }) extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final (title, content) = switch (item) {
-      ActivityCardio() => (
-        'Delete Workout',
-        'This will remove the workout from this app. It will stay in Apple Health '
+    final prompt = switch (item) {
+      ActivityCardio() => const _DeletePrompt(
+        title: 'Delete Workout',
+        content:
+            'This will remove the workout from this app. It will stay in Apple Health '
             'and may be re-imported if you run Import again.',
       ),
-      ActivitySession() => (
-        'Delete Session',
-        'Are you sure you want to delete this workout session? '
+      ActivitySession() => const _DeletePrompt(
+        title: 'Delete Session',
+        content:
+            'Are you sure you want to delete this workout session? '
             'This action cannot be undone.',
       ),
     };
@@ -28,7 +30,8 @@ class const DismissibleActivityTile({
     return Dismissible(
       key: key!,
       direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => _confirmDelete(context, title, content),
+      confirmDismiss: (_) =>
+          _confirmDelete(context, prompt.title, prompt.content),
       background: _deleteBackground(),
       child: child,
     );
@@ -51,20 +54,20 @@ class const DismissibleActivityTile({
   Widget _deleteBackground() {
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: AppSpacing.lg),
+      padding: const EdgeInsets.only(right: ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: CupertinoColors.destructiveRed,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: EColors.danger,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
       ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(CupertinoIcons.delete, color: CupertinoColors.white, size: 28),
-          SizedBox(height: AppSpacing.xs),
+          Icon(Icons.delete, color: Colors.white, size: 28),
+          SizedBox(height: ELayout.spaceXs),
           Text(
             'Delete',
             style: TextStyle(
-              color: CupertinoColors.white,
+              color: Colors.white,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -74,3 +77,8 @@ class const DismissibleActivityTile({
     );
   }
 }
+
+class const _DeletePrompt({
+  required final String title,
+  required final String content,
+});

@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:ethan_ui/ethan_ui.dart';
+
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/add_note_sheet.dart';
@@ -14,7 +16,6 @@ import 'package:workouts/features/active_session/session_resume/session_resume_m
 import 'package:workouts/models/session.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const SessionResumeBody({required final Session session})
     extends ConsumerStatefulWidget {
@@ -100,9 +101,10 @@ class _SessionResumeBodyState() extends ConsumerState<SessionResumeBody> {
 
     _maybeAutoAdvanceBlock(session);
 
-    return CupertinoPageScaffold(
-      navigationBar: _navigationBar(context, session),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: _appHeader(session),
+      body: SafeArea(
         child: Stack(
           children: [
             Column(
@@ -141,50 +143,33 @@ class _SessionResumeBodyState() extends ConsumerState<SessionResumeBody> {
     return _currentBlockIndex < session.blocks.length - 1;
   }
 
-  CupertinoNavigationBar _navigationBar(BuildContext context, Session session) {
-    return CupertinoNavigationBar(
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
+  EAppHeader _appHeader(Session session) {
+    return EAppHeader(
+      title: _elapsedDuration(session).formattedClock,
+      subtitle: _headerSubtitle(session),
+      automaticallyImplyLeading: false,
+      leading: IconButton(
+        tooltip: 'Hide session',
         onPressed: () => ref.read(sessionUIVisibilityProvider.notifier).hide(),
-        child: const Icon(CupertinoIcons.chevron_down),
+        icon: const Icon(Icons.expand_more),
       ),
-      middle: _navigationBarMiddle(session),
-      trailing: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => _completeSession(context),
-        child: const Text('Finish'),
-      ),
+      actions: [
+        TextButton(
+          onPressed: () => _completeSession(context),
+          child: const Text('Finish'),
+        ),
+      ],
     );
   }
 
-  Widget _navigationBarMiddle(Session session) {
-    final timeColor = session.isPaused
-        ? AppColors.warning
-        : AppColors.textColor1;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          _elapsedDuration(session).formattedClock,
-          style: AppTypography.body.copyWith(
-            fontWeight: FontWeight.w600,
-            color: timeColor,
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
-        ),
-        if (session.blocks.isNotEmpty)
-          Text(
-            session.isPaused
-                ? 'Paused · Block ${_currentBlockIndex + 1} of ${session.blocks.length}'
-                : 'Block ${_currentBlockIndex + 1} of ${session.blocks.length}',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor3,
-              fontSize: 11,
-            ),
-          ),
-      ],
-    );
+  String? _headerSubtitle(Session session) {
+    if (session.blocks.isEmpty) {
+      return session.isPaused ? 'Paused' : null;
+    }
+    final blockCaption =
+        'Block ${_currentBlockIndex + 1} of ${session.blocks.length}';
+    if (session.isPaused) return 'Paused · $blockCaption';
+    return blockCaption;
   }
 
   Widget _blockPager(Session session) {
@@ -250,7 +235,7 @@ class _SessionResumeBodyState() extends ConsumerState<SessionResumeBody> {
   }
 
   void _showAddNoteSheet(BuildContext context, Session session) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (context) => AddNoteSheet(
         sessionId: session.id,

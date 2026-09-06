@@ -1,11 +1,11 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/features/history/charts/polarization_legend.dart';
 import 'package:workouts/features/history/charts/polarization_scrub_detail_panel.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 const _kAerobicBaseTargetSeconds = 90 * 60; // 90 min/week aerobic base target
@@ -34,21 +34,21 @@ class _PolarizationChartState() extends State<PolarizationChart> {
       onTap: () => setState(() => _scrubIndex = null),
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
             _barsSection(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _labels(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             PolarizationScrubDetailPanel(
               week: _scrubIndex != null ? widget.weeks[_scrubIndex!] : null,
             ),
@@ -62,7 +62,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: Text('Polarization', style: AppTypography.subtitle)),
+        Expanded(child: Text('Polarization', style: EText.section)),
         PolarizationLegend(
           isExpanded: _legendExpanded,
           onToggle: () => setState(() => _legendExpanded = !_legendExpanded),
@@ -94,7 +94,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
   BoxDecoration _barsAreaDecoration() {
     return BoxDecoration(
       border: Border(
-        bottom: BorderSide(color: AppColors.textColor4.withValues(alpha: 0.4)),
+        bottom: BorderSide(color: EColors.textMuted.withValues(alpha: 0.4)),
       ),
     );
   }
@@ -125,7 +125,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
       bottom: 0,
       child: Container(
         width: 1,
-        color: AppColors.textColor4.withValues(alpha: 0.3),
+        color: EColors.textMuted.withValues(alpha: 0.3),
       ),
     );
   }
@@ -138,8 +138,8 @@ class _PolarizationChartState() extends State<PolarizationChart> {
 
   Widget _barsWithScrub() {
     if (widget.weeks.isEmpty) {
-      return const Center(
-        child: Text('No data yet', style: AppTypography.caption),
+      return Center(
+        child: Text('No data yet', style: EText.caption),
       );
     }
 
@@ -189,7 +189,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
                   priorityTwoFraction,
                   constraints.maxHeight,
                   '150m priority 2',
-                  AppColors.accentSecondary,
+                  EColors.warning,
                 ),
               if (_scrubIndex != null) _scrubCursor(barWidth, barSpacing),
             ],
@@ -252,7 +252,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
       bottom: 0,
       child: Container(
         width: 1,
-        color: AppColors.textColor3.withValues(alpha: 0.6),
+        color: EColors.textTertiary.withValues(alpha: 0.6),
       ),
     );
   }
@@ -404,7 +404,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
   TextStyle _weekLabelStyle(WeekZoneData week) {
     return TextStyle(
       fontSize: 9,
-      color: week.isCurrent ? AppColors.accentPrimary : AppColors.textColor4,
+      color: week.isCurrent ? EColors.accent : EColors.textMuted,
       fontWeight: week.isCurrent ? FontWeight.w600 : FontWeight.normal,
     );
   }

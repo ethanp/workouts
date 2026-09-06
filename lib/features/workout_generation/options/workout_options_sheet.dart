@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/workout_generation/options/workout_followup_answer.dart';
 import 'package:workouts/features/workout_generation/workout_generation_provider.dart';
@@ -9,13 +10,12 @@ import 'package:workouts/features/workout_generation/workout_preferences_form.da
 import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/services/context_builder.dart';
 import 'package:workouts/services/llm/llm_errors.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
 class const WorkoutOptionsSheet() extends ConsumerStatefulWidget {
   static Future<LlmWorkoutOption?> show(BuildContext context) {
     return Navigator.of(context).push<LlmWorkoutOption>(
-      CupertinoPageRoute(builder: (_) => const WorkoutOptionsSheet()),
+      MaterialPageRoute(builder: (_) => const WorkoutOptionsSheet()),
     );
   }
 
@@ -40,22 +40,20 @@ class _WorkoutOptionsSheetState() extends ConsumerState<WorkoutOptionsSheet> {
   Widget build(BuildContext context) {
     final generationState = ref.watch(workoutGenerationProvider);
 
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(
+        title: 'Generate Workout',
+        automaticallyImplyLeading: false,
+        leading: TextButton(
           onPressed: () {
             ref.read(workoutGenerationProvider.notifier).cancel();
             Navigator.of(context).pop();
           },
           child: const Text('Cancel'),
         ),
-        middle: const Text('Generate Workout', style: AppTypography.subtitle),
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: _showingForm
             ? WorkoutPreferencesForm(
                 onPreferencesSubmitted: _generateFromPreferences,
@@ -118,24 +116,24 @@ class _WorkoutOptionsSheetState() extends ConsumerState<WorkoutOptionsSheet> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              CupertinoIcons.exclamationmark_triangle,
+              Icons.warning_amber,
               size: 48,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
             Text(
               message,
-              style: AppTypography.body,
+              style: EText.body.medium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
             ConnectionGatedWidget(
-              child: CupertinoButton.filled(
+              child: FilledButton(
                 onPressed: () =>
                     ref.read(workoutGenerationProvider.notifier).generate(),
                 child: const Text('Try Again'),

@@ -1,9 +1,9 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
 import 'package:workouts/models/cardio_workout.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/cardio_type_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -12,27 +12,26 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => context.push(CardioDetailScreen(workout: workout)),
+    return InkWell(
+      onTap: () => context.push(CardioDetailScreen(workout: workout)),
       child: _tileCard(),
     );
   }
 
   Widget _tileCard() => Container(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
+      horizontal: ELayout.spaceMd,
+      vertical: ELayout.spaceSm,
     ),
     decoration: BoxDecoration(
-      color: AppColors.backgroundDepth2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: Border.all(color: AppColors.borderDepth1),
+      color: EColors.backgroundLift,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
+      border: Border.all(color: EColors.border),
     ),
     child: Row(
       children: [
         _activityTypeColorBar(),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         Expanded(child: _workoutInfo()),
         ..._trailingIcons(),
       ],
@@ -55,7 +54,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
       const SizedBox(height: 2),
       _summaryLine(),
       if (_showsZoneBreakdown()) ...[
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         _zoneBreakdown(),
       ],
     ],
@@ -65,33 +64,33 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     children: [
       Text(
         workout.activityType.displayName,
-        style: AppTypography.caption.copyWith(
+        style: EText.caption.copyWith(
           color: _typeColor(),
           fontWeight: FontWeight.w600,
         ),
       ),
       Text(
         '  ·  ${Format.dateIso(workout.startedAt)}',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     ],
   );
 
   Widget _summaryLine() => Text(
     _summaryText(),
-    style: AppTypography.body.copyWith(color: AppColors.textColor1),
+    style: EText.body.medium.copyWith(color: EColors.textPrimary),
   );
 
   List<Widget> _trailingIcons() => [
     if (workout.activityType.hasRoute && workout.routeAvailable)
       Padding(
-        padding: const EdgeInsets.only(left: AppSpacing.sm),
-        child: Icon(CupertinoIcons.map, color: _typeColor(), size: 16),
+        padding: const EdgeInsets.only(left: ELayout.spaceSm),
+        child: Icon(Icons.map, color: _typeColor(), size: 16),
       ),
-    const SizedBox(width: AppSpacing.xs),
+    const SizedBox(width: ELayout.spaceXs),
     const Icon(
-      CupertinoIcons.chevron_right,
-      color: AppColors.textColor4,
+      Icons.chevron_right,
+      color: EColors.textMuted,
       size: 14,
     ),
   ];
@@ -113,7 +112,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
 
   Widget _zoneBreakdown() {
     return Wrap(
-      spacing: AppSpacing.sm,
+      spacing: ELayout.spaceSm,
       runSpacing: 2,
       children: [
         for (
@@ -144,7 +143,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
         const SizedBox(width: 3),
         Text(
           'Z${zoneIndex + 1} ${minutes}m $percent%',
-          style: const TextStyle(fontSize: 10, color: AppColors.textColor4),
+          style: const TextStyle(fontSize: 10, color: EColors.textMuted),
         ),
       ],
     );

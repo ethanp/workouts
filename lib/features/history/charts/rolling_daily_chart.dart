@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 /// A smoothed trailing-7-day line chart with goal reference lines and a
 /// drag-to-inspect readout. Driven entirely by configuration so it can render
@@ -35,21 +35,21 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
       onTap: _clearHoverPosition,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _goalLegend(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
             _chartArea(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _hoveredPointSummary(),
           ],
         ),
@@ -61,7 +61,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(widget.title, style: AppTypography.subtitle),
+        Text(widget.title, style: EText.section),
         _currentSummary(),
       ],
     );
@@ -72,13 +72,13 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     if (latestPoint == null) {
       return Text(
         widget.emptySummaryLabel,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
       );
     }
 
     return Text(
       '${widget.formatValue(latestPoint.smoothedValue)}${widget.summarySuffix}',
-      style: AppTypography.caption.copyWith(
+      style: EText.caption.copyWith(
         color: _summaryColor(latestPoint.smoothedValue),
         fontWeight: FontWeight.w600,
       ),
@@ -87,8 +87,8 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
 
   Widget _goalLegend() {
     return Wrap(
-      spacing: AppSpacing.md,
-      runSpacing: AppSpacing.xs,
+      spacing: ELayout.spaceMd,
+      runSpacing: ELayout.spaceXs,
       children: widget.goals
           .map(
             (goal) => _GoalChip(
@@ -139,10 +139,10 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
   }
 
   Widget _emptyState() {
-    return const SizedBox(
+    return SizedBox(
       height: 180,
       child: Center(
-        child: Text('Need 2+ days of data', style: AppTypography.caption),
+        child: Text('Need 2+ days of data', style: EText.caption),
       ),
     );
   }
@@ -152,7 +152,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     if (hoveredPoint == null) {
       return Text(
         widget.inspectHint,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
       );
     }
 
@@ -160,7 +160,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
       '${_formatDate(hoveredPoint.date)} · '
       '${widget.formatValue(hoveredPoint.smoothedValue)} smoothed '
       '(${widget.formatValue(hoveredPoint.rollingValue)} raw)',
-      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      style: EText.caption.copyWith(color: EColors.textTertiary),
     );
   }
 
@@ -239,7 +239,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
   Color _summaryColor(double value) {
     final goalsByValue = [...widget.goals]
       ..sort((first, second) => first.value.compareTo(second.value));
-    var summaryColor = AppColors.textColor3;
+    var summaryColor = EColors.textTertiary;
     for (final goal in goalsByValue) {
       if (value >= goal.value) summaryColor = goal.color;
     }
@@ -264,8 +264,8 @@ class const _GoalChip({required final String label, required final Color color})
         const SizedBox(width: 6),
         Text(
           label,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor4,
+          style: EText.caption.copyWith(
+            color: EColors.textMuted,
             fontSize: 10,
           ),
         ),

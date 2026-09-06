@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const KeyboardEnterAccessory({
   required final VoidCallback onKeyboardDismissRequested,
@@ -11,8 +11,8 @@ class const KeyboardEnterAccessory({
     bottom: 0,
     child: DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        border: Border(top: BorderSide(color: AppColors.borderDepth1)),
+        color: EColors.backgroundLift,
+        border: Border(top: BorderSide(color: EColors.border)),
       ),
       child: SafeArea(
         top: false,
@@ -21,14 +21,11 @@ class const KeyboardEnterAccessory({
           child: Row(
             children: [
               const Spacer(),
-              CupertinoButton(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              TextButton(
                 onPressed: onKeyboardDismissRequested,
                 child: Text(
                   'Enter',
-                  style: AppTypography.button.copyWith(
-                    color: AppColors.accentPrimary,
-                  ),
+                  style: EText.section.copyWith(color: EColors.accent),
                 ),
               ),
             ],

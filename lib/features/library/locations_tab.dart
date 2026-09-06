@@ -1,11 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/training_location.dart';
 import 'package:workouts/features/library/locations_provider.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/locations_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
@@ -19,11 +19,11 @@ class const LocationsTab() extends ConsumerWidget {
       data: (locations) => locations.isEmpty
           ? const _EmptyView()
           : _LocationsList(locations: locations),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Unable to load locations: $error',
-          style: AppTypography.body,
+          style: EText.body.medium,
         ),
       ),
     );
@@ -35,7 +35,7 @@ class const _EmptyView() extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -43,21 +43,21 @@ class const _EmptyView() extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.12),
+                color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
-                CupertinoIcons.location,
+                Icons.location_on_outlined,
                 size: 32,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const Text('No Locations Yet', style: AppTypography.title),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceXl),
+            Text('No Locations Yet', style: EText.title),
+            const SizedBox(height: ELayout.spaceSm),
             Text(
               'Add your training locations so the AI knows what equipment is available.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -72,7 +72,7 @@ class const _LocationsList({required final List<TrainingLocation> locations})
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       children: [
         _explanationBanner(),
         ...locations.map((location) => _LocationCard(location: location)),
@@ -82,22 +82,22 @@ class const _LocationsList({required final List<TrainingLocation> locations})
 
   Widget _explanationBanner() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Row(
         children: [
-          Icon(CupertinoIcons.lightbulb, color: AppColors.textColor2, size: 20),
-          const SizedBox(width: AppSpacing.sm),
+          Icon(Icons.lightbulb_outline, color: EColors.textSecondary, size: 20),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Text(
               'Define where you train and what equipment is available. '
               'Select a location when generating workouts.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor2),
+              style: EText.body.medium.copyWith(color: EColors.textSecondary),
             ),
           ),
         ],
@@ -129,41 +129,41 @@ class const _LocationCard({required final TrainingLocation location})
   );
 
   Widget _deleteBackground() => Container(
-    margin: const EdgeInsets.only(bottom: AppSpacing.md),
+    margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
     decoration: BoxDecoration(
-      color: AppColors.error,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      color: EColors.danger,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
     ),
     alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    padding: const EdgeInsets.only(right: ELayout.spaceLg),
     child: const Icon(
-      CupertinoIcons.trash,
-      color: CupertinoColors.white,
+      Icons.delete,
+      color: Colors.white,
       size: 22,
     ),
   );
 
   Widget _card(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Row(
         children: [
           _locationIcon(),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _cardContent()),
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          IconButton(
+            tooltip: 'Edit',
             onPressed: () => _openEditSheet(context),
-            child: const Icon(
-              CupertinoIcons.pencil,
+            icon: const Icon(
+              Icons.edit,
               size: 20,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
           ),
         ],
@@ -176,13 +176,13 @@ class const _LocationCard({required final TrainingLocation location})
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: const Icon(
-        CupertinoIcons.location,
+        Icons.location_on_outlined,
         size: 18,
-        color: AppColors.accentPrimary,
+        color: EColors.accent,
       ),
     );
   }
@@ -193,16 +193,16 @@ class const _LocationCard({required final TrainingLocation location})
       children: [
         Text(
           location.name,
-          style: AppTypography.body.copyWith(
-            color: AppColors.textColor1,
+          style: EText.body.medium.copyWith(
+            color: EColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
         if (location.equipment.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           Text(
             location.equipment,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -212,7 +212,7 @@ class const _LocationCard({required final TrainingLocation location})
   }
 
   void _openEditSheet(BuildContext context) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => LocationFormSheet(existing: location),
     );
@@ -256,8 +256,8 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(top: false, child: _sheetContent()),
     );
@@ -266,29 +266,29 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
   Widget _sheetContent() {
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _dragHandle(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           Text(
             _isEditing ? 'Edit Location' : 'Add Location',
-            style: AppTypography.title,
+            style: EText.title,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: ELayout.spaceXl),
           _nameField(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           _equipmentField(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           if (_errorMessage != null) ...[
             _errorBanner(),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
           ],
           _actionButtons(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _cancelButton(),
         ],
       ),
@@ -300,7 +300,7 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.borderDepth3,
+        color: EColors.borderStrong,
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -312,24 +312,18 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
       children: [
         Text(
           'Name',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        CupertinoTextField(
+        const SizedBox(height: ELayout.spaceSm),
+        TextField(
           controller: _nameController,
-          placeholder: 'e.g., Home Gym, Office, Park',
           onChanged: (_) => setState(() {}),
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth3,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
-          placeholderStyle: AppTypography.body.copyWith(
-            color: AppColors.textColor4,
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'e.g., Home Gym, Office, Park',
           ),
         ),
       ],
@@ -342,24 +336,18 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
       children: [
         Text(
           'Equipment',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        CupertinoTextField(
+        const SizedBox(height: ELayout.spaceSm),
+        TextField(
           controller: _equipmentController,
-          placeholder: 'e.g., Kettlebells, pull-up bar, bands, foam roller',
           maxLines: 4,
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: AppColors.backgroundDepth3,
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-          ),
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
-          placeholderStyle: AppTypography.body.copyWith(
-            color: AppColors.textColor4,
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+          decoration: const InputDecoration(
+            hintText: 'e.g., Kettlebells, pull-up bar, bands, foam roller',
           ),
         ),
       ],
@@ -368,14 +356,14 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
 
   Widget _errorBanner() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.danger.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
       ),
       child: Text(
         _errorMessage!,
-        style: AppTypography.body.copyWith(color: AppColors.error),
+        style: EText.body.medium.copyWith(color: EColors.danger),
       ),
     );
   }
@@ -387,40 +375,36 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        CupertinoButton.filled(
+        FilledButton(
           onPressed: hasName ? _save : null,
-          child: Text(
-            _isEditing ? 'Save' : 'Add Location',
-            style: const TextStyle(
-              color: CupertinoColors.white,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: Text(_isEditing ? 'Save' : 'Add Location'),
         ),
         ConnectionGatedWidget(
           child: Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.sm),
-            child: CupertinoButton(
+            padding: const EdgeInsets.only(top: ELayout.spaceSm),
+            child: TextButton(
               onPressed: canGenerate ? _generate : null,
               child: _generating
-                  ? const CupertinoActivityIndicator(
-                      color: CupertinoColors.white,
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          CupertinoIcons.sparkles,
+                          Icons.auto_awesome,
                           size: 16,
-                          color: AppColors.accentPrimary,
+                          color: EColors.accent,
                         ),
-                        const SizedBox(width: AppSpacing.xs),
+                        const SizedBox(width: ELayout.spaceXs),
                         Text(
                           _equipmentController.text.trim().isNotEmpty
                               ? 'Revise with AI'
                               : 'Generate with AI',
                           style: const TextStyle(
-                            color: AppColors.accentPrimary,
+                            color: EColors.accent,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -434,9 +418,9 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
   }
 
   Widget _cancelButton() {
-    return CupertinoButton(
+    return TextButton(
       onPressed: () => Navigator.of(context).pop(),
-      child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+      child: Text('Cancel', style: TextStyle(color: EColors.textTertiary)),
     );
   }
 

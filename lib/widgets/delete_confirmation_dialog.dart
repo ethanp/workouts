@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-/// Shows a Cupertino confirmation dialog for a destructive delete action.
+/// Shows a confirmation dialog for a destructive delete action.
 ///
 /// Returns `true` if the user confirmed, `false` if they cancelled.
 Future<bool> confirmDeleteDialog(
@@ -8,18 +8,17 @@ Future<bool> confirmDeleteDialog(
   required String title,
   required String content,
 }) async {
-  return await showCupertinoDialog<bool>(
+  return await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => CupertinoAlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text(title),
           content: Text(content),
           actions: [
-            CupertinoDialogAction(
+            TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: const Text('Cancel'),
             ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
+            TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Delete'),
             ),

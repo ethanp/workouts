@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show SelectionArea;
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:workouts/features/cardio/cardio_provider.dart';
@@ -7,7 +7,6 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const CardioImportSnapshot({
   required final int localWorkouts,
@@ -84,9 +83,9 @@ class _CardioImportDebugTileState()
   Widget _buildContent() {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,31 +94,31 @@ class _CardioImportDebugTileState()
             onTap: _toggle,
             behavior: HitTestBehavior.opaque,
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(ELayout.spaceMd),
               child: Row(
                 children: [
                   Container(
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppColors.backgroundDepth3,
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      color: EColors.surface,
+                      borderRadius: BorderRadius.circular(ELayout.radiusSm),
                     ),
                     child: const Icon(
-                      CupertinoIcons.arrow_down_circle,
-                      color: AppColors.textColor2,
+                      Icons.download,
+                      color: EColors.textSecondary,
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(width: ELayout.spaceMd),
                   Expanded(
-                    child: Text('Import Debug', style: AppTypography.subtitle),
+                    child: Text('Import Debug', style: EText.section),
                   ),
                   Icon(
                     _expanded
-                        ? CupertinoIcons.chevron_up
-                        : CupertinoIcons.chevron_down,
-                    color: AppColors.textColor3,
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    color: EColors.textTertiary,
                     size: 16,
                   ),
                 ],
@@ -127,9 +126,9 @@ class _CardioImportDebugTileState()
             ),
           ),
           if (_expanded) ...[
-            Container(height: 1, color: AppColors.borderDepth1),
+            Container(height: 1, color: EColors.border),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(ELayout.spaceMd),
               child: _buildBody(),
             ),
           ],
@@ -140,13 +139,13 @@ class _CardioImportDebugTileState()
 
   Widget _buildBody() {
     if (_snapshot == null || _snapshot!.isLoading) {
-      return const Center(child: CupertinoActivityIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_snapshot!.hasError) {
       return Text(
         'Error: ${_snapshot!.error}',
-        style: AppTypography.caption.copyWith(color: AppColors.error),
+        style: EText.caption.copyWith(color: EColors.danger),
       );
     }
 
@@ -158,9 +157,9 @@ class _CardioImportDebugTileState()
       children: [
         Text(
           'Compares cardio workouts stored locally with those in Apple Health.',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          style: EText.caption.copyWith(color: EColors.textTertiary),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         DebugRow('Local workouts (total)', '${importSnapshot.localWorkouts}'),
         DebugRow(
           '  Imported from Health',
@@ -173,21 +172,23 @@ class _CardioImportDebugTileState()
               ? '${importSnapshot.healthKitWorkouts}'
               : 'Unavailable',
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         Text(
           'As of ${formatDebugTime(importSnapshot.fetchedAt)}',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         SizedBox(
           width: double.infinity,
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            color: AppColors.backgroundDepth3,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: EColors.surface,
+              padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
+            ),
             onPressed: _snapshot!.isLoading ? null : _refresh,
             child: Text(
               'Refresh',
-              style: AppTypography.body.copyWith(color: AppColors.textColor1),
+              style: EText.body.medium.copyWith(color: EColors.textPrimary),
             ),
           ),
         ),
@@ -282,18 +283,18 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _tileHeader(),
           if (_expanded) ...[
-            Container(height: 1, color: AppColors.borderDepth1),
+            Container(height: 1, color: EColors.border),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.all(ELayout.spaceMd),
               child: _body(),
             ),
           ],
@@ -307,29 +308,29 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
       onTap: _toggle,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         child: Row(
           children: [
             Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.backgroundDepth3,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                color: EColors.surface,
+                borderRadius: BorderRadius.circular(ELayout.radiusSm),
               ),
               child: const Icon(
-                CupertinoIcons.ant,
-                color: AppColors.textColor2,
+                Icons.bug_report,
+                color: EColors.textSecondary,
                 size: 20,
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Text('Sync Debug', style: AppTypography.subtitle)),
+            const SizedBox(width: ELayout.spaceMd),
+            Expanded(child: Text('Sync Debug', style: EText.section)),
             Icon(
               _expanded
-                  ? CupertinoIcons.chevron_up
-                  : CupertinoIcons.chevron_down,
-              color: AppColors.textColor3,
+                  ? Icons.expand_less
+                  : Icons.expand_more,
+              color: EColors.textTertiary,
               size: 16,
             ),
           ],
@@ -344,7 +345,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _rowCountSection(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _actionButtons(),
         ],
       ),
@@ -357,12 +358,12 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
       children: [
         Text(
           'Row counts',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         DebugRow('Local workouts', '$_localWorkouts'),
         DebugRow(
           'Postgres workouts (direct)',
@@ -371,7 +372,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
         if (_countsFetchedAt != null)
           Text(
             'Checked ${formatDebugTime(_countsFetchedAt!)}',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+            style: EText.caption.copyWith(color: EColors.textMuted),
           ),
       ],
     );
@@ -388,7 +389,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
               'Use to check whether sync is making progress.',
           onActivated: _refreshCounts,
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         _DebugAction(
           title: 'Reconnect to backend',
           description:
@@ -397,9 +398,9 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
               'on/off) or if the Connection panel still says offline.',
           onActivated: _reconnecting ? null : _forceReconnect,
           inProgress: _reconnecting,
-          accent: AppColors.accentPrimary,
+          accent: EColors.accent,
         ),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         _DebugAction(
           title: 'Reset local sync data',
           description:
@@ -408,7 +409,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
               'Pending offline edits will be lost. Destructive.',
           onActivated: _resettingSync ? null : _resetSyncData,
           inProgress: _resettingSync,
-          accent: AppColors.error,
+          accent: EColors.danger,
         ),
       ],
     );
@@ -424,26 +425,28 @@ class const _DebugAction({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final buttonColor = accent ?? AppColors.textColor1;
+    final buttonColor = accent ?? EColors.textPrimary;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           description,
-          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          style: EText.caption.copyWith(color: EColors.textTertiary),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         SizedBox(
           width: double.infinity,
-          child: CupertinoButton(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            color: AppColors.backgroundDepth3,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: EColors.surface,
+              padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
+            ),
             onPressed: onActivated,
             child: inProgress
-                ? const CupertinoActivityIndicator()
+                ? const CircularProgressIndicator()
                 : Text(
                     title,
-                    style: AppTypography.body.copyWith(color: buttonColor),
+                    style: EText.body.medium.copyWith(color: buttonColor),
                   ),
           ),
         ),
@@ -464,18 +467,18 @@ class const DebugRow(final String label, final String value)
           Expanded(
             child: Text(
               label,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor3,
+              style: EText.caption.copyWith(
+                color: EColors.textTertiary,
               ),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor1,
+              style: EText.caption.copyWith(
+                color: EColors.textPrimary,
               ),
             ),
           ),

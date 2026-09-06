@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/early_stopped_notifier.dart';
@@ -95,7 +95,7 @@ class _ExerciseCardState() extends ConsumerState<ExerciseCard> {
 
   void _openHistory() {
     Navigator.of(context).push<void>(
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (_) => ExerciseHistoryScreen(exercise: widget.exercise),
       ),
     );
@@ -103,7 +103,7 @@ class _ExerciseCardState() extends ConsumerState<ExerciseCard> {
 
   void _openAskAi() {
     Navigator.of(context).push<void>(
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (_) => ExerciseChatScreen(exercise: widget.exercise),
       ),
     );
@@ -162,7 +162,7 @@ class _ExerciseCardState() extends ConsumerState<ExerciseCard> {
         .toSet();
 
     final WorkoutExercise? replacement = await navigator.push<WorkoutExercise>(
-      CupertinoPageRoute(
+      MaterialPageRoute(
         builder: (_) => ReplaceExercisePickerScreen(
           originalExercise: widget.exercise,
           excludeIds: excludeIds,

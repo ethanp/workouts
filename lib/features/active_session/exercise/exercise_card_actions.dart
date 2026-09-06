@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const ExerciseCardActions({
   required final int completedSetCount,
@@ -51,7 +51,7 @@ class const ExerciseCardActions({
         const Spacer(),
         if (_showsWarmupGroup) ...[
           _warmupGroup(),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
         ],
         _progressBadge(
           isComplete: isComplete,
@@ -74,15 +74,15 @@ class const ExerciseCardActions({
     return Container(
       height: 32,
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (hasMinus)
             _warmupIconButton(
-              icon: CupertinoIcons.minus_circle,
+              icon: Icons.remove_circle_outline,
               onPressed: onRemoveWarmupSet!,
             ),
           Padding(
@@ -91,20 +91,20 @@ class const ExerciseCardActions({
             // there's no icon on a given side, fall back to md so the label
             // doesn't kiss the pill edge.
             padding: EdgeInsets.only(
-              left: hasMinus ? AppSpacing.xs : AppSpacing.md,
-              right: hasPlus ? AppSpacing.xs : AppSpacing.md,
+              left: hasMinus ? ELayout.spaceXs : ELayout.spaceMd,
+              right: hasPlus ? ELayout.spaceXs : ELayout.spaceMd,
             ),
             child: Text(
               'Warmup',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor2,
+              style: EText.caption.copyWith(
+                color: EColors.textSecondary,
                 fontWeight: FontWeight.w500,
               ),
             ),
           ),
           if (hasPlus)
             _warmupIconButton(
-              icon: CupertinoIcons.plus_circle,
+              icon: Icons.add_circle_outline,
               onPressed: onAddWarmupSet!,
             ),
         ],
@@ -115,11 +115,15 @@ class const ExerciseCardActions({
   Widget _warmupIconButton({
     required IconData icon,
     required VoidCallback onPressed,
-  }) => CupertinoButton(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-    minimumSize: const Size(32, 32),
+  }) => IconButton(
+    visualDensity: VisualDensity.compact,
+    style: IconButton.styleFrom(
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      minimumSize: const Size(32, 32),
+      padding: const EdgeInsets.symmetric(horizontal: ELayout.spaceSm),
+    ),
     onPressed: onPressed,
-    child: Icon(icon, size: 18, color: AppColors.textColor2),
+    icon: Icon(icon, size: 18, color: EColors.textSecondary),
   );
 
   /// Combined log / unlog pill, mirroring the warmup group: one rounded
@@ -130,22 +134,25 @@ class const ExerciseCardActions({
   Widget _logGroup({required bool isComplete}) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary,
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.accent,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.sm,
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(
+                horizontal: ELayout.spaceLg,
+                vertical: ELayout.spaceSm,
+              ),
             ),
             onPressed: onLogSet,
             child: Text(
               _logSetButtonLabel(isComplete),
               style: const TextStyle(
-                color: CupertinoColors.white,
+                color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -155,17 +162,17 @@ class const ExerciseCardActions({
             Container(
               width: 1,
               height: 20,
-              color: CupertinoColors.white.withValues(alpha: 0.3),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
-              minimumSize: const Size(36, 36),
-              onPressed: onUnlogSet,
-              child: const Icon(
-                CupertinoIcons.arrow_uturn_left,
-                size: 18,
-                color: CupertinoColors.white,
+            IconButton(
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                minimumSize: const Size(36, 36),
+                padding: EdgeInsets.zero,
               ),
+              onPressed: onUnlogSet,
+              icon: const Icon(Icons.undo, size: 18, color: Colors.white),
             ),
           ],
         ],
@@ -178,26 +185,26 @@ class const ExerciseCardActions({
     required bool useCompactLabel,
   }) {
     final background = isComplete
-        ? AppColors.success.withValues(alpha: 0.15)
-        : AppColors.backgroundDepth3;
+        ? EColors.success.withValues(alpha: 0.15)
+        : EColors.surface;
     final border = isComplete
-        ? AppColors.success.withValues(alpha: 0.3)
-        : AppColors.borderDepth2;
-    final textColor = isComplete ? AppColors.success : AppColors.textColor3;
+        ? EColors.success.withValues(alpha: 0.3)
+        : EColors.borderStrong;
+    final textColor = isComplete ? EColors.success : EColors.textTertiary;
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+        horizontal: ELayout.spaceMd,
+        vertical: ELayout.spaceSm,
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
         border: Border.all(color: border),
       ),
       child: Text(
         _progressLabel(useCompactLabel),
-        style: AppTypography.caption.copyWith(
+        style: EText.caption.copyWith(
           fontWeight: FontWeight.w500,
           color: textColor,
         ),

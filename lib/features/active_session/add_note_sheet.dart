@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/features/active_session/session_notes_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const AddNoteSheet({
   required final String sessionId,
@@ -31,43 +31,35 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth1,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.background,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _headerRow(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               if (_errorText != null) ...[
                 _errorBanner(),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: ELayout.spaceMd),
               ],
               _typeSelector(),
-              const SizedBox(height: AppSpacing.md),
-              CupertinoTextField(
+              const SizedBox(height: ELayout.spaceMd),
+              TextField(
                 controller: _contentController,
-                placeholder: 'What do you want to remember?',
+                decoration: const InputDecoration(
+                  hintText: 'What do you want to remember?',
+                ),
                 maxLines: 4,
                 minLines: 2,
-                padding: const EdgeInsets.all(AppSpacing.md),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundDepth2,
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                  border: Border.all(color: AppColors.borderDepth1),
-                ),
-                style: AppTypography.body,
-                placeholderStyle: AppTypography.body.copyWith(
-                  color: AppColors.textColor4,
-                ),
                 onChanged: (_) => setState(() => _errorText = null),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
             ],
           ),
         ),
@@ -79,14 +71,12 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        CupertinoButton(
-          padding: EdgeInsets.zero,
+        TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        Text('Add Note', style: AppTypography.title),
-        CupertinoButton(
-          padding: EdgeInsets.zero,
+        Text('Add Note', style: EText.title),
+        TextButton(
           onPressed: _contentController.text.trim().isEmpty || _isSaving
               ? null
               : _saveNote,
@@ -98,39 +88,39 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
 
   Widget _typeSelector() {
     return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
+      spacing: ELayout.spaceSm,
+      runSpacing: ELayout.spaceSm,
       children: SessionNoteType.values.map((type) {
         final isSelected = type == _selectedType;
         return GestureDetector(
           onTap: () => setState(() => _selectedType = type),
           child: Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              horizontal: ELayout.spaceMd,
+              vertical: ELayout.spaceSm,
             ),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.accentPrimary.withValues(alpha: 0.2)
-                  : AppColors.backgroundDepth2,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ? EColors.accent.withValues(alpha: 0.2)
+                  : EColors.backgroundLift,
+              borderRadius: BorderRadius.circular(ELayout.radiusSm),
               border: Border.all(
                 color: isSelected
-                    ? AppColors.accentPrimary
-                    : AppColors.borderDepth1,
+                    ? EColors.accent
+                    : EColors.border,
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(type.icon, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: AppSpacing.xs),
+                const SizedBox(width: ELayout.spaceXs),
                 Text(
                   type.displayName,
-                  style: AppTypography.body.copyWith(
+                  style: EText.body.medium.copyWith(
                     color: isSelected
-                        ? AppColors.accentPrimary
-                        : AppColors.textColor2,
+                        ? EColors.accent
+                        : EColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -144,27 +134,27 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
 
   Widget _errorBanner() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.all(ELayout.spaceSm),
       decoration: BoxDecoration(
-        color: CupertinoColors.destructiveRed.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.danger.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
         border: Border.all(
-          color: CupertinoColors.destructiveRed.withValues(alpha: 0.4),
+          color: EColors.danger.withValues(alpha: 0.4),
         ),
       ),
       child: Row(
         children: [
           const Icon(
-            CupertinoIcons.exclamationmark_triangle_fill,
+            Icons.warning,
             size: 16,
-            color: CupertinoColors.destructiveRed,
+            color: EColors.danger,
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Text(
               _errorText!,
-              style: AppTypography.caption.copyWith(
-                color: CupertinoColors.destructiveRed,
+              style: EText.caption.copyWith(
+                color: EColors.danger,
               ),
             ),
           ),

@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/models/training_location.dart';
 import 'package:workouts/features/library/locations_provider.dart';
 import 'package:workouts/services/context_builder.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
 const _durationPresets = [5, 10, 15, 30, 45, 60];
@@ -34,33 +34,33 @@ class _WorkoutPreferencesFormState()
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       children: [
         _sectionLabel('Duration'),
         _durationChips(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: ELayout.spaceXl),
         _sectionLabel('Focus Areas'),
         _goalChips(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: ELayout.spaceXl),
         _sectionLabel('Location'),
         _locationSelector(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: ELayout.spaceXl),
         _sectionLabel('Notes'),
         _notesField(),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: ELayout.spaceXl),
         _generateButton(),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: ELayout.spaceLg),
       ],
     );
   }
 
   Widget _sectionLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: Text(
         label,
-        style: AppTypography.caption.copyWith(
-          color: AppColors.textColor3,
+        style: EText.caption.copyWith(
+          color: EColors.textTertiary,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.5,
         ),
@@ -70,8 +70,8 @@ class _WorkoutPreferencesFormState()
 
   Widget _durationChips() {
     return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
+      spacing: ELayout.spaceSm,
+      runSpacing: ELayout.spaceSm,
       children: _durationPresets.map((minutes) {
         final isSelected = _selectedDuration == minutes;
         return GestureDetector(
@@ -80,26 +80,26 @@ class _WorkoutPreferencesFormState()
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.sm,
+              horizontal: ELayout.spaceMd,
+              vertical: ELayout.spaceSm,
             ),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppColors.accentPrimary
-                  : AppColors.backgroundDepth2,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+                  ? EColors.accent
+                  : EColors.backgroundLift,
+              borderRadius: BorderRadius.circular(ELayout.radiusMd),
               border: Border.all(
                 color: isSelected
-                    ? AppColors.accentPrimary
-                    : AppColors.borderDepth1,
+                    ? EColors.accent
+                    : EColors.border,
               ),
             ),
             child: Text(
               '$minutes min',
-              style: AppTypography.body.copyWith(
+              style: EText.body.medium.copyWith(
                 color: isSelected
-                    ? CupertinoColors.white
-                    : AppColors.textColor2,
+                    ? Colors.white
+                    : EColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -117,12 +117,12 @@ class _WorkoutPreferencesFormState()
         if (activeGoals.isEmpty) {
           return Text(
             'No active goals. Add goals in the Library.',
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+            style: EText.body.medium.copyWith(color: EColors.textTertiary),
           );
         }
         return Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
+          spacing: ELayout.spaceSm,
+          runSpacing: ELayout.spaceSm,
           children: activeGoals.map((goal) {
             final isSelected = _selectedGoalIds.contains(goal.id);
             return GestureDetector(
@@ -136,26 +136,26 @@ class _WorkoutPreferencesFormState()
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.sm,
+                  horizontal: ELayout.spaceMd,
+                  vertical: ELayout.spaceSm,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.accentPrimary
-                      : AppColors.backgroundDepth2,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                      ? EColors.accent
+                      : EColors.backgroundLift,
+                  borderRadius: BorderRadius.circular(ELayout.radiusMd),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.accentPrimary
-                        : AppColors.borderDepth1,
+                        ? EColors.accent
+                        : EColors.border,
                   ),
                 ),
                 child: Text(
                   goal.title,
-                  style: AppTypography.body.copyWith(
+                  style: EText.body.medium.copyWith(
                     color: isSelected
-                        ? CupertinoColors.white
-                        : AppColors.textColor2,
+                        ? Colors.white
+                        : EColors.textSecondary,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
@@ -166,10 +166,10 @@ class _WorkoutPreferencesFormState()
           }).toList(),
         );
       },
-      loading: () => const CupertinoActivityIndicator(),
+      loading: () => const CircularProgressIndicator(),
       error: (_, _) => Text(
         'Could not load goals.',
-        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+        style: EText.body.medium.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -182,7 +182,7 @@ class _WorkoutPreferencesFormState()
         if (savedLocations.isEmpty) {
           return Text(
             'No locations saved. Add locations in the Library.',
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+            style: EText.body.medium.copyWith(color: EColors.textTertiary),
           );
         }
         return Column(
@@ -194,17 +194,17 @@ class _WorkoutPreferencesFormState()
               }),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
-                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                padding: const EdgeInsets.all(AppSpacing.md),
+                margin: const EdgeInsets.only(bottom: ELayout.spaceSm),
+                padding: const EdgeInsets.all(ELayout.spaceMd),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.accentPrimary.withValues(alpha: 0.12)
-                      : AppColors.backgroundDepth2,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
+                      ? EColors.accent.withValues(alpha: 0.12)
+                      : EColors.backgroundLift,
+                  borderRadius: BorderRadius.circular(ELayout.radiusMd),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.accentPrimary
-                        : AppColors.borderDepth1,
+                        ? EColors.accent
+                        : EColors.border,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
@@ -212,14 +212,14 @@ class _WorkoutPreferencesFormState()
                   children: [
                     Icon(
                       isSelected
-                          ? CupertinoIcons.checkmark_circle_fill
-                          : CupertinoIcons.circle,
+                          ? Icons.check_circle
+                          : Icons.circle_outlined,
                       size: 20,
                       color: isSelected
-                          ? AppColors.accentPrimary
-                          : AppColors.textColor3,
+                          ? EColors.accent
+                          : EColors.textTertiary,
                     ),
-                    const SizedBox(width: AppSpacing.md),
+                    const SizedBox(width: ELayout.spaceMd),
                     Expanded(child: _locationInfo(location)),
                   ],
                 ),
@@ -228,10 +228,10 @@ class _WorkoutPreferencesFormState()
           }).toList(),
         );
       },
-      loading: () => const CupertinoActivityIndicator(),
+      loading: () => const CircularProgressIndicator(),
       error: (_, _) => Text(
         'Could not load locations.',
-        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+        style: EText.body.medium.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -242,15 +242,15 @@ class _WorkoutPreferencesFormState()
       children: [
         Text(
           location.name,
-          style: AppTypography.body.copyWith(
-            color: AppColors.textColor1,
+          style: EText.body.medium.copyWith(
+            color: EColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
         if (location.equipment.isNotEmpty)
           Text(
             location.equipment,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -259,20 +259,12 @@ class _WorkoutPreferencesFormState()
   }
 
   Widget _notesField() {
-    return CupertinoTextField(
+    return TextField(
       controller: _notesController,
-      placeholder: 'Anything else? e.g., "I\'m feeling tired", "skip legs"',
-      placeholderStyle: AppTypography.body.copyWith(
-        color: AppColors.textColor4,
+      decoration: const InputDecoration(
+        hintText: 'Anything else? e.g., "I\'m feeling tired", "skip legs"',
       ),
-      style: AppTypography.body.copyWith(color: AppColors.textColor1),
-      padding: const EdgeInsets.all(AppSpacing.md),
       maxLines: 3,
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
     );
   }
 
@@ -280,17 +272,17 @@ class _WorkoutPreferencesFormState()
     return ConnectionGatedWidget(
       child: SizedBox(
         width: double.infinity,
-        child: CupertinoButton.filled(
+        child: FilledButton(
           onPressed: _submit,
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(CupertinoIcons.sparkles, size: 18),
-              SizedBox(width: AppSpacing.sm),
+              Icon(Icons.auto_awesome, size: 18),
+              SizedBox(width: ELayout.spaceSm),
               Text(
                 'Generate',
                 style: TextStyle(
-                  color: CupertinoColors.white,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),

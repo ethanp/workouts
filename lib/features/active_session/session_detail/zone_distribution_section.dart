@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/polarization_week.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 
 class const ZoneDistributionSection({
@@ -27,24 +27,24 @@ class ZoneDistributionSectionState() extends State<ZoneDistributionSection> {
             children: [
               Text(
                 'Zone Distribution',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor3,
+                style: EText.caption.copyWith(
+                  color: EColors.textTertiary,
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs),
+              const SizedBox(width: ELayout.spaceXs),
               Icon(
                 _expanded
-                    ? CupertinoIcons.chevron_up
-                    : CupertinoIcons.chevron_down,
+                    ? Icons.expand_less
+                    : Icons.expand_more,
                 size: 11,
-                color: AppColors.textColor4,
+                color: EColors.textMuted,
               ),
             ],
           ),
         ),
         if (_expanded) ...[
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           ZoneBreakdown(samples: widget.samples),
         ],
       ],
@@ -64,7 +64,7 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
     if (!polarization.hasData) {
       return Text(
         'Not enough HR data to compute zones.',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
       );
     }
 
@@ -73,12 +73,12 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
       children: [
         Text(
           'Shown as Aerobic Base · Gray Zone · VO₂max — metabolic context only.',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor4,
+          style: EText.caption.copyWith(
+            color: EColors.textMuted,
             fontSize: 11,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ClipRRect(
           borderRadius: BorderRadius.circular(3),
           child: SizedBox(
@@ -104,13 +104,13 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
             ),
           ),
         ),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         Row(
           children: [
             _pill('${polarization.aerobicBaseMinutes}m Base', _aerobicColor),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             _pill('${polarization.grayZoneMinutes}m Gray', _grayZoneColor),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             _pill('${polarization.vo2maxMinutes}m VO₂max', _vo2maxColor),
           ],
         ),
@@ -121,16 +121,16 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
   Widget _pill(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
+        horizontal: ELayout.spaceSm,
         vertical: 2,
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         label,
-        style: AppTypography.caption.copyWith(color: color, fontSize: 11),
+        style: EText.caption.copyWith(color: color, fontSize: 11),
       ),
     );
   }
@@ -162,21 +162,21 @@ class const StatPill({required final String label, required final String value})
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
+        border: Border.all(color: EColors.border),
       ),
       child: Row(
         children: [
           Text(
             '$label ',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
-          Text(value, style: AppTypography.caption),
+          Text(value, style: EText.caption),
         ],
       ),
     );

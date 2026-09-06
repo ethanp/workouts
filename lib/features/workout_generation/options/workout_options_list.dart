@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/workout_generation/options/workout_option_card.dart';
 import 'package:workouts/models/llm_workout_option.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const WorkoutOptionsList({
   required final LlmWorkoutResponse response,
@@ -15,7 +15,7 @@ class const WorkoutOptionsList({
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       children: [
         if (showExplanation) _explanation(),
         ...response.options.map(
@@ -26,24 +26,24 @@ class const WorkoutOptionsList({
             onWorkoutSelected: () => onSelectOption(option),
           ),
         ),
-        if (footer != null) ...[const SizedBox(height: AppSpacing.xl), footer!],
+        if (footer != null) ...[const SizedBox(height: ELayout.spaceXl), footer!],
       ],
     );
   }
 
   Widget _explanation() {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Text(
         response.explanation,
-        style: AppTypography.body.copyWith(
-          color: AppColors.textColor2,
+        style: EText.body.medium.copyWith(
+          color: EColors.textSecondary,
           fontStyle: FontStyle.italic,
         ),
       ),

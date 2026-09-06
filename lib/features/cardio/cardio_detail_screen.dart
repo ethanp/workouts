@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -9,7 +10,6 @@ import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/services/backend/service_urls.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 import 'package:workouts/widgets/logging_tile_provider.dart';
@@ -23,50 +23,50 @@ class const CardioDetailScreen({required final CardioWorkout workout})
       cardioHeartRateSamplesProvider(workout.id),
     );
 
-    return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Workout Detail'),
-      ),
-      child: SafeArea(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: const EAppHeader(title: 'Workout Detail'),
+      body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           children: [
-            _WorkoutSummaryCard(workout: workout),
-            if (workout.activityType.hasRoute) ...[
-              const SizedBox(height: AppSpacing.md),
-              routePointsAsync.when(
-                data: (routePoints) => _RouteCard(routePoints: routePoints),
+              _WorkoutSummaryCard(workout: workout),
+              if (workout.activityType.hasRoute) ...[
+                const SizedBox(height: ELayout.spaceMd),
+                routePointsAsync.when(
+                  data: (routePoints) => _RouteCard(routePoints: routePoints),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, _) => Text(
+                    'Unable to load route: $error',
+                    style: EText.body.medium.copyWith(color: EColors.danger),
+                  ),
+                ),
+              ],
+              const SizedBox(height: ELayout.spaceMd),
+              heartRateSamplesAsync.when(
+                data: (cardioHeartRateSamples) => Column(
+                  children: [
+                    _heartRateCard(
+                      cardioHeartRateSamples,
+                      routePointsAsync.asData?.value ?? [],
+                    ),
+                    if (cardioHeartRateSamples.isNotEmpty) ...[
+                      const SizedBox(height: ELayout.spaceMd),
+                      WorkoutPolarizationCard(samples: cardioHeartRateSamples),
+                    ],
+                  ],
+                ),
                 loading: () =>
-                    const Center(child: CupertinoActivityIndicator()),
+                    const Center(child: CircularProgressIndicator()),
                 error: (error, _) => Text(
-                  'Unable to load route: $error',
-                  style: AppTypography.body.copyWith(color: AppColors.error),
+                  'Unable to load heart rate: $error',
+                  style: EText.body.medium.copyWith(color: EColors.danger),
                 ),
               ),
             ],
-            const SizedBox(height: AppSpacing.md),
-            heartRateSamplesAsync.when(
-              data: (cardioHeartRateSamples) => Column(
-                children: [
-                  _heartRateCard(
-                    cardioHeartRateSamples,
-                    routePointsAsync.asData?.value ?? [],
-                  ),
-                  if (cardioHeartRateSamples.isNotEmpty) ...[
-                    const SizedBox(height: AppSpacing.md),
-                    WorkoutPolarizationCard(samples: cardioHeartRateSamples),
-                  ],
-                ],
-              ),
-              loading: () => const Center(child: CupertinoActivityIndicator()),
-              error: (error, _) => Text(
-                'Unable to load heart rate: $error',
-                style: AppTypography.body.copyWith(color: AppColors.error),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
     );
   }
 
@@ -94,27 +94,27 @@ class const _WorkoutSummaryCard({required final CardioWorkout workout})
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(workout.activityType.displayName, style: AppTypography.subtitle),
+          Text(workout.activityType.displayName, style: EText.section),
           if (_hasRecordedDistance) ...[
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: ELayout.spaceXs),
             Text(
               Format.distance(workout.distanceMeters),
-              style: AppTypography.title,
+              style: EText.title,
             ),
           ],
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           Text(
             _subtitleText(),
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+            style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
         ],
       ),
@@ -149,27 +149,27 @@ class const _RouteCard({required final List<CardioRoutePoint> routePoints})
   }
 
   Widget _noRouteCard() => Container(
-    padding: const EdgeInsets.all(AppSpacing.md),
+    padding: const EdgeInsets.all(ELayout.spaceMd),
     decoration: BoxDecoration(
-      color: AppColors.backgroundDepth2,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      border: Border.all(color: AppColors.borderDepth1),
+      color: EColors.backgroundLift,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
+      border: Border.all(color: EColors.border),
     ),
     child: Text(
       'Route unavailable for this workout.',
-      style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      style: EText.body.medium.copyWith(color: EColors.textTertiary),
     ),
   );
 
   Widget _routeMapCard(List<LatLng> routeLatLngPoints, String tileProxyUrl) =>
       Container(
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
           child: SizedBox(
             height: 240,
             child: FlutterMap(
@@ -189,7 +189,7 @@ class const _RouteCard({required final List<CardioRoutePoint> routePoints})
                     Polyline(
                       points: routeLatLngPoints,
                       strokeWidth: 4,
-                      color: AppColors.accentPrimary,
+                      color: EColors.accent,
                     ),
                   ],
                 ),

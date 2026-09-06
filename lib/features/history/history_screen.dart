@@ -1,5 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
@@ -7,7 +8,6 @@ import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
 import 'package:workouts/providers/sync_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 enum HistoryTab() {
@@ -39,20 +39,15 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
     final syncState = ref.watch(syncStateProvider);
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SyncStatusIcon(),
-            const SizedBox(width: 4),
-            Text(syncState.name.titleCase, style: AppTypography.caption),
-          ],
-        ),
-        middle: const Text('History'),
-        trailing: _trailing(isImporting, dbReady),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(
+        title: 'History',
+        automaticallyImplyLeading: false,
+        leading: _syncStatus(syncState),
+        actions: [if (dbReady && !isImporting) _importAction()],
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: Column(
           children: [
             if (isImporting || importProgress.completedAt != null)
@@ -65,40 +60,42 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget? _trailing(bool isImporting, bool dbReady) {
-    if (!dbReady || isImporting) return null;
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
+  Widget _syncStatus(SyncState syncState) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SyncStatusIcon(),
+        const SizedBox(width: 4),
+        Text(syncState.name.titleCase, style: EText.caption),
+      ],
+    );
+  }
+
+  Widget _importAction() {
+    return TextButton.icon(
       onPressed: () => ref
           .read(cardioImportControllerProvider.notifier)
           .importRecentWorkouts(),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(CupertinoIcons.arrow_down_circle, size: 22),
-          const SizedBox(width: 4),
-          Text('Import', style: AppTypography.caption),
-        ],
-      ),
+      icon: const Icon(Icons.download, size: 20),
+      label: const Text('Import'),
     );
   }
 
   Widget _segmentedControl() {
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceSm,
       ),
-      child: CupertinoSlidingSegmentedControl<HistoryTab>(
-        groupValue: _selectedTab,
-        onValueChanged: (tab) {
-          if (tab != null) setState(() => _selectedTab = tab);
-        },
-        children: const {
-          HistoryTab.charts: Text('Charts'),
-          HistoryTab.list: Text('List'),
-          HistoryTab.calendar: Text('Calendar'),
-        },
+      child: SegmentedButton<HistoryTab>(
+        segments: const [
+          ButtonSegment(value: HistoryTab.charts, label: Text('Charts')),
+          ButtonSegment(value: HistoryTab.list, label: Text('List')),
+          ButtonSegment(value: HistoryTab.calendar, label: Text('Calendar')),
+        ],
+        selected: {_selectedTab},
+        onSelectionChanged: (tabs) =>
+            setState(() => _selectedTab = tabs.single),
       ),
     );
   }
@@ -119,20 +116,20 @@ class const ImportProgressBanner({
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      color: AppColors.backgroundDepth2,
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      color: EColors.backgroundLift,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Import from Apple Health',
-            style: AppTypography.subtitle.copyWith(color: AppColors.textColor1),
+            style: EText.section.copyWith(color: EColors.textPrimary),
           ),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _statusText(),
           if (importProgress.inProgress &&
               importProgress.totalWorkouts > 0) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _progressBar(),
           ],
         ],
@@ -145,7 +142,7 @@ class const ImportProgressBanner({
         ? importProgress.status
         : 'Fetches recent cardio workouts with route and heart rate. '
               'Only new workouts are added.',
-    style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+    style: EText.caption.copyWith(color: EColors.textTertiary),
   );
 
   Widget _progressBar() => Column(
@@ -153,21 +150,21 @@ class const ImportProgressBanner({
     children: [
       Text(
         '${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
-        style: AppTypography.caption.copyWith(
-          color: AppColors.textColor2,
+        style: EText.caption.copyWith(
+          color: EColors.textSecondary,
           fontWeight: FontWeight.w500,
         ),
       ),
-      const SizedBox(height: AppSpacing.xs),
+      const SizedBox(height: ELayout.spaceXs),
       ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
         child: Container(
           height: 6,
-          color: AppColors.backgroundDepth3,
+          color: EColors.surface,
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
-            child: Container(color: AppColors.accentPrimary),
+            child: Container(color: EColors.accent),
           ),
         ),
       ),

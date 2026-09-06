@@ -1,5 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_item.dart';
 import 'package:workouts/models/cardio_workout.dart';
@@ -8,7 +9,6 @@ import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
 import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/features/history/activity_calendar.dart';
 
@@ -47,7 +47,7 @@ class _HistoryCalendarTabState() extends ConsumerState<HistoryCalendarTab> {
         _scrollToBottom();
         return ListView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           children: [
             ActivityCalendar(
               activityData: activityData,
@@ -56,18 +56,18 @@ class _HistoryCalendarTabState() extends ConsumerState<HistoryCalendarTab> {
           ],
         );
       },
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Unable to load calendar: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
   }
 
   void _showDayDetail(BuildContext context, DateTime date) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => DayDetailSheet(date: date),
     );
@@ -80,23 +80,33 @@ class const DayDetailSheet({required final DateTime date})
   Widget build(BuildContext context, WidgetRef ref) {
     final itemsAsync = ref.watch(activityForDateProvider(date));
 
-    return CupertinoActionSheet(
-      title: Text(Format.dateFull(date)),
-      message: itemsAsync.when(
-        data: (items) => items.isEmpty
-            ? const Text('No activity on this day')
-            : ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 300),
-                child: SingleChildScrollView(
-                  child: DayDetailItemList(items: items),
-                ),
-              ),
-        loading: () => const CupertinoActivityIndicator(),
-        error: (_, _) => const Text('Unable to load'),
-      ),
-      cancelButton: CupertinoActionSheetAction(
-        onPressed: () => Navigator.of(context).pop(),
-        child: const Text('Close'),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(ELayout.spaceLg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(Format.dateFull(date), style: EText.section),
+            const SizedBox(height: ELayout.spaceMd),
+            itemsAsync.when(
+              data: (items) => items.isEmpty
+                  ? const Text('No activity on this day')
+                  : ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 300),
+                      child: SingleChildScrollView(
+                        child: DayDetailItemList(items: items),
+                      ),
+                    ),
+              loading: () => const CircularProgressIndicator(),
+              error: (_, _) => const Text('Unable to load'),
+            ),
+            const SizedBox(height: ELayout.spaceMd),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -111,17 +121,15 @@ class const DayDetailItemList({required final List<ActivityItem> items})
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: items.map((item) {
         return switch (item) {
-          ActivityCardio(:final workout) => CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
+          ActivityCardio(:final workout) => InkWell(
+            onTap: () {
               Navigator.of(context).pop();
               context.push(CardioDetailScreen(workout: workout));
             },
             child: DayDetailCardioRow(workout: workout),
           ),
-          ActivitySession(:final session) => CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: () {
+          ActivitySession(:final session) => InkWell(
+            onTap: () {
               Navigator.of(context).pop();
               context.push(SessionDetailScreen(session: session));
             },
@@ -138,20 +146,20 @@ class const DayDetailCardioRow({required final CardioWorkout workout})
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Icon(CupertinoIcons.flame, size: 20),
-              const SizedBox(width: AppSpacing.sm),
-              Text(_label(), style: AppTypography.body),
+              const Icon(Icons.local_fire_department, size: 20),
+              const SizedBox(width: ELayout.spaceSm),
+              Text(_label(), style: EText.body.medium),
             ],
           ),
           Text(
             Format.durationShort(workout.durationSeconds),
-            style: AppTypography.caption,
+            style: EText.caption,
           ),
         ],
       ),
@@ -176,29 +184,29 @@ class const DayDetailSessionRow({required final Session session})
         : '—';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              const Icon(CupertinoIcons.clock, size: 20),
-              const SizedBox(width: AppSpacing.sm),
+              const Icon(Icons.schedule, size: 20),
+              const SizedBox(width: ELayout.spaceSm),
               templatesMapAsync.when(
                 data: (templatesMap) {
                   final template = templatesMap[session.templateId];
                   return Text(
                     template?.name ?? 'Session',
-                    style: AppTypography.body,
+                    style: EText.body.medium,
                   );
                 },
-                loading: () => const Text('…', style: AppTypography.body),
+                loading: () => Text('…', style: EText.body.medium),
                 error: (_, _) =>
-                    const Text('Session', style: AppTypography.body),
+                    Text('Session', style: EText.body.medium),
               ),
             ],
           ),
-          Text(duration, style: AppTypography.caption),
+          Text(duration, style: EText.caption),
         ],
       ),
     );

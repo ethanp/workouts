@@ -1,8 +1,8 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/history/calendar_day_cell.dart';
 import 'package:workouts/features/history/calendar_week_row.dart';
 
@@ -14,23 +14,23 @@ class const ActivityCalendar({
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.lg,
-        AppSpacing.xl,
+        ELayout.spaceLg,
+        ELayout.spaceLg,
+        ELayout.spaceLg,
+        ELayout.spaceXl,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Activity Calendar', style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.sm),
+          Text('Activity Calendar', style: EText.section),
+          const SizedBox(height: ELayout.spaceSm),
           _legend(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _grid(),
         ],
       ),
@@ -40,13 +40,13 @@ class const ActivityCalendar({
   Widget _legend() {
     return Row(
       children: [
-        const Text('Less', style: AppTypography.caption),
-        const SizedBox(width: AppSpacing.sm),
+        Text('Less', style: EText.caption),
+        const SizedBox(width: ELayout.spaceSm),
         ..._intensitySquares(),
-        const SizedBox(width: AppSpacing.sm),
-        const Text('More', style: AppTypography.caption),
+        const SizedBox(width: ELayout.spaceSm),
+        Text('More', style: EText.caption),
         const Spacer(),
-        const Text('mi · min', style: AppTypography.caption),
+        Text('mi · min', style: EText.caption),
       ],
     );
   }
@@ -60,8 +60,8 @@ class const ActivityCalendar({
         margin: const EdgeInsets.only(right: 2),
         decoration: BoxDecoration(
           color: Color.lerp(
-            AppColors.accentPrimary.withValues(alpha: 0.15),
-            AppColors.accentPrimary.withValues(alpha: 0.9),
+            EColors.accent.withValues(alpha: 0.15),
+            EColors.accent.withValues(alpha: 0.9),
             intensity,
           ),
           borderRadius: BorderRadius.circular(2),
@@ -143,7 +143,7 @@ class const ActivityCalendar({
         _monthHeader(monthDate),
         _dayOfWeekRow(),
         ..._weekRows(monthDate, daysInMonth, globalMax),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
       ],
     );
   }
@@ -168,8 +168,8 @@ class const ActivityCalendar({
       padding: const EdgeInsets.only(bottom: 2, left: 4),
       child: Text(
         '${_monthNames[date.month - 1]} ${date.year}',
-        style: AppTypography.caption.copyWith(
-          color: AppColors.textColor3,
+        style: EText.caption.copyWith(
+          color: EColors.textTertiary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -188,8 +188,8 @@ class const ActivityCalendar({
             child: Text(
               label,
               textAlign: TextAlign.center,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
+              style: EText.caption.copyWith(
+                color: EColors.textMuted,
                 fontSize: 9,
               ),
             ),
@@ -222,10 +222,10 @@ class const ActivityCalendar({
   }
 
   Widget _emptyState() {
-    return const Padding(
-      padding: EdgeInsets.all(AppSpacing.xl),
+    return Padding(
+      padding: const EdgeInsets.all(ELayout.spaceXl),
       child: Center(
-        child: Text('No activity yet', style: AppTypography.caption),
+        child: Text('No activity yet', style: EText.caption),
       ),
     );
   }

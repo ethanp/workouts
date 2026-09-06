@@ -4,7 +4,7 @@ Personal workout tracker with local-first sync.
 
 ## Stack
 
-- **Flutter** (iOS) with Cupertino widgets
+- **Flutter** with Material and ethan_ui
 - **Riverpod** for state management
 - **PowerSync** for local-first SQLite with real-time sync
 - **Postgres** + **PostgREST** backend (managed in separate `infra` repo)
@@ -21,7 +21,6 @@ Personal workout tracker with local-first sync.
 
 ## Features
 
-- **Today**: View scheduled workouts, start sessions
-- **Goals & Context**: Track fitness goals and background notes (injuries, preferences, equipment)
-- **History**: Review past workout sessions
-- **Sync**: Real-time sync indicator in navigation bar
+- **History**: Review past workout sessions and cardio
+- **Library**: Heart-rate zones, workout templates, goals, and other training context
+- **Settings**: Sync, Apple Health, and app configuration

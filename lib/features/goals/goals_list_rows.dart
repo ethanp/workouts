@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const GoalsSectionHeader({
   required final IconData icon,
@@ -10,12 +10,12 @@ class const GoalsSectionHeader({
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 12, color: AppColors.textColor4),
-        const SizedBox(width: AppSpacing.xs),
+        Icon(icon, size: 12, color: EColors.textMuted),
+        const SizedBox(width: ELayout.spaceXs),
         Text(
           title,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor4,
+          style: EText.caption.copyWith(
+            color: EColors.textMuted,
             fontWeight: FontWeight.w600,
             letterSpacing: 1.0,
           ),
@@ -37,21 +37,21 @@ class const GoalsArchivedToggleRow({
     return GestureDetector(
       onTap: onArchivedSectionToggled,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        padding: const EdgeInsets.symmetric(vertical: ELayout.spaceXs),
         child: Row(
           children: [
             Icon(
               isExpanded
-                  ? CupertinoIcons.chevron_down
-                  : CupertinoIcons.chevron_right,
+                  ? Icons.expand_more
+                  : Icons.chevron_right,
               size: 12,
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: ELayout.spaceSm),
             Text(
               isExpanded ? 'Hide Archived' : 'Show Archived ($count)',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
+              style: EText.caption.copyWith(
+                color: EColors.textMuted,
               ),
             ),
           ],
@@ -67,13 +67,13 @@ class const GoalsQuickAddRow({required final VoidCallback onAddGoal})
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: AppSpacing.xxl),
-        CupertinoButton.filled(
+        const SizedBox(height: 32),
+        FilledButton(
           onPressed: onAddGoal,
           child: const Text(
             'Add Your First Goal',
             style: TextStyle(
-              color: CupertinoColors.white,
+              color: Colors.white,
               fontWeight: FontWeight.w600,
             ),
           ),

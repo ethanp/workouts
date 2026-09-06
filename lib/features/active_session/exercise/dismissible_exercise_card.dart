@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/exercise/exercise_card.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const DismissibleExerciseCard({
   required final SessionBlock block,
@@ -31,13 +31,13 @@ class const DismissibleExerciseCard({
       confirmDismiss: (_) => _confirmAndRemove(context, ref, hasLogs),
       background: Container(
         alignment: Alignment.centerRight,
-        margin: const EdgeInsets.only(bottom: AppSpacing.md),
-        padding: const EdgeInsets.only(right: AppSpacing.lg),
+        margin: const EdgeInsets.only(bottom: ELayout.spaceMd),
+        padding: const EdgeInsets.only(right: ELayout.spaceLg),
         decoration: BoxDecoration(
-          color: AppColors.error,
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: EColors.danger,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
         ),
-        child: const Icon(CupertinoIcons.trash, color: CupertinoColors.white),
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
       child: KeyedSubtree(
         key: wrapperKey,
@@ -57,18 +57,17 @@ class const DismissibleExerciseCard({
         ? 'This exercise has logged sets. Removing it will delete all progress for this exercise.'
         : 'Remove this exercise from the current block?';
 
-    final bool? confirmedRemoval = await showCupertinoDialog<bool>(
+    final bool? confirmedRemoval = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => CupertinoAlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Remove Exercise?'),
         content: Text(confirmationMessage),
         actions: [
-          CupertinoDialogAction(
+          TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('Cancel'),
           ),
-          CupertinoDialogAction(
-            isDestructiveAction: true,
+          TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('Remove'),
           ),

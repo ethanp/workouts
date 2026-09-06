@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/library/template_detail_screen.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class const TemplatesTab({
@@ -19,11 +19,11 @@ class const TemplatesTab({
       data: (templates) => templates.isEmpty
           ? _EmptyState(onTemplateAddRequested: onTemplateAddRequested)
           : _TemplateList(templates: templates),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Error: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
@@ -36,11 +36,11 @@ class const _TemplateList({required final List<WorkoutTemplate> templates})
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
       ),
       itemCount: templates.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
       itemBuilder: (context, templateIndex) =>
           _TemplateCard(template: templates[templateIndex]),
     );
@@ -58,7 +58,7 @@ class const _TemplateCard({required final WorkoutTemplate template})
 
     return GestureDetector(
       onTap: () => Navigator.of(context).push(
-        CupertinoPageRoute<void>(
+        MaterialPageRoute<void>(
           builder: (_) => TemplateDetailScreen(templateId: template.id),
         ),
       ),
@@ -83,35 +83,35 @@ class const _TemplateCard({required final WorkoutTemplate template})
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(
-      color: AppColors.error,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      color: EColors.danger,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
     ),
     alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    padding: const EdgeInsets.only(right: ELayout.spaceLg),
     child: const Icon(
-      CupertinoIcons.trash,
-      color: CupertinoColors.white,
+      Icons.delete,
+      color: Colors.white,
       size: 22,
     ),
   );
 
   Widget _card(int blockCount, int exerciseCount) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Row(
         children: [
           _templateIcon(),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _cardContent(blockCount, exerciseCount)),
           const Icon(
-            CupertinoIcons.chevron_right,
+            Icons.chevron_right,
             size: 14,
-            color: AppColors.textColor4,
+            color: EColors.textMuted,
           ),
         ],
       ),
@@ -123,13 +123,13 @@ class const _TemplateCard({required final WorkoutTemplate template})
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: const Icon(
-        CupertinoIcons.rectangle_stack,
+        Icons.layers,
         size: 18,
-        color: AppColors.accentPrimary,
+        color: EColors.accent,
       ),
     );
   }
@@ -140,8 +140,8 @@ class const _TemplateCard({required final WorkoutTemplate template})
       children: [
         Text(
           template.name,
-          style: AppTypography.body.copyWith(
-            color: AppColors.textColor1,
+          style: EText.body.medium.copyWith(
+            color: EColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -149,16 +149,16 @@ class const _TemplateCard({required final WorkoutTemplate template})
           const SizedBox(height: 2),
           Text(
             template.goal,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
         ],
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         Row(
           children: [
             _metaChip('$blockCount ${blockCount == 1 ? 'block' : 'blocks'}'),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             _metaChip(
               '$exerciseCount ${exerciseCount == 1 ? 'exercise' : 'exercises'}',
             ),
@@ -172,14 +172,14 @@ class const _TemplateCard({required final WorkoutTemplate template})
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth4,
+        color: EColors.surfaceRaised,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 11,
-          color: AppColors.textColor4,
+          color: EColors.textMuted,
           fontWeight: FontWeight.w400,
         ),
       ),
@@ -193,7 +193,7 @@ class const _EmptyState({required final VoidCallback onTemplateAddRequested})
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -201,33 +201,27 @@ class const _EmptyState({required final VoidCallback onTemplateAddRequested})
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.12),
+                color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
-                CupertinoIcons.rectangle_stack,
+                Icons.layers,
                 size: 32,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const Text('No Templates Yet', style: AppTypography.title),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceXl),
+            Text('No Templates Yet', style: EText.title),
+            const SizedBox(height: ELayout.spaceSm),
             Text(
               'Create workout templates to build structured training sessions.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.xxl),
-            CupertinoButton.filled(
+            const SizedBox(height: 32),
+            FilledButton(
               onPressed: onTemplateAddRequested,
-              child: const Text(
-                'Create Template',
-                style: TextStyle(
-                  color: CupertinoColors.white,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: const Text('Create Template'),
             ),
           ],
         ),

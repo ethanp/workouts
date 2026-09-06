@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/widgets/chart_date_plot.dart';
 import 'package:workouts/widgets/chart_tooltip.dart';
 import 'package:workouts/widgets/metric_trend.dart';
@@ -118,12 +118,12 @@ class MetricTrendPainter({
     _strokeQuarterHeightGuides(canvas, plot);
     plot.strokeLeftAndBottomEdges(canvas);
     plot.drawYearBoundaries(canvas);
-    plot.paintMonthOrDayLabels(canvas, labelColor: AppColors.textColor4);
+    plot.paintMonthOrDayLabels(canvas, labelColor: EColors.textMuted);
   }
 
   void _strokeQuarterHeightGuides(Canvas canvas, ChartDatePlot plot) {
     final gridPaint = Paint()
-      ..color = AppColors.borderDepth1.withValues(alpha: 0.4)
+      ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
 
     const lineCount = 4;

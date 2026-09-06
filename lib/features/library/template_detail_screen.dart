@@ -1,13 +1,14 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const TemplateDetailScreen({required final String templateId})
     extends ConsumerStatefulWidget {
@@ -36,53 +37,42 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     _initializedExpanded = true;
   }
 
-  Widget _missingTemplateScaffold() => CupertinoPageScaffold(
-    backgroundColor: AppColors.backgroundDepth1,
-    navigationBar: CupertinoNavigationBar(
-      backgroundColor: AppColors.backgroundDepth1,
-      border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-    ),
-    child: const Center(child: CupertinoActivityIndicator()),
+  Widget _missingTemplateScaffold() => const Scaffold(
+    backgroundColor: Colors.transparent,
+    appBar: EAppHeader(title: 'Template'),
+    body: SafeArea(child: Center(child: CircularProgressIndicator())),
   );
 
   Widget _scaffold(WorkoutTemplate template) {
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-        middle: Text(
-          template.name,
-          style: AppTypography.subtitle,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      child: SafeArea(child: _body(template)),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(title: template.name),
+      body: SafeArea(child: _body(template)),
     );
   }
 
   Widget _body(WorkoutTemplate template) {
     return ListView(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
       ),
       children: [
         _templateHeader(template),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: ELayout.spaceLg),
         _blocksSection(template),
-        const SizedBox(height: AppSpacing.xxl),
+        const SizedBox(height: 32),
       ],
     );
   }
 
   Widget _templateHeader(WorkoutTemplate template) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: _headerContent(template),
     );
@@ -92,21 +82,34 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(template.name, style: AppTypography.title),
+        Text(template.name, style: EText.title),
         if (template.goal.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           Text(
             template.goal,
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+            style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
         ],
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         _headerStatsRow(template),
         if (template.notes != null && template.notes!.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _headerNotesBox(template),
         ],
+        const SizedBox(height: ELayout.spaceMd),
+        _startWorkoutButton(template),
       ],
+    );
+  }
+
+  Widget _startWorkoutButton(WorkoutTemplate template) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: () =>
+            ref.read(activeSessionProvider.notifier).start(template.id),
+        child: const Text('Start workout'),
+      ),
     );
   }
 
@@ -118,12 +121,12 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return Row(
       children: [
         _metaStat(
-          icon: CupertinoIcons.rectangle_stack,
+          icon: Icons.layers,
           label: '$totalBlocks ${totalBlocks == 1 ? 'block' : 'blocks'}',
         ),
-        const SizedBox(width: AppSpacing.lg),
+        const SizedBox(width: ELayout.spaceLg),
         _metaStat(
-          icon: CupertinoIcons.list_bullet,
+          icon: Icons.format_list_bulleted,
           label:
               '$totalExercises ${totalExercises == 1 ? 'exercise' : 'exercises'}',
         ),
@@ -134,14 +137,14 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
   Widget _headerNotesBox(WorkoutTemplate template) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         template.notes!,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -150,12 +153,9 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 13, color: AppColors.textColor4),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          label,
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
-        ),
+        Icon(icon, size: 13, color: EColors.textMuted),
+        const SizedBox(width: ELayout.spaceXs),
+        Text(label, style: EText.caption.copyWith(color: EColors.textMuted)),
       ],
     );
   }
@@ -166,23 +166,19 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
       children: [
         Row(
           children: [
-            const Icon(
-              CupertinoIcons.rectangle_stack,
-              size: 12,
-              color: AppColors.textColor4,
-            ),
-            const SizedBox(width: AppSpacing.xs),
+            const Icon(Icons.layers, size: 12, color: EColors.textMuted),
+            const SizedBox(width: ELayout.spaceXs),
             Text(
               'BLOCKS',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
+              style: EText.caption.copyWith(
+                color: EColors.textMuted,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 1.0,
               ),
             ),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ...template.blocks.map(_blockCard),
       ],
     );
@@ -194,12 +190,12 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     final durationLabel = durationMinutes > 0 ? '${durationMinutes}m' : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: Column(
           children: [
@@ -207,13 +203,13 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
             if (isExpanded) ...[
               Container(
                 height: 1,
-                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                color: AppColors.borderDepth1,
+                margin: const EdgeInsets.symmetric(horizontal: ELayout.spaceMd),
+                color: EColors.border,
               ),
               ...block.exercises.map(
                 (exercise) => _exerciseRow(block, exercise),
               ),
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: ELayout.spaceXs),
             ],
           ],
         ),
@@ -229,18 +225,16 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return GestureDetector(
       onTap: () => _toggleBlock(block, isExpanded),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         child: Row(
           children: [
             _BlockTypeBadge(type: block.type),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: ELayout.spaceMd),
             Expanded(child: _blockTitleColumn(block, durationLabel)),
             Icon(
-              isExpanded
-                  ? CupertinoIcons.chevron_up
-                  : CupertinoIcons.chevron_down,
+              isExpanded ? Icons.expand_less : Icons.expand_more,
               size: 14,
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
             ),
           ],
         ),
@@ -264,8 +258,8 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
       children: [
         Text(
           block.title,
-          style: AppTypography.body.copyWith(
-            color: AppColors.textColor1,
+          style: EText.body.medium.copyWith(
+            color: EColors.textPrimary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -281,24 +275,24 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
         if (durationLabel != null) ...[
           Text(
             durationLabel,
-            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+            style: EText.caption.copyWith(color: EColors.textMuted),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           _dotSeparator(),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
         ],
         if (block.rounds > 1) ...[
           Text(
             '${block.rounds} rounds',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+            style: EText.caption.copyWith(color: EColors.textMuted),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           _dotSeparator(),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
         ],
         Text(
           '${block.exercises.length} ${block.exercises.length == 1 ? 'exercise' : 'exercises'}',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ],
     );
@@ -308,7 +302,7 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     width: 3,
     height: 3,
     decoration: const BoxDecoration(
-      color: AppColors.textColor4,
+      color: EColors.textMuted,
       shape: BoxShape.circle,
     ),
   );
@@ -321,48 +315,48 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     );
     return Padding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+        horizontal: ELayout.spaceMd,
+        vertical: ELayout.spaceSm,
       ),
       child: Row(
         children: [
           Container(
             width: 3,
             height: 3,
-            margin: const EdgeInsets.only(right: AppSpacing.md, left: 2),
+            margin: const EdgeInsets.only(right: ELayout.spaceMd, left: 2),
             decoration: const BoxDecoration(
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
               shape: BoxShape.circle,
             ),
           ),
           Expanded(
             child: Text(
               exercise.name,
-              style: AppTypography.body.copyWith(
-                color: AppColors.textColor2,
+              style: EText.body.medium.copyWith(
+                color: EColors.textSecondary,
                 fontSize: 14,
               ),
             ),
           ),
           if (exercise.prescriptionLabel.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm),
+              padding: const EdgeInsets.only(right: ELayout.spaceSm),
               child: Text(
                 exercise.prescriptionLabel,
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor4,
+                style: EText.caption.copyWith(
+                  color: EColors.textMuted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           if (warmupSets.canRemove)
             _warmupChip(
-              icon: CupertinoIcons.minus_circle,
+              icon: Icons.remove_circle_outline,
               onTap: () => _removeWarmupSet(block.id, exercise),
             ),
           if (warmupSets.canAdd)
             _warmupChip(
-              icon: CupertinoIcons.plus_circle,
+              icon: Icons.add_circle_outline,
               onTap: () => _addWarmupSet(block.id, exercise),
             ),
         ],
@@ -371,11 +365,12 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
   }
 
   Widget _warmupChip({required IconData icon, required VoidCallback onTap}) =>
-      CupertinoButton(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-        minimumSize: const Size(28, 28),
+      IconButton(
         onPressed: onTap,
-        child: Icon(icon, size: 18, color: AppColors.textColor3),
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+        padding: const EdgeInsets.symmetric(horizontal: ELayout.spaceXs),
+        icon: Icon(icon, size: 18, color: EColors.textTertiary),
       );
 
   Future<void> _addWarmupSet(String blockId, WorkoutExercise exercise) {
@@ -405,12 +400,12 @@ class const _BlockTypeBadge({required final WorkoutBlockType type})
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         type.name.capitalize,
@@ -424,12 +419,12 @@ class const _BlockTypeBadge({required final WorkoutBlockType type})
   }
 
   Color get _color => switch (type) {
-    WorkoutBlockType.warmup => AppColors.warning,
-    WorkoutBlockType.animalFlow => AppColors.accentSecondary,
-    WorkoutBlockType.strength => AppColors.error,
-    WorkoutBlockType.mobility => AppColors.success,
-    WorkoutBlockType.core => AppColors.accentPrimary,
-    WorkoutBlockType.conditioning => AppColors.warning,
-    WorkoutBlockType.cooldown => AppColors.textColor3,
+    WorkoutBlockType.warmup => EColors.warning,
+    WorkoutBlockType.animalFlow => EColors.warning,
+    WorkoutBlockType.strength => EColors.danger,
+    WorkoutBlockType.mobility => EColors.success,
+    WorkoutBlockType.core => EColors.accent,
+    WorkoutBlockType.conditioning => EColors.warning,
+    WorkoutBlockType.cooldown => EColors.textTertiary,
   };
 }

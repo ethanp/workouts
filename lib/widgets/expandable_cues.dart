@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 
 class const ExpandableCues({
   required final List<String> cues,
@@ -29,32 +29,28 @@ class _ExpandableCuesState() extends State<ExpandableCues> {
       children: [
         _toggleButton(),
         if (_isExpanded) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           ..._cueItems(),
         ],
       ],
     );
   }
 
-  Widget _toggleButton() => CupertinoButton(
-    padding: EdgeInsets.zero,
-    minimumSize: Size.zero,
-    onPressed: () => setState(() => _isExpanded = !_isExpanded),
+  Widget _toggleButton() => InkWell(
+    onTap: () => setState(() => _isExpanded = !_isExpanded),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          _isExpanded
-              ? CupertinoIcons.chevron_down
-              : CupertinoIcons.chevron_right,
+          _isExpanded ? Icons.expand_more : Icons.chevron_right,
           size: 16,
-          color: AppColors.textColor3,
+          color: EColors.textTertiary,
         ),
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: ELayout.spaceXs),
         Text(
           _isExpanded ? 'Form Cues' : 'Form Cues (${widget.cues.length})',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -66,8 +62,8 @@ class _ExpandableCuesState() extends State<ExpandableCues> {
       .map(
         (cue) => Padding(
           padding: const EdgeInsets.only(
-            bottom: AppSpacing.xs,
-            left: AppSpacing.md,
+            bottom: ELayout.spaceXs,
+            left: ELayout.spaceMd,
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,17 +72,17 @@ class _ExpandableCuesState() extends State<ExpandableCues> {
                 margin: const EdgeInsets.only(top: 8),
                 width: 4,
                 height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.textColor4,
+                decoration: const BoxDecoration(
+                  color: EColors.textMuted,
                   shape: BoxShape.circle,
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: ELayout.spaceSm),
               Expanded(
                 child: Text(
                   cue,
-                  style: AppTypography.body.copyWith(
-                    color: AppColors.textColor3,
+                  style: EText.body.medium.copyWith(
+                    color: EColors.textTertiary,
                   ),
                 ),
               ),

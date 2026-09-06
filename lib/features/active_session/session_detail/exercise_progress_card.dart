@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/exercise_history/exercise_history_provider.dart';
 import 'package:workouts/features/active_session/session_detail/exercise_progress_metrics.dart';
@@ -6,7 +7,6 @@ import 'package:workouts/features/active_session/session_detail/session_set_log_
 import 'package:workouts/models/exercise_history_entry.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
 
@@ -23,20 +23,20 @@ class const ExerciseProgressCard({
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(exerciseHistoryProvider(exercise.id));
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           _progressChart(historyAsync),
           if (exerciseLogs.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _loggedSets(),
           ],
         ],
@@ -50,13 +50,13 @@ class const ExerciseProgressCard({
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: Text(exercise.name, style: AppTypography.subtitle)),
+        Expanded(child: Text(exercise.name, style: EText.section)),
         Text(
           '$completedSets/$targetSets sets',
-          style: AppTypography.caption.copyWith(
+          style: EText.caption.copyWith(
             color: completedSets >= targetSets
-                ? AppColors.success
-                : AppColors.textColor3,
+                ? EColors.success
+                : EColors.textTertiary,
           ),
         ),
       ],
@@ -80,7 +80,7 @@ class const ExerciseProgressCard({
       trends: [
         MetricTrend(
           label: 'Top set',
-          color: AppColors.accentPrimary,
+          color: EColors.accent,
           formatValue: metrics.formatTopSet,
           points: [
             for (final point in points)
@@ -89,7 +89,7 @@ class const ExerciseProgressCard({
         ),
         MetricTrend(
           label: 'Volume',
-          color: AppColors.success,
+          color: EColors.success,
           formatValue: metrics.formatVolume,
           points: [
             for (final point in points)
@@ -117,14 +117,14 @@ class const _ChartPlaceholder({final String? label}) extends StatelessWidget {
     return Container(
       height: 220,
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       alignment: Alignment.center,
       child: label == null
-          ? const CupertinoActivityIndicator()
-          : Text(label!, style: AppTypography.caption),
+          ? const CircularProgressIndicator()
+          : Text(label!, style: EText.caption),
     );
   }
 }

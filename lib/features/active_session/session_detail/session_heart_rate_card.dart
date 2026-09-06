@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_detail/zone_distribution_section.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
 class const SessionHeartRateCard({
@@ -12,11 +12,11 @@ class const SessionHeartRateCard({
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,26 +24,26 @@ class const SessionHeartRateCard({
           Row(
             children: [
               const Icon(
-                CupertinoIcons.heart_fill,
+                Icons.favorite,
                 size: 20,
-                color: AppColors.textColor2,
+                color: EColors.textSecondary,
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Heart Rate', style: AppTypography.title),
+              const SizedBox(width: ELayout.spaceSm),
+              Text('Heart Rate', style: EText.title),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           Row(
             children: [
               StatPill(label: 'Avg', value: _avgText()),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: ELayout.spaceSm),
               StatPill(label: 'Max', value: _maxText()),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           HeartRateAndSpeedChart(samples: samples),
           if (samples.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
             ZoneDistributionSection(samples: samples),
           ],
         ],

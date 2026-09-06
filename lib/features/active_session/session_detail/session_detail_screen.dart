@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/session_detail/edit_session_duration_sheet.dart';
 import 'package:workouts/features/active_session/session_detail/session_blocks_card.dart';
@@ -12,7 +13,6 @@ import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/providers/heart_rate_samples_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const SessionDetailScreen({required final Session session})
     extends ConsumerWidget {
@@ -27,29 +27,30 @@ class const SessionDetailScreen({required final Session session})
     final liveSession =
         ref.watch(sessionByIdProvider(session.id)).value ?? session;
 
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: templatesMapAsync.when(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(
+        title: templatesMapAsync.when(
           data: (templatesMap) {
             final template = templatesMap[liveSession.templateId];
-            return Text(template?.name ?? 'Session Details');
+            return template?.name ?? 'Session Details';
           },
-          loading: () => const Text('Loading...'),
-          error: (_, _) => const Text('Session Details'),
+          loading: () => 'Loading...',
+          error: (_, _) => 'Session Details',
         ),
       ),
-      child: SafeArea(
+      body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           children: [
             SessionSummaryCard(
               session: liveSession,
-              onEditDuration: () => showCupertinoModalPopup<void>(
+              onEditDuration: () => showModalBottomSheet<void>(
                 context: context,
                 builder: (_) => EditSessionDurationSheet(session: liveSession),
               ),
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
             ..._heartRateSlot(
               liveSession,
               heartRateSamples ?? const <HeartRateSample>[],
@@ -66,7 +67,7 @@ class const SessionDetailScreen({required final Session session})
                 sessionDate: liveSession.completedAt ?? liveSession.startedAt,
               ),
               if (blockIndex < liveSession.blocks.length - 1)
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: ELayout.spaceMd),
             ],
           ],
         ),
@@ -86,7 +87,7 @@ class const SessionDetailScreen({required final Session session})
         averageHeartRate: session.averageHeartRate,
         maxHeartRate: session.maxHeartRate,
       ),
-      const SizedBox(height: AppSpacing.lg),
+      const SizedBox(height: ELayout.spaceLg),
     ];
   }
 
@@ -94,7 +95,7 @@ class const SessionDetailScreen({required final Session session})
     if (notes.isEmpty) return const [];
     return [
       SessionNotesCard(notes: notes),
-      const SizedBox(height: AppSpacing.lg),
+      const SizedBox(height: ELayout.spaceLg),
     ];
   }
 }

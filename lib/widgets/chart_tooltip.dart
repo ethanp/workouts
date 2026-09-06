@@ -1,7 +1,7 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/widgets/chart_date_plot.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
@@ -26,7 +26,7 @@ class ChartTooltip({
 
   void _strokeHoverDateCrosshair() {
     final linePaint = Paint()
-      ..color = AppColors.textColor3.withValues(alpha: 0.5)
+      ..color = EColors.textTertiary.withValues(alpha: 0.5)
       ..strokeWidth = 1;
     canvas.drawLine(
       Offset(_clampedX, plot.top),
@@ -43,7 +43,7 @@ class ChartTooltip({
         .toDouble();
 
     final lines = <_TooltipLine>[
-      _TooltipLine(text: _formatDate(hoverDate), color: AppColors.textColor3),
+      _TooltipLine(text: _formatDate(hoverDate), color: EColors.textTertiary),
     ];
 
     for (final metricTrend in visibleTrends) {
@@ -100,12 +100,12 @@ class ChartTooltip({
   void _paintReadoutCard(RRect rect) {
     canvas.drawRRect(
       rect,
-      Paint()..color = AppColors.backgroundDepth2.withValues(alpha: 0.92),
+      Paint()..color = EColors.backgroundLift.withValues(alpha: 0.92),
     );
     canvas.drawRRect(
       rect,
       Paint()
-        ..color = AppColors.borderDepth1
+        ..color = EColors.border
         ..style = PaintingStyle.stroke
         ..strokeWidth = 0.5,
     );

@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
@@ -6,7 +7,6 @@ import 'package:workouts/features/library/templates_provider.dart';
 import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/library_exercise_store.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
@@ -28,11 +28,11 @@ class _ExercisesTabState() extends ConsumerState<ExercisesTab> {
         bulkProgress: bulkProgress,
         onGenerateAll: widget.onGenerateAllBenefits,
       ),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Error: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
@@ -58,7 +58,7 @@ class const _ExercisesBody({
       _exerciseCountHeader(),
       ..._benefitsGenerationBanners(isOffline),
       if (exercises.isEmpty) _emptyLibrary() else _exerciseRows(exercises),
-      const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xxl)),
+      const SliverToBoxAdapter(child: SizedBox(height: 32)),
     ];
   }
 
@@ -66,14 +66,14 @@ class const _ExercisesBody({
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          AppSpacing.sm,
+          ELayout.spaceLg,
+          ELayout.spaceMd,
+          ELayout.spaceLg,
+          ELayout.spaceSm,
         ),
         child: Text(
           '${exercises.length} exercises',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ),
     );
@@ -102,7 +102,7 @@ class const _ExercisesBody({
       child: Center(
         child: Text(
           'No exercises yet',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ),
     );
@@ -111,15 +111,15 @@ class const _ExercisesBody({
   Widget _exerciseRows(List<WorkoutExercise> filteredExercises) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.sm,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceSm,
       ),
       sliver: SliverList.separated(
         itemCount: filteredExercises.length,
         separatorBuilder: (_, _) => Container(
           height: 1,
           margin: const EdgeInsets.only(left: 48),
-          color: AppColors.borderDepth1,
+          color: EColors.border,
         ),
         itemBuilder: (context, exerciseIndex) =>
             _ExerciseRow(exercise: filteredExercises[exerciseIndex]),
@@ -135,14 +135,14 @@ class const _GenerateAllBanner({
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.xs,
+        ELayout.spaceLg,
+        ELayout.spaceSm,
+        ELayout.spaceLg,
+        ELayout.spaceXs,
       ),
-      child: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: onGenerateAllBenefits,
+      child: InkWell(
+        onTap: onGenerateAllBenefits,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
         child: _bannerCard(),
       ),
     );
@@ -151,29 +151,29 @@ class const _GenerateAllBanner({
   Widget _bannerCard() {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accentSecondary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
         border: Border.all(
-          color: AppColors.accentSecondary.withValues(alpha: 0.3),
+          color: EColors.warning.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         children: [
           const Icon(
-            CupertinoIcons.sparkles,
+            Icons.auto_awesome,
             size: 18,
-            color: AppColors.accentSecondary,
+            color: EColors.warning,
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _bannerText()),
           const Icon(
-            CupertinoIcons.chevron_right,
+            Icons.chevron_right,
             size: 14,
-            color: AppColors.accentSecondary,
+            color: EColors.warning,
           ),
         ],
       ),
@@ -186,15 +186,15 @@ class const _GenerateAllBanner({
       children: [
         Text(
           'Generate All Benefits',
-          style: AppTypography.body.copyWith(
-            color: AppColors.accentSecondary,
+          style: EText.body.medium.copyWith(
+            color: EColors.warning,
             fontWeight: FontWeight.w600,
           ),
         ),
         Text(
           'Use AI to auto-generate benefits and link them to your goals.',
-          style: AppTypography.caption.copyWith(
-            color: AppColors.accentSecondary.withValues(alpha: 0.7),
+          style: EText.caption.copyWith(
+            color: EColors.warning.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -209,51 +209,51 @@ class const _GeneratingProgressBanner({
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.xs,
+        ELayout.spaceLg,
+        ELayout.spaceSm,
+        ELayout.spaceLg,
+        ELayout.spaceXs,
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+          horizontal: ELayout.spaceLg,
+          vertical: ELayout.spaceMd,
         ),
         decoration: BoxDecoration(
-          color: AppColors.accentSecondary.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: EColors.warning.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
           border: Border.all(
-            color: AppColors.accentSecondary.withValues(alpha: 0.3),
+            color: EColors.warning.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
           children: [
-            const CupertinoActivityIndicator(),
-            const SizedBox(width: AppSpacing.md),
+            const CircularProgressIndicator(),
+            const SizedBox(width: ELayout.spaceMd),
             Expanded(
               child: Text(
                 progress.label,
-                style: AppTypography.body.copyWith(
-                  color: AppColors.accentSecondary,
+                style: EText.body.medium.copyWith(
+                  color: EColors.warning,
                 ),
               ),
             ),
             Text(
               '${((progress.completed / progress.total) * 100).round()}%',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.accentSecondary,
+              style: EText.caption.copyWith(
+                color: EColors.warning,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
-            CupertinoButton(
-              padding: EdgeInsets.zero,
+            const SizedBox(width: ELayout.spaceSm),
+            IconButton(
+              tooltip: 'Cancel',
               onPressed: () =>
                   ref.read(bulkBenefitsControllerProvider.notifier).cancel(),
-              child: const Icon(
-                CupertinoIcons.stop_circle,
+              icon: const Icon(
+                Icons.stop_circle,
                 size: 20,
-                color: AppColors.accentSecondary,
+                color: EColors.warning,
               ),
             ),
           ],
@@ -267,21 +267,20 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: () => _openBenefitsSheet(context),
+    return InkWell(
+      onTap: () => _openBenefitsSheet(context),
       child: _rowContent(context, ref),
     );
   }
 
   Widget _rowContent(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-      color: CupertinoColors.transparent,
+      padding: const EdgeInsets.symmetric(vertical: ELayout.spaceMd),
+      color: Colors.transparent,
       child: Row(
         children: [
           _ModalityIcon(modality: exercise.modality),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _exerciseDetails()),
           _UnilateralToggle(exercise: exercise),
           if (exercise.benefits.isEmpty)
@@ -297,7 +296,7 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
       children: [
         Text(
           exercise.name,
-          style: AppTypography.body.copyWith(color: AppColors.textColor1),
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
         ),
         const SizedBox(height: 2),
         _exerciseMeta(),
@@ -308,8 +307,8 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
   Widget _exerciseMeta() {
     final benefitCount = exercise.benefits.length;
     return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.xs,
+      spacing: ELayout.spaceSm,
+      runSpacing: ELayout.spaceXs,
       children: [
         _ModalityPill(modality: exercise.modality),
         _SetMetricsPill(label: exercise.setMetrics.label),
@@ -317,11 +316,11 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
           benefitCount == 0
               ? 'No benefits'
               : '$benefitCount ${benefitCount == 1 ? 'benefit' : 'benefits'}',
-          style: AppTypography.caption.copyWith(
+          style: EText.caption.copyWith(
             fontSize: 12,
             color: benefitCount == 0
-                ? AppColors.textColor4
-                : AppColors.textColor3,
+                ? EColors.textMuted
+                : EColors.textTertiary,
           ),
         ),
       ],
@@ -329,20 +328,20 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
   }
 
   Widget _sparkleButton(BuildContext context) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    return IconButton(
+      tooltip: 'Generate benefits',
       onPressed: () => _openBenefitsSheet(context, autoGenerate: true),
-      child: const Icon(
-        CupertinoIcons.sparkles,
+      icon: const Icon(
+        Icons.auto_awesome,
         size: 18,
-        color: AppColors.accentSecondary,
+        color: EColors.warning,
       ),
     );
   }
 
   void _openBenefitsSheet(BuildContext context, {bool autoGenerate = false}) {
     Navigator.of(context).push(
-      CupertinoPageRoute<void>(
+      MaterialPageRoute<void>(
         builder: (_) => ExerciseBenefitsSheet(
           exercise: exercise,
           autoGenerate: autoGenerate,
@@ -362,21 +361,21 @@ class const _UnilateralToggle({required final WorkoutExercise exercise})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.xs),
+      padding: const EdgeInsets.only(right: ELayout.spaceXs),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Unilateral',
-            style: AppTypography.caption.copyWith(
+            style: EText.caption.copyWith(
               fontSize: 11,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: ELayout.spaceXs),
           Transform.scale(
             scale: 0.7,
-            child: CupertinoSwitch(
+            child: Switch(
               value: exercise.isUnilateral,
               onChanged: (next) => _toggle(ref, next),
             ),
@@ -401,14 +400,14 @@ class const _SetMetricsPill({required final String label})
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
+        color: EColors.accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
         style: const TextStyle(
           fontSize: 10,
-          color: AppColors.accentPrimary,
+          color: EColors.accent,
           fontWeight: FontWeight.w500,
         ),
       ),
@@ -425,26 +424,26 @@ class const _ModalityIcon({required final ExerciseModality modality})
       height: 36,
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Icon(_icon, size: 16, color: _color),
     );
   }
 
   IconData get _icon => switch (modality) {
-    ExerciseModality.reps => CupertinoIcons.repeat,
-    ExerciseModality.timed => CupertinoIcons.timer,
-    ExerciseModality.hold => CupertinoIcons.pause_circle,
-    ExerciseModality.mobility => CupertinoIcons.arrow_2_circlepath,
-    ExerciseModality.breath => CupertinoIcons.wind,
+    ExerciseModality.reps => Icons.repeat,
+    ExerciseModality.timed => Icons.timer,
+    ExerciseModality.hold => Icons.pause_circle_outline,
+    ExerciseModality.mobility => Icons.sync,
+    ExerciseModality.breath => Icons.air,
   };
 
   Color get _color => switch (modality) {
-    ExerciseModality.reps => AppColors.accentPrimary,
-    ExerciseModality.timed => AppColors.warning,
-    ExerciseModality.hold => AppColors.accentSecondary,
-    ExerciseModality.mobility => AppColors.success,
-    ExerciseModality.breath => AppColors.textColor3,
+    ExerciseModality.reps => EColors.accent,
+    ExerciseModality.timed => EColors.warning,
+    ExerciseModality.hold => EColors.warning,
+    ExerciseModality.mobility => EColors.success,
+    ExerciseModality.breath => EColors.textTertiary,
   };
 }
 
@@ -455,14 +454,14 @@ class const _ModalityPill({required final ExerciseModality modality})
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth4,
+        color: EColors.surfaceRaised,
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         modality.name,
         style: const TextStyle(
           fontSize: 10,
-          color: AppColors.textColor3,
+          color: EColors.textTertiary,
           fontWeight: FontWeight.w500,
         ),
       ),

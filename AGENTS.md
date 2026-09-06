@@ -21,12 +21,11 @@
   - Omit underscore prefixes for widget helper methods; reserve them for non-widget helpers.
 
 - **UI styling**:
-  - Follow iOS design language using Cupertino components and `AppColors`, `AppTypography`, `AppSpacing`, `AppRadius`.
+  - Follow Material design using ethan_ui (`EAppHeader`, `EColors`, `EText`, `ELayout`).
   - Keep unselected controls styled with white text on grey backgrounds.
-  - Name colors with numeric depth scales: `backgroundDepth1-5`, `borderDepth1-5`, `textColor1-4`.
 
 - **UX patterns**:
-  - Use `CupertinoButton.filled()` for primary actions with explicit white text styling.
+  - Use `FilledButton` for primary actions with explicit contrasting text styling.
   - Avoid confusing button states ("blue blobs") - always ensure text is clearly visible.
   - Implement dismissible overlays for persistent background processes (sessions, timers).
   - Add status banners for background state awareness (active sessions, sync status).
@@ -60,7 +59,7 @@
 
 - **Navigation & screens**:
   - Build screens with `ConsumerWidget`/`ConsumerStatefulWidget` as needed; avoid global state.
-  - Provide consistent Cupertino navigation and tab flows matching native expectations.
+  - Provide consistent Material navigation and tab flows using `EAppHeader`.
 
 - **Session management patterns**:
   - Support pause/resume functionality for long-running processes (workouts, timers).
@@ -101,6 +100,6 @@
 - **Workout app patterns**:
   - Session state: active/paused/completed with accurate timing that excludes pause duration.
   - Dismissible session UI: allow navigation while maintaining background session state.
-  - Two-tab navigation: "Today" (current workout) and "History" (completed sessions).
+  - Three-tab navigation: History, Library, Settings. Start a session from a template in Library.
   - Local-only design: no authentication, no remote dependencies, immediate app startup.
 

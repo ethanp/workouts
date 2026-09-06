@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_card.dart';
 import 'package:workouts/features/goals/goals_list_rows.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const GoalsList({
   required final List<FitnessGoal> activeGoals,
@@ -16,14 +16,14 @@ class const GoalsList({
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.md,
+      horizontal: ELayout.spaceLg,
+      vertical: ELayout.spaceMd,
     ),
     children: [
       ..._activeGoalsSection(),
       ..._emptySection(),
       ..._archivedSection(),
-      const SizedBox(height: AppSpacing.xxl),
+      const SizedBox(height: 32),
     ],
   );
 
@@ -31,20 +31,19 @@ class const GoalsList({
     if (activeGoals.isEmpty) return [];
     return [
       GoalsSectionHeader(
-        icon: CupertinoIcons.flag_fill,
+        icon: Icons.flag,
         title: 'GOALS',
-        action: CupertinoButton(
-          padding: EdgeInsets.zero,
+        action: TextButton(
           onPressed: onAddGoal,
           child: const Text(
             'Add',
-            style: TextStyle(fontSize: 14, color: AppColors.accentPrimary),
+            style: TextStyle(fontSize: 14, color: EColors.accent),
           ),
         ),
       ),
-      const SizedBox(height: AppSpacing.sm),
+      const SizedBox(height: ELayout.spaceSm),
       ..._activeGoalPrioritySections(),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: ELayout.spaceXl),
     ];
   }
 
@@ -59,7 +58,7 @@ class const GoalsList({
         ),
       );
       if (priority != goalPriorities.last) {
-        prioritySectionWidgets.add(const SizedBox(height: AppSpacing.md));
+        prioritySectionWidgets.add(const SizedBox(height: ELayout.spaceMd));
       }
     }
     return prioritySectionWidgets;
@@ -81,7 +80,7 @@ class const GoalsList({
       goalCategoryWidgets.add(
         _GoalCategoryHeader(categoryStyle: GoalCategoryStyle(goalCategory)),
       );
-      goalCategoryWidgets.add(const SizedBox(height: AppSpacing.xs));
+      goalCategoryWidgets.add(const SizedBox(height: ELayout.spaceXs));
       goalCategoryWidgets.addAll(
         categoryGoals.map(
           (fitnessGoal) => GoalCard(
@@ -91,7 +90,7 @@ class const GoalsList({
           ),
         ),
       );
-      goalCategoryWidgets.add(const SizedBox(height: AppSpacing.sm));
+      goalCategoryWidgets.add(const SizedBox(height: ELayout.spaceSm));
     }
     return goalCategoryWidgets;
   }
@@ -134,7 +133,7 @@ class const GoalsList({
     if (activeGoals.isNotEmpty) return [];
     return [
       GoalsQuickAddRow(onAddGoal: onAddGoal),
-      const SizedBox(height: AppSpacing.xl),
+      const SizedBox(height: ELayout.spaceXl),
     ];
   }
 
@@ -147,7 +146,7 @@ class const GoalsList({
         onArchivedSectionToggled: onToggleArchived,
       ),
       if (showArchived) ...[
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ...archivedGoals.map(
           (goal) => GoalCard(goal: goal, allGoals: allGoals, isArchived: true),
         ),
@@ -161,10 +160,10 @@ class const _GoalPriorityGroup({
   required final List<Widget> children,
 }) extends StatelessWidget {
   Color get _priorityColor => switch (priority) {
-    1 => CupertinoColors.systemYellow,
-    2 => CupertinoColors.systemBlue,
-    3 => CupertinoColors.systemGreen,
-    _ => CupertinoColors.systemGrey,
+    1 => EColors.warning,
+    2 => EColors.accent,
+    3 => EColors.success,
+    _ => EColors.textMuted,
   };
 
   @override
@@ -172,7 +171,7 @@ class const _GoalPriorityGroup({
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _GoalPriorityHeader(priority: priority, color: _priorityColor),
-      const SizedBox(height: AppSpacing.sm),
+      const SizedBox(height: ELayout.spaceSm),
       ...children,
     ],
   );
@@ -187,13 +186,13 @@ class const _GoalPriorityHeader({
     children: [
       Text(
         'PRIORITY $priority',
-        style: AppTypography.caption.copyWith(
+        style: EText.caption.copyWith(
           color: color,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.9,
         ),
       ),
-      const SizedBox(width: AppSpacing.sm),
+      const SizedBox(width: ELayout.spaceSm),
       Expanded(
         child: Container(height: 1, color: color.withValues(alpha: 0.3)),
       ),
@@ -206,7 +205,7 @@ class const _GoalCategoryHeader({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: AppSpacing.xs),
+    padding: const EdgeInsets.only(top: ELayout.spaceXs),
     child: Row(
       children: [
         Container(
@@ -217,16 +216,16 @@ class const _GoalCategoryHeader({
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         Text(
           categoryStyle.label.toUpperCase(),
-          style: AppTypography.caption.copyWith(
+          style: EText.caption.copyWith(
             color: categoryStyle.color,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         Expanded(
           child: Container(
             height: 1,

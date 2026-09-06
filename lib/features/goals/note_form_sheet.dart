@@ -1,9 +1,9 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/features/goals/goals_modal_labeled_field.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const NoteFormSheet({
   required final List<FitnessGoal> availableGoals,
@@ -48,32 +48,32 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     return Container(
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _dragHandle(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _sheetHeader(isEditing),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: ELayout.spaceXl),
               _contentField(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _categoryField(),
               if (widget.availableGoals.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: ELayout.spaceLg),
                 _goalLinkField(),
               ],
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: ELayout.spaceXl),
               _saveButton(isEditing),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: ELayout.spaceMd),
               _cancelButton(context),
             ],
           ),
@@ -87,7 +87,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.borderDepth3,
+        color: EColors.borderStrong,
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -97,13 +97,13 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     children: [
       Text(
         isEditing ? 'Edit Note' : 'New Background Note',
-        style: AppTypography.title,
+        style: EText.title,
         textAlign: TextAlign.center,
       ),
-      const SizedBox(height: AppSpacing.sm),
+      const SizedBox(height: ELayout.spaceSm),
       Text(
         'Add context about your body, preferences, or constraints.',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
         textAlign: TextAlign.center,
       ),
     ],
@@ -111,19 +111,12 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
 
   Widget _contentField() => GoalsModalLabeledField(
     label: 'Note',
-    child: CupertinoTextField(
+    child: TextField(
       controller: _contentController,
-      placeholder: 'e.g., Lower back sensitivity — avoid heavy axial loading',
-      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: const InputDecoration(
+        hintText: 'e.g., Lower back sensitivity — avoid heavy axial loading',
+      ),
       maxLines: 4,
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      style: AppTypography.body.copyWith(color: AppColors.textColor1),
-      placeholderStyle: AppTypography.body.copyWith(
-        color: AppColors.textColor4,
-      ),
       onChanged: (_) => setState(() {}),
     ),
   );
@@ -131,8 +124,8 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
   Widget _categoryField() => GoalsModalLabeledField(
     label: 'Category',
     child: Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
+      spacing: ELayout.spaceSm,
+      runSpacing: ELayout.spaceSm,
       children: NoteCategory.values.mapL(_categoryChip),
     ),
   );
@@ -143,32 +136,32 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
       onTap: () => setState(() => _selectedCategory = cat),
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+          horizontal: ELayout.spaceMd,
+          vertical: ELayout.spaceSm,
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.accentPrimary
-              : AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+              ? EColors.accent
+              : EColors.surface,
+          borderRadius: BorderRadius.circular(ELayout.radiusSm),
           border: Border.all(
             color: isSelected
-                ? AppColors.accentPrimary
-                : AppColors.borderDepth2,
+                ? EColors.accent
+                : EColors.borderStrong,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(cat.icon, style: const TextStyle(fontSize: 14)),
-            const SizedBox(width: AppSpacing.xs),
+            const SizedBox(width: ELayout.spaceXs),
             Text(
               cat.displayName,
               style: TextStyle(
                 fontSize: 13,
                 color: isSelected
-                    ? CupertinoColors.white
-                    : AppColors.textColor2,
+                    ? Colors.white
+                    : EColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -185,18 +178,18 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
         _goalOption(
           id: null,
           label: 'General (all goals)',
-          icon: CupertinoIcons.globe,
+          icon: Icons.public,
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         ...widget.availableGoals
             .where((goal) => goal.isActive)
             .map(
               (goal) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
                 child: _goalOption(
                   id: goal.id,
                   label: goal.title,
-                  icon: CupertinoIcons.flag_fill,
+                  icon: Icons.flag,
                 ),
               ),
             ),
@@ -213,16 +206,16 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     return GestureDetector(
       onTap: () => setState(() => _selectedGoalId = id),
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(ELayout.spaceMd),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.accentPrimary.withValues(alpha: 0.12)
-              : AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+              ? EColors.accent.withValues(alpha: 0.12)
+              : EColors.surface,
+          borderRadius: BorderRadius.circular(ELayout.radiusSm),
           border: Border.all(
             color: isSelected
-                ? AppColors.accentPrimary
-                : AppColors.borderDepth2,
+                ? EColors.accent
+                : EColors.borderStrong,
           ),
         ),
         child: Row(
@@ -231,17 +224,17 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
               icon,
               size: 15,
               color: isSelected
-                  ? AppColors.accentPrimary
-                  : AppColors.textColor3,
+                  ? EColors.accent
+                  : EColors.textTertiary,
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: ELayout.spaceSm),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
                   color: isSelected
-                      ? AppColors.accentPrimary
-                      : AppColors.textColor2,
+                      ? EColors.accent
+                      : EColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -252,7 +245,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     );
   }
 
-  Widget _saveButton(bool isEditing) => CupertinoButton.filled(
+  Widget _saveButton(bool isEditing) => FilledButton(
     onPressed: _contentController.text.trim().isEmpty
         ? null
         : () => widget.onSave(
@@ -263,14 +256,14 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     child: Text(
       isEditing ? 'Save Changes' : 'Add Note',
       style: const TextStyle(
-        color: CupertinoColors.white,
+        color: Colors.white,
         fontWeight: FontWeight.w600,
       ),
     ),
   );
 
-  Widget _cancelButton(BuildContext context) => CupertinoButton(
+  Widget _cancelButton(BuildContext context) => TextButton(
     onPressed: () => Navigator.of(context).pop(),
-    child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+    child: Text('Cancel', style: TextStyle(color: EColors.textTertiary)),
   );
 }

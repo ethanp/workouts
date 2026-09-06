@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const WeekMax({
@@ -20,8 +20,8 @@ class const CalendarDayCell({
 
   static Color intensityColor(double intensity) {
     return Color.lerp(
-      AppColors.accentPrimary.withValues(alpha: 0.15),
-      AppColors.accentPrimary.withValues(alpha: 0.9),
+      EColors.accent.withValues(alpha: 0.15),
+      EColors.accent.withValues(alpha: 0.9),
       intensity,
     )!;
   }
@@ -57,7 +57,7 @@ class const CalendarDayCell({
         : 0.0;
     final cellColor = hasActivity
         ? intensityColor(intensity)
-        : AppColors.backgroundDepth3.withValues(alpha: 0.8);
+        : EColors.surface.withValues(alpha: 0.8);
 
     return GestureDetector(
       onTap: onActivated,
@@ -70,10 +70,10 @@ class const CalendarDayCell({
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: isToday
-                ? AppColors.accentPrimary
+                ? EColors.accent
                 : hasActivity
                 ? intensityColor(intensity).withValues(alpha: 0.6)
-                : AppColors.borderDepth1.withValues(alpha: 0.4),
+                : EColors.border.withValues(alpha: 0.4),
             width: isToday ? 1.5 : 0.5,
           ),
           boxShadow: hasActivity
@@ -98,7 +98,7 @@ class const CalendarDayCell({
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w500,
-          color: AppColors.textColor4.withValues(alpha: 0.6),
+          color: EColors.textMuted.withValues(alpha: 0.6),
         ),
       ),
     );

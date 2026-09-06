@@ -1,9 +1,9 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_resume/block_navigation_hint_row.dart';
 import 'package:workouts/features/active_session/session_resume/session_resume_action_row.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
 class const SessionResumeMetricsPanel({
@@ -18,8 +18,8 @@ class const SessionResumeMetricsPanel({
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.sm,
+      horizontal: ELayout.spaceLg,
+      vertical: ELayout.spaceSm,
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,10 +29,10 @@ class const SessionResumeMetricsPanel({
           onNext: onNextBlock,
         ),
         if (watchConnected) ...[
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           CardioMetricsCard(samples: heartRateSamples),
         ],
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         SessionResumeActionRow(
           isPaused: session.isPaused,
           watchConnected: watchConnected,

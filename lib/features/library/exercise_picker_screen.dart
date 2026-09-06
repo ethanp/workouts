@@ -1,9 +1,9 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/library/templates_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
@@ -13,26 +13,26 @@ class const ExercisePickerScreen({required final Set<String> excludeIds})
   Widget build(BuildContext context, WidgetRef ref) {
     final exercisesAsync = ref.watch(allExercisesProvider);
 
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-        middle: const Text('Add Exercise', style: AppTypography.title),
-        leading: CupertinoButton(
-          padding: EdgeInsets.zero,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(
+        title: 'Add Exercise',
+        leading: IconButton(
+          tooltip: 'Close',
           onPressed: () => Navigator.of(context).pop(),
-          child: const Icon(CupertinoIcons.xmark, color: AppColors.textColor2),
+          icon: const Icon(Icons.close),
         ),
       ),
-      child: exercisesAsync.when(
-        data: (exercises) =>
-            _ExercisePickerBody(exercises: exercises, excludeIds: excludeIds),
-        loading: () => const Center(child: CupertinoActivityIndicator()),
-        error: (e, _) => Center(
-          child: Text(
-            'Error: $e',
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+      body: SafeArea(
+        child: exercisesAsync.when(
+          data: (exercises) =>
+              _ExercisePickerBody(exercises: exercises, excludeIds: excludeIds),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Text(
+              'Error: $e',
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
+            ),
           ),
         ),
       ),
@@ -80,13 +80,11 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Column(
-        children: [
-          filterChips(),
-          Expanded(child: exerciseList()),
-        ],
-      ),
+    return Column(
+      children: [
+        filterChips(),
+        Expanded(child: exerciseList()),
+      ],
     );
   }
 
@@ -98,8 +96,8 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: AppSpacing.md,
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
       ),
       child: Row(
         children: [
@@ -118,25 +116,25 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget filterChip(ExerciseModality? modality, String label) {
     final isSelected = _selectedModality == modality;
     return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.sm),
-      child: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: () => setState(() => _selectedModality = modality),
+      padding: const EdgeInsets.only(right: ELayout.spaceSm),
+      child: InkWell(
+        onTap: () => setState(() => _selectedModality = modality),
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
+            horizontal: ELayout.spaceMd,
+            vertical: ELayout.spaceSm,
           ),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppColors.accentPrimary
-                : AppColors.backgroundDepth3,
-            borderRadius: BorderRadius.circular(AppRadius.md),
+                ? EColors.accent
+                : EColors.surface,
+            borderRadius: BorderRadius.circular(ELayout.radiusMd),
           ),
           child: Text(
             label,
-            style: AppTypography.caption.copyWith(
-              color: isSelected ? AppColors.textColor1 : AppColors.textColor3,
+            style: EText.caption.copyWith(
+              color: isSelected ? EColors.textPrimary : EColors.textTertiary,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
@@ -151,7 +149,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
       return Center(
         child: Text(
           'No exercises available',
-          style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          style: EText.body.medium.copyWith(color: EColors.textTertiary),
         ),
       );
     }
@@ -161,7 +159,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
     );
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xxl),
+      padding: const EdgeInsets.only(bottom: 32),
       itemCount: modalities.length,
       itemBuilder: (context, index) {
         final modality = modalities[index];
@@ -180,15 +178,15 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.sm,
+            ELayout.spaceLg,
+            ELayout.spaceMd,
+            ELayout.spaceLg,
+            ELayout.spaceSm,
           ),
           child: Text(
             modality.name.toUpperCase(),
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
+            style: EText.caption.copyWith(
+              color: EColors.textMuted,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
@@ -202,67 +200,66 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget exerciseRow(WorkoutExercise exercise) {
     return Container(
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: AppColors.borderDepth1)),
+        border: Border(bottom: BorderSide(color: EColors.border)),
       ),
       child: Row(
         children: [
           Expanded(
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg,
-                vertical: AppSpacing.md,
-              ),
-              onPressed: () => Navigator.of(context).pop(exercise),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          exercise.name,
-                          style: AppTypography.body.copyWith(
-                            color: AppColors.textColor1,
+            child: InkWell(
+              onTap: () => Navigator.of(context).pop(exercise),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ELayout.spaceLg,
+                  vertical: ELayout.spaceMd,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            exercise.name,
+                            style: EText.body.medium.copyWith(
+                              color: EColors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.xs,
-                          children: [
-                            prescriptionBadge(exercise.prescription),
-                            setMetricsBadge(exercise.setMetrics.label),
-                            if (exercise.equipment != null) ...[
-                              equipmentBadge(exercise.equipment!),
+                          const SizedBox(height: ELayout.spaceXs),
+                          Wrap(
+                            spacing: ELayout.spaceSm,
+                            runSpacing: ELayout.spaceXs,
+                            children: [
+                              prescriptionBadge(exercise.prescription),
+                              setMetricsBadge(exercise.setMetrics.label),
+                              if (exercise.equipment != null) ...[
+                                equipmentBadge(exercise.equipment!),
+                              ],
+                              if (exercise.benefits.isNotEmpty) ...[
+                                _benefitsBadge(exercise.benefits.length),
+                              ],
                             ],
-                            if (exercise.benefits.isNotEmpty) ...[
-                              _benefitsBadge(exercise.benefits.length),
-                            ],
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Icon(
-                    CupertinoIcons.add_circled,
-                    color: AppColors.accentPrimary,
-                    size: 24,
-                  ),
-                ],
+                    const Icon(
+                      Icons.add_circle_outline,
+                      color: EColors.accent,
+                      size: 24,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
           ConnectionGatedWidget(
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.md,
-              ),
+            child: IconButton(
+              tooltip: 'Benefits',
               onPressed: () => _openBenefitsSheet(exercise),
-              child: const Icon(
-                CupertinoIcons.sparkles,
+              icon: const Icon(
+                Icons.auto_awesome,
                 size: 18,
-                color: AppColors.textColor4,
+                color: EColors.textMuted,
               ),
             ),
           ),
@@ -274,26 +271,26 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget _benefitsBadge(int count) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accentSecondary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.warning.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            CupertinoIcons.sparkles,
+            Icons.auto_awesome,
             size: 10,
-            color: AppColors.accentSecondary,
+            color: EColors.warning,
           ),
           const SizedBox(width: 2),
           Text(
             '$count',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.accentSecondary,
+            style: EText.caption.copyWith(
+              color: EColors.warning,
               fontSize: 10,
             ),
           ),
@@ -304,7 +301,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
 
   void _openBenefitsSheet(WorkoutExercise exercise) {
     Navigator.of(context).push(
-      CupertinoPageRoute<void>(
+      MaterialPageRoute<void>(
         builder: (_) => ExerciseBenefitsSheet(exercise: exercise),
       ),
     );
@@ -313,16 +310,16 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget prescriptionBadge(String prescription) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         prescription,
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -330,26 +327,26 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget equipmentBadge(String equipment) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accentSecondary.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.warning.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            CupertinoIcons.cube,
+            Icons.view_in_ar,
             size: 12,
-            color: AppColors.accentSecondary,
+            color: EColors.warning,
           ),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: ELayout.spaceXs),
           Text(
             equipment,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.accentSecondary,
+            style: EText.caption.copyWith(
+              color: EColors.warning,
             ),
           ),
         ],
@@ -360,16 +357,16 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
   Widget setMetricsBadge(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         label,
-        style: AppTypography.caption.copyWith(color: AppColors.accentPrimary),
+        style: EText.caption.copyWith(color: EColors.accent),
       ),
     );
   }

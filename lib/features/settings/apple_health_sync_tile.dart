@@ -1,8 +1,8 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
 import 'package:workouts/features/history/activity_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 /// Single tile that drives the two-step Apple Health workflow: import recent
 /// cardio workouts, then compute heart rate zones for any that are missing.
@@ -23,38 +23,38 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
         : null;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Apple Health', style: AppTypography.subtitle),
-          const SizedBox(height: AppSpacing.xs),
+          Text('Apple Health', style: EText.section),
+          const SizedBox(height: ELayout.spaceXs),
           Text(
             'Import recent workouts from Apple Health and compute their heart rate zones.',
-            style: AppTypography.body.copyWith(color: AppColors.textColor3),
+            style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _importButton(isImporting, ref),
           if (isImporting) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _importProgressSection(importProgress),
           ] else if (importProgress.status.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: ELayout.spaceXs),
             Text(
               importProgress.status,
-              style: AppTypography.caption.copyWith(color: AppColors.success),
+              style: EText.caption.copyWith(color: EColors.success),
             ),
           ],
           if (importErrorMessage != null) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             Text(
               importErrorMessage,
-              style: AppTypography.caption.copyWith(color: AppColors.error),
+              style: EText.caption.copyWith(color: EColors.danger),
             ),
           ],
           ..._backfillSection(missingCount, backfillStatus, ref),
@@ -65,18 +65,25 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
 
   Widget _importButton(bool isImporting, WidgetRef ref) => SizedBox(
     width: double.infinity,
-    child: CupertinoButton.filled(
+    child: FilledButton(
       onPressed: isImporting
           ? null
           : () => ref
                 .read(cardioImportControllerProvider.notifier)
                 .importRecentWorkouts(),
       child: isImporting
-          ? const CupertinoActivityIndicator(color: CupertinoColors.white)
+          ? const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
           : const Text(
               'Import workouts',
               style: TextStyle(
-                color: CupertinoColors.white,
+                color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -88,18 +95,18 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
     children: [
       Text(
         'Importing ${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
-      const SizedBox(height: AppSpacing.xs),
+      const SizedBox(height: ELayout.spaceXs),
       ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
         child: Container(
           height: 6,
-          color: AppColors.backgroundDepth3,
+          color: EColors.surface,
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
-            child: Container(color: AppColors.accentPrimary),
+            child: Container(color: EColors.accent),
           ),
         ),
       ),
@@ -119,42 +126,44 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
     if (!hasMissing && !isBackfilling && !hasStatusLabel) return const [];
 
     return [
-      const SizedBox(height: AppSpacing.md),
+      const SizedBox(height: ELayout.spaceMd),
       if (hasMissing)
         Text(
           '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data',
-          style: AppTypography.caption.copyWith(color: AppColors.warning),
+          style: EText.caption.copyWith(color: EColors.warning),
         ),
       if (hasMissing || isBackfilling) ...[
-        if (hasMissing) const SizedBox(height: AppSpacing.sm),
+        if (hasMissing) const SizedBox(height: ELayout.spaceSm),
         SizedBox(
           width: double.infinity,
-          child: CupertinoButton(
-            color: AppColors.backgroundDepth3,
-            disabledColor: AppColors.backgroundDepth3,
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: EColors.surface,
+              disabledBackgroundColor: EColors.surface,
+              padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
+            ),
             onPressed: isBackfilling
                 ? null
                 : () => ref
                       .read(metricsBackfillControllerProvider.notifier)
                       .runBackfill(),
             child: isBackfilling
-                ? const CupertinoActivityIndicator()
+                ? const CircularProgressIndicator()
                 : Text(
                     'Compute missing zones',
-                    style: AppTypography.body.copyWith(
-                      color: AppColors.textColor1,
+                    style: EText.body.medium.copyWith(
+                      color: EColors.textPrimary,
                     ),
                   ),
           ),
         ),
       ],
       if (hasStatusLabel) ...[
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         Text(
           backfillStatus.label,
-          style: AppTypography.caption.copyWith(
-            color: isBackfilling ? AppColors.textColor3 : AppColors.success,
+          style: EText.caption.copyWith(
+            color: isBackfilling ? EColors.textTertiary : EColors.success,
           ),
         ),
       ],

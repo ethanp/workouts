@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
 class const SetCaptureSheet({
@@ -41,14 +41,14 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.only(
-        left: AppSpacing.lg,
-        right: AppSpacing.lg,
-        top: AppSpacing.lg,
-        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        left: ELayout.spaceLg,
+        right: ELayout.spaceLg,
+        top: ELayout.spaceLg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + ELayout.spaceLg,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(
         top: false,
@@ -57,15 +57,15 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _header(),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
             _numberField(_repsController, 'Reps'),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _numberField(
               _weightController,
               'Weight (${WeightDisplay.unitLabel(widget.exercise)})',
               decimal: true,
             ),
-            const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: ELayout.spaceLg),
             _actions(context),
           ],
         ),
@@ -86,13 +86,13 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
       children: [
         Text(
           '$typeLabel: ${widget.exercise.name}',
-          style: AppTypography.subtitle,
+          style: EText.section,
         ),
         if (plannedSet != null) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           Text(
             'Planned ${_plannedSetLabel(plannedSet)}',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
         ],
       ],
@@ -104,20 +104,11 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
     String placeholder, {
     bool decimal = false,
   }) {
-    return CupertinoTextField(
+    return TextField(
       controller: controller,
       keyboardType: TextInputType.numberWithOptions(decimal: decimal),
-      placeholder: placeholder,
-      placeholderStyle: AppTypography.body.copyWith(
-        color: AppColors.textColor4,
-      ),
-      style: AppTypography.body.copyWith(color: AppColors.textColor1),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
-      ),
+      style: EText.body.medium.copyWith(color: EColors.textPrimary),
+      decoration: EInput.filledMd(hintText: placeholder),
     );
   }
 
@@ -125,15 +116,14 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
     return Row(
       children: [
         Expanded(
-          child: CupertinoButton(
-            color: AppColors.backgroundDepth4,
+          child: FilledButton.tonal(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Cancel'),
           ),
         ),
-        const SizedBox(width: AppSpacing.sm),
+        const SizedBox(width: ELayout.spaceSm),
         Expanded(
-          child: CupertinoButton.filled(
+          child: FilledButton(
             onPressed: () => Navigator.of(context).pop(_input()),
             child: const Text('Log Set'),
           ),

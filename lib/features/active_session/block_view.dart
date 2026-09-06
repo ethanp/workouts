@@ -1,14 +1,12 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart'
-    show ReorderableListView, ReorderableDragStartListener;
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/active_session/block_progress.dart';
 import 'package:workouts/features/library/exercise_picker_screen.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/features/active_session/exercise/dismissible_exercise_card.dart';
 
 class const BlockView({required final SessionBlock block})
@@ -54,7 +52,7 @@ class _BlockViewState() extends ConsumerState<BlockView> {
 
     return ReorderableListView.builder(
       scrollController: _scrollController,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       buildDefaultDragHandles: false,
       header: _stickyHeader(context, roundLabel: roundLabel),
       itemCount: widget.block.exercises.length,
@@ -70,11 +68,11 @@ class _BlockViewState() extends ConsumerState<BlockView> {
       children: [
         _blockHeader(context),
         if (roundLabel != null) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _roundBadge(roundLabel),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
         ] else
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
       ],
     );
   }
@@ -126,24 +124,23 @@ class _BlockViewState() extends ConsumerState<BlockView> {
         Expanded(
           child: Text(
             widget.block.type.name.titleCase,
-            style: AppTypography.title,
+            style: EText.title,
           ),
         ),
-        CupertinoButton(
-          padding: const EdgeInsets.all(AppSpacing.xs),
-          onPressed: () => _showExercisePicker(context),
+        InkWell(
+          onTap: () => _showExercisePicker(context),
           child: Container(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: const EdgeInsets.all(ELayout.spaceSm),
             decoration: BoxDecoration(
-              color: AppColors.accentPrimary.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              color: EColors.accent.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(ELayout.radiusSm),
               border: Border.all(
-                color: AppColors.accentPrimary.withValues(alpha: 0.3),
+                color: EColors.accent.withValues(alpha: 0.3),
               ),
             ),
             child: const Icon(
-              CupertinoIcons.add,
-              color: AppColors.accentPrimary,
+              Icons.add,
+              color: EColors.accent,
               size: 20,
             ),
           ),
@@ -157,18 +154,18 @@ class _BlockViewState() extends ConsumerState<BlockView> {
       alignment: Alignment.centerLeft,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          horizontal: ELayout.spaceMd,
+          vertical: ELayout.spaceXs,
         ),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth2),
+          color: EColors.surface,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.borderStrong),
         ),
         child: Text(
           label,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -214,11 +211,11 @@ class _BlockViewState() extends ConsumerState<BlockView> {
 class const _ExerciseDragHandle() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Padding(
-    padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    padding: EdgeInsets.symmetric(horizontal: ELayout.spaceSm),
     child: Icon(
-      CupertinoIcons.line_horizontal_3,
+      Icons.drag_handle,
       size: 20,
-      color: AppColors.textColor3,
+      color: EColors.textTertiary,
     ),
   );
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/utils/weight_display.dart';

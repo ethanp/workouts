@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/fitness_goal.dart';
@@ -7,7 +8,6 @@ import 'package:workouts/features/library/exercise_benefits_provider.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/services/llm/llm_service.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
 /// Review sheet for AI-generated or manually edited exercise benefits.
@@ -57,45 +57,31 @@ class _ExerciseBenefitsSheetState()
       );
     }
 
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: _navigationBar(activeGoals, isSaving, context),
-      child: SafeArea(child: _body(activeGoals, isOffline)),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: _appHeader(activeGoals, isSaving, context),
+      body: SafeArea(child: _body(activeGoals, isOffline)),
     );
   }
 
-  CupertinoNavigationBar _navigationBar(
+  EAppHeader _appHeader(
     List<FitnessGoal> activeGoals,
     bool isSaving,
     BuildContext context,
   ) {
-    return CupertinoNavigationBar(
-      backgroundColor: AppColors.backgroundDepth1,
-      border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-      middle: Text(
-        widget.exercise.name,
-        style: AppTypography.subtitle,
-        overflow: TextOverflow.ellipsis,
-      ),
-      leading: CupertinoButton(
-        padding: EdgeInsets.zero,
+    return EAppHeader(
+      title: widget.exercise.name,
+      automaticallyImplyLeading: false,
+      leading: TextButton(
         onPressed: () => Navigator.of(context).pop(),
-        child: const Text(
-          'Cancel',
-          style: TextStyle(color: AppColors.textColor3),
-        ),
+        child: const Text('Cancel'),
       ),
-      trailing: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: isSaving ? null : () => _persistBenefitEdits(context),
-        child: Text(
-          'Apply',
-          style: TextStyle(
-            color: isSaving ? AppColors.textColor4 : AppColors.accentPrimary,
-            fontWeight: FontWeight.w600,
-          ),
+      actions: [
+        TextButton(
+          onPressed: isSaving ? null : () => _persistBenefitEdits(context),
+          child: const Text('Apply'),
         ),
-      ),
+      ],
     );
   }
 
@@ -104,22 +90,22 @@ class _ExerciseBenefitsSheetState()
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.all(ELayout.spaceLg),
             children: [
               ConnectionGatedWidget(
                 child: Column(
                   children: [
                     _generateButton(activeGoals),
                     if (_generationError != null) ...[
-                      const SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: ELayout.spaceSm),
                       Text(
                         _generationError!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.error,
+                        style: EText.caption.copyWith(
+                          color: EColors.danger,
                         ),
                       ),
                     ],
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: ELayout.spaceLg),
                   ],
                 ),
               ),
@@ -129,7 +115,7 @@ class _ExerciseBenefitsSheetState()
                 ..._editableBenefits.asMap().entries.map(
                   (entry) => _benefitTile(entry.value, entry.key, activeGoals),
                 ),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: ELayout.spaceMd),
               _addBenefitButton(activeGoals),
             ],
           ),
@@ -139,38 +125,37 @@ class _ExerciseBenefitsSheetState()
   }
 
   Widget _generateButton(List<FitnessGoal> activeGoals) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: _isGenerating ? null : () => _generate(activeGoals),
+    return InkWell(
+      onTap: _isGenerating ? null : () => _generate(activeGoals),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.md,
-          horizontal: AppSpacing.lg,
+          vertical: ELayout.spaceMd,
+          horizontal: ELayout.spaceLg,
         ),
         decoration: BoxDecoration(
-          color: AppColors.accentSecondary.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(AppRadius.md),
+          color: EColors.warning.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
           border: Border.all(
-            color: AppColors.accentSecondary.withValues(alpha: 0.3),
+            color: EColors.warning.withValues(alpha: 0.3),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (_isGenerating)
-              const CupertinoActivityIndicator()
+              const CircularProgressIndicator()
             else
               const Icon(
-                CupertinoIcons.sparkles,
+                Icons.auto_awesome,
                 size: 16,
-                color: AppColors.accentSecondary,
+                color: EColors.warning,
               ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: ELayout.spaceSm),
             Text(
               _isGenerating ? 'Generating…' : 'Generate Benefits with AI',
-              style: AppTypography.body.copyWith(
-                color: AppColors.accentSecondary,
+              style: EText.body.medium.copyWith(
+                color: EColors.warning,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -185,11 +170,11 @@ class _ExerciseBenefitsSheetState()
         ? 'No benefits yet. Add manually.'
         : 'No benefits yet. Generate with AI or add manually.';
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      padding: const EdgeInsets.symmetric(vertical: ELayout.spaceXl),
       child: Center(
         child: Text(
           message,
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
           textAlign: TextAlign.center,
         ),
       ),
@@ -214,12 +199,12 @@ class _ExerciseBenefitsSheetState()
   Widget _swipeDeleteBackground() {
     return Container(
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: AppSpacing.lg),
+      padding: const EdgeInsets.only(right: ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.error.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        color: EColors.danger.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
       ),
-      child: const Icon(CupertinoIcons.trash, color: AppColors.error, size: 20),
+      child: const Icon(Icons.delete, color: EColors.danger, size: 20),
     );
   }
 
@@ -229,25 +214,25 @@ class _ExerciseBenefitsSheetState()
     List<FitnessGoal> activeGoals,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      margin: const EdgeInsets.only(bottom: ELayout.spaceSm),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             benefit.name,
-            style: AppTypography.body.copyWith(color: AppColors.textColor1),
+            style: EText.body.medium.copyWith(color: EColors.textPrimary),
           ),
           if (activeGoals.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
+              spacing: ELayout.spaceXs,
+              runSpacing: ELayout.spaceXs,
               children: activeGoals
                   .map(
                     (goal) => _goalChip(
@@ -269,24 +254,24 @@ class _ExerciseBenefitsSheetState()
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+          horizontal: ELayout.spaceSm,
+          vertical: ELayout.spaceXs,
         ),
         decoration: BoxDecoration(
           color: isLinked
-              ? AppColors.accentPrimary.withValues(alpha: 0.2)
-              : AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+              ? EColors.accent.withValues(alpha: 0.2)
+              : EColors.surface,
+          borderRadius: BorderRadius.circular(ELayout.radiusSm),
           border: Border.all(
             color: isLinked
-                ? AppColors.accentPrimary.withValues(alpha: 0.5)
-                : AppColors.borderDepth1,
+                ? EColors.accent.withValues(alpha: 0.5)
+                : EColors.border,
           ),
         ),
         child: Text(
           goal.title,
-          style: AppTypography.caption.copyWith(
-            color: isLinked ? AppColors.accentPrimary : AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: isLinked ? EColors.accent : EColors.textTertiary,
             fontWeight: isLinked ? FontWeight.w600 : FontWeight.normal,
           ),
         ),
@@ -295,31 +280,30 @@ class _ExerciseBenefitsSheetState()
   }
 
   Widget _addBenefitButton(List<FitnessGoal> activeGoals) {
-    return CupertinoButton(
-      padding: EdgeInsets.zero,
-      onPressed: _addManualBenefit,
+    return InkWell(
+      onTap: _addManualBenefit,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.md,
-          horizontal: AppSpacing.lg,
+          vertical: ELayout.spaceMd,
+          horizontal: ELayout.spaceLg,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth2),
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.borderStrong),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(
-              CupertinoIcons.add,
+              Icons.add,
               size: 16,
-              color: AppColors.textColor3,
+              color: EColors.textTertiary,
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: ELayout.spaceSm),
             Text(
               'Add Benefit',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
             ),
           ],
         ),

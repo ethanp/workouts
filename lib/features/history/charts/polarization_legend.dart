@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/features/history/charts/polarization_formatting.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 class const PolarizationLegend({
@@ -15,7 +15,7 @@ class const PolarizationLegend({
       children: [
         _compactLegend(),
         if (isExpanded) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _expandedLegend(),
         ],
       ],
@@ -29,7 +29,7 @@ class const PolarizationLegend({
         mainAxisSize: MainAxisSize.min,
         children: [
           for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
-            if (zoneIndex > 0) const SizedBox(width: AppSpacing.sm),
+            if (zoneIndex > 0) const SizedBox(width: ELayout.spaceSm),
             _legendDot(
               HrZonePalette.zoneColors[zoneIndex],
               'Z${zoneIndex + 1}',
@@ -37,11 +37,11 @@ class const PolarizationLegend({
           ],
           const SizedBox(width: 5),
           Icon(
-            CupertinoIcons.info_circle,
+            Icons.info_outline,
             size: 12,
             color: isExpanded
-                ? AppColors.textColor3
-                : AppColors.textColor4.withValues(alpha: 0.6),
+                ? EColors.textTertiary
+                : EColors.textMuted.withValues(alpha: 0.6),
           ),
         ],
       ),
@@ -50,8 +50,8 @@ class const PolarizationLegend({
 
   Widget _expandedLegend() {
     return Wrap(
-      spacing: AppSpacing.md,
-      runSpacing: AppSpacing.xs,
+      spacing: ELayout.spaceMd,
+      runSpacing: ELayout.spaceXs,
       children: [
         for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++)
           _legendDotExpanded(
@@ -75,7 +75,7 @@ class const PolarizationLegend({
         const SizedBox(width: 3),
         Text(
           label,
-          style: const TextStyle(fontSize: 10, color: AppColors.textColor4),
+          style: const TextStyle(fontSize: 10, color: EColors.textMuted),
         ),
       ],
     );
@@ -101,11 +101,11 @@ class const PolarizationLegend({
           children: [
             Text(
               name,
-              style: const TextStyle(fontSize: 10, color: AppColors.textColor4),
+              style: const TextStyle(fontSize: 10, color: EColors.textMuted),
             ),
             Text(
               range,
-              style: const TextStyle(fontSize: 8, color: AppColors.textColor4),
+              style: const TextStyle(fontSize: 8, color: EColors.textMuted),
             ),
           ],
         ),

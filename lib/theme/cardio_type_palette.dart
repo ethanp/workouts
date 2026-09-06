@@ -1,15 +1,15 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/models/cardio_type.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const CardioTypePalette._() {
   static Color colorFor(CardioType cardioType) => switch (cardioType) {
-    CardioType.outdoorRun => AppColors.accentPrimary,
-    CardioType.indoorRun => AppColors.accentSecondary,
+    CardioType.outdoorRun => EColors.accent,
+    CardioType.indoorRun => EColors.warning,
     CardioType.outdoorWalk => const Color(0xFF5E5CE6),
     CardioType.indoorWalk => const Color(0xFFBF5AF2),
     CardioType.elliptical => const Color(0xFFFF9F0A),
-    CardioType.stairClimbing => AppColors.success,
+    CardioType.stairClimbing => EColors.success,
     CardioType.rowing => const Color(0xFF64D2FF),
   };
 }

@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const BlockNavigationHintRow({
   required final VoidCallback? onPrevious,
@@ -11,16 +11,16 @@ class const BlockNavigationHintRow({
     children: [
       Text(
         'Swipe or tap arrows to navigate blocks',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+        style: EText.caption.copyWith(color: EColors.textMuted),
       ),
       Row(
         children: [
           _navigationButton(
-            icon: CupertinoIcons.chevron_left,
+            icon: Icons.chevron_left,
             onPressed: onPrevious,
           ),
           _navigationButton(
-            icon: CupertinoIcons.chevron_right,
+            icon: Icons.chevron_right,
             onPressed: onNext,
           ),
         ],
@@ -31,12 +31,12 @@ class const BlockNavigationHintRow({
   Widget _navigationButton({
     required IconData icon,
     required VoidCallback? onPressed,
-  }) => CupertinoButton(
-    padding: const EdgeInsets.all(AppSpacing.xs),
+  }) => IconButton(
+    visualDensity: VisualDensity.compact,
     onPressed: onPressed,
-    child: Icon(
+    icon: Icon(
       icon,
-      color: onPressed == null ? AppColors.textColor4 : AppColors.textColor2,
+      color: onPressed == null ? EColors.textMuted : EColors.textSecondary,
       size: 20,
     ),
   );

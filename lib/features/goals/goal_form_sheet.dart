@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/goals/goals_modal_labeled_field.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const GoalFormSheet({
   final FitnessGoal? initialGoal,
@@ -51,32 +51,32 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
     return Container(
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
       ),
       child: SafeArea(
         top: false,
         child: SingleChildScrollView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(ELayout.spaceLg),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _dragHandle(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _sheetTitle(isEditing),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: ELayout.spaceXl),
               _titleField(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _categoryField(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _priorityField(),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: ELayout.spaceLg),
               _descriptionField(),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: ELayout.spaceXl),
               _saveButton(context, isEditing),
-              const SizedBox(height: AppSpacing.md),
+              const SizedBox(height: ELayout.spaceMd),
               _cancelButton(context),
             ],
           ),
@@ -90,7 +90,7 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.borderDepth3,
+        color: EColors.borderStrong,
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -98,25 +98,16 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
 
   Widget _sheetTitle(bool isEditing) => Text(
     isEditing ? 'Edit Goal' : 'New Goal',
-    style: AppTypography.title,
+    style: EText.title,
     textAlign: TextAlign.center,
   );
 
   Widget _titleField() => GoalsModalLabeledField(
     label: 'Title',
-    child: CupertinoTextField(
+    child: TextField(
       controller: _titleController,
-      placeholder: 'e.g., Improve posture',
+      decoration: const InputDecoration(hintText: 'e.g., Improve posture'),
       onChanged: (_) => setState(() {}),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      style: AppTypography.body.copyWith(color: AppColors.textColor1),
-      placeholderStyle: AppTypography.body.copyWith(
-        color: AppColors.textColor4,
-      ),
     ),
   );
 
@@ -129,20 +120,20 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
         children: GoalCategory.values.map((cat) {
           final isSelected = cat == _selectedCategory;
           return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            padding: const EdgeInsets.only(right: ELayout.spaceSm),
             child: GestureDetector(
               onTap: () => setState(() => _selectedCategory = cat),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                padding: const EdgeInsets.symmetric(horizontal: ELayout.spaceMd),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.accentPrimary
-                      : AppColors.backgroundDepth3,
+                      ? EColors.accent
+                      : EColors.surface,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
                     color: isSelected
-                        ? AppColors.accentPrimary
-                        : AppColors.borderDepth2,
+                        ? EColors.accent
+                        : EColors.borderStrong,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -151,8 +142,8 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
                   style: TextStyle(
                     fontSize: 13,
                     color: isSelected
-                        ? CupertinoColors.white
-                        : AppColors.textColor2,
+                        ? Colors.white
+                        : EColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -171,7 +162,7 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
         final priority = index + 1;
         final isSelected = priority == _priority;
         return Padding(
-          padding: const EdgeInsets.only(right: AppSpacing.sm),
+          padding: const EdgeInsets.only(right: ELayout.spaceSm),
           child: GestureDetector(
             onTap: () => setState(() => _priority = priority),
             child: Container(
@@ -179,13 +170,13 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
               height: 40,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.accentPrimary
-                    : AppColors.backgroundDepth3,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ? EColors.accent
+                    : EColors.surface,
+                borderRadius: BorderRadius.circular(ELayout.radiusSm),
                 border: Border.all(
                   color: isSelected
-                      ? AppColors.accentPrimary
-                      : AppColors.borderDepth2,
+                      ? EColors.accent
+                      : EColors.borderStrong,
                 ),
               ),
               alignment: Alignment.center,
@@ -195,8 +186,8 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? CupertinoColors.white
-                      : AppColors.textColor2,
+                      ? Colors.white
+                      : EColors.textSecondary,
                 ),
               ),
             ),
@@ -208,24 +199,17 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
 
   Widget _descriptionField() => GoalsModalLabeledField(
     label: 'Description (optional)',
-    child: CupertinoTextField(
+    child: TextField(
       controller: _descriptionController,
-      placeholder: 'Why this goal matters to you…',
-      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: const InputDecoration(
+        hintText: 'Why this goal matters to you…',
+      ),
       maxLines: 3,
-      decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-      ),
-      style: AppTypography.body.copyWith(color: AppColors.textColor1),
-      placeholderStyle: AppTypography.body.copyWith(
-        color: AppColors.textColor4,
-      ),
     ),
   );
 
   Widget _saveButton(BuildContext context, bool isEditing) =>
-      CupertinoButton.filled(
+      FilledButton(
         onPressed: _titleController.text.trim().isEmpty
             ? null
             : () async {
@@ -244,14 +228,14 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
         child: Text(
           isEditing ? 'Save Changes' : 'Add Goal',
           style: const TextStyle(
-            color: CupertinoColors.white,
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
       );
 
-  Widget _cancelButton(BuildContext context) => CupertinoButton(
+  Widget _cancelButton(BuildContext context) => TextButton(
     onPressed: () => Navigator.of(context).pop(),
-    child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+    child: Text('Cancel', style: TextStyle(color: EColors.textTertiary)),
   );
 }

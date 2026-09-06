@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 /// A section of the settings screen with a header label and stacked tiles.
 ///
-/// Tiles are spaced with [AppSpacing.md] between each other and the section
-/// itself is padded with [AppSpacing.lg] below the header for breathing room.
+/// Tiles are spaced with [ELayout.spaceMd] between each other and the section
+/// itself is padded with [ELayout.spaceLg] below the header for breathing room.
 class const SettingsSection({
   required final String title,
   required final List<Widget> children,
@@ -16,13 +16,13 @@ class const SettingsSection({
       children: [
         Padding(
           padding: const EdgeInsets.only(
-            left: AppSpacing.sm,
-            bottom: AppSpacing.sm,
+            left: ELayout.spaceSm,
+            bottom: ELayout.spaceSm,
           ),
           child: Text(
             title.toUpperCase(),
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
+            style: EText.caption.copyWith(
+              color: EColors.textMuted,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.6,
             ),
@@ -35,7 +35,7 @@ class const SettingsSection({
         ) ...[
           children[childIndex],
           if (childIndex < children.length - 1)
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: ELayout.spaceMd),
         ],
       ],
     );

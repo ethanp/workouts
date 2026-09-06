@@ -1,11 +1,11 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/exercise/current_set_metric_tile.dart';
 import 'package:workouts/features/active_session/exercise/current_set_planned_label.dart';
 import 'package:workouts/features/active_session/exercise/current_set_value_stepper.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/weight_display.dart';
 
 class const CurrentSetEditor({
@@ -71,17 +71,17 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _inputTiles(),
         ],
       ),
@@ -116,20 +116,20 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
         Expanded(
           child: Text(
             _currentSetHeaderText,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor2,
+            style: EText.caption.copyWith(
+              color: EColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
         ),
         if (plannedSetLabel != null) ...[
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           Flexible(
             child: Text(
               plannedSetLabel,
               textAlign: TextAlign.end,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textColor4,
+              style: EText.caption.copyWith(
+                color: EColors.textMuted,
               ),
             ),
           ),
@@ -189,7 +189,7 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
 
   void _addMetricGap(List<Widget> inputTiles) {
     if (inputTiles.isEmpty) return;
-    inputTiles.add(const SizedBox(width: AppSpacing.sm));
+    inputTiles.add(const SizedBox(width: ELayout.spaceSm));
   }
 
   Widget _metricTile({

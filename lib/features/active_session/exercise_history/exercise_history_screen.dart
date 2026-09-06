@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/exercise_history/exercise_history_provider.dart';
 import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
@@ -7,7 +8,6 @@ import 'package:workouts/models/exercise_history_entry.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
@@ -15,11 +15,10 @@ class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final historyAsync = ref.watch(exerciseHistoryProvider(exercise.id));
-    return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text('History: ${exercise.name}'),
-      ),
-      child: SafeArea(child: _body(historyAsync)),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(title: 'History: ${exercise.name}'),
+      body: SafeArea(child: _body(historyAsync)),
     );
   }
 
@@ -27,29 +26,29 @@ class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
     return historyAsync.when(
       data: (entries) =>
           entries.isEmpty ? _emptyState() : _historyList(entries),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => _errorView(error),
     );
   }
 
   Widget _emptyState() => Center(
     child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       child: Text(
         'No completed sessions with ${exercise.name} yet.',
         textAlign: TextAlign.center,
-        style: AppTypography.body.copyWith(color: AppColors.textColor3),
+        style: EText.body.medium.copyWith(color: EColors.textTertiary),
       ),
     ),
   );
 
   Widget _errorView(Object error) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       child: Text(
         'Could not load history.\n$error',
         textAlign: TextAlign.center,
-        style: AppTypography.body.copyWith(color: AppColors.error),
+        style: EText.body.medium.copyWith(color: EColors.danger),
       ),
     ),
   );
@@ -57,11 +56,11 @@ class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
   Widget _historyList(List<ExerciseHistoryEntry> entries) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.md,
+        horizontal: ELayout.spaceMd,
+        vertical: ELayout.spaceMd,
       ),
       itemCount: entries.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
+      separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceMd),
       itemBuilder: (_, index) =>
           _SessionSection(entry: entries[index], exercise: exercise),
     );
@@ -83,18 +82,18 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _sessionDateHeader(),
           if (widget.entry.sets.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: ELayout.spaceXs),
             ..._setRows(),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
           ],
         ],
       ),
@@ -102,35 +101,41 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
   }
 
   Widget _sessionDateHeader() {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      onPressed: _isOpening ? null : _openSessionDetail,
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  Format.dateRelative(widget.entry.completedAt),
-                  style: AppTypography.subtitle,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(_subtitle, style: AppTypography.caption),
-              ],
+    return InkWell(
+      onTap: _isOpening ? null : _openSessionDetail,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: ELayout.spaceMd,
+          vertical: ELayout.spaceSm,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    Format.dateRelative(widget.entry.completedAt),
+                    style: EText.section,
+                  ),
+                  const SizedBox(height: ELayout.spaceXs),
+                  Text(_subtitle, style: EText.caption),
+                ],
+              ),
             ),
-          ),
-          _isOpening
-              ? const CupertinoActivityIndicator(radius: 10)
-              : const Icon(
-                  CupertinoIcons.chevron_right,
-                  size: 18,
-                  color: AppColors.textColor3,
-                ),
-        ],
+            _isOpening
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(
+                    Icons.chevron_right,
+                    size: 18,
+                    color: EColors.textTertiary,
+                  ),
+          ],
+        ),
       ),
     );
   }
@@ -146,7 +151,7 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
   Iterable<Widget> _setRows() {
     return widget.entry.sets.map(
       (log) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        padding: const EdgeInsets.symmetric(horizontal: ELayout.spaceMd),
         child: SessionSetLogRow(log: log, exercise: widget.exercise),
       ),
     );
@@ -162,7 +167,7 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
       );
       if (!mounted) return;
       navigator.push<void>(
-        CupertinoPageRoute(
+        MaterialPageRoute(
           builder: (_) => SessionDetailScreen(session: session),
         ),
       );

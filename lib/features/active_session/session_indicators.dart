@@ -1,35 +1,35 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const WatchConnectionIndicator({required final bool isConnected})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final color = isConnected ? AppColors.success : AppColors.textColor3;
+    final color = isConnected ? EColors.success : EColors.textTertiary;
     final background = isConnected
-        ? AppColors.success.withValues(alpha: 0.15)
-        : AppColors.backgroundDepth3;
+        ? EColors.success.withValues(alpha: 0.15)
+        : EColors.surface;
     final icon = isConnected
-        ? CupertinoIcons.check_mark_circled_solid
-        : CupertinoIcons.exclamationmark_triangle_fill;
+        ? Icons.check_circle
+        : Icons.warning;
     final label = isConnected ? 'Watch connected' : 'Watch offline';
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Text(label, style: AppTypography.caption.copyWith(color: color)),
+          const SizedBox(width: ELayout.spaceXs),
+          Text(label, style: EText.caption.copyWith(color: color)),
         ],
       ),
     );

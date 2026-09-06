@@ -8,8 +8,6 @@ import 'package:workouts/features/history/history_screen.dart';
 import 'package:workouts/features/library/library_screen.dart';
 import 'package:workouts/features/active_session/session_resume_screen.dart';
 import 'package:workouts/features/settings/settings_screen.dart';
-import 'package:workouts/features/today/today_screen.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const MainTab({
   required final IconData icon,
@@ -19,11 +17,6 @@ class const MainTab({
 
 const _mainTabs = <MainTab>[
   MainTab(icon: Icons.history, label: 'History', screen: HistoryScreen()),
-  MainTab(
-    icon: Icons.play_circle_outline,
-    label: 'Start Workout',
-    screen: TodayScreen(),
-  ),
   MainTab(
     icon: Icons.menu_book_outlined,
     label: 'Library',
@@ -120,10 +113,10 @@ class const _ActiveSessionWrapper({required final Widget child})
   Widget _activeSessionBanner(WidgetRef ref, Session session) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: session.isPaused ? AppColors.warning : AppColors.accentPrimary,
-        border: Border(bottom: BorderSide(color: AppColors.borderDepth2)),
+        color: session.isPaused ? EColors.warning : EColors.accent,
+        border: Border(bottom: BorderSide(color: EColors.borderStrong)),
       ),
       child: SafeArea(
         bottom: false,
@@ -134,7 +127,7 @@ class const _ActiveSessionWrapper({required final Widget child})
               color: Colors.white,
               size: 20,
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: ELayout.spaceSm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

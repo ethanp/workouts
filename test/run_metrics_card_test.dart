@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,10 +31,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-        child: CupertinoApp(
-          home: CupertinoPageScaffold(
-            child: CardioMetricsCard(samples: samples),
-          ),
+        child: MaterialApp(
+          home: Scaffold(body: CardioMetricsCard(samples: samples)),
         ),
       ),
     );

@@ -1,11 +1,11 @@
 import 'dart:math' as math;
+import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
 import 'package:workouts/utils/run_formatting.dart';
@@ -20,17 +20,17 @@ class const CardioMetricsCard({
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _MetricsHeader(samples: samples, speedSamples: speedSamples),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _TimelinePreview(samples: samples, speedSamples: speedSamples),
         ],
       ),
@@ -49,7 +49,7 @@ class const _MetricsHeader({
       children: [
         if (samples.isNotEmpty) ..._heartRateSection() else ..._waitingState(),
         if (speedSamples.isNotEmpty) ...[
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           _speedSection(),
         ],
       ],
@@ -63,20 +63,20 @@ class const _MetricsHeader({
 
     return [
       _LegendDot(color: _hrColor),
-      const SizedBox(width: AppSpacing.xs),
+      const SizedBox(width: ELayout.spaceXs),
       Text(
         'Avg $avg · Max $max',
-        style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     ];
   }
 
   List<Widget> _waitingState() => [
-    const Icon(CupertinoIcons.heart, color: AppColors.textColor3, size: 20),
-    const SizedBox(width: AppSpacing.xs),
+    const Icon(Icons.favorite_border, color: EColors.textTertiary, size: 20),
+    const SizedBox(width: ELayout.spaceXs),
     Text(
       'No heart rate data',
-      style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+      style: EText.caption.copyWith(color: EColors.textTertiary),
     ),
   ];
 
@@ -90,10 +90,10 @@ class const _MetricsHeader({
     return Row(
       children: [
         _LegendDot(color: _speedColor),
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: ELayout.spaceXs),
         Text(
           'Avg ${Format.speed(avgKmh)} · Max ${Format.speed(maxKmh)}',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+          style: EText.caption.copyWith(color: EColors.textTertiary),
         ),
       ],
     );
@@ -136,14 +136,14 @@ class const HeartRateAndSpeedChart({
     if (samples.length < 2) {
       return Container(
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.surface,
+          borderRadius: BorderRadius.circular(ELayout.radiusSm),
+          border: Border.all(color: EColors.border),
         ),
         child: Center(
           child: Text(
             samples.isEmpty ? 'No samples yet' : '${samples.first.bpm} BPM',
-            style: AppTypography.caption.copyWith(color: AppColors.textColor3),
+            style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
         ),
       );
@@ -151,9 +151,9 @@ class const HeartRateAndSpeedChart({
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
+        border: Border.all(color: EColors.border),
       ),
       child: CustomPaint(
         painter: _HeartRateAndSpeedPainter(
@@ -166,8 +166,8 @@ class const HeartRateAndSpeedChart({
   }
 }
 
-const _hrColor = AppColors.error;
-const _speedColor = AppColors.success;
+const _hrColor = EColors.danger;
+const _speedColor = EColors.success;
 
 class _HeartRateAndSpeedPainter({
   required final List<HeartRateSample> samples,
@@ -248,11 +248,11 @@ class _HeartRateAndSpeedPainter({
     _paintHeartRateZonesAsFaintBands(canvas, plot, heartRateScale);
 
     final gridPaint = Paint()
-      ..color = AppColors.borderDepth1.withValues(alpha: 0.6)
+      ..color = EColors.border.withValues(alpha: 0.6)
       ..strokeWidth = 0.5
       ..style = PaintingStyle.stroke;
     final axisPaint = Paint()
-      ..color = AppColors.textColor4.withValues(alpha: 0.5)
+      ..color = EColors.textMuted.withValues(alpha: 0.5)
       ..strokeWidth = 1;
 
     for (final tickBpm in heartRateScale.tickBpms) {
@@ -368,7 +368,7 @@ class _HeartRateAndSpeedPainter({
       text: TextSpan(
         text: text,
         style: TextStyle(
-          color: AppColors.textColor4,
+          color: EColors.textMuted,
           fontSize: _axisLabelFontSize,
         ),
       ),

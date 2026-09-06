@@ -1,6 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 
 enum TimerPhase() {
   idle,
@@ -52,19 +52,19 @@ class const ExerciseTimerPanel({
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth3,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth2),
+        color: EColors.surface,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.borderStrong),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _headerRow(),
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _countdownRow(),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           _controlsRow(),
         ],
       ),
@@ -78,17 +78,17 @@ class const ExerciseTimerPanel({
       children: [
         Text(
           _timeDisplay,
-          style: AppTypography.title.copyWith(
+          style: EText.title.copyWith(
             letterSpacing: 1.2,
             fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
         if (_showsPhaseLength) ...[
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: ELayout.spaceXs),
           Text(
             '/ ${phaseLength!.formattedClock}',
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor4,
+            style: EText.caption.copyWith(
+              color: EColors.textMuted,
               fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
@@ -103,11 +103,11 @@ class const ExerciseTimerPanel({
       children: [
         Text(
           _phaseLabel,
-          style: AppTypography.subtitle.copyWith(color: AppColors.textColor3),
+          style: EText.section.copyWith(color: EColors.textTertiary),
         ),
         Text(
           isPaused ? 'Paused' : '',
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ],
     );
@@ -118,22 +118,18 @@ class const ExerciseTimerPanel({
       children: [
         if (canAdjust) ...[
           _timerButton('-10s', () => onAdjustTime(-10)),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: ELayout.spaceXs),
           _timerButton('+10s', () => onAdjustTime(10)),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
         ],
         Expanded(child: _primaryButton()),
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: ELayout.spaceXs),
         Expanded(child: _resetButton()),
       ],
     );
   }
 
-  Widget _primaryButton() => CupertinoButton.filled(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.lg,
-      vertical: AppSpacing.sm,
-    ),
+  Widget _primaryButton() => FilledButton(
     onPressed: canPause
         ? onPause
         : canResume
@@ -147,50 +143,15 @@ class const ExerciseTimerPanel({
           : canResume
           ? 'Resume'
           : 'Start',
-      style: const TextStyle(
-        color: CupertinoColors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
     ),
   );
 
-  Widget _resetButton() => CupertinoButton(
-    padding: const EdgeInsets.symmetric(
-      horizontal: AppSpacing.md,
-      vertical: AppSpacing.sm,
-    ),
-    color: AppColors.backgroundDepth4,
-    disabledColor: AppColors.backgroundDepth4.withValues(alpha: 0.5),
-    borderRadius: BorderRadius.circular(AppRadius.md),
+  Widget _resetButton() => FilledButton.tonal(
     onPressed: canReset ? onReset : null,
-    child: const Text(
-      'Reset',
-      style: TextStyle(
-        color: CupertinoColors.white,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
+    child: const Text('Reset'),
   );
 
   Widget _timerButton(String label, VoidCallback onPressed) {
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      color: AppColors.backgroundDepth4,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      onPressed: onPressed,
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: CupertinoColors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
+    return FilledButton.tonal(onPressed: onPressed, child: Text(label));
   }
 }

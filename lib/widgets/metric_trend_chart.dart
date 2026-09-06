@@ -1,6 +1,6 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 import 'package:workouts/widgets/metric_trend_painter.dart';
 
@@ -39,9 +39,9 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
     return _chartCard(
       children: [
         _title(),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         _legend(),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: ELayout.spaceMd),
         _chartArea(visibleTrends),
       ],
     );
@@ -49,11 +49,11 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
 
   Widget _chartCard({required List<Widget> children}) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: const EdgeInsets.all(ELayout.spaceMd),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -63,7 +63,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
   }
 
   Widget _title() {
-    return Text(widget.title, style: AppTypography.subtitle);
+    return Text(widget.title, style: EText.section);
   }
 
   Widget _legend() {
@@ -106,8 +106,8 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
           const SizedBox(width: 6),
           Text(
             metricTrend.label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textColor3,
+            style: EText.caption.copyWith(
+              color: EColors.textTertiary,
               fontSize: 10,
             ),
           ),
@@ -121,11 +121,11 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
       label,
       isHidden,
       child: Padding(
-        padding: const EdgeInsets.only(left: AppSpacing.md),
+        padding: const EdgeInsets.only(left: ELayout.spaceMd),
         child: Text(
           latest,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor4,
+          style: EText.caption.copyWith(
+            color: EColors.textMuted,
             fontSize: 10,
           ),
         ),
@@ -138,11 +138,11 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
       label,
       isHidden,
       child: Padding(
-        padding: const EdgeInsets.only(left: AppSpacing.sm),
+        padding: const EdgeInsets.only(left: ELayout.spaceSm),
         child: Text(
           slope,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor4,
+          style: EText.caption.copyWith(
+            color: EColors.textMuted,
             fontSize: 10,
           ),
         ),
@@ -210,12 +210,12 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
 
   Widget _chartArea(List<MetricTrend> visibleTrends) {
     if (!_hasEnoughData()) {
-      return const SizedBox(
+      return SizedBox(
         height: 180,
         child: Center(
           child: Text(
             'Need 2+ workouts for trends',
-            style: AppTypography.caption,
+            style: EText.caption,
           ),
         ),
       );

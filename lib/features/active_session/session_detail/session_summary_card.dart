@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const SessionSummaryCard({
@@ -10,11 +10,11 @@ class const SessionSummaryCard({
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,33 +22,33 @@ class const SessionSummaryCard({
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Summary', style: AppTypography.title),
+              Text('Summary', style: EText.title),
               _statusBadge(),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _durationRow(),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           _summaryRow(
-            icon: CupertinoIcons.calendar,
+            icon: Icons.calendar_today,
             label: 'Completed',
             value: Format.dateTime(session.completedAt ?? session.startedAt),
           ),
           if (session.feeling?.isNotEmpty ?? false) ...[
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceSm),
             _summaryRow(
-              icon: CupertinoIcons.heart_fill,
+              icon: Icons.favorite,
               label: 'Feeling',
               value: session.feeling!,
             ),
           ],
           if (session.notes?.isNotEmpty ?? false) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text('Notes', style: AppTypography.subtitle),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: ELayout.spaceMd),
+            Text('Notes', style: EText.section),
+            const SizedBox(height: ELayout.spaceXs),
             Text(
               session.notes!,
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
             ),
           ],
         ],
@@ -59,42 +59,29 @@ class const SessionSummaryCard({
   Widget _durationRow() {
     return Row(
       children: [
-        Icon(CupertinoIcons.time, size: 20, color: AppColors.textColor3),
-        const SizedBox(width: AppSpacing.sm),
+        Icon(Icons.access_time, size: 20, color: EColors.textTertiary),
+        const SizedBox(width: ELayout.spaceSm),
         Text(
           'Duration: ',
-          style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          style: EText.body.medium.copyWith(color: EColors.textTertiary),
         ),
-        Text(_durationText(session.duration), style: AppTypography.body),
+        Text(_durationText(session.duration), style: EText.body.medium),
         if (onEditDuration != null) ...[
-          const SizedBox(width: AppSpacing.md),
-          CupertinoButton(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.xs,
+          const SizedBox(width: ELayout.spaceMd),
+          TextButton.icon(
+            style: TextButton.styleFrom(
+              foregroundColor: EColors.accent,
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.symmetric(
+                horizontal: ELayout.spaceSm,
+                vertical: ELayout.spaceXs,
+              ),
             ),
-            minimumSize: const Size(0, 0),
-            color: AppColors.accentPrimary.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(999),
             onPressed: onEditDuration,
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  CupertinoIcons.pencil,
-                  size: 14,
-                  color: AppColors.accentPrimary,
-                ),
-                SizedBox(width: AppSpacing.xs),
-                Text(
-                  'Edit',
-                  style: TextStyle(
-                    color: AppColors.accentPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
+            icon: const Icon(Icons.edit, size: 14),
+            label: const Text(
+              'Edit',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ),
         ],
@@ -109,13 +96,13 @@ class const SessionSummaryCard({
   }) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppColors.textColor3),
-        const SizedBox(width: AppSpacing.sm),
+        Icon(icon, size: 20, color: EColors.textTertiary),
+        const SizedBox(width: ELayout.spaceSm),
         Text(
           '$label: ',
-          style: AppTypography.body.copyWith(color: AppColors.textColor3),
+          style: EText.body.medium.copyWith(color: EColors.textTertiary),
         ),
-        Text(value, style: AppTypography.body),
+        Text(value, style: EText.body.medium),
       ],
     );
   }
@@ -124,17 +111,17 @@ class const SessionSummaryCard({
     final isComplete = session.isComplete;
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        horizontal: ELayout.spaceSm,
+        vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: isComplete ? AppColors.success : AppColors.accentPrimary,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: isComplete ? EColors.success : EColors.accent,
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         isComplete ? 'Completed' : 'In Progress',
         style: const TextStyle(
-          color: CupertinoColors.white,
+          color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),

@@ -1,10 +1,10 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_form_sheet.dart';
 import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/models/fitness_goal.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class const GoalCard({
@@ -18,7 +18,7 @@ class const GoalCard({
     final categoryStyle = GoalCategoryStyle(goal.category);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
       child: GestureDetector(
         onTap: () => _showActions(context, ref),
         child: Dismissible(
@@ -29,14 +29,14 @@ class const GoalCard({
               ref.read(goalsControllerProvider.notifier).deleteGoal(goal.id),
           background: _deleteBackground(),
           child: Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.all(ELayout.spaceMd),
             decoration: BoxDecoration(
-              color: AppColors.backgroundDepth2,
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              color: EColors.backgroundLift,
+              borderRadius: BorderRadius.circular(ELayout.radiusMd),
               border: Border.all(
                 color: isArchived
-                    ? AppColors.borderDepth1.withValues(alpha: 0.5)
-                    : AppColors.borderDepth1,
+                    ? EColors.border.withValues(alpha: 0.5)
+                    : EColors.border,
               ),
             ),
             child: Row(
@@ -44,9 +44,9 @@ class const GoalCard({
               children: [
                 Expanded(child: _cardContent(categoryStyle)),
                 const Icon(
-                  CupertinoIcons.chevron_right,
+                  Icons.chevron_right,
                   size: 14,
-                  color: AppColors.textColor4,
+                  color: EColors.textMuted,
                 ),
               ],
             ),
@@ -64,14 +64,14 @@ class const GoalCard({
 
   Widget _deleteBackground() => Container(
     decoration: BoxDecoration(
-      color: AppColors.error,
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      color: EColors.danger,
+      borderRadius: BorderRadius.circular(ELayout.radiusMd),
     ),
     alignment: Alignment.centerRight,
-    padding: const EdgeInsets.only(right: AppSpacing.lg),
+    padding: const EdgeInsets.only(right: ELayout.spaceLg),
     child: const Icon(
-      CupertinoIcons.trash,
-      color: CupertinoColors.white,
+      Icons.delete,
+      color: Colors.white,
       size: 22,
     ),
   );
@@ -82,17 +82,17 @@ class const GoalCard({
       children: [
         Text(
           goal.title,
-          style: AppTypography.body.copyWith(
+          style: EText.body.medium.copyWith(
             fontWeight: FontWeight.w600,
-            color: isArchived ? AppColors.textColor3 : AppColors.textColor2,
+            color: isArchived ? EColors.textTertiary : EColors.textSecondary,
           ),
         ),
         if (_showsStatusRow) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _statusRow(categoryStyle),
         ],
         if (goal.description.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xs),
+          const SizedBox(height: ELayout.spaceXs),
           _descriptionText(),
         ],
       ],
@@ -119,62 +119,67 @@ class const GoalCard({
   }
 
   List<Widget> _achievedBadge() => [
-    const SizedBox(width: AppSpacing.sm),
+    const SizedBox(width: ELayout.spaceSm),
     const Icon(
-      CupertinoIcons.checkmark_seal_fill,
+      Icons.verified,
       size: 13,
-      color: AppColors.success,
+      color: EColors.success,
     ),
     const SizedBox(width: 3),
     Text(
       'Achieved',
-      style: AppTypography.caption.copyWith(
+      style: EText.caption.copyWith(
         fontSize: 12,
-        color: AppColors.success,
+        color: EColors.success,
       ),
     ),
   ];
 
   List<Widget> _pausedBadge() => [
-    const SizedBox(width: AppSpacing.sm),
+    const SizedBox(width: ELayout.spaceSm),
     const Icon(
-      CupertinoIcons.pause_circle_fill,
+      Icons.pause_circle_outline,
       size: 13,
-      color: AppColors.textColor4,
+      color: EColors.textMuted,
     ),
     const SizedBox(width: 3),
     Text(
       'Archived',
-      style: AppTypography.caption.copyWith(
+      style: EText.caption.copyWith(
         fontSize: 12,
-        color: AppColors.textColor4,
+        color: EColors.textMuted,
       ),
     ),
   ];
 
   Widget _descriptionText() => Text(
     goal.description,
-    style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+    style: EText.caption.copyWith(color: EColors.textMuted),
     maxLines: 2,
     overflow: TextOverflow.ellipsis,
   );
 
   void _showActions(BuildContext context, WidgetRef ref) {
     final goalsNotifier = ref.read(goalsControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (sheetCtx) => CupertinoActionSheet(
-        title: Text(goal.title),
-        actions: _actionSheetActions(sheetCtx, context, ref, goalsNotifier),
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(sheetCtx).pop(),
-          child: const Text('Cancel'),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(title: Text(goal.title)),
+            ..._actionSheetActions(sheetCtx, context, ref, goalsNotifier),
+            ListTile(
+              title: const Text('Cancel'),
+              onTap: () => Navigator.of(sheetCtx).pop(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  List<CupertinoActionSheetAction> _actionSheetActions(
+  List<Widget> _actionSheetActions(
     BuildContext sheetCtx,
     BuildContext parentCtx,
     WidgetRef ref,
@@ -182,51 +187,50 @@ class const GoalCard({
   ) {
     final isActive = goal.isActive;
     return [
-      CupertinoActionSheetAction(
-        onPressed: () {
+      ListTile(
+        title: const Text('Edit'),
+        onTap: () {
           Navigator.of(sheetCtx).pop();
           _showEditSheet(parentCtx, ref);
         },
-        child: const Text('Edit'),
       ),
       if (isActive)
-        CupertinoActionSheetAction(
-          onPressed: () {
+        ListTile(
+          title: const Text('Mark as Achieved'),
+          onTap: () {
             Navigator.of(sheetCtx).pop();
             goalsNotifier.setGoalStatus(goal.id, GoalStatus.achieved);
           },
-          child: const Text('Mark as Achieved'),
         ),
       if (isActive)
-        CupertinoActionSheetAction(
-          onPressed: () {
+        ListTile(
+          title: const Text('Archive'),
+          onTap: () {
             Navigator.of(sheetCtx).pop();
             goalsNotifier.setGoalStatus(goal.id, GoalStatus.paused);
           },
-          child: const Text('Archive'),
         ),
       if (!isActive)
-        CupertinoActionSheetAction(
-          onPressed: () {
+        ListTile(
+          title: const Text('Reactivate'),
+          onTap: () {
             Navigator.of(sheetCtx).pop();
             goalsNotifier.setGoalStatus(goal.id, GoalStatus.active);
           },
-          child: const Text('Reactivate'),
         ),
-      CupertinoActionSheetAction(
-        isDestructiveAction: true,
-        onPressed: () {
+      ListTile(
+        title: Text('Delete', style: TextStyle(color: EColors.danger)),
+        onTap: () {
           Navigator.of(sheetCtx).pop();
           goalsNotifier.deleteGoal(goal.id);
         },
-        child: const Text('Delete'),
       ),
     ];
   }
 
   void _showEditSheet(BuildContext context, WidgetRef ref) {
     final goalsNotifier = ref.read(goalsControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         initialGoal: goal,
@@ -256,7 +260,7 @@ class const _CategoryPill({
     final effectiveColor = isArchived ? color.withValues(alpha: 0.4) : color;
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
+        horizontal: ELayout.spaceSm,
         vertical: 2,
       ),
       decoration: BoxDecoration(

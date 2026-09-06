@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 class const CurrentSetMetricTile({
   required final String label,
@@ -14,34 +14,32 @@ class const CurrentSetMetricTile({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(AppSpacing.sm),
+    padding: const EdgeInsets.all(ELayout.spaceSm),
     decoration: _tileDecoration,
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _metricLabel(),
-        const SizedBox(height: AppSpacing.xs),
+        const SizedBox(height: ELayout.spaceXs),
         _inputRow(),
       ],
     ),
   );
 
   BoxDecoration get _tileDecoration => BoxDecoration(
-    color: focusNode.hasFocus
-        ? AppColors.backgroundDepth4
-        : AppColors.backgroundDepth2,
-    borderRadius: BorderRadius.circular(AppRadius.sm),
+    color: focusNode.hasFocus ? EColors.surfaceRaised : EColors.backgroundLift,
+    borderRadius: BorderRadius.circular(ELayout.radiusSm),
     border: Border.all(
       color: focusNode.hasFocus
-          ? AppColors.accentPrimary.withValues(alpha: 0.55)
-          : AppColors.borderDepth2,
+          ? EColors.accent.withValues(alpha: 0.55)
+          : EColors.borderStrong,
     ),
   );
 
   Widget _metricLabel() => Text(
     label,
-    style: AppTypography.caption.copyWith(
-      color: AppColors.textColor3,
+    style: EText.caption.copyWith(
+      color: EColors.textTertiary,
       fontWeight: FontWeight.w600,
     ),
   );
@@ -50,18 +48,18 @@ class const CurrentSetMetricTile({
     crossAxisAlignment: CrossAxisAlignment.end,
     children: [
       _stepperButton('-', onDecrement),
-      const SizedBox(width: AppSpacing.xs),
+      const SizedBox(width: ELayout.spaceXs),
       Expanded(child: _inputField()),
       if (suffix != null) ...[
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: ELayout.spaceXs),
         _metricSuffix(suffix!),
       ],
-      const SizedBox(width: AppSpacing.xs),
+      const SizedBox(width: ELayout.spaceXs),
       _stepperButton('+', onIncrement),
     ],
   );
 
-  Widget _inputField() => CupertinoTextField(
+  Widget _inputField() => TextField(
     controller: controller,
     focusNode: focusNode,
     onChanged: onChanged,
@@ -69,30 +67,39 @@ class const CurrentSetMetricTile({
     onTapOutside: (_) => focusNode.unfocus(),
     keyboardType: keyboardType,
     textInputAction: TextInputAction.done,
-    placeholder: placeholder,
-    placeholderStyle: AppTypography.title.copyWith(
-      color: AppColors.textColor4,
-      fontWeight: FontWeight.w600,
-    ),
-    style: AppTypography.title.copyWith(
-      color: AppColors.textColor1,
+    textAlign: TextAlign.center,
+    style: EText.title.copyWith(
+      color: EColors.textPrimary,
       fontWeight: FontWeight.w700,
     ),
-    padding: EdgeInsets.zero,
-    decoration: const BoxDecoration(color: Color(0x00000000)),
-    textAlign: TextAlign.center,
+    decoration: InputDecoration(
+      hintText: placeholder,
+      hintStyle: EText.title.copyWith(
+        color: EColors.textMuted,
+        fontWeight: FontWeight.w600,
+      ),
+      isDense: true,
+      border: InputBorder.none,
+      contentPadding: EdgeInsets.zero,
+    ),
   );
 
-  Widget _stepperButton(String text, VoidCallback onPressed) => CupertinoButton(
-    minimumSize: const Size(34, 34),
-    padding: EdgeInsets.zero,
-    color: AppColors.backgroundDepth4,
-    borderRadius: BorderRadius.circular(AppRadius.sm),
+  Widget _stepperButton(String text, VoidCallback onPressed) => FilledButton(
+    style: FilledButton.styleFrom(
+      backgroundColor: EColors.surfaceRaised,
+      foregroundColor: EColors.textPrimary,
+      minimumSize: const Size(34, 34),
+      padding: EdgeInsets.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
+      ),
+    ),
     onPressed: onPressed,
     child: Text(
       text,
-      style: AppTypography.body.copyWith(
-        color: AppColors.textColor1,
+      style: EText.body.medium.copyWith(
+        color: EColors.textPrimary,
         fontWeight: FontWeight.w700,
       ),
     ),
@@ -102,8 +109,8 @@ class const CurrentSetMetricTile({
     padding: const EdgeInsets.only(bottom: 2),
     child: Text(
       text,
-      style: AppTypography.caption.copyWith(
-        color: AppColors.textColor4,
+      style: EText.caption.copyWith(
+        color: EColors.textMuted,
         fontWeight: FontWeight.w600,
       ),
     ),

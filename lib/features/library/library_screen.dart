@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/features/goals/background_notes_provider.dart';
@@ -9,12 +10,15 @@ import 'package:workouts/features/goals/goals_tab.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
 import 'package:workouts/features/library/exercises_tab.dart';
+import 'package:workouts/features/library/hr_zones_reference_tile.dart';
 import 'package:workouts/features/library/influences_tab.dart';
 import 'package:workouts/features/library/locations_tab.dart';
 import 'package:workouts/features/library/templates_tab.dart';
+import 'package:workouts/features/workout_generation/options/workout_options_sheet.dart';
+import 'package:workouts/features/workout_generation/workout_generation_provider.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 /// One Library destination: label, icon, and whether the section page shows +.
@@ -28,44 +32,44 @@ class const LibrarySection({
 
 const librarySections = <LibrarySection>[
   LibrarySection(
+    id: 'templates',
+    label: 'Templates',
+    icon: Icons.view_list,
+    subtitle: 'Saved workouts you can start',
+    canAdd: true,
+  ),
+  LibrarySection(
     id: 'goals',
     label: 'Goals',
-    icon: CupertinoIcons.flag_fill,
+    icon: Icons.flag,
     subtitle: 'Training priorities and targets',
     canAdd: true,
   ),
   LibrarySection(
     id: 'background',
     label: 'Background',
-    icon: CupertinoIcons.doc_text_fill,
+    icon: Icons.description,
     subtitle: 'Context for AI coaching',
     canAdd: true,
   ),
   LibrarySection(
     id: 'exercises',
     label: 'Exercises',
-    icon: CupertinoIcons.circle_grid_3x3_fill,
+    icon: Icons.grid_view,
     subtitle: 'Movements used in templates',
     canAdd: false,
   ),
   LibrarySection(
-    id: 'templates',
-    label: 'Templates',
-    icon: CupertinoIcons.square_list_fill,
-    subtitle: 'Reusable workout structures',
-    canAdd: true,
-  ),
-  LibrarySection(
     id: 'influences',
     label: 'Influences',
-    icon: CupertinoIcons.lightbulb_fill,
+    icon: Icons.lightbulb,
     subtitle: 'Coaches and training philosophies',
     canAdd: true,
   ),
   LibrarySection(
     id: 'locations',
     label: 'Locations',
-    icon: CupertinoIcons.location_solid,
+    icon: Icons.location_on,
     subtitle: 'Gyms and places you train',
     canAdd: true,
   ),
@@ -74,34 +78,57 @@ const librarySections = <LibrarySection>[
 class const LibraryScreen() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: const CupertinoNavigationBar(
-        backgroundColor: AppColors.backgroundDepth1,
-        border: Border(bottom: BorderSide(color: AppColors.borderDepth1)),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: const EAppHeader(
+        title: 'Library',
+        automaticallyImplyLeading: false,
         leading: SyncStatusIcon(),
-        middle: Text('Library', style: AppTypography.subtitle),
       ),
-      child: SafeArea(
-        child: ListView.separated(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
-          itemCount: librarySections.length,
-          separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
-          itemBuilder: (context, sectionIndex) {
-            final section = librarySections[sectionIndex];
-            return _LibraryIndexRow(
-              section: section,
-              onActivated: () => Navigator.of(context).push(
-                CupertinoPageRoute<void>(
-                  builder: (_) => LibrarySectionPage(section: section),
-                ),
+      body: SafeArea(child: _libraryScroll(context)),
+    );
+  }
+
+  Widget _libraryScroll(BuildContext context) {
+    return CustomScrollView(
+      slivers: [_heartRateZonesSliver(), _sectionsSliver(context)],
+    );
+  }
+
+  Widget _heartRateZonesSliver() {
+    return const SliverPadding(
+      padding: EdgeInsets.fromLTRB(
+        ELayout.spaceLg,
+        ELayout.spaceMd,
+        ELayout.spaceLg,
+        ELayout.spaceMd,
+      ),
+      sliver: SliverToBoxAdapter(child: HrZonesReferenceTile()),
+    );
+  }
+
+  Widget _sectionsSliver(BuildContext context) {
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        ELayout.spaceLg,
+        0,
+        ELayout.spaceLg,
+        ELayout.spaceMd,
+      ),
+      sliver: SliverList.separated(
+        itemCount: librarySections.length,
+        separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
+        itemBuilder: (context, sectionIndex) {
+          final section = librarySections[sectionIndex];
+          return _LibraryIndexRow(
+            section: section,
+            onActivated: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => LibrarySectionPage(section: section),
               ),
-            );
-          },
-        ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -118,24 +145,20 @@ class const _LibraryIndexRow({
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
+          horizontal: ELayout.spaceMd,
+          vertical: ELayout.spaceMd,
         ),
         decoration: BoxDecoration(
-          color: AppColors.backgroundDepth2,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: AppColors.borderDepth1),
+          color: EColors.backgroundLift,
+          borderRadius: BorderRadius.circular(ELayout.radiusMd),
+          border: Border.all(color: EColors.border),
         ),
         child: Row(
           children: [
             _sectionIcon(),
-            const SizedBox(width: AppSpacing.md),
+            const SizedBox(width: ELayout.spaceMd),
             Expanded(child: _sectionLabels()),
-            const Icon(
-              CupertinoIcons.chevron_right,
-              size: 16,
-              color: AppColors.textColor4,
-            ),
+            const Icon(Icons.chevron_right, size: 16, color: EColors.textMuted),
           ],
         ),
       ),
@@ -147,10 +170,10 @@ class const _LibraryIndexRow({
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: EColors.accent.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
-      child: Icon(section.icon, size: 18, color: AppColors.accentPrimary),
+      child: Icon(section.icon, size: 18, color: EColors.accent),
     );
   }
 
@@ -160,15 +183,15 @@ class const _LibraryIndexRow({
       children: [
         Text(
           section.label,
-          style: AppTypography.body.copyWith(
-            color: AppColors.textColor1,
+          style: EText.body.medium.copyWith(
+            color: EColors.textPrimary,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           section.subtitle,
-          style: AppTypography.caption.copyWith(color: AppColors.textColor4),
+          style: EText.caption.copyWith(color: EColors.textMuted),
         ),
       ],
     );
@@ -179,24 +202,28 @@ class const LibrarySectionPage({required final LibrarySection section})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return CupertinoPageScaffold(
-      backgroundColor: AppColors.backgroundDepth1,
-      navigationBar: CupertinoNavigationBar(
-        backgroundColor: AppColors.backgroundDepth1,
-        border: const Border(bottom: BorderSide(color: AppColors.borderDepth1)),
-        middle: Text(section.label, style: AppTypography.subtitle),
-        trailing: section.canAdd
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: () => _showAddSheetForSection(context, ref),
-                child: const Icon(
-                  CupertinoIcons.add,
-                  color: AppColors.accentPrimary,
-                ),
-              )
-            : null,
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      appBar: EAppHeader(
+        title: section.label,
+        actions: [
+          if (section.id == 'templates')
+            ConnectionGatedWidget(
+              child: IconButton(
+                tooltip: 'Generate workout',
+                onPressed: () => _showGenerateWorkout(context, ref),
+                icon: const Icon(Icons.auto_awesome),
+              ),
+            ),
+          if (section.canAdd)
+            IconButton(
+              tooltip: 'Add',
+              onPressed: () => _showAddSheetForSection(context, ref),
+              icon: const Icon(Icons.add),
+            ),
+        ],
       ),
-      child: SafeArea(child: _sectionBody(context, ref)),
+      body: SafeArea(child: _sectionBody(context, ref)),
     );
   }
 
@@ -226,12 +253,12 @@ class const LibrarySectionPage({required final LibrarySection section})
       case 'templates':
         _showNewTemplateSheet(context);
       case 'influences':
-        showCupertinoModalPopup<void>(
+        showModalBottomSheet<void>(
           context: context,
           builder: (_) => const InfluenceFormSheet(),
         );
       case 'locations':
-        showCupertinoModalPopup<void>(
+        showModalBottomSheet<void>(
           context: context,
           builder: (_) => const LocationFormSheet(),
         );
@@ -240,7 +267,7 @@ class const LibrarySectionPage({required final LibrarySection section})
 
   void _showAddGoalSheet(BuildContext context, WidgetRef ref) {
     final goalsNotifier = ref.read(goalsControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => GoalFormSheet(
         onSave: (title, category, description, priority) async {
@@ -258,7 +285,7 @@ class const LibrarySectionPage({required final LibrarySection section})
   void _showAddNoteSheet(BuildContext context, WidgetRef ref) {
     final goals = ref.read(goalsStreamProvider).value ?? [];
     final notesNotifier = ref.read(backgroundNotesControllerProvider.notifier);
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (sheetContext) => NoteFormSheet(
         availableGoals: goals,
@@ -275,10 +302,16 @@ class const LibrarySectionPage({required final LibrarySection section})
   }
 
   void _showNewTemplateSheet(BuildContext context) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
       builder: (_) => const _NewTemplateSheet(),
     );
+  }
+
+  Future<void> _showGenerateWorkout(BuildContext context, WidgetRef ref) async {
+    final option = await WorkoutOptionsSheet.show(context);
+    if (option == null) return;
+    await ref.read(workoutGenerationProvider.notifier).select(option);
   }
 }
 
@@ -305,8 +338,10 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
       decoration: const BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(top: false, child: _sheetScrollContent(context)),
     );
@@ -315,25 +350,21 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
   Widget _sheetScrollContent(BuildContext context) {
     return SingleChildScrollView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _dragHandle(),
-          const SizedBox(height: AppSpacing.lg),
-          const Text(
-            'New Template',
-            style: AppTypography.title,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: ELayout.spaceLg),
+          Text('New Template', style: EText.title, textAlign: TextAlign.center),
+          const SizedBox(height: ELayout.spaceXl),
           _nameFormField(),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           _goalFormField(),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: ELayout.spaceXl),
           _createButton(context),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           _cancelButton(context),
         ],
       ),
@@ -343,19 +374,11 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
   Widget _nameFormField() {
     return _formField(
       label: 'Name',
-      child: CupertinoTextField(
+      child: TextField(
         controller: _nameController,
-        placeholder: 'e.g., Upper Body Push',
         onChanged: (_) => setState(() {}),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        style: AppTypography.body.copyWith(color: AppColors.textColor1),
-        placeholderStyle: AppTypography.body.copyWith(
-          color: AppColors.textColor4,
-        ),
+        style: EText.body.medium.copyWith(color: EColors.textPrimary),
+        decoration: const InputDecoration(hintText: 'e.g., Upper Body Push'),
       ),
     );
   }
@@ -363,42 +386,30 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
   Widget _goalFormField() {
     return _formField(
       label: 'Goal (optional)',
-      child: CupertinoTextField(
+      child: TextField(
         controller: _goalController,
-        placeholder: 'e.g., Build pressing strength',
-        padding: const EdgeInsets.all(AppSpacing.md),
         maxLines: 2,
-        decoration: BoxDecoration(
-          color: AppColors.backgroundDepth3,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
-        ),
-        style: AppTypography.body.copyWith(color: AppColors.textColor1),
-        placeholderStyle: AppTypography.body.copyWith(
-          color: AppColors.textColor4,
+        style: EText.body.medium.copyWith(color: EColors.textPrimary),
+        decoration: const InputDecoration(
+          hintText: 'e.g., Build pressing strength',
         ),
       ),
     );
   }
 
   Widget _createButton(BuildContext context) {
-    return CupertinoButton.filled(
+    return FilledButton(
       onPressed: _nameController.text.trim().isEmpty
           ? null
           : () => _create(context),
-      child: const Text(
-        'Create Template',
-        style: TextStyle(
-          color: CupertinoColors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: const Text('Create Template'),
     );
   }
 
   Widget _cancelButton(BuildContext context) {
-    return CupertinoButton(
+    return TextButton(
       onPressed: () => Navigator.of(context).pop(),
-      child: Text('Cancel', style: TextStyle(color: AppColors.textColor3)),
+      child: Text('Cancel', style: TextStyle(color: EColors.textTertiary)),
     );
   }
 
@@ -407,7 +418,7 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
       width: 36,
       height: 4,
       decoration: BoxDecoration(
-        color: AppColors.borderDepth3,
+        color: EColors.borderStrong,
         borderRadius: BorderRadius.circular(2),
       ),
     ),
@@ -419,12 +430,12 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
       children: [
         Text(
           label,
-          style: AppTypography.caption.copyWith(
-            color: AppColors.textColor3,
+          style: EText.caption.copyWith(
+            color: EColors.textTertiary,
             fontWeight: FontWeight.w500,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: ELayout.spaceSm),
         child,
       ],
     );

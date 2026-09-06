@@ -1,6 +1,6 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session_note.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const SessionNotesCard({required final List<SessionNote> notes})
@@ -10,11 +10,11 @@ class const SessionNotesCard({required final List<SessionNote> notes})
     if (notes.isEmpty) return const SizedBox.shrink();
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       decoration: BoxDecoration(
-        color: AppColors.backgroundDepth2,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.borderDepth1),
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusXl),
+        border: Border.all(color: EColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,22 +22,22 @@ class const SessionNotesCard({required final List<SessionNote> notes})
           Row(
             children: [
               const Icon(
-                CupertinoIcons.doc_text,
+                Icons.description,
                 size: 20,
-                color: AppColors.textColor2,
+                color: EColors.textSecondary,
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Text('Session Notes', style: AppTypography.title),
+              const SizedBox(width: ELayout.spaceSm),
+              Text('Session Notes', style: EText.title),
               const Spacer(),
               Text(
                 '${notes.length}',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.textColor3,
+                style: EText.caption.copyWith(
+                  color: EColors.textTertiary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: ELayout.spaceMd),
           ...notes.map((note) => _buildNoteItem(note)),
         ],
       ),
@@ -46,32 +46,32 @@ class const SessionNotesCard({required final List<SessionNote> notes})
 
   Widget _buildNoteItem(SessionNote note) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.only(bottom: ELayout.spaceMd),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(AppSpacing.xs),
+            padding: const EdgeInsets.all(ELayout.spaceXs),
             decoration: BoxDecoration(
               color: _getTypeColor(note.noteType).withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
+              borderRadius: BorderRadius.circular(ELayout.radiusSm),
             ),
             child: Text(
               note.noteType.icon,
               style: const TextStyle(fontSize: 14),
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(note.content, style: AppTypography.body),
-                const SizedBox(height: AppSpacing.xs),
+                Text(note.content, style: EText.body.medium),
+                const SizedBox(height: ELayout.spaceXs),
                 Text(
                   Format.time(note.timestamp),
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textColor4,
+                  style: EText.caption.copyWith(
+                    color: EColors.textMuted,
                   ),
                 ),
               ],
@@ -84,10 +84,10 @@ class const SessionNotesCard({required final List<SessionNote> notes})
 
   Color _getTypeColor(SessionNoteType type) {
     return switch (type) {
-      SessionNoteType.observation => AppColors.textColor2,
-      SessionNoteType.modification => AppColors.accentPrimary,
-      SessionNoteType.painSignal => AppColors.warning,
-      SessionNoteType.breakthrough => AppColors.success,
+      SessionNoteType.observation => EColors.textSecondary,
+      SessionNoteType.modification => EColors.accent,
+      SessionNoteType.painSignal => EColors.warning,
+      SessionNoteType.breakthrough => EColors.success,
     };
   }
 }

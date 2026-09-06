@@ -1,7 +1,7 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
-import 'package:workouts/theme/app_theme.dart';
 
 /// A single ellipsis button on an exercise card header that opens an action
 /// sheet listing every per-exercise affordance — history, AI coach, stop
@@ -25,15 +25,11 @@ class const ExerciseCardMenuButton({
     final List<_MenuItem> items = _buildItems(isOffline: isOffline);
     if (items.isEmpty) return const SizedBox.shrink();
 
-    return CupertinoButton(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      minimumSize: const Size(28, 28),
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      tooltip: 'Exercise actions',
       onPressed: () => _showSheet(context, items),
-      child: const Icon(
-        CupertinoIcons.ellipsis_circle,
-        size: 22,
-        color: AppColors.textColor3,
-      ),
+      icon: const Icon(Icons.more_horiz, size: 22, color: EColors.textTertiary),
     );
   }
 
@@ -41,26 +37,26 @@ class const ExerciseCardMenuButton({
     return [
       if (onExerciseHistoryRequested != null)
         _MenuItem(
-          icon: CupertinoIcons.clock,
+          icon: Icons.schedule,
           label: 'History',
           onActivated: onExerciseHistoryRequested!,
         ),
       if (onAiCoachRequested != null && !isOffline)
         _MenuItem(
-          icon: CupertinoIcons.sparkles,
+          icon: Icons.auto_awesome,
           label: 'Ask AI Coach',
           onActivated: onAiCoachRequested!,
         ),
       if (onToggleStoppedEarly != null)
         _MenuItem(
-          icon: isStoppedEarly ? CupertinoIcons.flag_fill : CupertinoIcons.flag,
-          iconColor: isStoppedEarly ? AppColors.warning : null,
+          icon: isStoppedEarly ? Icons.flag : Icons.outlined_flag,
+          iconColor: isStoppedEarly ? EColors.warning : null,
           label: isStoppedEarly ? 'Resume exercise' : 'Stop early',
           onActivated: onToggleStoppedEarly!,
         ),
       if (onExerciseSwapRequested != null)
         _MenuItem(
-          icon: CupertinoIcons.arrow_2_squarepath,
+          icon: Icons.swap_horiz,
           label: 'Swap exercise',
           onActivated: onExerciseSwapRequested!,
         ),
@@ -68,42 +64,43 @@ class const ExerciseCardMenuButton({
   }
 
   void _showSheet(BuildContext context, List<_MenuItem> items) {
-    showCupertinoModalPopup<void>(
+    showModalBottomSheet<void>(
       context: context,
-      builder: (popupContext) => CupertinoActionSheet(
-        title: Text(exerciseName),
-        actions: items
-            .map(
-              (item) => CupertinoActionSheetAction(
-                onPressed: () {
-                  Navigator.of(popupContext).pop();
+      backgroundColor: EColors.backgroundLift,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                ELayout.spaceLg,
+                ELayout.spaceLg,
+                ELayout.spaceLg,
+                ELayout.spaceSm,
+              ),
+              child: Text(exerciseName, style: EText.section),
+            ),
+            for (final item in items)
+              ListTile(
+                leading: Icon(
+                  item.icon,
+                  color: item.iconColor ?? EColors.accent,
+                ),
+                title: Text(item.label),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
                   item.onActivated();
                 },
-                child: _itemRow(item),
               ),
-            )
-            .toList(),
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.of(popupContext).pop(),
-          child: const Text('Cancel'),
+            ListTile(
+              title: const Text('Cancel'),
+              onTap: () => Navigator.of(sheetContext).pop(),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  Widget _itemRow(_MenuItem item) => Row(
-    mainAxisSize: MainAxisSize.min,
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Icon(
-        item.icon,
-        size: 20,
-        color: item.iconColor ?? AppColors.accentPrimary,
-      ),
-      const SizedBox(width: AppSpacing.sm),
-      Text(item.label),
-    ],
-  );
 }
 
 class const _MenuItem({

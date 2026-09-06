@@ -1,4 +1,5 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
@@ -14,7 +15,6 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
-import 'package:workouts/theme/app_theme.dart';
 
 class const HistoryActivityListTab() extends ConsumerWidget {
   @override
@@ -32,17 +32,17 @@ class const HistoryActivityListTab() extends ConsumerWidget {
                   : null,
             )
           : ListView.separated(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.all(ELayout.spaceLg),
               itemCount: items.length,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
               itemBuilder: (context, index) =>
                   _buildActivityTile(context, ref, items[index]),
             ),
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Unable to load activity: $error',
-          style: AppTypography.body,
+          style: EText.body.medium,
         ),
       ),
     );

@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 
 class const GoalsEmptyState({required final VoidCallback onAddGoal})
     extends StatelessWidget {
@@ -7,7 +7,7 @@ class const GoalsEmptyState({required final VoidCallback onAddGoal})
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: const EdgeInsets.all(ELayout.spaceXl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -15,30 +15,30 @@ class const GoalsEmptyState({required final VoidCallback onAddGoal})
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.accentPrimary.withValues(alpha: 0.12),
+                color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: const Icon(
-                CupertinoIcons.flag_fill,
+                Icons.flag,
                 size: 32,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const Text('No Goals Yet', style: AppTypography.title),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: ELayout.spaceXl),
+            Text('No Goals Yet', style: EText.title),
+            const SizedBox(height: ELayout.spaceSm),
             Text(
               'Add goals to personalise your training and track what matters.',
-              style: AppTypography.body.copyWith(color: AppColors.textColor3),
+              style: EText.body.medium.copyWith(color: EColors.textTertiary),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppSpacing.xxl),
-            CupertinoButton.filled(
+            const SizedBox(height: 32),
+            FilledButton(
               onPressed: onAddGoal,
               child: const Text(
                 'Add Your First Goal',
                 style: TextStyle(
-                  color: CupertinoColors.white,
+                  color: Colors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),

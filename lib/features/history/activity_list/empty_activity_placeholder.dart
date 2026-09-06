@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:workouts/theme/app_theme.dart';
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 
 class const EmptyActivityPlaceholder({final VoidCallback? onImport})
     extends StatelessWidget {
@@ -9,22 +9,22 @@ class const EmptyActivityPlaceholder({final VoidCallback? onImport})
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(CupertinoIcons.clock, size: 64, color: AppColors.textColor4),
-          const SizedBox(height: AppSpacing.lg),
+          Icon(Icons.schedule, size: 64, color: EColors.textMuted),
+          const SizedBox(height: ELayout.spaceLg),
           Text(
             'No activity yet',
-            style: AppTypography.title.copyWith(color: AppColors.textColor3),
+            style: EText.title.copyWith(color: EColors.textTertiary),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: ELayout.spaceSm),
           Text(
             'Import cardio workouts from Apple Health or complete workout sessions '
             'to see them here.',
             textAlign: TextAlign.center,
-            style: AppTypography.body.copyWith(color: AppColors.textColor4),
+            style: EText.body.medium.copyWith(color: EColors.textMuted),
           ),
           if (onImport != null) ...[
-            const SizedBox(height: AppSpacing.lg),
-            CupertinoButton.filled(
+            const SizedBox(height: ELayout.spaceLg),
+            FilledButton(
               onPressed: onImport,
               child: const Text('Import Workouts'),
             ),

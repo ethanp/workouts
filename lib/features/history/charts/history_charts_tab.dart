@@ -1,13 +1,12 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:ethan_ui/ethan_ui.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
-import 'package:workouts/theme/app_theme.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
@@ -54,11 +53,11 @@ class const HistoryChartsTab() extends ConsumerWidget {
           ),
         );
       },
-      loading: () => const Center(child: CupertinoActivityIndicator()),
+      loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, _) => Center(
         child: Text(
           'Unable to load data: $error',
-          style: AppTypography.body.copyWith(color: AppColors.error),
+          style: EText.body.medium.copyWith(color: EColors.danger),
         ),
       ),
     );
@@ -92,7 +91,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         );
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(ELayout.spaceLg),
       children: [
         RollingDailyChart(
           title: 'Z2-5 Rolling Load',
@@ -112,15 +111,15 @@ class const HistoryChartsTab() extends ConsumerWidget {
             RollingDailyGoal(
               value: 150,
               label: '150m priority 2',
-              color: AppColors.accentSecondary,
+              color: EColors.warning,
             ),
           ],
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: ELayout.spaceLg),
         PolarizationChart(weeks: _weekZoneDataList(visibleWeeks)),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: ELayout.spaceLg),
         RollingDailyChart(
           title: 'Activity (7-day)',
           points: rollingActiveDaysPoints,
@@ -139,7 +138,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
         ),
-        const SizedBox(height: AppSpacing.xxl),
+        const SizedBox(height: 32),
         _OutdoorRunningCharts(
           weeks: _weekDataList(
             visibleWeeks,
@@ -156,33 +155,33 @@ class const HistoryChartsTab() extends ConsumerWidget {
 
   Widget _zoomResetPill(WidgetRef ref) {
     return Positioned(
-      top: AppSpacing.md,
-      right: AppSpacing.md,
+      top: ELayout.spaceMd,
+      right: ELayout.spaceMd,
       child: GestureDetector(
         onTap: () => ref.read(chartZoomProvider.notifier).reset(),
         child: Container(
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.xs,
+            horizontal: ELayout.spaceSm,
+            vertical: ELayout.spaceXs,
           ),
           decoration: BoxDecoration(
-            color: AppColors.backgroundDepth2.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            border: Border.all(color: AppColors.borderDepth1),
+            color: EColors.backgroundLift.withValues(alpha: 0.9),
+            borderRadius: BorderRadius.circular(ELayout.radiusSm),
+            border: Border.all(color: EColors.border),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                CupertinoIcons.arrow_left_right,
+                Icons.compare_arrows,
                 size: 12,
-                color: AppColors.accentPrimary,
+                color: EColors.accent,
               ),
               const SizedBox(width: 4),
               Text(
                 'Reset zoom',
-                style: AppTypography.caption.copyWith(
-                  color: AppColors.accentPrimary,
+                style: EText.caption.copyWith(
+                  color: EColors.accent,
                   fontSize: 11,
                 ),
               ),
@@ -260,19 +259,19 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
       children: [
         _sectionHeader(),
         if (_expanded) ...[
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           WeeklyBarChart(
             title: 'Weekly Run Distance',
             weeks: widget.weeks,
-            barColor: AppColors.accentPrimary,
+            barColor: EColors.accent,
             goalLine: const ChartGoalLine(
               target: 0.5,
               label: '0.5mi/wk goal',
-              color: AppColors.accentPrimary,
+              color: EColors.accent,
             ),
             formatValue: (value) => '${value.toStringAsFixed(1)}mi',
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: ELayout.spaceLg),
           MetricTrendChart(
             title: 'Outdoor Run Trends',
             trends: const OutdoorRunTrends().build(
@@ -299,20 +298,20 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
               fontSize: 11,
               fontWeight: FontWeight.w600,
               letterSpacing: 0.8,
-              color: AppColors.textColor4,
+              color: EColors.textMuted,
             ),
           ),
-          const SizedBox(width: AppSpacing.sm),
+          const SizedBox(width: ELayout.spaceSm),
           Icon(
-            _expanded ? CupertinoIcons.chevron_up : CupertinoIcons.chevron_down,
+            _expanded ? Icons.expand_less : Icons.expand_more,
             size: 11,
-            color: AppColors.textColor4,
+            color: EColors.textMuted,
           ),
-          const SizedBox(width: AppSpacing.md),
+          const SizedBox(width: ELayout.spaceMd),
           const Expanded(
             child: SizedBox(
               height: 0.5,
-              child: ColoredBox(color: AppColors.borderDepth1),
+              child: ColoredBox(color: EColors.border),
             ),
           ),
         ],
