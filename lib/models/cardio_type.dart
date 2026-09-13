@@ -1,13 +1,15 @@
 import 'package:ethan_utils/ethan_utils.dart';
 
-enum CardioType() {
-  outdoorRun,
-  indoorRun,
-  outdoorWalk,
-  indoorWalk,
-  elliptical,
-  stairClimbing,
-  rowing;
+enum CardioType({required this.primaryWork}) {
+  outdoorRun(primaryWork: CardioPrimaryWork.distanceAndPace),
+  indoorRun(primaryWork: CardioPrimaryWork.distanceAndPace),
+  outdoorWalk(primaryWork: CardioPrimaryWork.distanceAndPace),
+  indoorWalk(primaryWork: CardioPrimaryWork.distanceAndPace),
+  elliptical(primaryWork: CardioPrimaryWork.machineDistanceAndMets),
+  stairClimbing(primaryWork: CardioPrimaryWork.flightsAndSteps),
+  rowing(primaryWork: CardioPrimaryWork.machineDistanceAndMets);
+
+  final CardioPrimaryWork primaryWork;
 
   String get displayName => name.titleCase;
 
@@ -24,4 +26,10 @@ enum CardioType() {
     (cardioType) => cardioType.name == key,
     orElse: () => outdoorRun,
   );
+}
+
+enum CardioPrimaryWork() {
+  distanceAndPace,
+  machineDistanceAndMets,
+  flightsAndSteps;
 }

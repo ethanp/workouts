@@ -9,6 +9,7 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
+import 'package:workouts/theme/workout_block_type_palette.dart';
 
 class const TemplateDetailScreen({required final String templateId})
     extends ConsumerStatefulWidget {
@@ -47,7 +48,7 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: EAppHeader(title: template.name),
-      body: SafeArea(child: _body(template)),
+      body: SafeArea(bottom: false, child: _body(template)),
     );
   }
 
@@ -56,7 +57,7 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
       padding: const EdgeInsets.symmetric(
         horizontal: ELayout.spaceLg,
         vertical: ELayout.spaceMd,
-      ),
+      ).withOverlaidTabBar(context),
       children: [
         _templateHeader(template),
         const SizedBox(height: ELayout.spaceLg),
@@ -404,27 +405,17 @@ class const _BlockTypeBadge({required final WorkoutBlockType type})
         vertical: ELayout.spaceXs,
       ),
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.12),
+        color: type.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
       child: Text(
         type.name.capitalize,
         style: TextStyle(
           fontSize: 11,
-          color: _color,
+          color: type.color,
           fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
-
-  Color get _color => switch (type) {
-    WorkoutBlockType.warmup => EColors.warning,
-    WorkoutBlockType.animalFlow => EColors.warning,
-    WorkoutBlockType.strength => EColors.danger,
-    WorkoutBlockType.mobility => EColors.success,
-    WorkoutBlockType.core => EColors.accent,
-    WorkoutBlockType.conditioning => EColors.warning,
-    WorkoutBlockType.cooldown => EColors.textTertiary,
-  };
 }

@@ -7,6 +7,16 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
+extension DistanceBucketColor on DistanceBucket {
+  Color get color => switch (this) {
+    DistanceBucket.fourHundredMeters => const Color(0xFFFF9F0A),
+    DistanceBucket.halfMile => const Color(0xFFFF6482),
+    DistanceBucket.oneMile => EColors.accent,
+    DistanceBucket.fiveK => const Color(0xFF30D158),
+    DistanceBucket.fiveMiles => const Color(0xFF64D2FF),
+  };
+}
+
 class const OutdoorRunTrends() {
   List<MetricTrend> build({
     required List<CardioWorkout> workouts,
@@ -33,17 +43,14 @@ class const OutdoorRunTrends() {
         .sortedOn((workout) => workout.startedAt);
   }
 
-  static const _bucketColors = <DistanceBucket, Color>{
-    DistanceBucket.fourHundredMeters: Color(0xFFFF9F0A),
-    DistanceBucket.halfMile: Color(0xFFFF6482),
-    DistanceBucket.oneMile: EColors.accent,
-    DistanceBucket.fiveK: Color(0xFF30D158),
-    DistanceBucket.fiveMiles: Color(0xFF64D2FF),
-  };
 
   List<MetricTrend> _bestEffortPaces(List<CardioBestEffort> bestEfforts) {
     final byBucket = <DistanceBucket, List<CardioBestEffort>>{};
     for (final effort in bestEfforts) {
+      if (effort.activityType != null &&
+          effort.activityType != CardioType.outdoorRun) {
+        continue;
+      }
       (byBucket[effort.bucket] ??= []).add(effort);
     }
 
@@ -52,7 +59,7 @@ class const OutdoorRunTrends() {
         if (byBucket[bucket] != null && byBucket[bucket]!.length >= 2)
           MetricTrend(
             label: bucket.label,
-            color: _bucketColors[bucket] ?? EColors.accent,
+            color: bucket.color,
             lowerIsBetter: true,
             points: byBucket[bucket]!
                 .where((bestEffort) => bestEffort.workoutStartedAt != null)

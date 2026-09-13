@@ -7,6 +7,7 @@ import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/theme/goal_priority_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
@@ -38,6 +39,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
     return calendarAsync.when(
       data: (days) {
         final chartList = _chartList(
+          context,
           days,
           cardioWorkoutsAsync.value ?? [],
           bestEffortsAsync.value ?? [],
@@ -64,6 +66,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
   }
 
   Widget _chartList(
+    BuildContext context,
     List<ActivityCalendarDay> days,
     List<CardioWorkout> workouts,
     List<CardioBestEffort> bestEfforts,
@@ -91,7 +94,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         );
 
     return ListView(
-      padding: const EdgeInsets.all(ELayout.spaceLg),
+      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
       children: [
         RollingDailyChart(
           title: 'Z2-5 Rolling Load',
@@ -111,7 +114,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
             RollingDailyGoal(
               value: 150,
               label: '150m priority 2',
-              color: EColors.warning,
+              color: GoalPriorityPalette.priority2,
             ),
           ],
           displayStart: visibleRange?.start,

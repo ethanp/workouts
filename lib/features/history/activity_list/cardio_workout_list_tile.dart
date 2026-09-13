@@ -42,7 +42,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     width: 3,
     height: 42,
     decoration: BoxDecoration(
-      color: _typeColor(),
+      color: workout.activityType.color,
       borderRadius: BorderRadius.circular(2),
     ),
   );
@@ -65,7 +65,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
       Text(
         workout.activityType.displayName,
         style: EText.caption.copyWith(
-          color: _typeColor(),
+          color: workout.activityType.color,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -85,7 +85,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     if (workout.activityType.hasRoute && workout.routeAvailable)
       Padding(
         padding: const EdgeInsets.only(left: ELayout.spaceSm),
-        child: Icon(Icons.map, color: _typeColor(), size: 16),
+        child: Icon(Icons.map, color: workout.activityType.color, size: 16),
       ),
     const SizedBox(width: ELayout.spaceXs),
     const Icon(
@@ -97,15 +97,17 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
 
   String _summaryText() {
     final duration = Format.duration(workout.durationSeconds);
-    if (!workout.activityType.hasDistance || workout.distanceMeters <= 0) {
+    if (workout.displayDistanceMeters <= 0) {
+      final flightsClimbed = workout.flightsClimbed;
+      if (flightsClimbed != null && flightsClimbed > 0) {
+        return '${flightsClimbed.round()} flights  ·  $duration';
+      }
       return duration;
     }
-    return '${Format.distance(workout.distanceMeters)}  ·  '
+    return '${Format.distance(workout.displayDistanceMeters)}  ·  '
         '$duration  ·  '
-        '${Format.pace(workout.durationSeconds, workout.distanceMeters)}';
+        '${Format.pace(workout.durationSeconds, workout.displayDistanceMeters)}';
   }
-
-  Color _typeColor() => CardioTypePalette.colorFor(workout.activityType);
 
   bool _showsZoneBreakdown() =>
       workout.hasHrSamples && workout.zoneTime.total > 0;

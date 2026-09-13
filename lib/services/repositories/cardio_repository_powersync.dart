@@ -5,9 +5,10 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
+import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/cardio_workout_event.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_import.dart';
@@ -37,7 +38,13 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
           COALESCE(m.zone3_seconds, 0) AS zone3_seconds,
           COALESCE(m.zone4_seconds, 0) AS zone4_seconds,
           COALESCE(m.zone5_seconds, 0) AS zone5_seconds,
-          COALESCE(m.has_hr_samples, 0) AS has_hr_samples
+          COALESCE(m.has_hr_samples, 0) AS has_hr_samples,
+          m.pace_seconds_per_mile,
+          m.meters_per_heartbeat,
+          m.cardiac_drift_percent,
+          COALESCE(m.has_distance_samples, 0) AS has_distance_samples,
+          m.distance_origin,
+          m.fitness_confidence
         FROM cardio_workouts w
         LEFT JOIN cardio_computed_metrics m ON m.id = w.id
         ORDER BY w.started_at DESC
@@ -62,16 +69,30 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
           )
           .map((sampleRows) => sampleRows.mapL(CardioHeartRateSample.fromRow));
 
+  Stream<List<CardioQuantitySample>> watchDistanceSamples(String workoutId) =>
+      _powerSync
+          .watch(
+            'SELECT * FROM cardio_distance_samples WHERE workout_id = ? ORDER BY started_at ASC',
+            parameters: [workoutId],
+          )
+          .map((sampleRows) => sampleRows.mapL(CardioQuantitySample.fromRow));
+
+  Stream<List<CardioWorkoutEvent>> watchWorkoutEvents(String workoutId) =>
+      _powerSync
+          .watch(
+            'SELECT * FROM cardio_workout_events WHERE workout_id = ? ORDER BY occurred_at ASC',
+            parameters: [workoutId],
+          )
+          .map((eventRows) => eventRows.mapL(CardioWorkoutEvent.fromRow));
+
   Stream<List<CardioBestEffort>> watchBestEfforts() => _powerSync
       .watch(
         '''
-        SELECT be.distance_meters, be.elapsed_seconds, w.started_at
+        SELECT be.distance_meters, be.elapsed_seconds, w.started_at, w.activity_type
         FROM cardio_best_efforts be
         JOIN cardio_workouts w ON w.id = be.workout_id
-        WHERE w.activity_type = ?
         ORDER BY w.started_at ASC
         ''',
-        parameters: [CardioType.outdoorRun.dbKey],
         triggerOnTables: const {'cardio_best_efforts', 'cardio_workouts'},
       )
       .map((rows) {
@@ -120,7 +141,13 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
         COALESCE(m.zone3_seconds, 0) AS zone3_seconds,
         COALESCE(m.zone4_seconds, 0) AS zone4_seconds,
         COALESCE(m.zone5_seconds, 0) AS zone5_seconds,
-        COALESCE(m.has_hr_samples, 0) AS has_hr_samples
+        COALESCE(m.has_hr_samples, 0) AS has_hr_samples,
+        m.pace_seconds_per_mile,
+        m.meters_per_heartbeat,
+        m.cardiac_drift_percent,
+        COALESCE(m.has_distance_samples, 0) AS has_distance_samples,
+        m.distance_origin,
+        m.fitness_confidence
       FROM cardio_workouts w
       LEFT JOIN cardio_computed_metrics m ON m.id = w.id
       WHERE DATE(w.started_at, 'localtime') = ?
@@ -146,6 +173,18 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
         [workoutId],
       );
       await transaction.execute(
+        'DELETE FROM cardio_distance_samples WHERE workout_id = ?',
+        [workoutId],
+      );
+      await transaction.execute(
+        'DELETE FROM cardio_step_samples WHERE workout_id = ?',
+        [workoutId],
+      );
+      await transaction.execute(
+        'DELETE FROM cardio_workout_events WHERE workout_id = ?',
+        [workoutId],
+      );
+      await transaction.execute(
         'DELETE FROM cardio_computed_metrics WHERE id = ?',
         [workoutId],
       );
@@ -156,10 +195,15 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     _log.log('Deleted workout $workoutId (queued for upload).');
   }
 
-  Future<int> upsertImportedWorkouts(
+  Future<void> wipeImportedCardio() => _importer.wipeStoredCardio();
+
+  Future<bool> insertImportedWorkout(Map<String, dynamic> payload) =>
+      _importer.insertRawWorkout(payload);
+
+  Future<int> replaceImportedWorkouts(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
-  }) => _importer.upsertAll(payloads, onProgress: onProgress);
+  }) => _importer.replaceAll(payloads, onProgress: onProgress);
 
   Future<void> recomputeZones({
     void Function(int done, int total)? onProgress,

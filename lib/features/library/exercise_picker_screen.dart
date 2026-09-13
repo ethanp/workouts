@@ -24,6 +24,7 @@ class const ExercisePickerScreen({required final Set<String> excludeIds})
         ),
       ),
       body: SafeArea(
+        bottom: false,
         child: exercisesAsync.when(
           data: (exercises) =>
               _ExercisePickerBody(exercises: exercises, excludeIds: excludeIds),
@@ -159,7 +160,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
     );
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 32),
+      padding: const EdgeInsets.only(bottom: 32).withOverlaidTabBar(context),
       itemCount: modalities.length,
       itemBuilder: (context, index) {
         final modality = modalities[index];

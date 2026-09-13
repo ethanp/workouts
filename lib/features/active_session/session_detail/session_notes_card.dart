@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session_note.dart';
+import 'package:workouts/theme/session_note_type_palette.dart';
 import 'package:workouts/utils/run_formatting.dart';
 
 class const SessionNotesCard({required final List<SessionNote> notes})
@@ -53,7 +54,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
           Container(
             padding: const EdgeInsets.all(ELayout.spaceXs),
             decoration: BoxDecoration(
-              color: _getTypeColor(note.noteType).withValues(alpha: 0.15),
+              color: note.noteType.color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(ELayout.radiusSm),
             ),
             child: Text(
@@ -82,12 +83,4 @@ class const SessionNotesCard({required final List<SessionNote> notes})
     );
   }
 
-  Color _getTypeColor(SessionNoteType type) {
-    return switch (type) {
-      SessionNoteType.observation => EColors.textSecondary,
-      SessionNoteType.modification => EColors.accent,
-      SessionNoteType.painSignal => EColors.warning,
-      SessionNoteType.breakthrough => EColors.success,
-    };
-  }
 }

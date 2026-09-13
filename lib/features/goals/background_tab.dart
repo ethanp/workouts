@@ -86,7 +86,7 @@ class const BackgroundNotesList({
     padding: const EdgeInsets.symmetric(
       horizontal: ELayout.spaceLg,
       vertical: ELayout.spaceMd,
-    ),
+    ).withOverlaidTabBar(context),
     children: [
       if (activeNotes.isNotEmpty) ...[
         GoalsSectionHeader(

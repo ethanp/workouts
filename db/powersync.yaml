@@ -109,6 +109,18 @@ sync_rules:
         priority: 3
         data:
           - SELECT * FROM cardio_best_efforts
+      cardio_distance_samples:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_distance_samples
+      cardio_step_samples:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_step_samples
+      cardio_workout_events:
+        priority: 3
+        data:
+          - SELECT * FROM cardio_workout_events
       training_locations:
         priority: 0
         data:

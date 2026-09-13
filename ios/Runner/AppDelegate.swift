@@ -5,6 +5,8 @@ import UserNotifications
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let healthKitBridge = HealthKitBridge()
+  private let healthInventoryProgressStreamHandler = HealthInventoryProgressStreamHandler()
+  private let healthImportStreamHandler = HealthInventoryProgressStreamHandler()
   private let heartRateStreamHandler = HeartRateStreamHandler()
   private let watchConnectivityStreamHandler = WatchConnectivityStreamHandler()
   private let watchCommandStreamHandler = WatchCommandStreamHandler()
@@ -16,9 +18,7 @@ import UserNotifications
     // Required by flutter_local_notifications so the foreground app can
     // receive UNNotificationCenter callbacks (interval-timer alerts when
     // the screen is locked but the app technically still active).
-    if #available(iOS 10.0, *) {
-      UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
-    }
+    UNUserNotificationCenter.current().delegate = self as? UNUserNotificationCenterDelegate
     let didFinish = super.application(application, didFinishLaunchingWithOptions: launchOptions)
     WatchSessionManager.shared.configureSession(
       connectivityHandler: watchConnectivityStreamHandler,
@@ -43,6 +43,16 @@ import UserNotifications
       }
       self.handleHealthKitMethodCall(call: call, result: result)
     }
+
+    FlutterEventChannel(
+      name: "com.workouts/health_inventory_progress",
+      binaryMessenger: messenger
+    ).setStreamHandler(healthInventoryProgressStreamHandler)
+
+    FlutterEventChannel(
+      name: "com.workouts/health_import",
+      binaryMessenger: messenger
+    ).setStreamHandler(healthImportStreamHandler)
 
     FlutterEventChannel(
       name: "com.workouts/heart_rate_stream",
@@ -80,20 +90,43 @@ import UserNotifications
       healthKitBridge.requestAuthorization { status in
         DispatchQueue.main.async { result(status) }
       }
+    case "inspectRecentCardioWorkouts":
+      let maxWorkouts = (call.arguments as? [String: Any])?["maxWorkouts"] as? Int ?? 40
+      healthKitBridge.inspectRecentCardioWorkouts(
+        maxWorkouts: maxWorkouts,
+        onProgress: { [weak self] payload in
+          self?.healthInventoryProgressStreamHandler.send(payload)
+        }
+      ) { payload, error in
+        DispatchQueue.main.async {
+          if let error {
+            result(FlutterError(code: "inspect_workouts_failed", message: error.localizedDescription, details: nil))
+            return
+          }
+          result(payload)
+        }
+      }
     case "fetchRecentCardioWorkouts":
       let request = FetchCardioWorkoutsRequest(arguments: call.arguments as? [String: Any])
       healthKitBridge.fetchRecentCardioWorkouts(
         maxWorkouts: request.maxWorkouts,
         includeRoute: request.includeRoute,
         maxRoutePoints: request.maxRoutePoints,
-        includeHeartRateSeries: request.includeHeartRateSeries
-      ) { payload, error in
+        includeHeartRateSeries: request.includeHeartRateSeries,
+        includeAssociatedSeries: request.includeAssociatedSeries,
+        onProgress: { [weak self] payload in
+          self?.healthImportStreamHandler.send(payload)
+        },
+        onWorkout: { [weak self] workout in
+          self?.healthImportStreamHandler.send(["workout": workout])
+        }
+      ) { count, error in
         DispatchQueue.main.async {
           if let error {
             result(FlutterError(code: "fetch_workouts_failed", message: error.localizedDescription, details: nil))
             return
           }
-          result(payload)
+          result(count as NSNumber?)
         }
       }
     case "countCardioWorkouts":
@@ -142,11 +175,13 @@ private struct FetchCardioWorkoutsRequest {
   let includeRoute: Bool
   let maxRoutePoints: Int
   let includeHeartRateSeries: Bool
+  let includeAssociatedSeries: Bool
 
   init(arguments: [String: Any]?) {
     maxWorkouts = arguments?["maxWorkouts"] as? Int ?? 20
     includeRoute = arguments?["includeRoute"] as? Bool ?? false
     maxRoutePoints = arguments?["maxRoutePoints"] as? Int ?? 1500
     includeHeartRateSeries = arguments?["includeHeartRateSeries"] as? Bool ?? true
+    includeAssociatedSeries = arguments?["includeAssociatedSeries"] as? Bool ?? true
   }
 }

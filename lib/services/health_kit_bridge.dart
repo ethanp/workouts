@@ -2,16 +2,23 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workouts/models/health_data_inventory.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
 
 class HealthKitBridge() {
   this
     : _methodChannel = const MethodChannel('com.workouts/health_kit'),
-      _heartRateChannel = const EventChannel('com.workouts/heart_rate_stream');
+      _heartRateChannel = const EventChannel('com.workouts/heart_rate_stream'),
+      _inventoryProgressChannel = const EventChannel(
+        'com.workouts/health_inventory_progress',
+      ),
+      _importChannel = const EventChannel('com.workouts/health_import');
 
   final MethodChannel _methodChannel;
   final EventChannel _heartRateChannel;
+  final EventChannel _inventoryProgressChannel;
+  final EventChannel _importChannel;
   final _uuid = const Uuid();
 
   Future<HealthPermissionStatus> getAuthorizationStatus() async {
@@ -68,32 +75,77 @@ class HealthKitBridge() {
     }
   }
 
-  Future<List<Map<String, dynamic>>> fetchRecentCardioWorkouts({
-    int maxWorkouts = 20,
-    bool includeRoute = false,
-    int maxRoutePoints = 1500,
-    bool includeHeartRateSeries = true,
+  Stream<HealthInventoryInspectProgress> inventoryInspectProgress() {
+    return _inventoryProgressChannel.receiveBroadcastStream().map((event) {
+      return HealthInventoryInspectProgress.fromMap(
+        Map<String, dynamic>.from(event as Map),
+      );
+    });
+  }
+
+  Future<Map<String, dynamic>> inspectRecentCardioWorkouts({
+    int maxWorkouts = 40,
   }) async {
     try {
-      final payload = await _methodChannel.invokeMethod<List<Object?>>(
+      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+        'inspectRecentCardioWorkouts',
+        {'maxWorkouts': maxWorkouts},
+      );
+      if (payload == null) return const {};
+      return Map<String, dynamic>.from(payload);
+    } on MissingPluginException {
+      return const {};
+    } on PlatformException {
+      return const {};
+    }
+  }
+
+  Future<int> importCardioWorkouts({
+    int maxWorkouts = 0,
+    bool includeRoute = true,
+    int maxRoutePoints = 1500,
+    bool includeHeartRateSeries = true,
+    bool includeAssociatedSeries = true,
+    required void Function(HealthInventoryInspectProgress progress) onProgress,
+    required Future<void> Function(Map<String, dynamic> workout) onWorkout,
+  }) async {
+    final importEvents = StreamController<Map<String, dynamic>>();
+    final eventSubscription = _importChannel.receiveBroadcastStream().listen((
+      event,
+    ) {
+      importEvents.add(Map<String, dynamic>.from(event as Map));
+    });
+    final consumeEvents = () async {
+      await for (final event in importEvents.stream) {
+        final workout = event['workout'];
+        if (workout is Map) {
+          await onWorkout(Map<String, dynamic>.from(workout));
+          continue;
+        }
+        onProgress(HealthInventoryInspectProgress.fromMap(event));
+        if (event['importFinished'] == true) break;
+      }
+    }();
+    try {
+      final workoutCount = await _methodChannel.invokeMethod<int>(
         'fetchRecentCardioWorkouts',
         {
           'maxWorkouts': maxWorkouts,
           'includeRoute': includeRoute,
           'maxRoutePoints': maxRoutePoints,
           'includeHeartRateSeries': includeHeartRateSeries,
+          'includeAssociatedSeries': includeAssociatedSeries,
         },
       );
-      if (payload == null) {
-        return const [];
-      }
-      return payload
-          .map((item) => Map<String, dynamic>.from(item as Map))
-          .toList();
+      await consumeEvents;
+      return workoutCount ?? 0;
     } on MissingPluginException {
-      return const [];
+      return 0;
     } on PlatformException {
-      return const [];
+      rethrow;
+    } finally {
+      await eventSubscription.cancel();
+      await importEvents.close();
     }
   }
 

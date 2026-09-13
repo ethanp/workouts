@@ -35,7 +35,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
           Text('Apple Health', style: EText.section),
           const SizedBox(height: ELayout.spaceXs),
           Text(
-            'Import recent workouts from Apple Health and compute their heart rate zones.',
+            'Replaces stored cardio with every cardio workout Apple Health has, then computes heart rate zones.',
             style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: ELayout.spaceMd),
@@ -52,7 +52,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
           ],
           if (importErrorMessage != null) ...[
             const SizedBox(height: ELayout.spaceSm),
-            Text(
+            SelectableText(
               importErrorMessage,
               style: EText.caption.copyWith(color: EColors.danger),
             ),
@@ -81,7 +81,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
               ),
             )
           : const Text(
-              'Import workouts',
+              'Replace from Apple Health',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -94,22 +94,31 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'Importing ${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
+        importProgress.status.isNotEmpty
+            ? importProgress.status
+            : 'Reading Apple Health…',
         style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
-      const SizedBox(height: ELayout.spaceXs),
-      ClipRRect(
-        borderRadius: BorderRadius.circular(ELayout.radiusSm),
-        child: Container(
-          height: 6,
-          color: EColors.surface,
-          child: FractionallySizedBox(
-            alignment: Alignment.centerLeft,
-            widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
-            child: Container(color: EColors.accent),
+      if (importProgress.totalWorkouts > 0) ...[
+        const SizedBox(height: ELayout.spaceXs),
+        Text(
+          '${importProgress.processedWorkouts}/${importProgress.totalWorkouts}',
+          style: EText.caption.copyWith(color: EColors.textTertiary),
+        ),
+        const SizedBox(height: ELayout.spaceXs),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(ELayout.radiusSm),
+          child: Container(
+            height: 6,
+            color: EColors.surface,
+            child: FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: importProgress.progressFraction.clamp(0.0, 1.0),
+              child: Container(color: EColors.accent),
+            ),
           ),
         ),
-      ),
+      ],
     ],
   );
 

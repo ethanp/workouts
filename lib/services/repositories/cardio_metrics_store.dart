@@ -1,8 +1,10 @@
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
+import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/utils/hr_zone_classifier.dart';
+import 'package:workouts/utils/indoor_fitness_calculator.dart';
 
 const _log = ELogger('CardioMetricsStore');
 
@@ -26,17 +28,24 @@ const _needsMetricsSql = '''
 class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
   Future<void> computeAndStore(String workoutId) async {
     final hrSamples = await loadHrSamples(workoutId);
+    final fitnessSignals = await _fitnessSignals(workoutId, hrSamples);
     if (hrSamples.isEmpty) {
       // Don't clobber a good metrics row with an empty one — import can race
       // with backfill, which may load samples before they've been written.
       if (await _hasComputedHrSamples(workoutId)) return;
-      await _persist(workoutId, HrZoneTime.zero, hasHrSamples: false);
+      await _persist(
+        workoutId,
+        HrZoneTime.zero,
+        hasHrSamples: false,
+        fitnessSignals: fitnessSignals,
+      );
       return;
     }
     await _persist(
       workoutId,
       HrZoneClassifier.compute(hrSamples),
       hasHrSamples: true,
+      fitnessSignals: fitnessSignals,
     );
   }
 
@@ -107,16 +116,52 @@ class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
         .toList();
   }
 
+  Future<IndoorFitnessSignals> _fitnessSignals(
+    String workoutId,
+    List<TimestampedHeartRate> hrSamples,
+  ) async {
+    final Map<String, dynamic>? workoutRow = await _powerSync.getOptional(
+      'SELECT duration_seconds, distance_meters, machine_linked'
+      ' FROM cardio_workouts WHERE id = ?',
+      [workoutId],
+    );
+    if (workoutRow == null) return IndoorFitnessSignals.empty;
+    final distanceSamples = await loadDistanceSamples(workoutId);
+    return IndoorFitnessCalculator().compute(
+      durationSeconds: (workoutRow['duration_seconds'] as int?) ?? 0,
+      distanceMeters: (workoutRow['distance_meters'] as num?)?.toDouble() ?? 0,
+      heartRateSamples: hrSamples,
+      distanceSamples: distanceSamples,
+      machineLinked: (workoutRow['machine_linked'] as int?) == 1,
+    );
+  }
+
+  Future<List<CardioQuantitySample>> loadDistanceSamples(String workoutId) async {
+    final List<Map<String, dynamic>> sampleRows = await _powerSync.execute(
+      'SELECT * FROM cardio_distance_samples'
+      ' WHERE workout_id = ? ORDER BY started_at ASC',
+      [workoutId],
+    );
+    return sampleRows.map(CardioQuantitySample.fromRow).toList();
+  }
+
   Future<void> _persist(
     String workoutId,
     HrZoneTime zone, {
     required bool hasHrSamples,
+    required IndoorFitnessSignals fitnessSignals,
   }) async {
     final computedAt = DateTime.now().toUtc().toIso8601String();
     await _powerSync.upsert('cardio_computed_metrics', {
       'id': workoutId,
       ...zone.toRow(),
       'has_hr_samples': hasHrSamples ? 1 : 0,
+      'pace_seconds_per_mile': fitnessSignals.paceSecondsPerMile,
+      'meters_per_heartbeat': fitnessSignals.metersPerHeartbeat,
+      'cardiac_drift_percent': fitnessSignals.cardiacDriftPercent,
+      'has_distance_samples': fitnessSignals.hasDistanceSamples ? 1 : 0,
+      'distance_origin': fitnessSignals.distanceOrigin.dbKey,
+      'fitness_confidence': fitnessSignals.confidence.dbKey,
       'computed_at': computedAt,
     });
   }

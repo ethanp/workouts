@@ -4,6 +4,7 @@ import 'package:workouts/features/goals/goal_category_style.dart';
 import 'package:workouts/features/goals/goal_card.dart';
 import 'package:workouts/features/goals/goals_list_rows.dart';
 import 'package:workouts/models/fitness_goal.dart';
+import 'package:workouts/theme/goal_priority_palette.dart';
 
 class const GoalsList({
   required final List<FitnessGoal> activeGoals,
@@ -18,7 +19,7 @@ class const GoalsList({
     padding: const EdgeInsets.symmetric(
       horizontal: ELayout.spaceLg,
       vertical: ELayout.spaceMd,
-    ),
+    ).withOverlaidTabBar(context),
     children: [
       ..._activeGoalsSection(),
       ..._emptySection(),
@@ -159,12 +160,7 @@ class const _GoalPriorityGroup({
   required final int priority,
   required final List<Widget> children,
 }) extends StatelessWidget {
-  Color get _priorityColor => switch (priority) {
-    1 => EColors.warning,
-    2 => EColors.accent,
-    3 => EColors.success,
-    _ => EColors.textMuted,
-  };
+  Color get _priorityColor => GoalPriorityPalette.colorFor(priority);
 
   @override
   Widget build(BuildContext context) => Column(

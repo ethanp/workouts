@@ -36,7 +36,19 @@ class const HrZoneTime({
   };
 
   int get gteZone2 => zone2 + zone3 + zone4 + zone5;
+  int get easyAerobicSeconds => zone1 + zone2;
+  int get hardAerobicSeconds => zone4 + zone5;
   int get total => zone1 + zone2 + zone3 + zone4 + zone5;
+
+  int get dominantZoneIndex {
+    var dominantZoneIndex = 0;
+    for (var zoneIndex = 1; zoneIndex < 5; zoneIndex++) {
+      if (this[zoneIndex] > this[dominantZoneIndex]) {
+        dominantZoneIndex = zoneIndex;
+      }
+    }
+    return dominantZoneIndex;
+  }
 
   int get zone1Minutes => zone1 ~/ 60;
   int get zone2Minutes => zone2 ~/ 60;

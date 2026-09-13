@@ -67,5 +67,12 @@ void main() {
     test('hasActivity is false when no cardio workouts or sessions', () {
       expect(_day().hasActivity, isFalse);
     });
+
+    test('hasCardio and hasStrength follow the workout counts', () {
+      expect(_day(cardioCount: 1).hasCardio, isTrue);
+      expect(_day(cardioCount: 1).hasStrength, isFalse);
+      expect(_day(sessionCount: 1).hasStrength, isTrue);
+      expect(_day(sessionCount: 1).hasCardio, isFalse);
+    });
   });
 }

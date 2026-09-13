@@ -6,6 +6,7 @@ import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/features/history/charts/polarization_legend.dart';
 import 'package:workouts/features/history/charts/polarization_scrub_detail_panel.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
+import 'package:workouts/theme/goal_priority_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
 const _kAerobicBaseTargetSeconds = 90 * 60; // 90 min/week aerobic base target
@@ -189,7 +190,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
                   priorityTwoFraction,
                   constraints.maxHeight,
                   '150m priority 2',
-                  EColors.warning,
+                  GoalPriorityPalette.priority2,
                 ),
               if (_scrubIndex != null) _scrubCursor(barWidth, barSpacing),
             ],

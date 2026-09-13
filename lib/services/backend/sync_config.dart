@@ -116,6 +116,9 @@ const _fkDependencies = <String, Set<String>>{
   'cardio_route_points': {'cardio_workouts'},
   'cardio_heart_rate_samples': {'cardio_workouts'},
   'cardio_best_efforts': {'cardio_workouts'},
+  'cardio_distance_samples': {'cardio_workouts'},
+  'cardio_step_samples': {'cardio_workouts'},
+  'cardio_workout_events': {'cardio_workouts'},
   'workout_block_exercises': {'workout_blocks', 'exercises'},
   'session_blocks': {'sessions'},
   'session_notes': {'sessions'},
@@ -136,6 +139,9 @@ const _conflictColumns = <String, String>{
   'cardio_route_points': 'workout_id,point_index',
   'cardio_heart_rate_samples': 'workout_id,timestamp',
   'cardio_best_efforts': 'workout_id,distance_meters',
+  'cardio_distance_samples': 'workout_id,started_at',
+  'cardio_step_samples': 'workout_id,started_at',
+  'cardio_workout_events': 'workout_id,event_type,occurred_at',
 };
 
 /// Resolves the workouts-specific PostgREST 409 conflicts: re-homing exercises
@@ -146,6 +152,9 @@ class const WorkoutsConflictResolver() extends ConflictResolver {
     'cardio_route_points',
     'cardio_heart_rate_samples',
     'cardio_best_efforts',
+    'cardio_distance_samples',
+    'cardio_step_samples',
+    'cardio_workout_events',
     'workout_blocks',
     'workout_block_exercises',
     'session_blocks',
@@ -236,7 +245,14 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
   PowerSyncDatabase database,
 ) async {
   const orphanFilter = '''
-    json_extract(data, '\$.type') IN ('cardio_route_points', 'cardio_heart_rate_samples')
+    json_extract(data, '\$.type') IN (
+      'cardio_route_points',
+      'cardio_heart_rate_samples',
+      'cardio_best_efforts',
+      'cardio_distance_samples',
+      'cardio_step_samples',
+      'cardio_workout_events'
+    )
       AND (
         json_extract(data, '\$.data.workout_id') IS NULL
         OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)

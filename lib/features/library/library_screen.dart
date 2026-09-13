@@ -85,7 +85,7 @@ class const LibraryScreen() extends ConsumerWidget {
         automaticallyImplyLeading: false,
         leading: SyncStatusIcon(),
       ),
-      body: SafeArea(child: _libraryScroll(context)),
+      body: SafeArea(bottom: false, child: _libraryScroll(context)),
     );
   }
 
@@ -114,7 +114,7 @@ class const LibraryScreen() extends ConsumerWidget {
         0,
         ELayout.spaceLg,
         ELayout.spaceMd,
-      ),
+      ).withOverlaidTabBar(context),
       sliver: SliverList.separated(
         itemCount: librarySections.length,
         separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
@@ -223,7 +223,7 @@ class const LibrarySectionPage({required final LibrarySection section})
             ),
         ],
       ),
-      body: SafeArea(child: _sectionBody(context, ref)),
+      body: SafeArea(bottom: false, child: _sectionBody(context, ref)),
     );
   }
 

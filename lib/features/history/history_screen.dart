@@ -48,6 +48,7 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
         actions: [if (dbReady && !isImporting) _importAction()],
       ),
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             if (isImporting || importProgress.completedAt != null)
@@ -127,10 +128,12 @@ class const ImportProgressBanner({
           ),
           const SizedBox(height: ELayout.spaceXs),
           _statusText(),
-          if (importProgress.inProgress &&
-              importProgress.totalWorkouts > 0) ...[
+          if (importProgress.inProgress) ...[
             const SizedBox(height: ELayout.spaceSm),
-            _progressBar(),
+            if (importProgress.totalWorkouts > 0)
+              _progressBar()
+            else
+              const LinearProgressIndicator(minHeight: 6),
           ],
         ],
       ),
@@ -140,8 +143,7 @@ class const ImportProgressBanner({
   Widget _statusText() => Text(
     importProgress.status.isNotEmpty
         ? importProgress.status
-        : 'Fetches recent cardio workouts with route and heart rate. '
-              'Only new workouts are added.',
+        : 'Replaces stored cardio with every cardio workout Apple Health has.',
     style: EText.caption.copyWith(color: EColors.textTertiary),
   );
 

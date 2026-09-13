@@ -5,6 +5,7 @@ import 'package:workouts/features/goals/background_notes_provider.dart';
 import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/models/background_note.dart';
 import 'package:workouts/models/fitness_goal.dart';
+import 'package:workouts/theme/note_category_palette.dart';
 import 'package:workouts/widgets/delete_confirmation_dialog.dart';
 
 class const BackgroundNoteRow({
@@ -17,7 +18,7 @@ class const BackgroundNoteRow({
     final linkedGoal = note.goalId != null
         ? allGoals.where((goal) => goal.id == note.goalId).firstOrNull
         : null;
-    final categoryColor = _categoryColor(note.category);
+    final categoryColor = note.category.color;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
@@ -225,15 +226,4 @@ class const BackgroundNoteRow({
     );
   }
 
-  Color _categoryColor(NoteCategory category) {
-    return switch (category) {
-      NoteCategory.injuryHistory => EColors.danger,
-      NoteCategory.avoid => EColors.warning,
-      NoteCategory.medical => EColors.danger,
-      NoteCategory.preference => EColors.warning,
-      NoteCategory.equipment => EColors.accent,
-      NoteCategory.constraint => EColors.warning,
-      NoteCategory.philosophy => EColors.success,
-    };
-  }
 }

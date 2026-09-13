@@ -2,8 +2,10 @@ import 'package:ethan_utils/ethan_utils.dart';
 
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/utils/best_effort_calculator.dart';
+import 'package:workouts/utils/distance_timeline_best_effort.dart';
 
 const _log = ELogger('BestEffortStore');
 const _uuid = Uuid();
@@ -18,9 +20,11 @@ class BestEffortStore(final PowerSyncDatabase _powerSync) {
 
   Future<void> computeAndStore(String workoutId) async {
     final routePoints = await _loadRoutePoints(workoutId);
-    if (routePoints.length < 2) return;
-
-    final bestEfforts = _calculator.compute(routePoints);
+    final bestEfforts = routePoints.length >= 2
+        ? _calculator.compute(routePoints)
+        : DistanceTimelineBestEffortCalculator().compute(
+            await _loadDistanceSamples(workoutId),
+          );
     if (bestEfforts.isEmpty) return;
 
     _log.fine('Storing ${bestEfforts.length} best efforts for $workoutId.');
@@ -34,7 +38,13 @@ class BestEffortStore(final PowerSyncDatabase _powerSync) {
   }) async {
     final pendingRows = await _powerSync.execute('''
       SELECT w.id FROM cardio_workouts w
-      WHERE w.route_available = 1
+      WHERE (
+          w.route_available = 1
+          OR EXISTS (
+            SELECT 1 FROM cardio_distance_samples sample
+            WHERE sample.workout_id = w.id
+          )
+        )
         AND NOT EXISTS (
           SELECT 1 FROM cardio_best_efforts be WHERE be.workout_id = w.id
         )
@@ -58,6 +68,16 @@ class BestEffortStore(final PowerSyncDatabase _powerSync) {
       [workoutId],
     );
     return routePointRows.mapL(CardioRoutePoint.fromRow);
+  }
+
+  Future<List<CardioQuantitySample>> _loadDistanceSamples(
+    String workoutId,
+  ) async {
+    final sampleRows = await _powerSync.execute(
+      'SELECT * FROM cardio_distance_samples WHERE workout_id = ? ORDER BY started_at ASC',
+      [workoutId],
+    );
+    return sampleRows.mapL(CardioQuantitySample.fromRow);
   }
 
   Future<void> _upsert(

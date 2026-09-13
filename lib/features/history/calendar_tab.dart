@@ -47,7 +47,7 @@ class _HistoryCalendarTabState() extends ConsumerState<HistoryCalendarTab> {
         _scrollToBottom();
         return ListView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(ELayout.spaceLg),
+          padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
           children: [
             ActivityCalendar(
               activityData: activityData,

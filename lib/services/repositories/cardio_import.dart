@@ -9,17 +9,43 @@ const _log = ELogger('CardioImporter');
 const _uuid = Uuid();
 final _workoutIdNamespace = Namespace.url.value;
 
+const _cardioUploadTables = [
+  'cardio_route_points',
+  'cardio_heart_rate_samples',
+  'cardio_best_efforts',
+  'cardio_distance_samples',
+  'cardio_step_samples',
+  'cardio_workout_events',
+  'cardio_workouts',
+];
+
 /// Orchestrates importing HealthKit cardio workouts into the local database.
 class CardioImporter(
   final PowerSyncDatabase _powerSync,
   final CardioMetricsStore _metricsStore,
   final BestEffortStore _bestEffortStore,
 ) {
-  Future<int> upsertAll(
+  Future<void> wipeStoredCardio() async {
+    await _wipeLocalCardio();
+    await _purgeCardioUploads();
+  }
+
+  Future<bool> insertRawWorkout(Map<String, dynamic> payload) async {
+    final CardioImportPayload? workout = CardioImportPayload.tryParse(payload);
+    if (workout == null) {
+      _log.warn('Skipping unparseable Apple Health workout.');
+      return false;
+    }
+    await _insert(workout);
+    return true;
+  }
+
+  Future<int> replaceAll(
     List<Map<String, dynamic>> payloads, {
     void Function(int done, int total)? onProgress,
   }) async {
-    _log.log('Starting import of ${payloads.length} cardio workouts.');
+    _log.log('Replacing cardio with ${payloads.length} Apple Health workouts.');
+    await wipeStoredCardio();
     var inserted = 0;
     Object? firstImportError;
     StackTrace? firstImportStack;
@@ -29,8 +55,8 @@ class CardioImporter(
       );
       if (workout != null) {
         try {
-          final bool wasNew = await _upsert(workout);
-          if (wasNew) inserted++;
+          await _insert(workout);
+          inserted++;
         } catch (error, stackTrace) {
           _log.error(
             'Failed to import workout ${workout.externalWorkoutId}.',
@@ -47,36 +73,56 @@ class CardioImporter(
       }
       onProgress?.call(payloadIndex + 1, payloads.length);
     }
-    _log.log(
-      'Import complete: $inserted new, ${payloads.length - inserted} already stored.',
-    );
+    _log.log('Import complete: $inserted workouts written.');
     if (firstImportError != null) {
       Error.throwWithStackTrace(firstImportError, firstImportStack!);
     }
     return inserted;
   }
 
-  Future<bool> _upsert(CardioImportPayload workout) async {
+  Future<void> _wipeLocalCardio() async {
+    await _powerSync.writeTransaction((transaction) async {
+      for (final table in _cardioUploadTables) {
+        if (table == 'cardio_workouts') continue;
+        await transaction.execute('DELETE FROM $table');
+      }
+      await transaction.execute('DELETE FROM cardio_computed_metrics');
+      await transaction.execute('DELETE FROM cardio_workouts');
+    });
+  }
+
+  Future<void> _purgeCardioUploads() async {
+    final tableList = _cardioUploadTables.map((table) => "'$table'").join(', ');
+    await _powerSync.execute(
+      "DELETE FROM ps_crud WHERE json_extract(data, '\$.type') IN ($tableList)",
+    );
+  }
+
+  Future<void> _insert(CardioImportPayload workout) async {
     final String workoutId = await _resolveWorkoutId(workout.externalWorkoutId);
-    if (await _existingCreatedAt(workoutId) != null) {
-      _log.fine(
-        'Skipping workout ${workout.externalWorkoutId} (already stored).',
-      );
-      return false;
-    }
+    final String now = DateTime.now().toIso8601String();
     _log.fine(
       'Inserting workout ${workout.externalWorkoutId} '
       '(${workout.routePoints.length} pts, ${workout.heartRateSamples.length} HR samples)',
     );
-    final String now = DateTime.now().toIso8601String();
     await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
-    // HR before route points: outdoor walks can have large routes, and metrics
-    // backfill must not observe a workout that still has no samples.
     await _saveHeartRateSamples(workoutId, workout.heartRateSamples, now: now);
+    await _saveQuantitySamples(
+      table: 'cardio_distance_samples',
+      workoutId: workoutId,
+      samples: workout.distanceSamples,
+      now: now,
+    );
+    await _saveQuantitySamples(
+      table: 'cardio_step_samples',
+      workoutId: workoutId,
+      samples: workout.stepSamples,
+      now: now,
+    );
+    await _saveEvents(workoutId, workout.events, now: now);
     await _metricsStore.computeAndStore(workoutId);
     await _saveRoutePoints(workoutId, workout.routePoints, now: now);
     await _bestEffortStore.computeAndStore(workoutId);
-    return true;
   }
 
   Future<void> _saveWorkout(
@@ -90,44 +136,60 @@ class CardioImporter(
       id, external_workout_id, activity_type, started_at, ended_at,
       duration_seconds, distance_meters, energy_kcal, avg_heart_rate_bpm,
       max_heart_rate_bpm, route_available, source_name, source_bundle_id,
-      device_model, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      device_model, device_name, elevation_ascended_meters, recovery_bpm,
+      effort_score, estimated_effort_score, machine_linked, average_mets,
+      fitness_machine_duration_seconds, cross_trainer_distance_meters,
+      indoor_bike_distance_meters, basal_energy_kcal, step_count,
+      flights_climbed, min_heart_rate_bpm, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''',
-    [
-      workoutId,
-      workout.externalWorkoutId,
-      workout.activityType.dbKey,
-      workout.startedAt,
-      workout.endedAt,
-      workout.durationSeconds,
-      workout.distanceMeters,
-      workout.energyKcal,
-      workout.avgHeartRateBpm,
-      workout.maxHeartRateBpm,
-      workout.routeAvailable ? 1 : 0,
-      workout.sourceName,
-      workout.sourceBundleId,
-      workout.deviceModel,
-      createdAt,
-      updatedAt,
-    ],
+    _workoutValues(workoutId, workout, createdAt: createdAt, updatedAt: updatedAt),
   );
+
+  List<Object?> _workoutValues(
+    String workoutId,
+    CardioImportPayload workout, {
+    required String createdAt,
+    required String updatedAt,
+  }) => [
+    workoutId,
+    workout.externalWorkoutId,
+    workout.activityType.dbKey,
+    workout.startedAt,
+    workout.endedAt,
+    workout.durationSeconds,
+    workout.distanceMeters,
+    workout.energyKcal,
+    workout.avgHeartRateBpm,
+    workout.maxHeartRateBpm,
+    workout.routeAvailable ? 1 : 0,
+    workout.sourceName,
+    workout.sourceBundleId,
+    workout.deviceModel,
+    workout.deviceName,
+    workout.elevationAscendedMeters,
+    workout.recoveryBpm,
+    workout.effortScore,
+    workout.estimatedEffortScore,
+    workout.machineLinked ? 1 : 0,
+    workout.averageMets,
+    workout.fitnessMachineDurationSeconds,
+    workout.crossTrainerDistanceMeters,
+    workout.indoorBikeDistanceMeters,
+    workout.basalEnergyKcal,
+    workout.stepCount,
+    workout.flightsClimbed,
+    workout.minHeartRateBpm,
+    createdAt,
+    updatedAt,
+  ];
 
   Future<void> _saveRoutePoints(
     String workoutId,
     List<RoutePointPayload> points, {
     required String now,
   }) async {
-    final Map<String, dynamic>? countRow = await _powerSync.getOptional(
-      'SELECT COUNT(*) AS cnt FROM cardio_route_points WHERE workout_id = ?',
-      [workoutId],
-    );
-    if ((countRow?['cnt'] as int? ?? 0) > 0) {
-      _log.fine('Route points already exist for $workoutId — skipping.');
-      return;
-    }
     if (points.isEmpty) return;
-
     _log.fine('Inserting ${points.length} route points for $workoutId.');
     await _powerSync.writeTransaction((transaction) async {
       for (var pointIndex = 0; pointIndex < points.length; pointIndex++) {
@@ -157,16 +219,7 @@ class CardioImporter(
     List<HeartRateSamplePayload> samples, {
     required String now,
   }) async {
-    final Map<String, dynamic>? countRow = await _powerSync.getOptional(
-      'SELECT COUNT(*) AS cnt FROM cardio_heart_rate_samples WHERE workout_id = ?',
-      [workoutId],
-    );
-    if ((countRow?['cnt'] as int? ?? 0) > 0) {
-      _log.fine('HR samples already exist for $workoutId — skipping.');
-      return;
-    }
     if (samples.isEmpty) return;
-
     _log.fine('Inserting ${samples.length} HR samples for $workoutId.');
     await _powerSync.writeTransaction((transaction) async {
       for (final HeartRateSamplePayload sample in samples) {
@@ -175,6 +228,60 @@ class CardioImporter(
           '  (id, workout_id, timestamp, bpm, created_at, updated_at)'
           ' VALUES (?, ?, ?, ?, ?, ?)',
           [_uuid.v4(), workoutId, sample.timestamp, sample.bpm, now, now],
+        );
+      }
+    });
+  }
+
+  Future<void> _saveQuantitySamples({
+    required String table,
+    required String workoutId,
+    required List<QuantitySamplePayload> samples,
+    required String now,
+  }) async {
+    if (samples.isEmpty) return;
+    _log.fine('Inserting ${samples.length} $table rows for $workoutId.');
+    await _powerSync.writeTransaction((transaction) async {
+      for (final QuantitySamplePayload sample in samples) {
+        await transaction.execute(
+          'INSERT INTO $table'
+          '  (id, workout_id, started_at, ended_at, value, created_at, updated_at)'
+          ' VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [
+            _uuid.v4(),
+            workoutId,
+            sample.startedAt,
+            sample.endedAt,
+            sample.value,
+            now,
+            now,
+          ],
+        );
+      }
+    });
+  }
+
+  Future<void> _saveEvents(
+    String workoutId,
+    List<WorkoutEventPayload> events, {
+    required String now,
+  }) async {
+    if (events.isEmpty) return;
+    await _powerSync.writeTransaction((transaction) async {
+      for (final WorkoutEventPayload event in events) {
+        await transaction.execute(
+          'INSERT INTO cardio_workout_events'
+          '  (id, workout_id, event_type, occurred_at, ended_at, created_at, updated_at)'
+          ' VALUES (?, ?, ?, ?, ?, ?, ?)',
+          [
+            _uuid.v4(),
+            workoutId,
+            event.eventType,
+            event.occurredAt,
+            event.endedAt,
+            now,
+            now,
+          ],
         );
       }
     });
@@ -195,13 +302,5 @@ class CardioImporter(
       ]);
     }
     return deterministicId;
-  }
-
-  Future<String?> _existingCreatedAt(String workoutId) async {
-    final Map<String, dynamic>? workoutRow = await _powerSync.getOptional(
-      'SELECT created_at FROM cardio_workouts WHERE id = ?',
-      [workoutId],
-    );
-    return workoutRow?['created_at'] as String?;
   }
 }

@@ -118,12 +118,10 @@ class const _ErrorToast({
   }
 
   Widget _messageBody() {
-    return SelectionArea(
-      child: Text(
-        message,
-        style: EText.caption.secondary,
-        maxLines: 4,
-        overflow: TextOverflow.ellipsis,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 160),
+      child: SingleChildScrollView(
+        child: SelectableText(message, style: EText.caption.secondary),
       ),
     );
   }

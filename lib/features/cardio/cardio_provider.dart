@@ -3,13 +3,17 @@ import 'package:ethan_utils/ethan_utils.dart';
 
 import 'dart:async';
 
-import 'package:powersync/powersync.dart';
+import 'package:http/http.dart' as http;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
+import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/cardio_workout_event.dart';
+import 'package:workouts/models/health_data_inventory.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
@@ -90,6 +94,24 @@ Stream<List<CardioHeartRateSample>> cardioHeartRateSamples(
 );
 
 @riverpod
+Stream<List<CardioQuantitySample>> cardioDistanceSamples(
+  Ref ref,
+  String workoutId,
+) => _watchRepo(
+  ref,
+  (cardioRepository) => cardioRepository.watchDistanceSamples(workoutId),
+);
+
+@riverpod
+Stream<List<CardioWorkoutEvent>> cardioWorkoutEvents(
+  Ref ref,
+  String workoutId,
+) => _watchRepo(
+  ref,
+  (cardioRepository) => cardioRepository.watchWorkoutEvents(workoutId),
+);
+
+@riverpod
 Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
     _watchRepo(ref, (cardioRepository) => cardioRepository.watchBestEfforts());
 
@@ -157,25 +179,33 @@ class CardioImportController() extends _$CardioImportController {
     super.state = newState;
   }
 
-  static const _addingStatus =
-      'Adding new workouts (skips ones already stored)…';
   static const _idleResetDelay = Duration(seconds: 3);
 
   Future<void> importRecentWorkouts({
-    int maxWorkouts = 30,
+    int maxWorkouts = 0,
     int maxRoutePoints = 1500,
   }) async {
     final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
     if (powerSyncDatabase == null) return;
+    final keepImportAlive = ref.keepAlive();
     try {
       await _requestHealthKitAuthorization();
-      final importedWorkouts = await _fetchRecentCardioWorkouts(
+      await _wipeServerCardio();
+      final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
+      await cardioRepository.wipeImportedCardio();
+      final writtenCount = await _importWorkoutsOneByOne(
+        cardioRepository,
         maxWorkouts: maxWorkouts,
         maxRoutePoints: maxRoutePoints,
       );
-      await _upsertImportedWorkouts(powerSyncDatabase, importedWorkouts);
+      _publishCompletion(
+        importedCount: writtenCount,
+        newCount: writtenCount,
+      );
     } catch (error, stackTrace) {
       _reportImportFailure(error, stackTrace);
+    } finally {
+      keepImportAlive.close();
     }
   }
 
@@ -207,44 +237,46 @@ class CardioImportController() extends _$CardioImportController {
         .requestAuthorization();
   }
 
-  Future<List<Map<String, dynamic>>> _fetchRecentCardioWorkouts({
+  Future<int> _importWorkoutsOneByOne(
+    CardioRepositoryPowerSync cardioRepository, {
     required int maxWorkouts,
     required int maxRoutePoints,
-  }) {
-    _publishProgress(
-      status: 'Fetching last $maxWorkouts workouts from Apple Health…',
-    );
-    return ref
+  }) async {
+    _publishProgress(status: 'Asking Apple Health for workouts…');
+    var writtenCount = 0;
+    await ref
         .read(healthKitBridgeProvider)
-        .fetchRecentCardioWorkouts(
+        .importCardioWorkouts(
           maxWorkouts: maxWorkouts,
-          includeRoute: true,
           maxRoutePoints: maxRoutePoints,
-          includeHeartRateSeries: true,
+          onProgress: (inspectProgress) => _publishProgress(
+            status: inspectProgress.caption,
+            totalWorkouts: inspectProgress.totalWorkouts,
+            processedWorkouts: inspectProgress.completedWorkouts,
+          ),
+          onWorkout: (workout) async {
+            if (await cardioRepository.insertImportedWorkout(workout)) {
+              writtenCount++;
+            }
+          },
         );
+    return writtenCount;
   }
 
-  Future<void> _upsertImportedWorkouts(
-    PowerSyncDatabase database,
-    List<Map<String, dynamic>> importedWorkouts,
-  ) async {
-    _publishProgress(
-      status: _addingStatus,
-      totalWorkouts: importedWorkouts.length,
+  Future<void> _wipeServerCardio() async {
+    _publishProgress(status: 'Clearing stored cardio…');
+    final postgrestUrl = ref.read(postgrestUrlProvider);
+    if (postgrestUrl.isEmpty) {
+      throw StateError('No PostgREST URL; cannot clear stored cardio.');
+    }
+    final response = await http.delete(
+      Uri.parse('$postgrestUrl/cardio_workouts?id=not.is.null'),
     );
-    final newCount = await CardioRepositoryPowerSync(database)
-        .upsertImportedWorkouts(
-          importedWorkouts,
-          onProgress: (processedWorkouts, totalWorkouts) => _publishProgress(
-            status: _addingStatus,
-            totalWorkouts: totalWorkouts,
-            processedWorkouts: processedWorkouts,
-          ),
-        );
-    _publishCompletion(
-      importedCount: importedWorkouts.length,
-      newCount: newCount,
-    );
+    if (response.statusCode >= 400) {
+      throw Exception(
+        'Could not clear stored cardio: ${response.statusCode} ${response.body}',
+      );
+    }
   }
 
   void _publishCompletion({required int importedCount, required int newCount}) {
@@ -273,7 +305,7 @@ class CardioImportController() extends _$CardioImportController {
     if (importedCount == 0) {
       return 'No workouts found. Check Apple Health permissions in Settings.';
     }
-    return 'Done. Found $importedCount workouts, $newCount new.';
+    return 'Done. Replaced stored cardio with $newCount workouts.';
   }
 
   void _scheduleResetToIdle() {
@@ -288,5 +320,60 @@ class CardioImportController() extends _$CardioImportController {
     errorBus.add('Apple Health import: $error');
     if (!ref.mounted) return;
     state = AsyncValue.error(error, stackTrace);
+  }
+}
+
+@riverpod
+class HealthDataInventoryController() extends _$HealthDataInventoryController {
+  @override
+  HealthDataInventoryState build() => const HealthDataInventoryState();
+
+  Future<void> inspectRecentWorkouts({int maxWorkouts = 40}) async {
+    final keepAliveLink = ref.keepAlive();
+    final healthKitBridge = ref.read(healthKitBridgeProvider);
+    final progressSubscription = healthKitBridge
+        .inventoryInspectProgress()
+        .listen(_showInspectProgress);
+    try {
+      state = HealthDataInventoryState(
+        inventory: state.inventory,
+        inspectProgress: const HealthInventoryInspectProgress(
+          caption: 'Requesting Health access…',
+        ),
+      );
+      await ref
+          .read(healthKitPermissionProvider.notifier)
+          .requestAuthorization();
+      _showInspectProgress(
+        HealthInventoryInspectProgress(
+          caption: 'Loading last $maxWorkouts cardio workouts…',
+          totalWorkouts: maxWorkouts,
+        ),
+      );
+      final payload = await healthKitBridge.inspectRecentCardioWorkouts(
+        maxWorkouts: maxWorkouts,
+      );
+      await progressSubscription.cancel();
+      state = HealthDataInventoryState(
+        inventory: HealthDataInventory.fromMap(payload),
+      );
+    } catch (error, stackTrace) {
+      await progressSubscription.cancel();
+      _log.error('Health data inventory failed', error, stackTrace);
+      state = HealthDataInventoryState(
+        inventory: state.inventory,
+        errorMessage: '$error',
+      );
+    } finally {
+      keepAliveLink.close();
+    }
+  }
+
+  void _showInspectProgress(HealthInventoryInspectProgress inspectProgress) {
+    if (!ref.mounted) return;
+    state = HealthDataInventoryState(
+      inventory: state.inventory,
+      inspectProgress: inspectProgress,
+    );
   }
 }

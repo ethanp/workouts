@@ -1,6 +1,30 @@
 import Flutter
 import Foundation
 
+final class HealthInventoryProgressStreamHandler: NSObject, FlutterStreamHandler {
+  private var eventSink: FlutterEventSink?
+
+  func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
+    eventSink = events
+    return nil
+  }
+
+  func onCancel(withArguments arguments: Any?) -> FlutterError? {
+    eventSink = nil
+    return nil
+  }
+
+  func send(_ payload: [String: Any]) {
+    if Thread.isMainThread {
+      eventSink?(payload)
+      return
+    }
+    DispatchQueue.main.async { [weak self] in
+      self?.eventSink?(payload)
+    }
+  }
+}
+
 final class HeartRateStreamHandler: NSObject, FlutterStreamHandler {
   private var eventSink: FlutterEventSink?
 

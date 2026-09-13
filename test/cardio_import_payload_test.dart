@@ -75,6 +75,59 @@ void main() {
       expect(outdoorWalk.distanceMeters, 3200);
     });
 
+    test('reads GymKit summaries used on the workout detail page', () {
+      final payload = CardioImportPayload.tryParse({
+        'externalWorkoutId': 'startrac-elliptical',
+        'activityType': 'elliptical',
+        'startDate': '2026-09-01T10:00:00Z',
+        'endDate': '2026-09-01T10:30:00Z',
+        'durationSeconds': 1800,
+        'distanceMeters': 2400,
+        'machineLinked': true,
+        'averageMets': 7.6,
+        'fitnessMachineDurationSeconds': 1740,
+        'crossTrainerDistanceMeters': 2400,
+        'basalEnergyKcal': 18.2,
+        'minHeartRateBpm': 98,
+        'stepCount': 0,
+        'flightsClimbed': 12,
+      });
+
+      expect(payload!.machineLinked, isTrue);
+      expect(payload.averageMets, 7.6);
+      expect(payload.fitnessMachineDurationSeconds, 1740);
+      expect(payload.crossTrainerDistanceMeters, 2400);
+      expect(payload.basalEnergyKcal, 18.2);
+      expect(payload.minHeartRateBpm, 98);
+      expect(payload.flightsClimbed, 12);
+    });
+
+    test('keeps one event per type and time', () {
+      final payload = CardioImportPayload.tryParse({
+        'externalWorkoutId': 'dup-events',
+        'activityType': 'elliptical',
+        'startDate': '2026-09-01T10:00:00Z',
+        'endDate': '2026-09-01T10:30:00Z',
+        'durationSeconds': 1800,
+        'distanceMeters': 0,
+        'events': [
+          {
+            'type': 'segment',
+            'timestamp': '2026-08-19T19:13:21Z',
+            'endTimestamp': '2026-08-19T19:13:21Z',
+          },
+          {
+            'type': 'segment',
+            'timestamp': '2026-08-19T19:13:21Z',
+            'endTimestamp': '2026-08-19T19:20:00Z',
+          },
+        ],
+      });
+
+      expect(payload!.events, hasLength(1));
+      expect(payload.events.single.endedAt, '2026-08-19T19:20:00Z');
+    });
+
     test('returns null when required identifiers are missing', () {
       expect(CardioImportPayload.tryParse({'startDate': 'x'}), isNull);
     });

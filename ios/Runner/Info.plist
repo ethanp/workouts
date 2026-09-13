@@ -70,7 +70,7 @@
 			<string>googlegmail</string>
 		</array>
 		<key>NSHealthShareUsageDescription</key>
-		<string>Workouts needs access to your Health data to log sessions and sync with Apple Health.</string>
+		<string>Workouts reads workouts, heart rate, distance, steps, recovery, and effort from Apple Health to track cardio fitness over time.</string>
 		<key>NSHealthUpdateUsageDescription</key>
 		<string>Workouts writes completed sessions to Apple Health so your logs stay in sync.</string>
 	</dict>

@@ -32,7 +32,7 @@ class const HistoryActivityListTab() extends ConsumerWidget {
                   : null,
             )
           : ListView.separated(
-              padding: const EdgeInsets.all(ELayout.spaceLg),
+              padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
               itemCount: items.length,
               separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
               itemBuilder: (context, index) =>

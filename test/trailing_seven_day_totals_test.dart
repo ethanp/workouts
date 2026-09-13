@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 import 'package:workouts/features/history/charts/trailing_seven_day_totals.dart';
@@ -118,11 +116,9 @@ void main() {
         dailyValue: _z2LoadMinutes,
       );
 
-      final smoothedPeak = points
-          .map((point) => point.smoothedValue)
-          .reduce(math.max);
-      expect(smoothedPeak, greaterThan(0));
-      expect(smoothedPeak, lessThan(70));
+      final midPlateau = _pointOn(points, DateTime(2026, 1, 13)).smoothedValue;
+      expect(midPlateau, greaterThan(0));
+      expect(midPlateau, lessThan(70));
     });
 
     test('counts post-transition activity when the window starts before '

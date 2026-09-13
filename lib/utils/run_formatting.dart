@@ -143,6 +143,18 @@ class Format._() {
     return '$hour:${local.minute.pad(2)} $period';
   }
 
+  static String kcal(double energyKcal) => '${energyKcal.round()} kcal';
+
+  static String mets(double averageMets) =>
+      '${averageMets.toStringAsFixed(1)} METs';
+
+  static String elevation(double meters) => '${meters.round()} m gain';
+
+  static String steps(double stepCount) => '${stepCount.round()} steps';
+
+  static String flights(double flightsClimbed) =>
+      '${flightsClimbed.round()} flights';
+
   /// "8:30" — bare m:ss.
   static String minSec(int totalSeconds) {
     final minutes = totalSeconds ~/ 60;

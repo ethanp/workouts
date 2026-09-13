@@ -14,8 +14,25 @@ class const CardioImportPayload({
   required final String sourceName,
   required final String? sourceBundleId,
   required final String? deviceModel,
+  final String? deviceName,
+  final double? elevationAscendedMeters,
+  final double? recoveryBpm,
+  final double? effortScore,
+  final double? estimatedEffortScore,
+  final bool machineLinked = false,
+  final double? averageMets,
+  final double? fitnessMachineDurationSeconds,
+  final double? crossTrainerDistanceMeters,
+  final double? indoorBikeDistanceMeters,
+  final double? basalEnergyKcal,
+  final double? stepCount,
+  final double? flightsClimbed,
+  final double? minHeartRateBpm,
   required final List<RoutePointPayload> routePoints,
   required final List<HeartRateSamplePayload> heartRateSamples,
+  final List<QuantitySamplePayload> distanceSamples = const [],
+  final List<QuantitySamplePayload> stepSamples = const [],
+  final List<WorkoutEventPayload> events = const [],
 }) {
   static CardioImportPayload? tryParse(Map<String, dynamic> payload) {
     final String? externalWorkoutId = payload['externalWorkoutId'] as String?;
@@ -42,10 +59,31 @@ class const CardioImportPayload({
       sourceName: (payload['sourceName'] as String?) ?? 'Apple Health',
       sourceBundleId: payload['sourceBundleId'] as String?,
       deviceModel: payload['deviceModel'] as String?,
+      deviceName: payload['deviceName'] as String?,
+      elevationAscendedMeters: _asDouble(payload['elevationAscendedMeters']),
+      recoveryBpm: _asDouble(payload['recoveryBpm']),
+      effortScore: _asDouble(payload['effortScore']),
+      estimatedEffortScore: _asDouble(payload['estimatedEffortScore']),
+      machineLinked: payload['machineLinked'] == true,
+      averageMets: _asDouble(payload['averageMets']),
+      fitnessMachineDurationSeconds: _asDouble(
+        payload['fitnessMachineDurationSeconds'],
+      ),
+      crossTrainerDistanceMeters: _asDouble(
+        payload['crossTrainerDistanceMeters'],
+      ),
+      indoorBikeDistanceMeters: _asDouble(payload['indoorBikeDistanceMeters']),
+      basalEnergyKcal: _asDouble(payload['basalEnergyKcal']),
+      stepCount: _asDouble(payload['stepCount']),
+      flightsClimbed: _asDouble(payload['flightsClimbed']),
+      minHeartRateBpm: _asDouble(payload['minHeartRateBpm']),
       routePoints: RoutePointPayload.parseList(payload['routePoints']),
       heartRateSamples: HeartRateSamplePayload.parseList(
         payload['heartRateSeries'],
       ),
+      distanceSamples: QuantitySamplePayload.parseList(payload['distanceSeries']),
+      stepSamples: QuantitySamplePayload.parseList(payload['stepSeries']),
+      events: WorkoutEventPayload.parseList(payload['events']),
     );
   }
 }
@@ -94,6 +132,58 @@ class const HeartRateSamplePayload({
       parsedSamples.add(HeartRateSamplePayload(timestamp: timestamp, bpm: bpm));
     }
     return parsedSamples;
+  }
+}
+
+class const QuantitySamplePayload({
+  required final String startedAt,
+  required final String endedAt,
+  required final double value,
+}) {
+  static List<QuantitySamplePayload> parseList(Object? raw) {
+    if (raw is! List) return const [];
+    final parsedSamples = <QuantitySamplePayload>[];
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final Map<String, dynamic> sampleMap = Map<String, dynamic>.from(item);
+      final String? startedAt = sampleMap['timestamp'] as String?;
+      final String endedAt =
+          (sampleMap['endTimestamp'] as String?) ?? startedAt ?? '';
+      final double? value = _asDouble(sampleMap['value']);
+      if (startedAt == null || value == null) continue;
+      parsedSamples.add(
+        QuantitySamplePayload(
+          startedAt: startedAt,
+          endedAt: endedAt,
+          value: value,
+        ),
+      );
+    }
+    return parsedSamples;
+  }
+}
+
+class const WorkoutEventPayload({
+  required final String eventType,
+  required final String occurredAt,
+  final String? endedAt,
+}) {
+  static List<WorkoutEventPayload> parseList(Object? raw) {
+    if (raw is! List) return const [];
+    final parsedEvents = <String, WorkoutEventPayload>{};
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final Map<String, dynamic> eventMap = Map<String, dynamic>.from(item);
+      final String? eventType = eventMap['type'] as String?;
+      final String? occurredAt = eventMap['timestamp'] as String?;
+      if (eventType == null || occurredAt == null) continue;
+      parsedEvents['$eventType|$occurredAt'] = WorkoutEventPayload(
+        eventType: eventType,
+        occurredAt: occurredAt,
+        endedAt: eventMap['endTimestamp'] as String?,
+      );
+    }
+    return parsedEvents.values.toList();
   }
 }
 

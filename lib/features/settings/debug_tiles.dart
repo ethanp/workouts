@@ -143,7 +143,7 @@ class _CardioImportDebugTileState()
     }
 
     if (_snapshot!.hasError) {
-      return Text(
+      return SelectableText(
         'Error: ${_snapshot!.error}',
         style: EText.caption.copyWith(color: EColors.danger),
       );

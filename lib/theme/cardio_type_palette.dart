@@ -2,8 +2,8 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:workouts/models/cardio_type.dart';
 
-class const CardioTypePalette._() {
-  static Color colorFor(CardioType cardioType) => switch (cardioType) {
+extension CardioTypeColor on CardioType {
+  Color get color => switch (this) {
     CardioType.outdoorRun => EColors.accent,
     CardioType.indoorRun => EColors.warning,
     CardioType.outdoorWalk => const Color(0xFF5E5CE6),

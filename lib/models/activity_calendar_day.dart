@@ -14,5 +14,9 @@ class ActivityCalendarDay({
 }) {
   bool get hasActivity => cardioCount > 0 || sessionCount > 0;
 
+  bool get hasCardio => cardioCount > 0;
+
+  bool get hasStrength => sessionCount > 0;
+
   HrZoneTime get totalZoneTime => cardioZoneTime + sessionZoneTime;
 }

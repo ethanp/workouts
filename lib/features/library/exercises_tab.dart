@@ -7,6 +7,7 @@ import 'package:workouts/features/library/templates_provider.dart';
 import 'package:ethan_sync/ethan_sync.dart' show isOfflineProvider;
 import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/library_exercise_store.dart';
+import 'package:workouts/theme/exercise_modality_palette.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 import 'package:workouts/widgets/exercise_benefits_sheet.dart';
 
@@ -58,7 +59,9 @@ class const _ExercisesBody({
       _exerciseCountHeader(),
       ..._benefitsGenerationBanners(isOffline),
       if (exercises.isEmpty) _emptyLibrary() else _exerciseRows(exercises),
-      const SliverToBoxAdapter(child: SizedBox(height: 32)),
+      SliverToBoxAdapter(
+        child: SizedBox(height: 32 + context.overlaidTabBarInset),
+      ),
     ];
   }
 
@@ -423,10 +426,10 @@ class const _ModalityIcon({required final ExerciseModality modality})
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        color: _color.withValues(alpha: 0.12),
+        color: modality.color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
-      child: Icon(_icon, size: 16, color: _color),
+      child: Icon(_icon, size: 16, color: modality.color),
     );
   }
 
@@ -438,13 +441,6 @@ class const _ModalityIcon({required final ExerciseModality modality})
     ExerciseModality.breath => Icons.air,
   };
 
-  Color get _color => switch (modality) {
-    ExerciseModality.reps => EColors.accent,
-    ExerciseModality.timed => EColors.warning,
-    ExerciseModality.hold => EColors.warning,
-    ExerciseModality.mobility => EColors.success,
-    ExerciseModality.breath => EColors.textTertiary,
-  };
 }
 
 class const _ModalityPill({required final ExerciseModality modality})
