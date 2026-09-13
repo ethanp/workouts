@@ -4,7 +4,11 @@ Personal workout tracker with local-first sync.
 
 ### Screenshots
 
-![History](screenshots/history.png)
+![History charts](screenshots/history-charts.png)
+
+![History list](screenshots/history.png)
+
+![History calendar](screenshots/history-calendar.png)
 
 ## Stack
 
