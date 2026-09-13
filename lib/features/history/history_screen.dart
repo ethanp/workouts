@@ -1,4 +1,3 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +6,6 @@ import 'package:workouts/features/history/activity_list/history_activity_list_ta
 import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
 import 'package:ethan_sync/ethan_sync.dart';
-import 'package:workouts/widgets/sync_status_icon.dart';
 
 enum HistoryTab() {
   charts,
@@ -64,9 +62,9 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const SyncStatusIcon(),
+        const ESyncPhaseIcon(),
         const SizedBox(width: 4),
-        Text(syncPhase.name.titleCase, style: EText.caption),
+        Text(syncPhase.label, style: EText.caption),
       ],
     );
   }

@@ -1,3 +1,4 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,8 +21,6 @@ import 'package:workouts/features/workout_generation/workout_generation_provider
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
-import 'package:workouts/widgets/sync_status_icon.dart';
-
 /// One Library destination: label, icon, and whether the section page shows +.
 class const LibrarySection({
   required final String id,
@@ -84,7 +83,7 @@ class const LibraryScreen() extends ConsumerWidget {
       appBar: const EAppHeader(
         title: 'Library',
         automaticallyImplyLeading: false,
-        leading: SyncStatusIcon(),
+        leading: ESyncPhaseIcon(),
       ),
       body: SafeArea(bottom: false, child: _libraryScroll(context)),
     );

@@ -1,3 +1,4 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,7 +13,11 @@ class const SettingsScreen() extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: const EAppHeader(title: 'Settings', automaticallyImplyLeading: false),
+      appBar: const EAppHeader(
+        title: 'Settings',
+        automaticallyImplyLeading: false,
+        leading: ESyncPhaseIcon(),
+      ),
       body: SafeArea(
         bottom: false,
         child: ListView(
