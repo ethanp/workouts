@@ -1,5 +1,5 @@
 import 'package:workouts/models/cardio_type.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 
 class const CardioBestEffort({
   required final DistanceBucket bucket,

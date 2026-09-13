@@ -7,7 +7,7 @@ import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
 import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/repositories/session/exercise_history_store.dart';
 import 'package:workouts/services/repositories/session/session_exercise_store.dart';
 import 'package:workouts/services/repositories/session/session_hydrator.dart';

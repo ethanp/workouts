@@ -1,7 +1,8 @@
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_browse_providers.dart';
+import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 
 /// Single tile that drives the two-step Apple Health workflow: import recent
@@ -35,7 +36,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
           Text('Apple Health', style: EText.section),
           const SizedBox(height: ELayout.spaceXs),
           Text(
-            'Replaces stored cardio with every cardio workout Apple Health has, then computes heart rate zones.',
+            'Pulls new and changed cardio from Apple Health. Workouts that are already stored stay put.',
             style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: ELayout.spaceMd),
@@ -81,7 +82,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
               ),
             )
           : const Text(
-              'Replace from Apple Health',
+              'Sync from Apple Health',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,

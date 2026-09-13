@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
-import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/error_bus.dart';
 
 class const EditSessionDurationSheet({required final Session session})
     extends ConsumerStatefulWidget {

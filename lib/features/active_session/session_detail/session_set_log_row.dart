@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 class const SessionSetLogRow({
   required final SessionSetLog log,

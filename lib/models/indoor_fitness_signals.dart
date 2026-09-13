@@ -1,8 +1,9 @@
 import 'package:workouts/models/cardio_quantity_sample.dart';
+import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/models/distance_origin.dart';
 import 'package:workouts/models/fitness_signal_confidence.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 
 class const IndoorFitnessSignals({
   required final double? paceSecondsPerMile,
@@ -22,71 +23,67 @@ class const IndoorFitnessSignals({
   );
 }
 
-class IndoorFitnessCalculator() {
+extension CardioWorkoutFitnessSignals on CardioWorkout {
+  IndoorFitnessSignals fitnessSignals({
+    required List<TimestampedHeartRate> heartRateSamples,
+    required List<CardioQuantitySample> distanceSamples,
+  }) => _IndoorFitness(
+    workout: this,
+    heartRateSamples: heartRateSamples,
+    distanceSamples: distanceSamples,
+  ).compute();
+}
+
+class _IndoorFitness {
+  const _IndoorFitness({
+    required this.workout,
+    required this.heartRateSamples,
+    required this.distanceSamples,
+  });
+
   static const minDriftDuration = Duration(minutes: 20);
   static const minHalfSampleCount = 8;
 
-  IndoorFitnessSignals compute({
-    required int durationSeconds,
-    required double distanceMeters,
-    required List<TimestampedHeartRate> heartRateSamples,
-    required List<CardioQuantitySample> distanceSamples,
-    required bool machineLinked,
-  }) {
-    final double? paceSecondsPerMile = _paceSecondsPerMile(
-      durationSeconds: durationSeconds,
-      distanceMeters: distanceMeters,
-    );
-    final double? metersPerHeartbeat = _metersPerHeartbeat(
-      distanceMeters: distanceMeters,
-      heartRateSamples: heartRateSamples,
-    );
-    final double? cardiacDriftPercent = _cardiacDriftPercent(
-      durationSeconds: durationSeconds,
-      heartRateSamples: heartRateSamples,
-    );
+  final CardioWorkout workout;
+  final List<TimestampedHeartRate> heartRateSamples;
+  final List<CardioQuantitySample> distanceSamples;
+
+  IndoorFitnessSignals compute() {
+    final cardiacDriftPercent = _cardiacDriftPercent();
     return IndoorFitnessSignals(
-      paceSecondsPerMile: paceSecondsPerMile,
-      metersPerHeartbeat: metersPerHeartbeat,
+      paceSecondsPerMile: _paceSecondsPerMile(),
+      metersPerHeartbeat: _metersPerHeartbeat(),
       cardiacDriftPercent: cardiacDriftPercent,
       hasDistanceSamples: distanceSamples.isNotEmpty,
-      distanceOrigin: machineLinked
+      distanceOrigin: workout.machineLinked
           ? DistanceOrigin.machineLinked
           : DistanceOrigin.watchEstimated,
-      confidence: _confidence(
-        durationSeconds: durationSeconds,
-        hasDistance: distanceMeters > 0 || distanceSamples.isNotEmpty,
-        heartRateSamples: heartRateSamples,
-        hasDrift: cardiacDriftPercent != null,
-        machineLinked: machineLinked,
-      ),
+      confidence: _confidence(hasDrift: cardiacDriftPercent != null),
     );
   }
 
-  double? _paceSecondsPerMile({
-    required int durationSeconds,
-    required double distanceMeters,
-  }) {
-    if (durationSeconds <= 0 || distanceMeters <= 0) return null;
-    return durationSeconds / (distanceMeters / metersPerMile);
+  double? _paceSecondsPerMile() {
+    if (workout.durationSeconds <= 0 || workout.distanceMeters <= 0) {
+      return null;
+    }
+    return workout.durationSeconds / (workout.distanceMeters / metersPerMile);
   }
 
-  double? _metersPerHeartbeat({
-    required double distanceMeters,
-    required List<TimestampedHeartRate> heartRateSamples,
-  }) {
-    if (distanceMeters <= 0 || heartRateSamples.length < 2) return null;
-    final totalBeats = _integratedBeats(heartRateSamples);
+  double? _metersPerHeartbeat() {
+    if (workout.distanceMeters <= 0 || heartRateSamples.length < 2) {
+      return null;
+    }
+    final totalBeats = _integratedBeats();
     if (totalBeats <= 0) return null;
-    return distanceMeters / totalBeats;
+    return workout.distanceMeters / totalBeats;
   }
 
-  double _integratedBeats(List<TimestampedHeartRate> heartRateSamples) {
+  double _integratedBeats() {
     var totalBeats = 0.0;
     for (var index = 1; index < heartRateSamples.length; index++) {
       final elapsedMinutes = heartRateSamples[index].timestamp
-          .difference(heartRateSamples[index - 1].timestamp)
-          .inMilliseconds /
+              .difference(heartRateSamples[index - 1].timestamp)
+              .inMilliseconds /
           60000.0;
       if (elapsedMinutes <= 0) continue;
       totalBeats += heartRateSamples[index - 1].bpm * elapsedMinutes;
@@ -94,14 +91,11 @@ class IndoorFitnessCalculator() {
     return totalBeats;
   }
 
-  double? _cardiacDriftPercent({
-    required int durationSeconds,
-    required List<TimestampedHeartRate> heartRateSamples,
-  }) {
-    if (durationSeconds < minDriftDuration.inSeconds) return null;
+  double? _cardiacDriftPercent() {
+    if (workout.durationSeconds < minDriftDuration.inSeconds) return null;
     if (heartRateSamples.length < minHalfSampleCount * 2) return null;
     final midpoint = heartRateSamples.first.timestamp.add(
-      Duration(seconds: durationSeconds ~/ 2),
+      Duration(seconds: workout.durationSeconds ~/ 2),
     );
     final firstHalf = heartRateSamples
         .where((sample) => !sample.timestamp.isAfter(midpoint))
@@ -125,20 +119,18 @@ class IndoorFitnessCalculator() {
     return total / samples.length;
   }
 
-  FitnessSignalConfidence _confidence({
-    required int durationSeconds,
-    required bool hasDistance,
-    required List<TimestampedHeartRate> heartRateSamples,
-    required bool hasDrift,
-    required bool machineLinked,
-  }) {
+  FitnessSignalConfidence _confidence({required bool hasDrift}) {
+    final hasDistance =
+        workout.distanceMeters > 0 || distanceSamples.isNotEmpty;
     if (heartRateSamples.length < minHalfSampleCount || !hasDistance) {
       return FitnessSignalConfidence.insufficient;
     }
-    if (hasDrift && machineLinked && durationSeconds >= minDriftDuration.inSeconds) {
+    if (hasDrift &&
+        workout.machineLinked &&
+        workout.durationSeconds >= minDriftDuration.inSeconds) {
       return FitnessSignalConfidence.high;
     }
-    if (hasDrift || machineLinked) {
+    if (hasDrift || workout.machineLinked) {
       return FitnessSignalConfidence.medium;
     }
     return FitnessSignalConfidence.low;

@@ -1,4 +1,3 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,14 +5,19 @@ import 'package:workouts/features/cardio/cardio_detail_screen.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/theme/cardio_type_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:ethan_utils/ethan_utils.dart';
+import 'package:workouts/models/distance_bucket.dart';
 
 class const CardioWorkoutListTile({required final CardioWorkout workout})
     extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return InkWell(
-      onTap: () => context.push(CardioDetailScreen(workout: workout)),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => CardioDetailScreen(workout: workout),
+        ),
+      ),
       child: _tileCard(),
     );
   }
@@ -70,7 +74,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
         ),
       ),
       Text(
-        '  ·  ${Format.dateIso(workout.startedAt)}',
+        '  ·  ${workout.startedAt.dayKey}',
         style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     ],
@@ -96,17 +100,17 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
   ];
 
   String _summaryText() {
-    final duration = Format.duration(workout.durationSeconds);
+    final duration = workout.duration.formattedHms;
     if (workout.displayDistanceMeters <= 0) {
       final flightsClimbed = workout.flightsClimbed;
       if (flightsClimbed != null && flightsClimbed > 0) {
-        return '${flightsClimbed.round()} flights  ·  $duration';
+        return '${workout.flightsCaption}  ·  $duration';
       }
       return duration;
     }
-    return '${Format.distance(workout.displayDistanceMeters)}  ·  '
+    return '${workout.displayDistanceMeters.milesCaption}  ·  '
         '$duration  ·  '
-        '${Format.pace(workout.durationSeconds, workout.displayDistanceMeters)}';
+        '${workout.duration.pacePerMile(workout.displayDistanceMeters)}';
   }
 
   bool _showsZoneBreakdown() =>

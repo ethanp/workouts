@@ -1,3 +1,25 @@
+import 'package:workouts/models/timestamped_heart_rate.dart';
+
+enum HrZone {
+  zone1(lowerBpm: 93, upperBpm: 114),
+  zone2(lowerBpm: 115, upperBpm: 145),
+  zone3(lowerBpm: 146, upperBpm: 162),
+  zone4(lowerBpm: 163, upperBpm: 175),
+  zone5(lowerBpm: 176, upperBpm: 185);
+
+  const HrZone({required this.lowerBpm, required this.upperBpm});
+
+  final int lowerBpm;
+  final int upperBpm;
+
+  static HrZone? forBpm(int bpm) {
+    for (final zone in values.reversed) {
+      if (bpm >= zone.lowerBpm) return zone;
+    }
+    return null;
+  }
+}
+
 /// Time spent in each of 5 heart rate zones, stored in seconds.
 ///
 /// This is the single value type for HR zone data throughout the app.
@@ -11,6 +33,36 @@ class const HrZoneTime({
   final int zone5 = 0,
 }) {
   static const zero = HrZoneTime();
+
+  /// Buckets continuous heart-rate samples into the 5-zone model.
+  ///
+  /// Each sample is the start of an interval that continues until the next
+  /// sample (capped at [maxGapSeconds] to handle dropouts).
+  factory fromSamples(
+    List<TimestampedHeartRate> samples, {
+    int maxGapSeconds = 30,
+  }) {
+    if (samples.length < 2) return HrZoneTime.zero;
+
+    final zoneTotals = List.filled(HrZone.values.length, 0);
+    for (var sampleIndex = 0; sampleIndex < samples.length - 1; sampleIndex++) {
+      final gapSeconds = samples[sampleIndex + 1].timestamp
+          .difference(samples[sampleIndex].timestamp)
+          .inSeconds
+          .clamp(0, maxGapSeconds);
+      if (gapSeconds <= 0) continue;
+      final zone = HrZone.forBpm(samples[sampleIndex].bpm);
+      if (zone != null) zoneTotals[zone.index] += gapSeconds;
+    }
+
+    return HrZoneTime(
+      zone1: zoneTotals[0],
+      zone2: zoneTotals[1],
+      zone3: zoneTotals[2],
+      zone4: zoneTotals[3],
+      zone5: zoneTotals[4],
+    );
+  }
 
   /// Constructs from a SQL row using column prefix, e.g. `total_zone1_seconds`.
   factory fromRow(

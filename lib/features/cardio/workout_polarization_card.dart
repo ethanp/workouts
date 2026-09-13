@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/hr_zone_time.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
 
 /// Shows the 5-zone heart-rate breakdown for a single cardio workout.
 class const WorkoutPolarizationCard({
@@ -168,17 +168,13 @@ class const WorkoutPolarizationCard({
   }
 
   HrZoneTime _compute() {
-    final timestamped = <TimestampedHeartRate>[];
-    for (final sample in samples) {
-      timestamped.add(
-        TimestampedHeartRate(timestamp: sample.timestamp, bpm: sample.bpm),
+    final timestamped = [
+      for (final sample in samples) sample.asTimestampedHeartRate,
+    ]..sort(
+        (firstSample, secondSample) =>
+            firstSample.timestamp.compareTo(secondSample.timestamp),
       );
-    }
-    timestamped.sort(
-      (firstSample, secondSample) =>
-          firstSample.timestamp.compareTo(secondSample.timestamp),
-    );
 
-    return HrZoneClassifier.compute(timestamped);
+    return HrZoneTime.fromSamples(timestamped);
   }
 }

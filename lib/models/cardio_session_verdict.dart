@@ -1,7 +1,7 @@
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/utils/run_formatting.dart';
 
 enum CardioAerobicJob({required this.label}) {
   easyAerobic(label: 'Easy aerobic'),
@@ -58,24 +58,23 @@ class const CardioSessionVerdict({
       return const CardioPrimaryWorkMetric(headline: '');
     }
     return CardioPrimaryWorkMetric(
-      headline: Format.distance(workout.displayDistanceMeters),
-      supporting: Format.pace(
-        workout.durationSeconds,
-        workout.displayDistanceMeters,
-      ),
+      headline: workout.displayDistanceMeters.milesCaption,
+      supporting: workout.duration.pacePerMile(workout.displayDistanceMeters),
     );
   }
 
   static CardioPrimaryWorkMetric _machineDistanceAndMets(CardioWorkout workout) {
     final displayDistanceMeters = workout.displayDistanceMeters;
-    final averageMets = workout.averageMets;
     if (displayDistanceMeters <= 0) {
-      if (averageMets == null) return const CardioPrimaryWorkMetric(headline: '');
-      return CardioPrimaryWorkMetric(headline: Format.mets(averageMets));
+      final metsCaption = workout.metsCaption;
+      if (metsCaption == null) {
+        return const CardioPrimaryWorkMetric(headline: '');
+      }
+      return CardioPrimaryWorkMetric(headline: metsCaption);
     }
     return CardioPrimaryWorkMetric(
-      headline: Format.distance(displayDistanceMeters),
-      supporting: averageMets == null ? null : Format.mets(averageMets),
+      headline: displayDistanceMeters.milesCaption,
+      supporting: workout.metsCaption,
     );
   }
 
@@ -86,13 +85,13 @@ class const CardioSessionVerdict({
       if (stepCount == null || stepCount <= 0) {
         return const CardioPrimaryWorkMetric(headline: '');
       }
-      return CardioPrimaryWorkMetric(headline: Format.steps(stepCount));
+      return CardioPrimaryWorkMetric(headline: workout.stepsCaption!);
     }
     return CardioPrimaryWorkMetric(
-      headline: Format.flights(flightsClimbed),
+      headline: workout.flightsCaption!,
       supporting: stepCount == null || stepCount <= 0
           ? null
-          : Format.steps(stepCount),
+          : workout.stepsCaption,
     );
   }
 }

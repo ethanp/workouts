@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:workouts/utils/json_parsing.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 /// A named physiological benefit of an exercise, optionally linked to
 /// one or more of the user's fitness goals by ID.

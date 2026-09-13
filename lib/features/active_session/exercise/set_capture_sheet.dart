@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
+import 'package:workouts/models/weight.dart';
 
 class const SetCaptureSheet({
   required final WorkoutExercise exercise,
@@ -26,7 +26,7 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
     _weightController = TextEditingController(
       text: plannedSet?.weight == null
           ? ''
-          : WeightDisplay.inputValue(plannedSet!.weight!, widget.exercise),
+          : plannedSet!.weight!.inputValue(widget.exercise.weightUnit),
     );
   }
 
@@ -62,7 +62,7 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
             const SizedBox(height: ELayout.spaceSm),
             _numberField(
               _weightController,
-              'Weight (${WeightDisplay.unitLabel(widget.exercise)})',
+              'Weight (${widget.exercise.weightUnit.label})',
               decimal: true,
             ),
             const SizedBox(height: ELayout.spaceLg),
@@ -135,9 +135,9 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
   SetLogInput _input() {
     return SetLogInput(
       reps: int.tryParse(_repsController.text.trim()),
-      weight: WeightDisplay.inputValueToWeight(
+      weight: Weight.fromInput(
         _weightController.text,
-        widget.exercise,
+        widget.exercise.weightUnit,
       ),
       duration: widget.plannedSet?.duration ?? widget.exercise.workDuration,
       unitRemaining: widget.plannedSet?.unitRemaining,

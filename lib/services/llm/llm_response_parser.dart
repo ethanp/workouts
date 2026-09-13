@@ -9,7 +9,6 @@ import 'package:workouts/models/llm_workout_option.dart';
 import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/llm/llm_errors.dart';
-import 'package:workouts/utils/json_parsing.dart';
 
 const _log = ELogger('LlmResponseParser');
 

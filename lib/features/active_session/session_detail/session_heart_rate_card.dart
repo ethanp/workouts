@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_detail/zone_distribution_section.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/widgets/cardio_metrics_card.dart';
+import 'package:workouts/widgets/heart_rate_and_speed_chart.dart';
 
 class const SessionHeartRateCard({
   required final List<HeartRateSample> samples,

@@ -114,6 +114,7 @@ import UserNotifications
         maxRoutePoints: request.maxRoutePoints,
         includeHeartRateSeries: request.includeHeartRateSeries,
         includeAssociatedSeries: request.includeAssociatedSeries,
+        skipUnchangedWorkouts: request.skipUnchangedWorkouts,
         onProgress: { [weak self] payload in
           self?.healthImportStreamHandler.send(payload)
         },
@@ -129,6 +130,9 @@ import UserNotifications
           result(count as NSNumber?)
         }
       }
+    case "cardioImportPersisted":
+      healthKitBridge.cardioImportPersisted()
+      result(nil)
     case "countCardioWorkouts":
       healthKitBridge.countCardioWorkouts { count, error in
         DispatchQueue.main.async {
@@ -176,6 +180,7 @@ private struct FetchCardioWorkoutsRequest {
   let maxRoutePoints: Int
   let includeHeartRateSeries: Bool
   let includeAssociatedSeries: Bool
+  let skipUnchangedWorkouts: [[String: Any]]
 
   init(arguments: [String: Any]?) {
     maxWorkouts = arguments?["maxWorkouts"] as? Int ?? 20
@@ -183,5 +188,6 @@ private struct FetchCardioWorkoutsRequest {
     maxRoutePoints = arguments?["maxRoutePoints"] as? Int ?? 1500
     includeHeartRateSeries = arguments?["includeHeartRateSeries"] as? Bool ?? true
     includeAssociatedSeries = arguments?["includeAssociatedSeries"] as? Bool ?? true
+    skipUnchangedWorkouts = arguments?["skipUnchangedWorkouts"] as? [[String: Any]] ?? []
   }
 }

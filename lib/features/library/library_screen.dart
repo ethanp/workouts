@@ -11,6 +11,7 @@ import 'package:workouts/features/goals/note_form_sheet.dart';
 import 'package:workouts/features/library/bulk_benefits_provider.dart';
 import 'package:workouts/features/library/exercises_tab.dart';
 import 'package:workouts/features/library/hr_zones_reference_tile.dart';
+import 'package:workouts/features/library/influences/influence_form_sheet.dart';
 import 'package:workouts/features/library/influences_tab.dart';
 import 'package:workouts/features/library/locations_tab.dart';
 import 'package:workouts/features/library/templates_tab.dart';

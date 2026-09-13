@@ -4,7 +4,6 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/providers/sync_provider.dart';
 
 /// Surfaces sync status, pending uploads, and per-candidate host reachability.
 class const ConnectionTile() extends ConsumerStatefulWidget {
@@ -25,7 +24,7 @@ class _ConnectionTileState() extends ConsumerState<ConnectionTile> {
   @override
   Widget build(BuildContext context) {
     final syncStatus = ref.watch(syncStatusProvider);
-    final description = ref.watch(syncStatusDescriptionProvider);
+    final description = ref.watch(syncStatusCaptionProvider);
     final pendingAsync = ref.watch(pendingUploadCountProvider);
     final activeHost = ref.watch(hostResolverProvider);
     final health = ref.watch(hostHealthProvider);

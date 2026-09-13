@@ -1,3 +1,5 @@
+import 'package:json_annotation/json_annotation.dart';
+
 const poundsPerKilogram = 2.2046226218;
 
 enum WeightUnit({required final String label}) {
@@ -55,4 +57,14 @@ class const Weight.kilograms(final double kilograms) {
 
   @override
   String toString() => 'Weight(${formatKilograms()})';
+}
+
+class const NullableWeightKilogramsConverter()
+    extends JsonConverter<Weight?, num?> {
+  @override
+  Weight? fromJson(num? json) =>
+      json == null ? null : Weight.kilograms(json.toDouble());
+
+  @override
+  num? toJson(Weight? object) => object?.kilograms;
 }

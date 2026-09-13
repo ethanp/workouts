@@ -1,4 +1,3 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,7 +6,7 @@ import 'package:workouts/features/active_session/session_detail/session_detail_s
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 class const SessionListTile({required final Session session})
     extends ConsumerWidget {
@@ -59,7 +58,7 @@ class const SessionListTile({required final Session session})
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(Format.dateRelative(displayDate), style: EText.section),
+        Text(displayDate.todayYesterdayOrDate, style: EText.section),
         _statusBadge(isComplete),
       ],
     );
@@ -149,7 +148,11 @@ class const SessionListTile({required final Session session})
     if (session.isInProgress) {
       await ref.read(activeSessionProvider.notifier).resumeExisting(session);
     } else {
-      context.push(SessionDetailScreen(session: session));
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => SessionDetailScreen(session: session),
+        ),
+      );
     }
   }
 }

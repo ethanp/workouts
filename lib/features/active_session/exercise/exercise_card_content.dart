@@ -8,8 +8,8 @@ import 'package:workouts/features/active_session/exercise/exercise_interval_time
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/features/active_session/session_detail/session_set_log_row.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/run_formatting.dart';
 import 'package:workouts/widgets/expandable_cues.dart';
 
 class const ExerciseCardContent({
@@ -162,7 +162,7 @@ class const ExerciseCardContent({
       onToggleStoppedEarly != null && !planContext.isFullyLogged;
 
   Widget _restLabel() => Text(
-    'Rest: ${Format.restDuration(exercise.restDuration!)}',
+    'Rest: ${exercise.restDuration!.formattedMinutesOrSeconds}',
     style: EText.caption.copyWith(color: EColors.textTertiary),
   );
 

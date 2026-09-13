@@ -5,7 +5,7 @@ import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
-import 'package:workouts/utils/json_parsing.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 /// Parse targetSets from prescription string.
 /// Formats: "3 × 8" -> 3, "5 per side" -> 1, "3 × 5 per side" -> 3

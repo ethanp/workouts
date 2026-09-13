@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/features/active_session/exercise/active_timer_store_provider.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/weight.dart';
@@ -13,7 +13,7 @@ import 'package:workouts/features/history/history_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
-import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/error_bus.dart';
 
 part 'active_session_provider.g.dart';
 

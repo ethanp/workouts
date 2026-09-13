@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 class const SessionSummaryCard({
   required final Session session,
@@ -32,7 +32,7 @@ class const SessionSummaryCard({
           _summaryRow(
             icon: Icons.calendar_today,
             label: 'Completed',
-            value: Format.dateTime(session.completedAt ?? session.startedAt),
+            value: (session.completedAt ?? session.startedAt).dateAtTime,
           ),
           if (session.feeling?.isNotEmpty ?? false) ...[
             const SizedBox(height: ELayout.spaceSm),

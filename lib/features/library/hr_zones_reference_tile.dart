@@ -2,7 +2,7 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 
 /// Read-only reference table showing the fixed 5-zone bpm boundaries.
 class const HrZonesReferenceTile() extends StatelessWidget {
@@ -65,8 +65,8 @@ class const HrZonesReferenceTile() extends StatelessWidget {
     required double zoneCodeWidth,
     required TextStyle zoneCodeStyle,
   }) {
-    final lowerBpm = HrZoneClassifier.zoneBoundaries[zoneIndex];
-    final upperBpm = HrZoneClassifier.zoneUpperBounds[zoneIndex];
+    final lowerBpm = HrZone.values[zoneIndex].lowerBpm;
+    final upperBpm = HrZone.values[zoneIndex].upperBpm;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(

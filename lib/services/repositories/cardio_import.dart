@@ -2,6 +2,7 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_import_payload.dart';
+import 'package:workouts/models/cardio_workout_fingerprint.dart';
 import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 
@@ -30,7 +31,44 @@ class CardioImporter(
     await _purgeCardioUploads();
   }
 
+  Future<CardioWorkoutFingerprintIndex> storedAppleHealthFingerprints() async {
+    final workoutRows = await _powerSync.execute(
+      '''
+      SELECT external_workout_id, started_at, ended_at, duration_seconds
+      FROM cardio_workouts
+      WHERE external_workout_id IS NOT NULL
+        AND TRIM(external_workout_id) != ''
+      ''',
+    );
+    return CardioWorkoutFingerprintIndex.fromRows(workoutRows);
+  }
+
+  Future<int> deleteAppleHealthWorkoutsMissingFrom(
+    Set<String> seenExternalIds,
+  ) async {
+    if (seenExternalIds.isEmpty) return 0;
+    final seen = {for (final id in seenExternalIds) id.toLowerCase()};
+    final workoutRows = await _powerSync.execute(
+      '''
+      SELECT id, external_workout_id
+      FROM cardio_workouts
+      WHERE external_workout_id IS NOT NULL
+        AND TRIM(external_workout_id) != ''
+      ''',
+    );
+    var removed = 0;
+    for (final workoutRow in workoutRows) {
+      final externalId = (workoutRow['external_workout_id'] as String)
+          .toLowerCase();
+      if (seen.contains(externalId)) continue;
+      await _deleteWorkoutGraph(workoutRow['id'] as String);
+      removed++;
+    }
+    return removed;
+  }
+
   Future<bool> insertRawWorkout(Map<String, dynamic> payload) async {
+    if (payload['skippedUnchanged'] == true) return false;
     final CardioImportPayload? workout = CardioImportPayload.tryParse(payload);
     if (workout == null) {
       _log.warn('Skipping unparseable Apple Health workout.');
@@ -105,6 +143,7 @@ class CardioImporter(
       'Inserting workout ${workout.externalWorkoutId} '
       '(${workout.routePoints.length} pts, ${workout.heartRateSamples.length} HR samples)',
     );
+    await _deleteWorkoutGraph(workoutId);
     await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
     await _saveHeartRateSamples(workoutId, workout.heartRateSamples, now: now);
     await _saveQuantitySamples(
@@ -302,5 +341,30 @@ class CardioImporter(
       ]);
     }
     return deterministicId;
+  }
+
+  Future<void> _deleteWorkoutGraph(String workoutId) async {
+    await _powerSync.writeTransaction((transaction) async {
+      for (final table in [
+        'cardio_route_points',
+        'cardio_heart_rate_samples',
+        'cardio_best_efforts',
+        'cardio_distance_samples',
+        'cardio_step_samples',
+        'cardio_workout_events',
+      ]) {
+        await transaction.execute(
+          'DELETE FROM $table WHERE workout_id = ?',
+          [workoutId],
+        );
+      }
+      await transaction.execute(
+        'DELETE FROM cardio_computed_metrics WHERE id = ?',
+        [workoutId],
+      );
+      await transaction.execute('DELETE FROM cardio_workouts WHERE id = ?', [
+        workoutId,
+      ]);
+    });
   }
 }

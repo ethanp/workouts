@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/active_session_provider.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/features/history/activity_list/cardio_workout_list_tile.dart';
 import 'package:workouts/features/history/activity_list/dismissible_activity_tile.dart';
 import 'package:workouts/features/history/activity_list/empty_activity_placeholder.dart';
@@ -12,7 +12,7 @@ import 'package:workouts/features/history/history_provider.dart';
 import 'package:workouts/models/activity_item.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/session.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 

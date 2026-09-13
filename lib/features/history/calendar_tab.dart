@@ -1,5 +1,5 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/activity_item.dart';
@@ -9,7 +9,7 @@ import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/features/cardio/cardio_detail_screen.dart';
 import 'package:workouts/features/active_session/session_detail/session_detail_screen.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/features/history/activity_calendar.dart';
 
 class const HistoryCalendarTab() extends ConsumerStatefulWidget {
@@ -86,7 +86,7 @@ class const DayDetailSheet({required final DateTime date})
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(Format.dateFull(date), style: EText.section),
+            Text(date.fullDate, style: EText.section),
             const SizedBox(height: ELayout.spaceMd),
             itemsAsync.when(
               data: (items) => items.isEmpty
@@ -124,14 +124,22 @@ class const DayDetailItemList({required final List<ActivityItem> items})
           ActivityCardio(:final workout) => InkWell(
             onTap: () {
               Navigator.of(context).pop();
-              context.push(CardioDetailScreen(workout: workout));
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CardioDetailScreen(workout: workout),
+                ),
+              );
             },
             child: DayDetailCardioRow(workout: workout),
           ),
           ActivitySession(:final session) => InkWell(
             onTap: () {
               Navigator.of(context).pop();
-              context.push(SessionDetailScreen(session: session));
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SessionDetailScreen(session: session),
+                ),
+              );
             },
             child: DayDetailSessionRow(session: session),
           ),
@@ -158,7 +166,7 @@ class const DayDetailCardioRow({required final CardioWorkout workout})
             ],
           ),
           Text(
-            Format.durationShort(workout.durationSeconds),
+            workout.duration.formattedHm,
             style: EText.caption,
           ),
         ],
@@ -168,7 +176,7 @@ class const DayDetailCardioRow({required final CardioWorkout workout})
 
   String _label() {
     if (workout.activityType.hasDistance && workout.distanceMeters > 0) {
-      return '${workout.activityType.displayName} · ${Format.distance(workout.distanceMeters)}';
+      return '${workout.activityType.displayName} · ${workout.distanceMeters.milesCaption}';
     }
     return workout.activityType.displayName;
   }

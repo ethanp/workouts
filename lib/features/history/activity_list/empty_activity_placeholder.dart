@@ -17,7 +17,7 @@ class const EmptyActivityPlaceholder({final VoidCallback? onImport})
           ),
           const SizedBox(height: ELayout.spaceSm),
           Text(
-            'Import cardio workouts from Apple Health or complete workout sessions '
+            'Sync cardio workouts from Apple Health or complete workout sessions '
             'to see them here.',
             textAlign: TextAlign.center,
             style: EText.body.medium.copyWith(color: EColors.textMuted),
@@ -26,7 +26,7 @@ class const EmptyActivityPlaceholder({final VoidCallback? onImport})
             const SizedBox(height: ELayout.spaceLg),
             FilledButton(
               onPressed: onImport,
-              child: const Text('Import Workouts'),
+              child: const Text('Sync from Apple Health'),
             ),
           ],
         ],

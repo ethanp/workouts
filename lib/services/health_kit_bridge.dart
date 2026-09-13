@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
+import 'package:workouts/models/apple_health_cardio_listing.dart';
+import 'package:workouts/models/cardio_workout_fingerprint.dart';
 import 'package:workouts/models/health_data_inventory.dart';
 import 'package:workouts/models/health_permission_status.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
@@ -100,12 +102,13 @@ class HealthKitBridge() {
     }
   }
 
-  Future<int> importCardioWorkouts({
+  Future<AppleHealthCardioListing> importCardioWorkouts({
     int maxWorkouts = 0,
     bool includeRoute = true,
     int maxRoutePoints = 1500,
     bool includeHeartRateSeries = true,
     bool includeAssociatedSeries = true,
+    List<CardioWorkoutFingerprint> skipUnchanged = const [],
     required void Function(HealthInventoryInspectProgress progress) onProgress,
     required Future<void> Function(Map<String, dynamic> workout) onWorkout,
   }) async {
@@ -115,15 +118,22 @@ class HealthKitBridge() {
     ) {
       importEvents.add(Map<String, dynamic>.from(event as Map));
     });
+    var seenExternalIds = const <String>[];
     final consumeEvents = () async {
       await for (final event in importEvents.stream) {
         final workout = event['workout'];
         if (workout is Map) {
           await onWorkout(Map<String, dynamic>.from(workout));
+          await _acknowledgePersistedImportWorkout();
           continue;
         }
         onProgress(HealthInventoryInspectProgress.fromMap(event));
-        if (event['importFinished'] == true) break;
+        if (event['importFinished'] != true) continue;
+        seenExternalIds = [
+          for (final id in event['seenExternalIds'] as List? ?? const [])
+            '$id',
+        ];
+        break;
       }
     }();
     try {
@@ -135,17 +145,35 @@ class HealthKitBridge() {
           'maxRoutePoints': maxRoutePoints,
           'includeHeartRateSeries': includeHeartRateSeries,
           'includeAssociatedSeries': includeAssociatedSeries,
+          'skipUnchangedWorkouts': [
+            for (final fingerprint in skipUnchanged)
+              fingerprint.asHealthKitSkipArgument,
+          ],
         },
       );
       await consumeEvents;
-      return workoutCount ?? 0;
+      return AppleHealthCardioListing(
+        listedCount: workoutCount ?? 0,
+        seenExternalIds: seenExternalIds,
+      );
     } on MissingPluginException {
-      return 0;
+      return const AppleHealthCardioListing(
+        listedCount: 0,
+        seenExternalIds: [],
+      );
     } on PlatformException {
       rethrow;
     } finally {
       await eventSubscription.cancel();
       await importEvents.close();
+    }
+  }
+
+  Future<void> _acknowledgePersistedImportWorkout() async {
+    try {
+      await _methodChannel.invokeMethod<void>('cardioImportPersisted');
+    } on MissingPluginException {
+      return;
     }
   }
 

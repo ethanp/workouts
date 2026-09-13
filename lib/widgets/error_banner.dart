@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:url_launcher/url_launcher.dart';
-import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/error_bus.dart';
 
 const _recentLogLineCount = 75;
 

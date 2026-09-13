@@ -1,5 +1,4 @@
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 class const CurrentSetPlannedLabel({
   required final PlannedSet? plannedSet,

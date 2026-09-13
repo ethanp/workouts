@@ -2,9 +2,10 @@ import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/cardio_quantity_sample.dart';
+import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
-import 'package:workouts/utils/indoor_fitness_calculator.dart';
+import 'package:workouts/models/indoor_fitness_signals.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 
 const _log = ELogger('CardioMetricsStore');
 
@@ -43,7 +44,7 @@ class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
     }
     await _persist(
       workoutId,
-      HrZoneClassifier.compute(hrSamples),
+      HrZoneTime.fromSamples(hrSamples),
       hasHrSamples: true,
       fitnessSignals: fitnessSignals,
     );
@@ -121,18 +122,13 @@ class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
     List<TimestampedHeartRate> hrSamples,
   ) async {
     final Map<String, dynamic>? workoutRow = await _powerSync.getOptional(
-      'SELECT duration_seconds, distance_meters, machine_linked'
-      ' FROM cardio_workouts WHERE id = ?',
+      'SELECT * FROM cardio_workouts WHERE id = ?',
       [workoutId],
     );
     if (workoutRow == null) return IndoorFitnessSignals.empty;
-    final distanceSamples = await loadDistanceSamples(workoutId);
-    return IndoorFitnessCalculator().compute(
-      durationSeconds: (workoutRow['duration_seconds'] as int?) ?? 0,
-      distanceMeters: (workoutRow['distance_meters'] as num?)?.toDouble() ?? 0,
+    return CardioWorkout.fromRow(workoutRow).fitnessSignals(
       heartRateSamples: hrSamples,
-      distanceSamples: distanceSamples,
-      machineLinked: (workoutRow['machine_linked'] as int?) == 1,
+      distanceSamples: await loadDistanceSamples(workoutId),
     );
   }
 

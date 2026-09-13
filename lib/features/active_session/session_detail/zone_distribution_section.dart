@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/polarization_week.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 
 class const ZoneDistributionSection({
   required final List<HeartRateSample> samples,
@@ -136,23 +137,13 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
   }
 
   PolarizationWeek _compute() {
-    final timestamped =
-        samples
-            .map(
-              (sample) => TimestampedHeartRate(
-                timestamp: sample.timestamp,
-                bpm: sample.bpm,
-              ),
-            )
-            .toList()
-          ..sort(
-            (firstSample, secondSample) =>
-                firstSample.timestamp.compareTo(secondSample.timestamp),
-          );
+    final timestamped = samples.map((sample) => sample.asTimestampedHeartRate).toList()
+      ..sort(
+        (firstSample, secondSample) =>
+            firstSample.timestamp.compareTo(secondSample.timestamp),
+      );
 
-    return PolarizationWeek.fromHrZoneTime(
-      HrZoneClassifier.compute(timestamped),
-    );
+    return PolarizationWeek.fromHrZoneTime(HrZoneTime.fromSamples(timestamped));
   }
 }
 

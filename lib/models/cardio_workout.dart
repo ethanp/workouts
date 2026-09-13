@@ -119,6 +119,32 @@ class const CardioWorkout({
     if (namedDevice == null || namedDevice.isEmpty) return machineCaption;
     return '$namedDevice · $machineCaption';
   }
+
+  Duration get duration => Duration(seconds: durationSeconds);
+
+  String? get metsCaption {
+    final averageMets = this.averageMets;
+    if (averageMets == null) return null;
+    return '${averageMets.toStringAsFixed(1)} METs';
+  }
+
+  String? get stepsCaption {
+    final stepCount = this.stepCount;
+    if (stepCount == null) return null;
+    return '${stepCount.round()} steps';
+  }
+
+  String? get flightsCaption {
+    final flightsClimbed = this.flightsClimbed;
+    if (flightsClimbed == null) return null;
+    return '${flightsClimbed.round()} flights';
+  }
+
+  String? get elevationGainCaption {
+    final elevationAscendedMeters = this.elevationAscendedMeters;
+    if (elevationAscendedMeters == null) return null;
+    return '${elevationAscendedMeters.round()} m gain';
+  }
 }
 
 double? _asDouble(Object? rawValue) {

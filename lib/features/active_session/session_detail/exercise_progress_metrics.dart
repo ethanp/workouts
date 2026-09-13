@@ -3,7 +3,6 @@ import 'package:workouts/models/exercise_set_metrics.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 /// One session's worth of progress for a single exercise: the heaviest /
 /// best single set ([topSet]) and the cumulative work done ([volume]).
@@ -154,12 +153,12 @@ class const ExerciseProgressMetrics(final WorkoutExercise exercise) {
   }
 
   double _weightInDisplayUnit(Weight weight) {
-    final unit = WeightDisplay.unitForExercise(exercise);
+    final unit = exercise.weightUnit;
     return unit == WeightUnit.kilograms ? weight.kilograms : weight.pounds;
   }
 
   String _formatWeight(double value) {
-    final unit = WeightDisplay.unitForExercise(exercise);
+    final unit = exercise.weightUnit;
     final rounded = value.roundToDouble();
     final formatted = (value - rounded).abs() < 0.05
         ? rounded.round().toString()

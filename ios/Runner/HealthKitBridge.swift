@@ -3,6 +3,9 @@ import HealthKit
 
 final class HealthKitBridge {
   private let healthStore = HKHealthStore()
+  private let importPersistGate = DispatchQueue(label: "com.workouts.cardio-import-persist")
+  private var continueAfterPersist: (() -> Void)?
+  private var persistAcknowledgedEarly = false
   private let dateFormatter: ISO8601DateFormatter = {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -104,6 +107,7 @@ final class HealthKitBridge {
     maxRoutePoints: Int,
     includeHeartRateSeries: Bool,
     includeAssociatedSeries: Bool,
+    skipUnchangedWorkouts: [[String: Any]] = [],
     onProgress: @escaping ([String: Any]) -> Void,
     onWorkout: @escaping ([String: Any]) -> Void,
     completion: @escaping (Int?, Error?) -> Void
@@ -142,6 +146,7 @@ final class HealthKitBridge {
         maxRoutePoints: maxRoutePoints,
         includeHeartRateSeries: includeHeartRateSeries,
         includeAssociatedSeries: includeAssociatedSeries,
+        skipUnchangedWorkouts: skipUnchangedWorkouts,
         onProgress: onProgress,
         onWorkout: onWorkout
       ) {
@@ -282,10 +287,12 @@ final class HealthKitBridge {
     maxRoutePoints: Int,
     includeHeartRateSeries: Bool,
     includeAssociatedSeries: Bool,
+    skipUnchangedWorkouts: [[String: Any]],
     onProgress: @escaping ([String: Any]) -> Void,
     onWorkout: @escaping ([String: Any]) -> Void,
     completion: @escaping () -> Void
   ) {
+    let skipIndex = UnchangedAppleHealthWorkoutIndex(skipUnchangedWorkouts)
     func serializeNext(_ index: Int) {
       if index >= workouts.count {
         onProgress([
@@ -293,12 +300,25 @@ final class HealthKitBridge {
           "completedWorkouts": workouts.count,
           "totalWorkouts": workouts.count,
           "importFinished": true,
+          "seenExternalIds": workouts.map { $0.uuid.uuidString },
         ])
         completion()
         return
       }
       let workout = workouts[index]
       let activity = activityTypeKey(for: workout)
+      if skipIndex.containsUnchanged(workout) {
+        onWorkout(skippedUnchangedHeader(workout))
+        onProgress([
+          "caption": "Already present \(activity) (\(index + 1) of \(workouts.count))",
+          "completedWorkouts": index + 1,
+          "totalWorkouts": workouts.count,
+        ])
+        self.waitUntilDartPersistedWorkout {
+          serializeNext(index + 1)
+        }
+        return
+      }
       onProgress([
         "caption": "Reading \(activity) (\(index + 1) of \(workouts.count))",
         "completedWorkouts": index,
@@ -318,10 +338,45 @@ final class HealthKitBridge {
           "completedWorkouts": index + 1,
           "totalWorkouts": workouts.count,
         ])
-        serializeNext(index + 1)
+        self.waitUntilDartPersistedWorkout {
+          serializeNext(index + 1)
+        }
       }
     }
     serializeNext(0)
+  }
+
+  func cardioImportPersisted() {
+    importPersistGate.async {
+      if let resume = self.continueAfterPersist {
+        self.continueAfterPersist = nil
+        resume()
+        return
+      }
+      self.persistAcknowledgedEarly = true
+    }
+  }
+
+  private func waitUntilDartPersistedWorkout(_ resume: @escaping () -> Void) {
+    importPersistGate.async {
+      if self.persistAcknowledgedEarly {
+        self.persistAcknowledgedEarly = false
+        resume()
+        return
+      }
+      self.continueAfterPersist = resume
+    }
+  }
+
+  private func skippedUnchangedHeader(_ workout: HKWorkout) -> [String: Any] {
+    [
+      "externalWorkoutId": workout.uuid.uuidString,
+      "activityType": activityTypeKey(for: workout),
+      "startDate": dateFormatter.string(from: workout.startDate),
+      "endDate": dateFormatter.string(from: workout.endDate),
+      "durationSeconds": Int(workout.duration),
+      "skippedUnchanged": true,
+    ]
   }
 
   private func cardioWorkoutPredicate() -> NSPredicate {
@@ -1362,5 +1417,49 @@ final class HealthKitBridge {
     case .notDetermined: return "notDetermined"
     @unknown default: return "unknown"
     }
+  }
+}
+
+private struct UnchangedAppleHealthWorkoutIndex {
+  private let fingerprintsById: [String: (start: Date, end: Date, durationSeconds: Int)]
+
+  init(_ skipUnchangedWorkouts: [[String: Any]]) {
+    var fingerprints: [String: (start: Date, end: Date, durationSeconds: Int)] = [:]
+    let dateFormatter = ISO8601DateFormatter()
+    dateFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    let dateFormatterWithoutFraction = ISO8601DateFormatter()
+    dateFormatterWithoutFraction.formatOptions = [.withInternetDateTime]
+    for workout in skipUnchangedWorkouts {
+      guard let externalId = workout["externalWorkoutId"] as? String,
+            let startText = workout["startDate"] as? String,
+            let endText = workout["endDate"] as? String
+      else { continue }
+      let durationSeconds =
+        (workout["durationSeconds"] as? Int)
+        ?? (workout["durationSeconds"] as? NSNumber)?.intValue
+      guard let durationSeconds else { continue }
+      let start =
+        dateFormatter.date(from: startText)
+        ?? dateFormatterWithoutFraction.date(from: startText)
+      let end =
+        dateFormatter.date(from: endText)
+        ?? dateFormatterWithoutFraction.date(from: endText)
+      guard let start, let end else { continue }
+      fingerprints[externalId.lowercased()] = (
+        start: start,
+        end: end,
+        durationSeconds: durationSeconds
+      )
+    }
+    fingerprintsById = fingerprints
+  }
+
+  func containsUnchanged(_ workout: HKWorkout) -> Bool {
+    guard let known = fingerprintsById[workout.uuid.uuidString.lowercased()] else {
+      return false
+    }
+    return abs(known.start.timeIntervalSince(workout.startDate)) < 1.5
+      && abs(known.end.timeIntervalSince(workout.endDate)) < 1.5
+      && known.durationSeconds == Int(workout.duration)
   }
 }

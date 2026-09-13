@@ -2,11 +2,10 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:ethan_sync/ethan_sync.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 class const CardioImportSnapshot({
   required final int localWorkouts,

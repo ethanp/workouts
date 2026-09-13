@@ -4,8 +4,6 @@ import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/utils/best_effort_calculator.dart';
-import 'package:workouts/utils/distance_timeline_best_effort.dart';
 
 const _log = ELogger('BestEffortStore');
 const _uuid = Uuid();
@@ -16,15 +14,11 @@ const _uuid = Uuid();
 /// Entries are keyed by `workout_id` + `distance_meters`; workout modality
 /// (for example, run vs bike) is derived from the parent workout record.
 class BestEffortStore(final PowerSyncDatabase _powerSync) {
-  final _calculator = BestEffortCalculator();
-
   Future<void> computeAndStore(String workoutId) async {
     final routePoints = await _loadRoutePoints(workoutId);
     final bestEfforts = routePoints.length >= 2
-        ? _calculator.compute(routePoints)
-        : DistanceTimelineBestEffortCalculator().compute(
-            await _loadDistanceSamples(workoutId),
-          );
+        ? routePoints.bestEfforts
+        : (await _loadDistanceSamples(workoutId)).bestEfforts;
     if (bestEfforts.isEmpty) return;
 
     _log.fine('Storing ${bestEfforts.length} best efforts for $workoutId.');

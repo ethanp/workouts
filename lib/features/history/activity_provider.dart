@@ -10,7 +10,7 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';

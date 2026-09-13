@@ -3,10 +3,9 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/health_data_inventory_controller.dart';
 import 'package:workouts/models/health_data_inventory.dart';
 import 'package:workouts/theme/cardio_type_palette.dart';
-import 'package:workouts/utils/run_formatting.dart';
 
 class const HealthDataInventoryTile() extends StatelessWidget {
   @override
@@ -332,7 +331,7 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${workout.activityType.displayName} · ${Format.dateTime(workout.startedAt)}',
+            '${workout.activityType.displayName} · ${workout.startedAt.dateAtTime}',
             style: EText.body.medium,
           ),
           const SizedBox(height: ELayout.spaceXs),

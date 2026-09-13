@@ -5,7 +5,6 @@ import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/powersync/powersync_mappers.dart' as mappers;
-import 'package:workouts/utils/json_parsing.dart';
 
 class TemplateHydrator(final PowerSyncDatabase _powerSync) {
   Future<List<String>> fetchExerciseNames() async {

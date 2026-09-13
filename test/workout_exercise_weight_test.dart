@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 void main() {
   group('Weight', () {
@@ -15,18 +14,19 @@ void main() {
     });
   });
 
-  group('WeightDisplay', () {
+  group('WorkoutExercise.weightUnit', () {
     test('formats non-kettlebell weights in pounds', () {
       final exercise = _exercise(name: 'Chest Press Machine');
 
-      expect(WeightDisplay.unitLabel(exercise), 'lb');
+      expect(exercise.weightUnit, WeightUnit.pounds);
+      expect(exercise.weightUnit.label, 'lb');
       expect(const Weight.kilograms(22.6796185).formatFor(exercise), '50lb');
       expect(
-        WeightDisplay.inputValue(const Weight.kilograms(22.6796185), exercise),
+        const Weight.kilograms(22.6796185).inputValue(exercise.weightUnit),
         '50',
       );
       expect(
-        WeightDisplay.inputValueToWeight('50', exercise)?.kilograms,
+        Weight.fromInput('50', exercise.weightUnit)?.kilograms,
         closeTo(22.68, 0.01),
       );
     });
@@ -34,14 +34,12 @@ void main() {
     test('formats kettlebell weights in kilograms', () {
       final exercise = _exercise(name: 'Kettlebell Swing');
 
-      expect(WeightDisplay.unitLabel(exercise), 'kg');
+      expect(exercise.weightUnit, WeightUnit.kilograms);
+      expect(exercise.weightUnit.label, 'kg');
       expect(const Weight.kilograms(20).formatFor(exercise), '20kg');
+      expect(const Weight.kilograms(20).inputValue(exercise.weightUnit), '20');
       expect(
-        WeightDisplay.inputValue(const Weight.kilograms(20), exercise),
-        '20',
-      );
-      expect(
-        WeightDisplay.inputValueToWeight('20', exercise),
+        Weight.fromInput('20', exercise.weightUnit),
         const Weight.kilograms(20),
       );
     });

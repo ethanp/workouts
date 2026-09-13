@@ -1,5 +1,5 @@
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/models/session.dart';
@@ -197,8 +197,11 @@ class _BlockViewState() extends ConsumerState<BlockView> {
   }
 
   Future<void> _showExercisePicker(BuildContext context) async {
-    final exercise = await context.push<WorkoutExercise>(
-      ExercisePickerScreen(excludeIds: widget.block.exerciseIds),
+    final exercise = await Navigator.of(context).push<WorkoutExercise>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ExercisePickerScreen(excludeIds: widget.block.exerciseIds),
+      ),
     );
     if (mounted && exercise != null) {
       ref

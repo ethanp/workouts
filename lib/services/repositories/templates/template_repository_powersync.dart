@@ -8,7 +8,6 @@ import 'package:workouts/models/warmup_sets.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
 import 'package:ethan_sync/ethan_sync.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
 import 'package:workouts/services/repositories/seed_templates.dart' as seeds;
 import 'package:workouts/services/repositories/templates/llm_template_converter.dart';
 import 'package:workouts/services/repositories/templates/template_block_store.dart';

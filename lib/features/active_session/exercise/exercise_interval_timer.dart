@@ -5,15 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/exercise/active_exercise_timer_provider.dart';
 import 'package:workouts/features/active_session/exercise/active_timer_store.dart';
 import 'package:workouts/features/active_session/exercise/active_timer_store_provider.dart';
+import 'package:workouts/features/active_session/exercise/exercise_interval_persistence.dart';
 import 'package:workouts/features/active_session/exercise/exercise_set_plan_context.dart';
 import 'package:workouts/features/active_session/exercise_timer_panel.dart';
-import 'package:workouts/services/notifications/timer_notification_service.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
-
-/// Timer records older than this on launch are dropped — matches the
-/// `fetchResumableSession` staleness rule so a forgotten timer from
-/// yesterday never auto-fires anything on the next session.
-const Duration _maxRestoreAge = Duration(hours: 12);
 
 class const ExerciseIntervalTimer({
   /// Locates this card's record in [ActiveTimerStore]. The store holds at
@@ -63,6 +58,7 @@ class _ExerciseIntervalTimerState()
 
   TimerPhase _phase = TimerPhase.idle;
   int _lastObservedLoggedSetCount = 0;
+  late final ExerciseIntervalPersistence _persistence;
 
   /// Cached notifier reference captured during initState so the dispose
   /// path can release the active-timer slot without touching `ref`.
@@ -104,6 +100,11 @@ class _ExerciseIntervalTimerState()
     _lastObservedLoggedSetCount = widget.planContext.loggedSetCount;
     _activeExerciseTimerNotifier = ref.read(
       activeExerciseTimerProvider.notifier,
+    );
+    _persistence = ExerciseIntervalPersistence(
+      store: ref.read(activeTimerStoreProvider),
+      notifications: ref.read(timerNotificationServiceProvider),
+      identity: widget.identity,
     );
     if (_restoreFromStore()) return;
     if (_shouldAutoStartSetupOrWork) {
@@ -240,23 +241,9 @@ class _ExerciseIntervalTimerState()
   /// callers use that to skip auto-start (since the restored state takes
   /// precedence).
   bool _restoreFromStore() {
-    final ActiveTimerRecord? record = ref.read(activeTimerStoreProvider).read();
-    if (record == null) return false;
-    if (record.sessionId != widget.identity.sessionId) {
-      // Stale leftover from a different session — clear it for everyone.
-      unawaited(ref.read(activeTimerStoreProvider).clear());
-      unawaited(ref.read(timerNotificationServiceProvider).cancel());
-      return false;
-    }
-    if (!widget.identity.matches(record)) {
-      // Belongs to a sibling card; that card's State will pick it up.
-      return false;
-    }
-    if (_isStaleRecord(record)) {
-      unawaited(ref.read(activeTimerStoreProvider).clear());
-      unawaited(ref.read(timerNotificationServiceProvider).cancel());
-      return false;
-    }
+    final decision = _persistence.decideRestore();
+    if (!decision.shouldRestore) return false;
+    final record = decision.record!;
     // initState is a forbidden lifecycle for provider mutations. Stage
     // local state synchronously here and defer the actual claim to the
     // next frame so peer ExerciseIntervalTimers' build/initState aren't
@@ -270,7 +257,7 @@ class _ExerciseIntervalTimerState()
     }
     _endsAt = record.endsAt;
     _pausedRemaining = null;
-    if (_endsAt != null && !DateTime.now().isBefore(_endsAt!)) {
+    if (decision.advanceExpired) {
       // Phase expired while we were dead. Schedule the same advance path
       // the resume hook uses — including the auto-log for work/setup —
       // after this frame so the surrounding session UI is settled.
@@ -282,12 +269,6 @@ class _ExerciseIntervalTimerState()
     }
     _startTicker();
     return true;
-  }
-
-  bool _isStaleRecord(ActiveTimerRecord record) {
-    final DateTime? endsAt = record.endsAt;
-    if (endsAt == null) return false;
-    return DateTime.now().difference(endsAt) > _maxRestoreAge;
   }
 
   void _startInitialPhase() {
@@ -316,8 +297,8 @@ class _ExerciseIntervalTimerState()
       _endsAt = endsAt;
     });
     _startTicker();
-    _persistRunning(phase: phase, endsAt: endsAt);
-    _scheduleNotification(phase: phase, endsAt: endsAt);
+    _persistence.persistRunning(phase: phase, endsAt: endsAt);
+    _schedulePhaseNotification(phase: phase, endsAt: endsAt);
   }
 
   /// 1 Hz repaint pulse. Wall-clock arithmetic against `_endsAt` is what
@@ -361,7 +342,7 @@ class _ExerciseIntervalTimerState()
       _pausedRemaining = null;
       _endsAt = null;
     });
-    _clearPersisted();
+    _persistence.clear();
     unawaited(widget.onCompleted());
   }
 
@@ -376,7 +357,7 @@ class _ExerciseIntervalTimerState()
       _pausedRemaining = null;
       _endsAt = null;
     });
-    _clearPersisted();
+    _persistence.clear();
   }
 
   void _pauseTimer() {
@@ -387,8 +368,8 @@ class _ExerciseIntervalTimerState()
       _pausedRemaining = paused;
       _endsAt = null;
     });
-    _persistPaused(phase: _phase, pausedRemaining: paused);
-    unawaited(ref.read(timerNotificationServiceProvider).cancel());
+    _persistence.persistPaused(phase: _phase, pausedRemaining: paused);
+    _persistence.cancelNotification();
   }
 
   void _resumeTimer() {
@@ -399,8 +380,8 @@ class _ExerciseIntervalTimerState()
       _pausedRemaining = null;
     });
     _startTicker();
-    _persistRunning(phase: _phase, endsAt: endsAt);
-    _scheduleNotification(phase: _phase, endsAt: endsAt);
+    _persistence.persistRunning(phase: _phase, endsAt: endsAt);
+    _schedulePhaseNotification(phase: _phase, endsAt: endsAt);
   }
 
   void _resetTimer() {
@@ -411,7 +392,7 @@ class _ExerciseIntervalTimerState()
       _pausedRemaining = null;
       _endsAt = null;
     });
-    _clearPersisted();
+    _persistence.clear();
   }
 
   void _adjustTime(int seconds) {
@@ -424,7 +405,7 @@ class _ExerciseIntervalTimerState()
         return;
       }
       setState(() => _pausedRemaining = adjusted);
-      _persistPaused(phase: _phase, pausedRemaining: adjusted);
+      _persistence.persistPaused(phase: _phase, pausedRemaining: adjusted);
       return;
     }
     if (_endsAt == null) return;
@@ -434,8 +415,8 @@ class _ExerciseIntervalTimerState()
       return;
     }
     setState(() => _endsAt = adjustedEndsAt);
-    _persistRunning(phase: _phase, endsAt: adjustedEndsAt);
-    _scheduleNotification(phase: _phase, endsAt: adjustedEndsAt);
+    _persistence.persistRunning(phase: _phase, endsAt: adjustedEndsAt);
+    _schedulePhaseNotification(phase: _phase, endsAt: adjustedEndsAt);
   }
 
   Duration _durationForPhase(TimerPhase phase) => switch (phase) {
@@ -445,64 +426,14 @@ class _ExerciseIntervalTimerState()
     TimerPhase.idle || TimerPhase.complete => Duration.zero,
   };
 
-  void _persistRunning({required TimerPhase phase, required DateTime endsAt}) {
-    unawaited(
-      ref
-          .read(activeTimerStoreProvider)
-          .write(
-            ActiveTimerRecord(
-              sessionId: widget.identity.sessionId,
-              blockId: widget.identity.blockId,
-              exerciseId: widget.identity.exerciseId,
-              phase: phase,
-              endsAt: endsAt,
-            ),
-          ),
-    );
-  }
-
-  void _persistPaused({
-    required TimerPhase phase,
-    required Duration pausedRemaining,
-  }) {
-    unawaited(
-      ref
-          .read(activeTimerStoreProvider)
-          .write(
-            ActiveTimerRecord(
-              sessionId: widget.identity.sessionId,
-              blockId: widget.identity.blockId,
-              exerciseId: widget.identity.exerciseId,
-              phase: phase,
-              pausedRemaining: pausedRemaining,
-            ),
-          ),
-    );
-  }
-
-  void _clearPersisted() {
-    unawaited(ref.read(activeTimerStoreProvider).clear());
-    unawaited(ref.read(timerNotificationServiceProvider).cancel());
-  }
-
-  void _scheduleNotification({
+  void _schedulePhaseNotification({
     required TimerPhase phase,
     required DateTime endsAt,
   }) {
-    unawaited(
-      ref
-          .read(timerNotificationServiceProvider)
-          .scheduleAt(endsAt: endsAt, body: _notificationBody(phase)),
+    _persistence.scheduleNotification(
+      phase: phase,
+      endsAt: endsAt,
+      exerciseName: widget.planContext.exercise.name,
     );
-  }
-
-  String _notificationBody(TimerPhase phase) {
-    final String exerciseName = widget.planContext.exercise.name;
-    return switch (phase) {
-      TimerPhase.rest => '$exerciseName: rest is up',
-      TimerPhase.work => "$exerciseName: time's up",
-      TimerPhase.setup => '$exerciseName: setup complete',
-      TimerPhase.idle || TimerPhase.complete => exerciseName,
-    };
   }
 }

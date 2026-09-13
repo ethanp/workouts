@@ -2,10 +2,10 @@
 
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_block.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/json_converters.dart';
 
 part 'session.freezed.dart';
 part 'session.g.dart';

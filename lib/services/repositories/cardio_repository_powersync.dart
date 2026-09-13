@@ -9,11 +9,12 @@ import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/cardio_workout_event.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:workouts/models/cardio_workout_fingerprint.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_import.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 
 part 'cardio_repository_powersync.g.dart';
 
@@ -196,6 +197,13 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   }
 
   Future<void> wipeImportedCardio() => _importer.wipeStoredCardio();
+
+  Future<CardioWorkoutFingerprintIndex> storedAppleHealthFingerprints() =>
+      _importer.storedAppleHealthFingerprints();
+
+  Future<int> deleteAppleHealthWorkoutsMissingFrom(
+    Set<String> seenExternalIds,
+  ) => _importer.deleteAppleHealthWorkoutsMissingFrom(seenExternalIds);
 
   Future<bool> insertImportedWorkout(Map<String, dynamic> payload) =>
       _importer.insertRawWorkout(payload);

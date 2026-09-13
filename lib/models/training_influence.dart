@@ -1,5 +1,5 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:workouts/utils/json_parsing.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 part 'training_influence.freezed.dart';
 part 'training_influence.g.dart';

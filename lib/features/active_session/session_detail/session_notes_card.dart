@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/theme/session_note_type_palette.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 class const SessionNotesCard({required final List<SessionNote> notes})
     extends StatelessWidget {
@@ -70,7 +70,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
                 Text(note.content, style: EText.body.medium),
                 const SizedBox(height: ELayout.spaceXs),
                 Text(
-                  Format.time(note.timestamp),
+                  note.timestamp.clockTime,
                   style: EText.caption.copyWith(
                     color: EColors.textMuted,
                   ),

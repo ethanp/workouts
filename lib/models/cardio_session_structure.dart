@@ -1,6 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/cardio_workout_event.dart';
-import 'package:workouts/utils/run_formatting.dart';
 
 class const CardioSessionStructure({required final List<String> captions}) {
   factory fromEvents(List<CardioWorkoutEvent> events) {
@@ -47,24 +46,24 @@ class const CardioSessionStructure({required final List<String> captions}) {
         pause.occurredAt,
       );
       if (pausedFor.inSeconds <= 0) {
-        return 'Paused at ${Format.time(pause.occurredAt)}';
+        return 'Paused at ${pause.occurredAt.clockTime}';
       }
-      return 'Paused ${Format.restDuration(pausedFor)} at ${Format.time(pause.occurredAt)}';
+      return 'Paused ${pausedFor.formattedMinutesOrSeconds} at ${pause.occurredAt.clockTime}';
     }
     final endedAt = pause.endedAt;
     if (endedAt != null && endedAt.isAfter(pause.occurredAt)) {
-      return 'Paused ${Format.restDuration(endedAt.difference(pause.occurredAt))} '
-          'at ${Format.time(pause.occurredAt)}';
+      return 'Paused ${endedAt.difference(pause.occurredAt).formattedMinutesOrSeconds} '
+          'at ${pause.occurredAt.clockTime}';
     }
-    return 'Paused at ${Format.time(pause.occurredAt)}';
+    return 'Paused at ${pause.occurredAt.clockTime}';
   }
 
   static String _otherCaption(CardioWorkoutEvent event) {
     final endedAt = event.endedAt;
     if (endedAt != null && endedAt.isAfter(event.occurredAt)) {
       return '${event.eventType.camelToTitleCase} · '
-          '${Format.time(event.occurredAt)}–${Format.time(endedAt)}';
+          '${event.occurredAt.clockTime}–${endedAt.clockTime}';
     }
-    return '${event.eventType.camelToTitleCase} at ${Format.time(event.occurredAt)}';
+    return '${event.eventType.camelToTitleCase} at ${event.occurredAt.clockTime}';
   }
 }

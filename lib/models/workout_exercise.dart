@@ -5,9 +5,8 @@ import 'dart:convert';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:workouts/models/exercise_benefit.dart';
 import 'package:workouts/models/exercise_set_metrics.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/weight.dart';
-import 'package:workouts/utils/json_converters.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 part 'workout_exercise.freezed.dart';
 part 'workout_exercise.g.dart';
@@ -234,6 +233,18 @@ abstract class WorkoutExercise with _$WorkoutExercise {
   ExerciseSetMetrics get setMetrics => ExerciseSetMetrics(setMetricsStyle);
 
   bool get supportsAddedWeight => setMetrics.supportsAddedWeight;
+
+  WeightUnit get weightUnit {
+    final exerciseText = '$name ${equipment ?? ''}'.toLowerCase();
+    if (exerciseText.contains('kettlebell') || exerciseText.contains('kb')) {
+      return WeightUnit.kilograms;
+    }
+    return WeightUnit.pounds;
+  }
+}
+
+extension WeightForExercise on Weight {
+  String formatFor(WorkoutExercise exercise) => format(exercise.weightUnit);
 }
 
 ExerciseSetMetricsStyle inferSetMetricsStyle({

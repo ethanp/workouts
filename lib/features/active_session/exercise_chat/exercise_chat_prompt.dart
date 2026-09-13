@@ -1,5 +1,5 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/run_formatting.dart';
 
 /// Builds the system prompt for the per-exercise chat.
 ///
@@ -19,7 +19,7 @@ class const ExerciseChatPromptBuilder() {
       if (exercise.equipment != null && exercise.equipment!.isNotEmpty)
         '- Equipment: ${exercise.equipment}',
       if (exercise.restDuration != null)
-        '- Planned rest: ${Format.restDuration(exercise.restDuration!)}',
+        '- Planned rest: ${exercise.restDuration!.formattedMinutesOrSeconds}',
       if (exercise.cues.isNotEmpty) ...[
         '- Coaching cues:',
         ...exercise.cues.map((cue) => '  - $cue'),

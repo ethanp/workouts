@@ -6,10 +6,10 @@ import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/features/history/activity_provider.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_browse_providers.dart';
 import 'package:workouts/theme/goal_priority_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
 import 'package:workouts/features/history/charts/outdoor_run_trends.dart';
 import 'package:workouts/features/history/charts/polarization_chart.dart';
@@ -145,7 +145,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         _OutdoorRunningCharts(
           weeks: _weekDataList(
             visibleWeeks,
-            valueFor: (week) => week.outdoorRunMeters / metersPerMile,
+            valueFor: (week) => week.outdoorRunMeters.asMiles,
           ),
           workouts: workouts,
           bestEfforts: bestEfforts,

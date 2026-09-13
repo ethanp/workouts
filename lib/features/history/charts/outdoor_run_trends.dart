@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/cardio_workout.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 
 extension DistanceBucketColor on DistanceBucket {
@@ -70,7 +70,7 @@ class const OutdoorRunTrends() {
                   ),
                 )
                 .toList(),
-            formatValue: (paceValue) => Format.paceValue(paceValue),
+            formatValue: (paceValue) => paceValue.paceCaption,
           ),
     ];
   }
@@ -83,7 +83,7 @@ class const OutdoorRunTrends() {
           .map(
             (workout) => TrendPoint(
               date: workout.startedAt,
-              value: workout.distanceMeters / metersPerMile,
+              value: workout.distanceMeters.asMiles,
             ),
           )
           .toList(),
@@ -153,7 +153,7 @@ class const OutdoorRunTrends() {
           )
           .toList(),
       formatValue: (durationValue) =>
-          Format.durationShort(durationValue.round()),
+          Duration(seconds: durationValue.round()).formattedHm,
     );
   }
 }

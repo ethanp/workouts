@@ -154,7 +154,7 @@ class WorkoutGenerationNotifier() extends _$WorkoutGenerationNotifier {
         preferences: _lastPreferences,
       );
 
-      final (:tokens, :parsed) = ref
+      final workoutStream = ref
           .read(llmServiceProvider)
           .streamWorkoutOptions(
             context: contextWithPrefs,
@@ -170,13 +170,13 @@ class WorkoutGenerationNotifier() extends _$WorkoutGenerationNotifier {
       // before onDone/onError can fire, and the parsed error would then go
       // unawaited and surface as an uncaught zone error.)
       final accumulated = StringBuffer();
-      _tokenSubscription = tokens.listen((delta) {
+      _tokenSubscription = workoutStream.tokens.listen((delta) {
         if (!identical(_activeClient, client)) return;
         accumulated.write(delta);
         state = GenerationStreaming(accumulated.toString());
       }, onError: (_) {});
 
-      final response = await parsed;
+      final response = await workoutStream.parsed;
       if (!identical(_activeClient, client)) return;
       _log.log('Generated ${response.options.length} workout options');
       state = GenerationComplete(response);

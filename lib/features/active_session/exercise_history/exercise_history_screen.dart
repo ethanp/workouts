@@ -8,7 +8,7 @@ import 'package:workouts/models/exercise_history_entry.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 class const ExerciseHistoryScreen({required final WorkoutExercise exercise})
     extends ConsumerWidget {
@@ -115,7 +115,7 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    Format.dateRelative(widget.entry.completedAt),
+                    widget.entry.completedAt.todayYesterdayOrDate,
                     style: EText.section,
                   ),
                   const SizedBox(height: ELayout.spaceXs),

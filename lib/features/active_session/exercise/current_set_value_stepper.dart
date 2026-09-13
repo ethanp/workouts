@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 class const CurrentSetValueStepper({
   required final WorkoutExercise exercise,
@@ -49,7 +48,7 @@ class const CurrentSetValueStepper({
       int.tryParse(durationController.text.trim()) ?? 0;
 
   double get _weightStep {
-    final WeightUnit weightUnit = WeightDisplay.unitForExercise(exercise);
+    final WeightUnit weightUnit = exercise.weightUnit;
     if (weightUnit == WeightUnit.kilograms) return 1;
     return 5;
   }

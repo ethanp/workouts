@@ -2,7 +2,7 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 
 part 'heart_rate_samples_repository_powersync.g.dart';
 

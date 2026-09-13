@@ -2,7 +2,7 @@ import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 
 const _log = ELogger('SessionMetricsStore');
 
@@ -17,7 +17,7 @@ class SessionMetricsStore(final PowerSyncDatabase _powerSync) {
       zone = HrZoneTime.zero;
       hasHrSamples = false;
     } else {
-      zone = HrZoneClassifier.compute(hrSamples);
+      zone = HrZoneTime.fromSamples(hrSamples);
       hasHrSamples = true;
     }
     await _persist(sessionId, zone, hasHrSamples: hasHrSamples);

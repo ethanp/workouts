@@ -10,7 +10,7 @@ import 'package:workouts/app/app.dart';
 import 'package:workouts/services/backend/sync_config.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/preferences_provider.dart';
-import 'package:workouts/utils/error_bus.dart';
+import 'package:workouts/error_bus.dart';
 
 const _log = ELogger('Main');
 

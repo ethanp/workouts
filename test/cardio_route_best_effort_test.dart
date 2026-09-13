@@ -1,9 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/models/cardio_route_point.dart';
-import 'package:workouts/utils/best_effort_calculator.dart';
-import 'package:workouts/utils/run_formatting.dart';
-
-final _calculator = BestEffortCalculator();
+import 'package:workouts/models/distance_bucket.dart';
 
 CardioRoutePoint _point({
   required int index,
@@ -40,13 +37,13 @@ List<CardioRoutePoint> _straightRoute({
 }
 
 void main() {
-  group('BestEffortCalculator', () {
+  group('CardioRoutePoint.bestEfforts', () {
     test('returns empty for fewer than 2 points', () {
       final single = [
         _point(index: 0, lat: 0, lng: 0, recordedAt: DateTime(2026)),
       ];
-      expect(_calculator.compute(single), isEmpty);
-      expect(_calculator.compute([]), isEmpty);
+      expect(single.bestEfforts, isEmpty);
+      expect(<CardioRoutePoint>[].bestEfforts, isEmpty);
     });
 
     test('returns empty when no points have timestamps', () {
@@ -66,31 +63,27 @@ void main() {
           longitude: 0.01,
         ),
       ];
-      expect(_calculator.compute(noTimestamps), isEmpty);
+      expect(noTimestamps.bestEfforts, isEmpty);
     });
 
     test('skips buckets where total distance is insufficient', () {
-      // ~333 m route (4 points * ~111m spacing) — only 400m bucket is too big
       final shortRoute = _straightRoute(count: 4);
-      final results = _calculator.compute(shortRoute);
-      expect(results, isEmpty);
+      expect(shortRoute.bestEfforts, isEmpty);
     });
 
     test('computes 400m best effort for a route just over 400m', () {
-      // 5 points * ~111m = ~444m total — enough for 400m bucket only
       final route = _straightRoute(count: 5);
-      final results = _calculator.compute(route);
+      final results = route.bestEfforts;
       expect(results.length, 1);
       expect(results.first.bucket, DistanceBucket.fourHundredMeters);
       expect(results.first.elapsedSeconds, greaterThan(0));
     });
 
     test('computes multiple buckets for a long route', () {
-      // ~2.8 km route — should cover 400m, 1/2 mi, 1 mi
       final route = _straightRoute(count: 26, secondsBetween: 20);
-      final results = _calculator.compute(route);
+      final results = route.bestEfforts;
 
-      final buckets = results.map((r) => r.bucket).toSet();
+      final buckets = results.map((result) => result.bucket).toSet();
       expect(buckets, contains(DistanceBucket.fourHundredMeters));
       expect(buckets, contains(DistanceBucket.halfMile));
       expect(buckets, contains(DistanceBucket.oneMile));
@@ -99,8 +92,6 @@ void main() {
 
     test('fastest window is chosen when pace varies', () {
       final start = DateTime(2026, 3, 1, 8, 0, 0);
-      // First 5 points: slow (60s apart), last 5 points: fast (10s apart)
-      // Each pair ~111m apart
       final route = <CardioRoutePoint>[];
       for (var i = 0; i < 5; i++) {
         route.add(
@@ -123,14 +114,9 @@ void main() {
         );
       }
 
-      final results = _calculator.compute(route);
-      final fourHundred = results.firstWhere(
-        (r) => r.bucket == DistanceBucket.fourHundredMeters,
+      final fourHundred = route.bestEfforts.firstWhere(
+        (result) => result.bucket == DistanceBucket.fourHundredMeters,
       );
-
-      // The fast section covers ~555m in 50s (points 5-9).
-      // The slow section covers ~444m in 240s (points 0-4).
-      // Best 400m should come from the fast section.
       expect(fourHundred.elapsedSeconds, lessThan(60));
     });
 
@@ -155,29 +141,22 @@ void main() {
           ),
         ),
       ];
-      // Should still compute — the no-timestamp point is skipped
-      final results = _calculator.compute(route);
-      expect(results, isNotEmpty);
+      expect(route.bestEfforts, isNotEmpty);
     });
 
     test('elapsed seconds reflect actual time between window endpoints', () {
-      // 6 points, 30s apart, ~111m each = ~555m in 150s
       final route = _straightRoute(count: 6, secondsBetween: 30);
-      final results = _calculator.compute(route);
-      final fourHundred = results.firstWhere(
-        (r) => r.bucket == DistanceBucket.fourHundredMeters,
+      final fourHundred = route.bestEfforts.firstWhere(
+        (result) => result.bucket == DistanceBucket.fourHundredMeters,
       );
-      // 400m needs ~4 segments of 111m = requires spanning at least 4 gaps
-      // Best window should be ~120s (4 gaps * 30s)
       expect(fourHundred.elapsedSeconds, closeTo(120, 1));
     });
   });
 
   group('CardioBestEffort.paceSecondsPerUnit', () {
     test('converts elapsed seconds to pace per mile', () {
-      final effort = _calculator.compute(_straightRoute(count: 5)).first;
+      final effort = _straightRoute(count: 5).bestEfforts.first;
       final pacePerMile = effort.paceSecondsPerUnit(metersPerMile);
-      // 400m bucket, so pace = elapsed * (metersPerMile / 400)
       expect(pacePerMile, greaterThan(0));
     });
   });

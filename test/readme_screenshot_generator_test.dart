@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_browse_providers.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/history/history_screen.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
@@ -15,9 +16,7 @@ import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
-import 'package:workouts/utils/run_formatting.dart';
+import 'package:workouts/models/distance_bucket.dart';
 
 const _phoneSize = Size(390, 844);
 
@@ -83,7 +82,7 @@ Future<void> _writeHistoryReadmeScreenshot(
               StateError('unused in README screenshot'),
             ),
           ),
-          syncStateProvider.overrideWith((ref) => SyncState.synced),
+          syncPhaseProvider.overrideWith((ref) => SyncPhase.synced),
         ],
         child: MaterialApp(
           theme: ETheme.material3Dark,

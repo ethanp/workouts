@@ -4,7 +4,6 @@ import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/background_note.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
 
 part 'background_notes_repository_powersync.g.dart';
 

@@ -1,41 +1,47 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:workouts/models/hr_zone_time.dart';
-import 'package:workouts/utils/hr_zone_classifier.dart';
+import 'package:workouts/models/timestamped_heart_rate.dart';
 
-TimestampedHeartRate _hr(DateTime t, int bpm) =>
-    TimestampedHeartRate(timestamp: t, bpm: bpm);
+TimestampedHeartRate _hr(DateTime timestamp, int bpm) =>
+    TimestampedHeartRate(timestamp: timestamp, bpm: bpm);
 
 void main() {
   final base = DateTime(2026, 1, 1, 8, 0, 0);
-  Duration sec(int s) => Duration(seconds: s);
+  Duration sec(int seconds) => Duration(seconds: seconds);
 
-  group('zone boundaries', () {
-    test('5-zone boundaries are correct', () {
-      expect(HrZoneClassifier.zoneBoundaries, [93, 115, 146, 163, 176]);
+  group('HrZone', () {
+    test('5-zone lower bounds are correct', () {
+      expect(HrZone.values.map((zone) => zone.lowerBpm), [
+        93,
+        115,
+        146,
+        163,
+        176,
+      ]);
     });
 
-    test('zone2Lower is the zone 2 boundary', () {
-      expect(HrZoneClassifier.zone2Lower, 115);
+    test('zone 2 lower bound is 115', () {
+      expect(HrZone.zone2.lowerBpm, 115);
     });
   });
 
-  group('zone bucketing', () {
+  group('HrZoneTime.fromSamples', () {
     test('below zone 1 contributes to no zone', () {
       final samples = [_hr(base, 80), _hr(base.add(sec(10)), 80)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.total, 0);
     });
 
     test('zone 1 BPM (93-114) lands in zone 1', () {
       final samples = [_hr(base, 100), _hr(base.add(sec(10)), 100)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone1, 10);
       expect(zone.zone2, 0);
     });
 
     test('zone 2 BPM (115-145) lands in zone 2', () {
       final samples = [_hr(base, 120), _hr(base.add(sec(10)), 120)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone1, 0);
       expect(zone.zone2, 10);
       expect(zone.zone3, 0);
@@ -43,25 +49,25 @@ void main() {
 
     test('zone 3 BPM (146-162) lands in zone 3', () {
       final samples = [_hr(base, 150), _hr(base.add(sec(10)), 150)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone3, 10);
     });
 
     test('zone 4 BPM (163-175) lands in zone 4', () {
       final samples = [_hr(base, 170), _hr(base.add(sec(10)), 170)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone4, 10);
     });
 
     test('zone 5 BPM (176+) lands in zone 5', () {
       final samples = [_hr(base, 180), _hr(base.add(sec(10)), 180)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone5, 10);
     });
 
     test('exactly at zone boundary lands in the higher zone', () {
       final samples = [_hr(base, 115), _hr(base.add(sec(10)), 115)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone2, 10);
       expect(zone.zone1, 0);
     });
@@ -75,16 +81,14 @@ void main() {
         _hr(base.add(sec(40)), 115),
         _hr(base.add(sec(50)), 80),
       ];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone2, 40);
       expect(zone.zone4, 10);
       expect(zone.zone1, 0);
       expect(zone.zone3, 0);
       expect(zone.zone5, 0);
     });
-  });
 
-  group('gap handling', () {
     test('gaps capped at maxGapSeconds', () {
       final samples = [
         _hr(base, 150),
@@ -92,19 +96,17 @@ void main() {
       ];
       final capped = [_hr(base, 150), _hr(base.add(sec(30)), 150)];
       expect(
-        HrZoneClassifier.compute(samples),
-        equals(HrZoneClassifier.compute(capped)),
+        HrZoneTime.fromSamples(samples),
+        equals(HrZoneTime.fromSamples(capped)),
       );
     });
 
     test('empty or single sample produces zero zone time', () {
-      expect(HrZoneClassifier.compute([]), HrZoneTime.zero);
-      expect(HrZoneClassifier.compute([_hr(base, 120)]), HrZoneTime.zero);
+      expect(HrZoneTime.fromSamples([]), HrZoneTime.zero);
+      expect(HrZoneTime.fromSamples([_hr(base, 120)]), HrZoneTime.zero);
     });
-  });
 
-  group('gteZone2', () {
-    test('sums zones 2-5', () {
+    test('gteZone2 sums zones 2-5', () {
       final samples = [
         _hr(base, 120),
         _hr(base.add(sec(10)), 140),
@@ -112,14 +114,14 @@ void main() {
         _hr(base.add(sec(30)), 180),
         _hr(base.add(sec(40)), 180),
       ];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.gteZone2, zone.zone2 + zone.zone3 + zone.zone4 + zone.zone5);
       expect(zone.gteZone2, 40);
     });
 
-    test('excludes zone 1', () {
+    test('gteZone2 excludes zone 1', () {
       final samples = [_hr(base, 100), _hr(base.add(sec(10)), 100)];
-      final zone = HrZoneClassifier.compute(samples);
+      final zone = HrZoneTime.fromSamples(samples);
       expect(zone.zone1, 10);
       expect(zone.gteZone2, 0);
     });

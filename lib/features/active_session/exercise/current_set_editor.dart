@@ -6,7 +6,6 @@ import 'package:workouts/features/active_session/exercise/current_set_value_step
 import 'package:workouts/features/active_session/exercise/set_log_input.dart';
 import 'package:workouts/models/weight.dart';
 import 'package:workouts/models/workout_exercise.dart';
-import 'package:workouts/utils/weight_display.dart';
 
 class const CurrentSetEditor({
   super.key,
@@ -99,7 +98,7 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
   String get _initialWeightText {
     final weight = widget.initialInput.weight;
     if (weight == null) return '';
-    return WeightDisplay.inputValue(weight, widget.exercise);
+    return weight.inputValue(widget.exercise.weightUnit);
   }
 
   String get _initialDurationText {
@@ -161,7 +160,7 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
           label: 'Weight',
           controller: _weightController,
           focusNode: _weightFocusNode,
-          suffix: WeightDisplay.unitLabel(widget.exercise),
+          suffix: widget.exercise.weightUnit.label,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           onDecrement: _valueStepper.decrementWeight,
           onIncrement: _valueStepper.incrementWeight,
@@ -236,9 +235,9 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
 
   Weight? _weightInput() {
     if (!_showsWeightControl) return null;
-    return WeightDisplay.inputValueToWeight(
+    return Weight.fromInput(
       _weightController.text,
-      widget.exercise,
+      widget.exercise.weightUnit,
     );
   }
 

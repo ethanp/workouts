@@ -2,12 +2,11 @@ import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:workouts/features/cardio/cardio_provider.dart';
+import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
 import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
-import 'package:workouts/providers/sync_provider.dart';
-import 'package:workouts/services/powersync/powersync_database_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/widgets/sync_status_icon.dart';
 
 enum HistoryTab() {
@@ -37,14 +36,14 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
         const CardioImportProgress.idle();
     final isImporting = importProgress.inProgress;
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
-    final syncState = ref.watch(syncStateProvider);
+    final syncPhase = ref.watch(syncPhaseProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: EAppHeader(
         title: 'History',
         automaticallyImplyLeading: false,
-        leading: _syncStatus(syncState),
+        leading: _syncStatus(syncPhase),
         actions: [if (dbReady && !isImporting) _importAction()],
       ),
       body: SafeArea(
@@ -61,13 +60,13 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget _syncStatus(SyncState syncState) {
+  Widget _syncStatus(SyncPhase syncPhase) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         const SyncStatusIcon(),
         const SizedBox(width: 4),
-        Text(syncState.name.titleCase, style: EText.caption),
+        Text(syncPhase.name.titleCase, style: EText.caption),
       ],
     );
   }
@@ -78,7 +77,7 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
           .read(cardioImportControllerProvider.notifier)
           .importRecentWorkouts(),
       icon: const Icon(Icons.download, size: 20),
-      label: const Text('Import'),
+      label: const Text('Sync'),
     );
   }
 
@@ -123,7 +122,7 @@ class const ImportProgressBanner({
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Import from Apple Health',
+            'Sync from Apple Health',
             style: EText.section.copyWith(color: EColors.textPrimary),
           ),
           const SizedBox(height: ELayout.spaceXs),
@@ -143,7 +142,7 @@ class const ImportProgressBanner({
   Widget _statusText() => Text(
     importProgress.status.isNotEmpty
         ? importProgress.status
-        : 'Replaces stored cardio with every cardio workout Apple Health has.',
+        : 'Pulls new and changed cardio from Apple Health. Already stored workouts stay put.',
     style: EText.caption.copyWith(color: EColors.textTertiary),
   );
 
