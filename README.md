@@ -2,6 +2,10 @@
 
 Personal workout tracker with local-first sync.
 
+### Screenshots
+
+![History](screenshots/history.png)
+
 ## Stack
 
 - **Flutter** with Material and ethan_ui
