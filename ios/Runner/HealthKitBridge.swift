@@ -78,27 +78,123 @@ final class HealthKitBridge {
   }
 
   private static let cardioActivityTypes: [HKWorkoutActivityType] = [
-    .running, .walking, .elliptical, .stairClimbing, .rowing
+    .running, .walking, .cycling, .elliptical, .stairClimbing, .rowing
   ]
 
   func countCardioWorkouts(completion: @escaping (Int, Error?) -> Void) {
+    var total = 0
+    func addPage(endedBefore: Date?) {
+      loadCardioWorkoutPage(limit: 100, endedBefore: endedBefore) { workouts, error in
+        if let error {
+          completion(0, error)
+          return
+        }
+        total += workouts.count
+        if workouts.count < 100 {
+          completion(total, nil)
+          return
+        }
+        addPage(endedBefore: workouts.last?.endDate)
+      }
+    }
+    addPage(endedBefore: nil)
+  }
+
+  func fetchCardioWorkoutSeries(
+    externalWorkoutId: String,
+    maxRoutePoints: Int,
+    includeRoute: Bool,
+    completion: @escaping ([String: Any]?, Error?) -> Void
+  ) {
     guard HKHealthStore.isHealthDataAvailable() else {
-      completion(0, nil)
+      completion([:], nil)
+      return
+    }
+    guard let workoutId = UUID(uuidString: externalWorkoutId) else {
+      completion([:], nil)
       return
     }
     let query = HKSampleQuery(
       sampleType: .workoutType(),
-      predicate: cardioWorkoutPredicate(),
-      limit: HKObjectQueryNoLimit,
+      predicate: HKQuery.predicateForObject(with: workoutId),
+      limit: 1,
       sortDescriptors: nil
-    ) { _, samples, error in
+    ) { [weak self] _, samples, error in
       if let error {
-        completion(0, error)
+        completion(nil, error)
         return
       }
-      completion((samples as? [HKWorkout])?.count ?? 0, nil)
+      guard let self, let workout = samples?.first as? HKWorkout else {
+        completion([:], nil)
+        return
+      }
+      self.serializeCardioWorkout(
+        workout: workout,
+        includeRoute: includeRoute,
+        maxRoutePoints: maxRoutePoints,
+        includeHeartRateSeries: true,
+        includeAssociatedSeries: true,
+        inspectSignals: false
+      ) { payload in
+        completion(payload, nil)
+      }
     }
     healthStore.execute(query)
+  }
+
+  /// HR samples only, no route / expansion. Safe to call once per workout
+  /// while computing zones across the catalog.
+  func fetchCardioHeartRateForZones(
+    externalWorkoutId: String,
+    completion: @escaping ([String: Any]?, Error?) -> Void
+  ) {
+    guard HKHealthStore.isHealthDataAvailable() else {
+      completion(["heartRateSeries": []], nil)
+      return
+    }
+    guard let workoutId = UUID(uuidString: externalWorkoutId) else {
+      completion(["heartRateSeries": []], nil)
+      return
+    }
+    guard let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
+      completion(["heartRateSeries": []], nil)
+      return
+    }
+    let workoutQuery = HKSampleQuery(
+      sampleType: .workoutType(),
+      predicate: HKQuery.predicateForObject(with: workoutId),
+      limit: 1,
+      sortDescriptors: nil
+    ) { [weak self] _, samples, error in
+      if let error {
+        completion(nil, error)
+        return
+      }
+      guard let self, let workout = samples?.first as? HKWorkout else {
+        completion(["heartRateSeries": []], nil)
+        return
+      }
+      let unit = HKUnit.count().unitDivided(by: .minute())
+      let heartRateQuery = HKSampleQuery(
+        sampleType: heartRateType,
+        predicate: HKQuery.predicateForObjects(from: workout),
+        limit: HKObjectQueryNoLimit,
+        sortDescriptors: [
+          NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true),
+        ]
+      ) { _, heartRateSamples, heartRateError in
+        if let heartRateError {
+          completion(nil, heartRateError)
+          return
+        }
+        let series = ((heartRateSamples as? [HKQuantitySample]) ?? []).map {
+          self.quantitySamplePayload($0, unit: unit)
+        }
+        completion(["heartRateSeries": series], nil)
+      }
+      self.healthStore.execute(heartRateQuery)
+    }
+    healthStore.execute(workoutQuery)
   }
 
   func fetchRecentCardioWorkouts(
@@ -117,42 +213,87 @@ final class HealthKitBridge {
       "completedWorkouts": 0,
       "totalWorkouts": 0,
     ])
-    loadRecentCardioWorkouts(maxWorkouts: maxWorkouts) { [weak self] workouts, error in
-      guard let self else {
-        completion(0, nil)
-        return
-      }
+    let headerOnly = !includeRoute && !includeHeartRateSeries && !includeAssociatedSeries
+    let skipIndex = UnchangedAppleHealthWorkoutIndex(skipUnchangedWorkouts)
+    let maxToRead = maxWorkouts <= 0 ? Int.max : maxWorkouts
+    var seenExternalIds: [String] = []
+    var seenExternalIdSet = Set<String>()
+    var completedWorkouts = 0
+
+    func finish(error: Error?) {
       if let error {
         completion(nil, error)
         return
       }
-      if workouts.isEmpty {
-        onProgress([
-          "caption": "No cardio workouts found.",
-          "completedWorkouts": 0,
-          "totalWorkouts": 0,
-        ])
-        completion(0, nil)
+      onProgress([
+        "caption": completedWorkouts == 0
+          ? "No cardio workouts found."
+          : "Finished reading \(completedWorkouts) workouts.",
+        "completedWorkouts": completedWorkouts,
+        "totalWorkouts": completedWorkouts,
+        "importFinished": true,
+        "seenExternalIds": seenExternalIds,
+      ])
+      completion(completedWorkouts, nil)
+    }
+
+    func loadPage(endedBefore: Date?) {
+      let remaining = maxToRead - completedWorkouts
+      if remaining <= 0 {
+        finish(error: nil)
         return
       }
-      onProgress([
-        "caption": "Found \(workouts.count) workouts. Reading each one…",
-        "completedWorkouts": 0,
-        "totalWorkouts": workouts.count,
-      ])
-      self.serializeWorkoutsOneByOne(
-        workouts,
-        includeRoute: includeRoute,
-        maxRoutePoints: maxRoutePoints,
-        includeHeartRateSeries: includeHeartRateSeries,
-        includeAssociatedSeries: includeAssociatedSeries,
-        skipUnchangedWorkouts: skipUnchangedWorkouts,
-        onProgress: onProgress,
-        onWorkout: onWorkout
-      ) {
-        completion(workouts.count, nil)
+      let pageLimit = min(Self.cardioImportPageSize, remaining)
+      loadCardioWorkoutPage(limit: pageLimit, endedBefore: endedBefore) { [weak self] workouts, error in
+        guard let self else {
+          completion(0, nil)
+          return
+        }
+        if let error {
+          finish(error: error)
+          return
+        }
+        let freshWorkouts = workouts.filter {
+          !seenExternalIdSet.contains($0.uuid.uuidString)
+        }
+        if freshWorkouts.isEmpty {
+          finish(error: nil)
+          return
+        }
+        onProgress([
+          "caption": "Reading workouts…",
+          "completedWorkouts": completedWorkouts,
+          "totalWorkouts": completedWorkouts + freshWorkouts.count,
+        ])
+        self.serializeWorkoutsOneByOne(
+          freshWorkouts,
+          headerOnly: headerOnly,
+          includeRoute: includeRoute,
+          maxRoutePoints: maxRoutePoints,
+          includeHeartRateSeries: includeHeartRateSeries,
+          includeAssociatedSeries: includeAssociatedSeries,
+          skipIndex: skipIndex,
+          completedBeforePage: completedWorkouts,
+          onProgress: onProgress,
+          onWorkout: onWorkout
+        ) {
+          for workout in freshWorkouts {
+            let externalId = workout.uuid.uuidString
+            if seenExternalIdSet.insert(externalId).inserted {
+              seenExternalIds.append(externalId)
+            }
+          }
+          completedWorkouts += freshWorkouts.count
+          if workouts.count < pageLimit {
+            finish(error: nil)
+            return
+          }
+          loadPage(endedBefore: freshWorkouts.last?.endDate)
+        }
       }
     }
+
+    loadPage(endedBefore: nil)
   }
 
   func inspectRecentCardioWorkouts(
@@ -257,20 +398,35 @@ final class HealthKitBridge {
     return "Inspecting \(activity) · \(sourceName) (\(index + 1) of \(total))"
   }
 
+  private static let cardioImportPageSize = 25
+
   private func loadRecentCardioWorkouts(
     maxWorkouts: Int,
+    completion: @escaping ([HKWorkout], Error?) -> Void
+  ) {
+    loadCardioWorkoutPage(
+      limit: max(1, maxWorkouts),
+      endedBefore: nil,
+      completion: completion
+    )
+  }
+
+  private func loadCardioWorkoutPage(
+    limit: Int,
+    endedBefore: Date?,
     completion: @escaping ([HKWorkout], Error?) -> Void
   ) {
     guard HKHealthStore.isHealthDataAvailable() else {
       completion([], nil)
       return
     }
-    let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
     let query = HKSampleQuery(
       sampleType: HKObjectType.workoutType(),
-      predicate: cardioWorkoutPredicate(),
-      limit: maxWorkouts <= 0 ? HKObjectQueryNoLimit : max(1, maxWorkouts),
-      sortDescriptors: [sortDescriptor]
+      predicate: cardioPagePredicate(endedBefore: endedBefore),
+      limit: max(1, limit),
+      sortDescriptors: [
+        NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false),
+      ]
     ) { _, samples, error in
       if let error {
         completion([], error)
@@ -281,38 +437,46 @@ final class HealthKitBridge {
     healthStore.execute(query)
   }
 
+  private func cardioPagePredicate(endedBefore: Date?) -> NSPredicate {
+    let typePredicate = cardioWorkoutPredicate()
+    guard let endedBefore else { return typePredicate }
+    return NSCompoundPredicate(andPredicateWithSubpredicates: [
+      typePredicate,
+      HKQuery.predicateForSamples(
+        withStart: nil,
+        end: endedBefore,
+        options: .strictEndDate
+      ),
+    ])
+  }
+
   private func serializeWorkoutsOneByOne(
     _ workouts: [HKWorkout],
+    headerOnly: Bool,
     includeRoute: Bool,
     maxRoutePoints: Int,
     includeHeartRateSeries: Bool,
     includeAssociatedSeries: Bool,
-    skipUnchangedWorkouts: [[String: Any]],
+    skipIndex: UnchangedAppleHealthWorkoutIndex,
+    completedBeforePage: Int,
     onProgress: @escaping ([String: Any]) -> Void,
     onWorkout: @escaping ([String: Any]) -> Void,
     completion: @escaping () -> Void
   ) {
-    let skipIndex = UnchangedAppleHealthWorkoutIndex(skipUnchangedWorkouts)
     func serializeNext(_ index: Int) {
       if index >= workouts.count {
-        onProgress([
-          "caption": "Finished reading \(workouts.count) workouts.",
-          "completedWorkouts": workouts.count,
-          "totalWorkouts": workouts.count,
-          "importFinished": true,
-          "seenExternalIds": workouts.map { $0.uuid.uuidString },
-        ])
         completion()
         return
       }
       let workout = workouts[index]
       let activity = activityTypeKey(for: workout)
+      let completedWorkouts = completedBeforePage + index + 1
       if skipIndex.containsUnchanged(workout) {
         onWorkout(skippedUnchangedHeader(workout))
         onProgress([
-          "caption": "Already present \(activity) (\(index + 1) of \(workouts.count))",
-          "completedWorkouts": index + 1,
-          "totalWorkouts": workouts.count,
+          "caption": "Already present \(activity) (\(completedWorkouts))",
+          "completedWorkouts": completedWorkouts,
+          "totalWorkouts": completedBeforePage + workouts.count,
         ])
         self.waitUntilDartPersistedWorkout {
           serializeNext(index + 1)
@@ -320,10 +484,25 @@ final class HealthKitBridge {
         return
       }
       onProgress([
-        "caption": "Reading \(activity) (\(index + 1) of \(workouts.count))",
-        "completedWorkouts": index,
-        "totalWorkouts": workouts.count,
+        "caption": "Reading \(activity) (\(completedWorkouts))",
+        "completedWorkouts": completedBeforePage + index,
+        "totalWorkouts": completedBeforePage + workouts.count,
       ])
+      let emit: ([String: Any]) -> Void = { payload in
+        onWorkout(payload)
+        onProgress([
+          "caption": "Read \(activity) (\(completedWorkouts))",
+          "completedWorkouts": completedWorkouts,
+          "totalWorkouts": completedBeforePage + workouts.count,
+        ])
+        self.waitUntilDartPersistedWorkout {
+          serializeNext(index + 1)
+        }
+      }
+      if headerOnly {
+        emit(self.headerPayload(for: workout))
+        return
+      }
       serializeCardioWorkout(
         workout: workout,
         includeRoute: includeRoute,
@@ -332,18 +511,41 @@ final class HealthKitBridge {
         includeAssociatedSeries: includeAssociatedSeries,
         inspectSignals: false
       ) { payload in
-        onWorkout(payload)
-        onProgress([
-          "caption": "Read \(activity) (\(index + 1) of \(workouts.count))",
-          "completedWorkouts": index + 1,
-          "totalWorkouts": workouts.count,
-        ])
-        self.waitUntilDartPersistedWorkout {
-          serializeNext(index + 1)
-        }
+        emit(payload)
       }
     }
     serializeNext(0)
+  }
+
+  private func headerPayload(for workout: HKWorkout) -> [String: Any] {
+    let unit = HKUnit.count().unitDivided(by: .minute())
+    let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)
+    let heartRateStatistics = heartRateType.flatMap { workout.statistics(for: $0) }
+    let activity = activityTypeKey(for: workout)
+    return workoutPayload(
+      workout: workout,
+      avgHeartRateBpm: heartRateStatistics?.averageQuantity()?.doubleValue(for: unit),
+      maxHeartRateBpm: heartRateStatistics?.maximumQuantity()?.doubleValue(for: unit),
+      heartRateSeries: [],
+      heartRateHasCondensed: false,
+      distanceSeries: [],
+      distanceHasCondensed: false,
+      stepSeries: [],
+      stepHasCondensed: false,
+      routeAvailable: activity == "outdoorRun" ||
+        activity == "outdoorWalk" ||
+        activity == "outdoorCycle",
+      routePoints: nil,
+      routePointCount: nil,
+      recoveryBpm: nil,
+      effortScore: nil,
+      estimatedEffortScore: nil,
+      includeRoute: false,
+      includeHeartRateSeries: false,
+      includeAssociatedSeries: false,
+      inspectSignals: false,
+      signalSummaries: []
+    )
   }
 
   func cardioImportPersisted() {
@@ -391,11 +593,23 @@ final class HealthKitBridge {
     switch workout.workoutActivityType {
     case .running: return isIndoor ? "indoorRun" : "outdoorRun"
     case .walking: return isIndoor ? "indoorWalk" : "outdoorWalk"
+    case .cycling: return isIndoorCycling(workout, flaggedIndoor: isIndoor)
+      ? "indoorCycle"
+      : "outdoorCycle"
     case .elliptical: return "elliptical"
     case .stairClimbing: return "stairClimbing"
     case .rowing: return "rowing"
     default: return "outdoorRun"
     }
+  }
+
+  private func isIndoorCycling(_ workout: HKWorkout, flaggedIndoor: Bool) -> Bool {
+    if flaggedIndoor { return true }
+    let indoorBikeMeters = metadataQuantityMeters(
+      workout.metadata ?? [:],
+      key: HKMetadataKeyIndoorBikeDistance
+    ) ?? 0
+    return indoorBikeMeters > 0
   }
 
   private func serializeCardioWorkout(
@@ -449,7 +663,7 @@ final class HealthKitBridge {
       dispatchGroup.enter()
       fetchAssociatedQuantitySeries(
         for: workout,
-        identifier: .distanceWalkingRunning,
+        identifier: distanceQuantityIdentifier(for: workout),
         unit: .meter(),
         maxSamples: 5000
       ) { series, hasCondensed in
@@ -557,6 +771,9 @@ final class HealthKitBridge {
     var payload: [String: Any] = [
       "externalWorkoutId": workout.uuid.uuidString,
       "activityType": activityTypeKey(for: workout),
+      "healthKitActivityType": workoutActivityTypeName(workout.workoutActivityType),
+      "healthKitActivityTypeRaw": workout.workoutActivityType.rawValue,
+      "indoorWorkout": (metadata[HKMetadataKeyIndoorWorkout] as? NSNumber)?.boolValue ?? false,
       "startDate": dateFormatter.string(from: workout.startDate),
       "endDate": dateFormatter.string(from: workout.endDate),
       "durationSeconds": Int(workout.duration),
@@ -583,6 +800,21 @@ final class HealthKitBridge {
       "indoorBikeDistanceMeters": metadataQuantityMeters(
         metadata,
         key: HKMetadataKeyIndoorBikeDistance
+      ) as Any,
+      "averageCyclingCadenceRpm": statisticAverage(
+        workout,
+        identifier: .cyclingCadence,
+        unit: HKUnit.count().unitDivided(by: .minute())
+      ) as Any,
+      "averageCyclingPowerWatts": statisticAverage(
+        workout,
+        identifier: .cyclingPower,
+        unit: .watt()
+      ) as Any,
+      "averageCyclingSpeedMetersPerSecond": statisticAverage(
+        workout,
+        identifier: .cyclingSpeed,
+        unit: HKUnit.meter().unitDivided(by: .second())
       ) as Any,
       "stepCount": statisticSum(workout, identifier: .stepCount, unit: .count()) as Any,
       "flightsClimbed": statisticSum(
@@ -631,28 +863,29 @@ final class HealthKitBridge {
     for workout: HKWorkout,
     completion: @escaping (Double?, Double?) -> Void
   ) {
-    if let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate),
-       let statistics = workout.statistics(for: heartRateType) {
-      let unit = HKUnit.count().unitDivided(by: .minute())
+    let unit = HKUnit.count().unitDivided(by: .minute())
+    guard let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
+      completion(nil, nil)
+      return
+    }
+    if let statistics = workout.statistics(for: heartRateType) {
       completion(
         statistics.averageQuantity()?.doubleValue(for: unit),
         statistics.maximumQuantity()?.doubleValue(for: unit)
       )
       return
     }
-    fetchAssociatedQuantitySeries(
-      for: workout,
-      identifier: .heartRate,
-      unit: HKUnit.count().unitDivided(by: .minute()),
-      maxSamples: 5000
-    ) { series, _ in
-      let values = series.compactMap { sample in sample["value"] as? Double }
-      guard !values.isEmpty else {
-        completion(nil, nil)
-        return
-      }
-      completion(values.reduce(0, +) / Double(values.count), values.max())
+    let statisticsQuery = HKStatisticsQuery(
+      quantityType: heartRateType,
+      quantitySamplePredicate: HKQuery.predicateForObjects(from: workout),
+      options: [.discreteAverage, .discreteMax]
+    ) { _, statistics, _ in
+      completion(
+        statistics?.averageQuantity()?.doubleValue(for: unit),
+        statistics?.maximumQuantity()?.doubleValue(for: unit)
+      )
     }
+    healthStore.execute(statisticsQuery)
   }
 
   private func fetchAssociatedQuantitySeries(
@@ -1010,13 +1243,30 @@ final class HealthKitBridge {
     return selectedPoints
   }
 
+  private func distanceQuantityIdentifier(
+    for workout: HKWorkout
+  ) -> HKQuantityTypeIdentifier {
+    switch workout.workoutActivityType {
+    case .cycling: return .distanceCycling
+    case .rowing: return .distanceRowing
+    default: return .distanceWalkingRunning
+    }
+  }
+
   private func displayedDistanceMeters(
     _ workout: HKWorkout,
     metadata: [String: Any]
   ) -> Double {
-    if let walkingRunningMeters = workout.totalDistance?.doubleValue(for: .meter()),
-       walkingRunningMeters > 0 {
-      return walkingRunningMeters
+    if let totalMeters = workout.totalDistance?.doubleValue(for: .meter()),
+       totalMeters > 0 {
+      return totalMeters
+    }
+    if let cyclingMeters = statisticSum(
+      workout,
+      identifier: .distanceCycling,
+      unit: .meter()
+    ), cyclingMeters > 0 {
+      return cyclingMeters
     }
     if let crossTrainerMeters = metadataQuantityMeters(
       metadata,
@@ -1080,6 +1330,18 @@ final class HealthKitBridge {
       return nil
     }
     return statistics.sumQuantity()?.doubleValue(for: unit)
+  }
+
+  private func statisticAverage(
+    _ workout: HKWorkout,
+    identifier: HKQuantityTypeIdentifier,
+    unit: HKUnit
+  ) -> Double? {
+    guard let quantityType = HKQuantityType.quantityType(forIdentifier: identifier),
+          let statistics = workout.statistics(for: quantityType) else {
+      return nil
+    }
+    return statistics.averageQuantity()?.doubleValue(for: unit)
   }
 
   private func statisticMin(

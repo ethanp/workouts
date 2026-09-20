@@ -12,7 +12,7 @@ class HealthDataInventoryController() extends _$HealthDataInventoryController {
   @override
   HealthDataInventoryState build() => const HealthDataInventoryState();
 
-  Future<void> inspectRecentWorkouts({int maxWorkouts = 40}) async {
+  Future<void> inspectRecentWorkouts({int maxWorkouts = 5}) async {
     final keepAliveLink = ref.keepAlive();
     final healthKitBridge = ref.read(healthKitBridgeProvider);
     final progressSubscription = healthKitBridge

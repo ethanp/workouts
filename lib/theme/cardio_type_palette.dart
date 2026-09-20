@@ -8,6 +8,8 @@ extension CardioTypeColor on CardioType {
     CardioType.indoorRun => EColors.warning,
     CardioType.outdoorWalk => const Color(0xFF5E5CE6),
     CardioType.indoorWalk => const Color(0xFFBF5AF2),
+    CardioType.indoorCycle => const Color(0xFFFF375F),
+    CardioType.outdoorCycle => const Color(0xFF32ADE6),
     CardioType.elliptical => const Color(0xFFFF9F0A),
     CardioType.stairClimbing => EColors.success,
     CardioType.rowing => const Color(0xFF64D2FF),

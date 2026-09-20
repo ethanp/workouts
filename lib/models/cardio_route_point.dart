@@ -15,6 +15,25 @@ class const CardioRoutePoint({
   final DateTime? createdAt,
   final DateTime? updatedAt,
 }) {
+  factory fromHealthKit({
+    required String workoutId,
+    required int pointIndex,
+    required double latitude,
+    required double longitude,
+    required double? altitudeMeters,
+    required DateTime? recordedAt,
+  }) {
+    return CardioRoutePoint(
+      id: 'hk-route-$workoutId-$pointIndex',
+      workoutId: workoutId,
+      pointIndex: pointIndex,
+      latitude: latitude,
+      longitude: longitude,
+      altitudeMeters: altitudeMeters,
+      recordedAt: recordedAt,
+    );
+  }
+
   factory fromRow(Map<String, dynamic> routePointRow) {
     return CardioRoutePoint(
       id: routePointRow['id'] as String,

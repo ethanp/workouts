@@ -1,84 +1,38 @@
 import 'package:ethan_sync/ethan_sync.dart';
-import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
-import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_workout.dart';
+import 'package:workouts/models/cardio_workout_series.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/indoor_fitness_signals.dart';
 import 'package:workouts/models/timestamped_heart_rate.dart';
 
-const _log = ELogger('CardioMetricsStore');
-
-/// Workouts that still need zone metrics: no row yet, an incomplete row, or a
-/// stale empty row written before HR samples landed (import/backfill race).
 const _needsMetricsSql = '''
   m.id IS NULL
   OR m.zone1_seconds IS NULL
-  OR (
-    COALESCE(m.has_hr_samples, 0) = 0
-    AND EXISTS (
-      SELECT 1 FROM cardio_heart_rate_samples sample
-      WHERE sample.workout_id = w.id
-      LIMIT 1
-    )
-  )
 ''';
 
-/// Manages the `cardio_computed_metrics` local-only table: computing,
-/// storing, backfilling, and recomputing zone times for individual workouts.
+/// Computes and stores zone times in `cardio_computed_metrics` from HealthKit
+/// series when a workout is opened.
 class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
-  Future<void> computeAndStore(String workoutId) async {
-    final hrSamples = await loadHrSamples(workoutId);
-    final fitnessSignals = await _fitnessSignals(workoutId, hrSamples);
-    if (hrSamples.isEmpty) {
-      // Don't clobber a good metrics row with an empty one — import can race
-      // with backfill, which may load samples before they've been written.
-      if (await _hasComputedHrSamples(workoutId)) return;
-      await _persist(
-        workoutId,
-        HrZoneTime.zero,
-        hasHrSamples: false,
-        fitnessSignals: fitnessSignals,
-      );
-      return;
-    }
-    await _persist(
-      workoutId,
-      HrZoneTime.fromSamples(hrSamples),
-      hasHrSamples: true,
-      fitnessSignals: fitnessSignals,
-    );
-  }
-
-  Future<void> recomputeAllZones({
-    void Function(int done, int total)? onProgress,
+  Future<void> persistFromHealthKitSeries({
+    required CardioWorkout workout,
+    required CardioWorkoutSeries series,
   }) async {
-    final List<Map<String, dynamic>> workoutRows = await _powerSync.execute(
-      'SELECT id FROM cardio_workouts ORDER BY started_at DESC',
+    final hrSamples = [
+      for (final sample in series.heartRateSamples)
+        TimestampedHeartRate(timestamp: sample.timestamp, bpm: sample.bpm),
+    ];
+    await _persist(
+      workout.id,
+      hrSamples.isEmpty ? HrZoneTime.zero : HrZoneTime.fromSamples(hrSamples),
+      hasHrSamples: hrSamples.isNotEmpty,
+      fitnessSignals: workout.fitnessSignals(
+        heartRateSamples: hrSamples,
+        distanceSamples: series.distanceSamples,
+      ),
     );
-    _log.log('Recomputing zones for ${workoutRows.length} workouts.');
-    for (var index = 0; index < workoutRows.length; index++) {
-      await computeAndStore(workoutRows[index]['id'] as String);
-      onProgress?.call(index + 1, workoutRows.length);
-    }
-    _log.log('Zone recompute complete.');
   }
 
-  Future<void> backfillMissing() async {
-    final List<Map<String, dynamic>> pendingRows = await _missingRows();
-    if (pendingRows.isEmpty) return;
-
-    _log.log(
-      'Computing missing cardio metrics for ${pendingRows.length} workouts...',
-    );
-    for (final pendingRow in pendingRows) {
-      await computeAndStore(pendingRow['id'] as String);
-    }
-    _log.log('Cardio metrics computed for ${pendingRows.length} workouts.');
-  }
-
-  /// Streams the number of cardio workouts that have no computed zone metrics
-  /// yet. Drives the "compute missing zones" UI affordance.
   Stream<int> watchMissingCount() => _powerSync
       .watch('''
         SELECT COUNT(*) AS cnt FROM cardio_workouts w
@@ -86,60 +40,6 @@ class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
         WHERE $_needsMetricsSql
       ''')
       .map((rows) => (rows.first['cnt'] as int?) ?? 0);
-
-  Future<List<Map<String, dynamic>>> _missingRows() => _powerSync.execute('''
-        SELECT w.id FROM cardio_workouts w
-        LEFT JOIN cardio_computed_metrics m ON m.id = w.id
-        WHERE $_needsMetricsSql
-      ''');
-
-  Future<bool> _hasComputedHrSamples(String workoutId) async {
-    final Map<String, dynamic>? metricsRow = await _powerSync.getOptional(
-      'SELECT has_hr_samples FROM cardio_computed_metrics WHERE id = ?',
-      [workoutId],
-    );
-    return (metricsRow?['has_hr_samples'] as int?) == 1;
-  }
-
-  Future<List<TimestampedHeartRate>> loadHrSamples(String workoutId) async {
-    final List<Map<String, dynamic>> sampleRows = await _powerSync.execute(
-      'SELECT timestamp, bpm FROM cardio_heart_rate_samples'
-      ' WHERE workout_id = ? ORDER BY timestamp ASC',
-      [workoutId],
-    );
-    return sampleRows
-        .map(
-          (sampleRow) => TimestampedHeartRate(
-            timestamp: DateTime.parse(sampleRow['timestamp'] as String),
-            bpm: sampleRow['bpm'] as int,
-          ),
-        )
-        .toList();
-  }
-
-  Future<IndoorFitnessSignals> _fitnessSignals(
-    String workoutId,
-    List<TimestampedHeartRate> hrSamples,
-  ) async {
-    final Map<String, dynamic>? workoutRow = await _powerSync.getOptional(
-      'SELECT * FROM cardio_workouts WHERE id = ?',
-      [workoutId],
-    );
-    if (workoutRow == null) return IndoorFitnessSignals.empty;
-    return CardioWorkout.fromRow(workoutRow).fitnessSignals(
-      heartRateSamples: hrSamples,
-      distanceSamples: await loadDistanceSamples(workoutId),
-    );
-  }
-
-  Future<List<CardioQuantitySample>> loadDistanceSamples(String workoutId) async {
-    final List<Map<String, dynamic>> sampleRows = await _powerSync.execute(
-      'SELECT * FROM cardio_distance_samples'
-      ' WHERE workout_id = ? ORDER BY started_at ASC',
-      [workoutId],
-    );
-    return sampleRows.map(CardioQuantitySample.fromRow).toList();
-  }
 
   Future<void> _persist(
     String workoutId,

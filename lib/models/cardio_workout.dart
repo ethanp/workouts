@@ -1,4 +1,5 @@
 import 'package:workouts/models/cardio_type.dart';
+import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/models/distance_origin.dart';
 import 'package:workouts/models/fitness_signal_confidence.dart';
 import 'package:workouts/models/hr_zone_time.dart';
@@ -30,6 +31,9 @@ class const CardioWorkout({
   final double? fitnessMachineDurationSeconds,
   final double? crossTrainerDistanceMeters,
   final double? indoorBikeDistanceMeters,
+  final double? averageCyclingCadenceRpm,
+  final double? averageCyclingPowerWatts,
+  final double? averageCyclingSpeedMetersPerSecond,
   final double? basalEnergyKcal,
   final double? stepCount,
   final double? flightsClimbed,
@@ -79,6 +83,15 @@ class const CardioWorkout({
       ),
       indoorBikeDistanceMeters: _asDouble(
         workoutRow['indoor_bike_distance_meters'],
+      ),
+      averageCyclingCadenceRpm: _asDouble(
+        workoutRow['average_cycling_cadence_rpm'],
+      ),
+      averageCyclingPowerWatts: _asDouble(
+        workoutRow['average_cycling_power_watts'],
+      ),
+      averageCyclingSpeedMetersPerSecond: _asDouble(
+        workoutRow['average_cycling_speed_meters_per_second'],
       ),
       basalEnergyKcal: _asDouble(workoutRow['basal_energy_kcal']),
       stepCount: _asDouble(workoutRow['step_count']),
@@ -138,6 +151,30 @@ class const CardioWorkout({
     final flightsClimbed = this.flightsClimbed;
     if (flightsClimbed == null) return null;
     return '${flightsClimbed.round()} flights';
+  }
+
+  bool get hasCyclingMachineStats =>
+      averageCyclingPowerWatts != null ||
+      averageCyclingCadenceRpm != null ||
+      averageCyclingSpeedMetersPerSecond != null;
+
+  String? get cyclingPowerCaption {
+    final watts = averageCyclingPowerWatts;
+    if (watts == null || watts <= 0) return null;
+    return '${watts.round()} W';
+  }
+
+  String? get cyclingCadenceCaption {
+    final rpm = averageCyclingCadenceRpm;
+    if (rpm == null || rpm <= 0) return null;
+    return '${rpm.round()} rpm';
+  }
+
+  String? get cyclingSpeedCaption {
+    final metersPerSecond = averageCyclingSpeedMetersPerSecond;
+    if (metersPerSecond == null || metersPerSecond <= 0) return null;
+    final mph = metersPerSecond * 3600 / metersPerMile;
+    return '${mph.toStringAsFixed(1)} mph';
   }
 
   String? get elevationGainCaption {

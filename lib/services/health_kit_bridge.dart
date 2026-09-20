@@ -3,6 +3,11 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/apple_health_cardio_listing.dart';
+import 'package:workouts/models/cardio_heart_rate_sample.dart';
+import 'package:workouts/models/cardio_import_payload.dart';
+import 'package:workouts/models/cardio_quantity_sample.dart';
+import 'package:workouts/models/cardio_route_point.dart';
+import 'package:workouts/models/cardio_workout_series.dart';
 import 'package:workouts/models/cardio_workout_fingerprint.dart';
 import 'package:workouts/models/health_data_inventory.dart';
 import 'package:workouts/models/health_permission_status.dart';
@@ -86,7 +91,7 @@ class HealthKitBridge() {
   }
 
   Future<Map<String, dynamic>> inspectRecentCardioWorkouts({
-    int maxWorkouts = 40,
+    int maxWorkouts = 5,
   }) async {
     try {
       final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
@@ -94,12 +99,127 @@ class HealthKitBridge() {
         {'maxWorkouts': maxWorkouts},
       );
       if (payload == null) return const {};
-      return Map<String, dynamic>.from(payload);
+      return _jsonObjectMap(payload);
     } on MissingPluginException {
       return const {};
     } on PlatformException {
       return const {};
     }
+  }
+
+  Future<List<CardioHeartRateSample>> fetchCardioHeartRateForZones({
+    required String workoutId,
+    required String externalWorkoutId,
+  }) async {
+    try {
+      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+        'fetchCardioHeartRateForZones',
+        {'externalWorkoutId': externalWorkoutId},
+      );
+      if (payload == null) return const [];
+      final heartRateSamples = HeartRateSamplePayload.parseList(
+        Map<String, dynamic>.from(payload)['heartRateSeries'],
+      );
+      return [
+        for (
+          var sampleIndex = 0;
+          sampleIndex < heartRateSamples.length;
+          sampleIndex++
+        )
+          CardioHeartRateSample.fromHealthKit(
+            workoutId: workoutId,
+            sampleIndex: sampleIndex,
+            timestamp: DateTime.parse(heartRateSamples[sampleIndex].timestamp),
+            bpm: heartRateSamples[sampleIndex].bpm,
+          ),
+      ];
+    } on MissingPluginException {
+      return const [];
+    } on PlatformException {
+      return const [];
+    }
+  }
+
+  Future<CardioWorkoutSeries> fetchCardioWorkoutSeries({
+    required String workoutId,
+    required String externalWorkoutId,
+    int maxRoutePoints = 1500,
+    bool includeRoute = true,
+  }) async {
+    try {
+      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+        'fetchCardioWorkoutSeries',
+        {
+          'externalWorkoutId': externalWorkoutId,
+          'maxRoutePoints': maxRoutePoints,
+          'includeRoute': includeRoute,
+        },
+      );
+      if (payload == null) return CardioWorkoutSeries.empty;
+      return _seriesFromHealthKitPayload(
+        workoutId: workoutId,
+        payload: Map<String, dynamic>.from(payload),
+      );
+    } on MissingPluginException {
+      return CardioWorkoutSeries.empty;
+    } on PlatformException {
+      return CardioWorkoutSeries.empty;
+    }
+  }
+
+  CardioWorkoutSeries _seriesFromHealthKitPayload({
+    required String workoutId,
+    required Map<String, dynamic> payload,
+  }) {
+    final routePoints = RoutePointPayload.parseList(payload['routePoints']);
+    final heartRateSamples = HeartRateSamplePayload.parseList(
+      payload['heartRateSeries'],
+    );
+    final distanceSamples = QuantitySamplePayload.parseList(
+      payload['distanceSeries'],
+    );
+    return CardioWorkoutSeries(
+      routePoints: [
+        for (var pointIndex = 0; pointIndex < routePoints.length; pointIndex++)
+          CardioRoutePoint.fromHealthKit(
+            workoutId: workoutId,
+            pointIndex: pointIndex,
+            latitude: routePoints[pointIndex].lat,
+            longitude: routePoints[pointIndex].lng,
+            altitudeMeters: routePoints[pointIndex].altitudeMeters,
+            recordedAt: DateTime.tryParse(
+              routePoints[pointIndex].timestamp ?? '',
+            ),
+          ),
+      ],
+      heartRateSamples: [
+        for (
+          var sampleIndex = 0;
+          sampleIndex < heartRateSamples.length;
+          sampleIndex++
+        )
+          CardioHeartRateSample.fromHealthKit(
+            workoutId: workoutId,
+            sampleIndex: sampleIndex,
+            timestamp: DateTime.parse(heartRateSamples[sampleIndex].timestamp),
+            bpm: heartRateSamples[sampleIndex].bpm,
+          ),
+      ],
+      distanceSamples: [
+        for (
+          var sampleIndex = 0;
+          sampleIndex < distanceSamples.length;
+          sampleIndex++
+        )
+          CardioQuantitySample.fromHealthKit(
+            workoutId: workoutId,
+            sampleIndex: sampleIndex,
+            startedAt: DateTime.parse(distanceSamples[sampleIndex].startedAt),
+            endedAt: DateTime.parse(distanceSamples[sampleIndex].endedAt),
+            value: distanceSamples[sampleIndex].value,
+          ),
+      ],
+    );
   }
 
   Future<AppleHealthCardioListing> importCardioWorkouts({
@@ -175,6 +295,21 @@ class HealthKitBridge() {
     } on MissingPluginException {
       return;
     }
+  }
+
+  Map<String, dynamic> _jsonObjectMap(Map<Object?, Object?> payload) => {
+    for (final entry in payload.entries)
+      if (entry.key is String) entry.key as String: _jsonReadyValue(entry.value),
+  };
+
+  Object? _jsonReadyValue(Object? value) {
+    if (value is Map) {
+      return _jsonObjectMap(Map<Object?, Object?>.from(value));
+    }
+    if (value is List) {
+      return [for (final item in value) _jsonReadyValue(item)];
+    }
+    return value;
   }
 
   HealthPermissionStatus _mapStatus(String? status) {

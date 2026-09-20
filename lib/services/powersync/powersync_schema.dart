@@ -159,6 +159,9 @@ const schema = Schema([
     Column.real('fitness_machine_duration_seconds'),
     Column.real('cross_trainer_distance_meters'),
     Column.real('indoor_bike_distance_meters'),
+    Column.real('average_cycling_cadence_rpm'),
+    Column.real('average_cycling_power_watts'),
+    Column.real('average_cycling_speed_meters_per_second'),
     Column.real('basal_energy_kcal'),
     Column.real('step_count'),
     Column.real('flights_climbed'),
@@ -166,7 +169,7 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('cardio_route_points', [
+  Table.localOnly('cardio_route_points', [
     Column.text('workout_id'),
     Column.integer('point_index'),
     Column.real('lat'),
@@ -176,7 +179,7 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('cardio_heart_rate_samples', [
+  Table.localOnly('cardio_heart_rate_samples', [
     Column.text('workout_id'),
     Column.text('timestamp'),
     Column.integer('bpm'),
@@ -190,7 +193,7 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('cardio_distance_samples', [
+  Table.localOnly('cardio_distance_samples', [
     Column.text('workout_id'),
     Column.text('started_at'),
     Column.text('ended_at'),
@@ -198,7 +201,7 @@ const schema = Schema([
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
-  Table('cardio_step_samples', [
+  Table.localOnly('cardio_step_samples', [
     Column.text('workout_id'),
     Column.text('started_at'),
     Column.text('ended_at'),
@@ -215,7 +218,7 @@ const schema = Schema([
     Column.text('updated_at'),
   ]),
 
-  Table.localOnly('cardio_computed_metrics', [
+  Table('cardio_computed_metrics', [
     Column.integer('zone1_seconds'),
     Column.integer('zone2_seconds'),
     Column.integer('zone3_seconds'),

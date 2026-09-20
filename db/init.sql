@@ -289,6 +289,9 @@ CREATE TABLE cardio_workouts (
     fitness_machine_duration_seconds DOUBLE PRECISION,
     cross_trainer_distance_meters DOUBLE PRECISION,
     indoor_bike_distance_meters DOUBLE PRECISION,
+    average_cycling_cadence_rpm DOUBLE PRECISION,
+    average_cycling_power_watts DOUBLE PRECISION,
+    average_cycling_speed_meters_per_second DOUBLE PRECISION,
     basal_energy_kcal DOUBLE PRECISION,
     step_count DOUBLE PRECISION,
     flights_climbed DOUBLE PRECISION,
@@ -399,4 +402,27 @@ CREATE TRIGGER update_cardio_step_samples_updated_at BEFORE UPDATE ON cardio_ste
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_cardio_workout_events_updated_at BEFORE UPDATE ON cardio_workout_events
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TABLE cardio_computed_metrics (
+    id TEXT PRIMARY KEY REFERENCES cardio_workouts(id) ON DELETE CASCADE,
+    zone1_seconds INTEGER NOT NULL DEFAULT 0,
+    zone2_seconds INTEGER NOT NULL DEFAULT 0,
+    zone3_seconds INTEGER NOT NULL DEFAULT 0,
+    zone4_seconds INTEGER NOT NULL DEFAULT 0,
+    zone5_seconds INTEGER NOT NULL DEFAULT 0,
+    has_hr_samples INTEGER NOT NULL DEFAULT 0,
+    pace_seconds_per_mile DOUBLE PRECISION,
+    meters_per_heartbeat DOUBLE PRECISION,
+    cardiac_drift_percent DOUBLE PRECISION,
+    has_distance_samples INTEGER NOT NULL DEFAULT 0,
+    distance_origin TEXT,
+    fitness_confidence TEXT,
+    computed_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TRIGGER update_cardio_computed_metrics_updated_at
+    BEFORE UPDATE ON cardio_computed_metrics
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

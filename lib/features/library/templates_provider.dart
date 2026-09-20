@@ -1,3 +1,4 @@
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/workout_exercise.dart';
 import 'package:workouts/models/workout_template.dart';
@@ -35,6 +36,7 @@ WorkoutTemplate? templateById(Ref ref, String templateId) {
 
 @riverpod
 Future<List<WorkoutExercise>> allExercises(Ref ref) async {
+  ref.watch(localDataRevisionProvider);
   final repository = ref.watch(templateRepositoryPowerSyncProvider);
   return repository.fetchExercises();
 }

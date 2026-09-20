@@ -8,7 +8,6 @@ import 'package:powersync/powersync.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app_identity.dart';
 import 'package:workouts/services/powersync/powersync_schema.dart';
-import 'package:workouts/error_bus.dart';
 
 const _log = ELogger('WorkoutsSync');
 
@@ -31,10 +30,11 @@ SyncConfig buildWorkoutsSyncConfig(SharedPreferences preferences) {
       crudBatchLimit: 1000,
     ),
     startupHooks: [
+      _purgeCardioSeriesUploads,
       _purgeOrphanedCardioChildCrudEntries,
       if (kDebugMode) _logDownloadedTables,
     ],
-    onSyncError: errorBus.add,
+    onSyncError: _log.warn,
   );
 }
 
@@ -55,6 +55,7 @@ const _fkDependencies = <String, Set<String>>{
   'cardio_distance_samples': {'cardio_workouts'},
   'cardio_step_samples': {'cardio_workouts'},
   'cardio_workout_events': {'cardio_workouts'},
+  'cardio_computed_metrics': {'cardio_workouts'},
   'workout_block_exercises': {'workout_blocks', 'exercises'},
   'session_blocks': {'sessions'},
   'session_notes': {'sessions'},
@@ -91,6 +92,7 @@ class const WorkoutsConflictResolver() extends ConflictResolver {
     'cardio_distance_samples',
     'cardio_step_samples',
     'cardio_workout_events',
+    'cardio_computed_metrics',
     'workout_blocks',
     'workout_block_exercises',
     'session_blocks',
@@ -174,6 +176,33 @@ class const WorkoutsConflictResolver() extends ConflictResolver {
   }
 }
 
+/// GPS / HR / distance / step samples stay in Apple Health. Drop leftover
+/// upload-queue rows so a crashed import cannot replay them. Do not DELETE
+/// the local series tables here — that is hundreds of thousands of rows
+/// and jetsams the app on launch.
+Future<void> _purgeCardioSeriesUploads(PowerSyncDatabase database) async {
+  const seriesTables = [
+    'cardio_route_points',
+    'cardio_heart_rate_samples',
+    'cardio_distance_samples',
+    'cardio_step_samples',
+  ];
+  final tableList = seriesTables.map((table) => "'$table'").join(', ');
+  try {
+    final countRows = await database.execute(
+      "SELECT COUNT(*) AS cnt FROM ps_crud WHERE json_extract(data, '\$.type') IN ($tableList)",
+    );
+    final queuedCount = countRows.first['cnt'] as int? ?? 0;
+    if (queuedCount == 0) return;
+    await database.execute(
+      "DELETE FROM ps_crud WHERE json_extract(data, '\$.type') IN ($tableList)",
+    );
+    _log.log('Removed $queuedCount leftover cardio series upload rows.');
+  } catch (error) {
+    _log.warn('Could not drop leftover cardio series upload rows: $error');
+  }
+}
+
 /// Bulk-removes CRUD queue entries for cardio child tables whose `workout_id`
 /// no longer exists locally, so a deleted cardio workout doesn't leave
 /// un-uploadable orphans wedged in the queue.
@@ -181,18 +210,24 @@ Future<void> _purgeOrphanedCardioChildCrudEntries(
   PowerSyncDatabase database,
 ) async {
   const orphanFilter = '''
-    json_extract(data, '\$.type') IN (
-      'cardio_route_points',
-      'cardio_heart_rate_samples',
-      'cardio_best_efforts',
-      'cardio_distance_samples',
-      'cardio_step_samples',
-      'cardio_workout_events'
-    )
+    (
+      json_extract(data, '\$.type') IN (
+        'cardio_route_points',
+        'cardio_heart_rate_samples',
+        'cardio_best_efforts',
+        'cardio_distance_samples',
+        'cardio_step_samples',
+        'cardio_workout_events'
+      )
       AND (
         json_extract(data, '\$.data.workout_id') IS NULL
         OR json_extract(data, '\$.data.workout_id') NOT IN (SELECT id FROM cardio_workouts)
       )
+    )
+    OR (
+      json_extract(data, '\$.type') = 'cardio_computed_metrics'
+      AND json_extract(data, '\$.id') NOT IN (SELECT id FROM cardio_workouts)
+    )
   ''';
   try {
     final countRows = await database.execute(

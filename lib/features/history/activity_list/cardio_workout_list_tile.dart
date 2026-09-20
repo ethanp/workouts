@@ -110,7 +110,16 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
     }
     return '${workout.displayDistanceMeters.milesCaption}  ·  '
         '$duration  ·  '
-        '${workout.duration.pacePerMile(workout.displayDistanceMeters)}';
+        '${_distanceWorkCaption()}';
+  }
+
+  String _distanceWorkCaption() {
+    final cyclingWork = [
+      if (workout.cyclingPowerCaption != null) workout.cyclingPowerCaption!,
+      if (workout.cyclingCadenceCaption != null) workout.cyclingCadenceCaption!,
+    ];
+    if (cyclingWork.isNotEmpty) return cyclingWork.join('  ·  ');
+    return workout.duration.pacePerMile(workout.displayDistanceMeters);
   }
 
   bool _showsZoneBreakdown() =>

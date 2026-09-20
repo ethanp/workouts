@@ -137,6 +137,9 @@ class CardioImportController() extends _$CardioImportController {
         .read(healthKitBridgeProvider)
         .importCardioWorkouts(
           maxWorkouts: maxWorkouts,
+          includeRoute: false,
+          includeHeartRateSeries: false,
+          includeAssociatedSeries: false,
           maxRoutePoints: maxRoutePoints,
           skipUnchanged: alreadyStored.fingerprints,
           onProgress: (inspectProgress) => _publishProgress(

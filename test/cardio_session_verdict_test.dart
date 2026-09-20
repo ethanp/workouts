@@ -48,6 +48,24 @@ void main() {
       expect(CardioType.indoorRun.primaryWork, CardioPrimaryWork.distanceAndPace);
     });
 
+    test('uses distance, power, cadence, and METs for indoor cycle', () {
+      expect(
+        CardioType.indoorCycle.primaryWork,
+        CardioPrimaryWork.machineDistanceAndMets,
+      );
+      final verdict = CardioSessionVerdict.fromWorkout(
+        _workout(
+          activityType: CardioType.indoorCycle,
+          distanceMeters: 3589,
+          averageMets: 7.6,
+          averageCyclingPowerWatts: 74,
+          averageCyclingCadenceRpm: 68.2,
+        ),
+      );
+      expect(verdict.primaryWork.headline, contains('mi'));
+      expect(verdict.primaryWork.supporting, '74 W · 68 rpm · 7.6 METs');
+    });
+
     test('uses machine distance and METs for elliptical', () {
       final verdict = CardioSessionVerdict.fromWorkout(
         _workout(
@@ -87,6 +105,8 @@ CardioWorkout _workout({
   double distanceMeters = 0,
   HrZoneTime zoneTime = HrZoneTime.zero,
   double? averageMets,
+  double? averageCyclingPowerWatts,
+  double? averageCyclingCadenceRpm,
   double? flightsClimbed,
   double? stepCount,
 }) {
@@ -102,6 +122,8 @@ CardioWorkout _workout({
     sourceName: 'Apple Health',
     zoneTime: zoneTime,
     averageMets: averageMets,
+    averageCyclingPowerWatts: averageCyclingPowerWatts,
+    averageCyclingCadenceRpm: averageCyclingCadenceRpm,
     flightsClimbed: flightsClimbed,
     stepCount: stepCount,
   );

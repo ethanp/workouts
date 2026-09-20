@@ -6,6 +6,20 @@ class const CardioHeartRateSample({
   final DateTime? createdAt,
   final DateTime? updatedAt,
 }) {
+  factory fromHealthKit({
+    required String workoutId,
+    required int sampleIndex,
+    required DateTime timestamp,
+    required int bpm,
+  }) {
+    return CardioHeartRateSample(
+      id: 'hk-hr-$workoutId-$sampleIndex',
+      workoutId: workoutId,
+      timestamp: timestamp,
+      bpm: bpm,
+    );
+  }
+
   factory fromRow(Map<String, dynamic> sampleRow) {
     return CardioHeartRateSample(
       id: sampleRow['id'] as String,

@@ -5,8 +5,7 @@ import 'package:workouts/features/cardio/cardio_browse_providers.dart';
 import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 
-/// Single tile that drives the two-step Apple Health workflow: import recent
-/// cardio workouts, then compute heart rate zones for any that are missing.
+/// Apple Health catalog sync, plus optional newest-first zone compute.
 class const AppleHealthSyncTile() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -139,7 +138,8 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
       const SizedBox(height: ELayout.spaceMd),
       if (hasMissing)
         Text(
-          '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data',
+          '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data. '
+          'Computes newest first.',
           style: EText.caption.copyWith(color: EColors.warning),
         ),
       if (hasMissing || isBackfilling) ...[

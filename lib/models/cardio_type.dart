@@ -1,24 +1,61 @@
 import 'package:ethan_utils/ethan_utils.dart';
 
-enum CardioType({required this.primaryWork}) {
-  outdoorRun(primaryWork: CardioPrimaryWork.distanceAndPace),
-  indoorRun(primaryWork: CardioPrimaryWork.distanceAndPace),
-  outdoorWalk(primaryWork: CardioPrimaryWork.distanceAndPace),
-  indoorWalk(primaryWork: CardioPrimaryWork.distanceAndPace),
-  elliptical(primaryWork: CardioPrimaryWork.machineDistanceAndMets),
-  stairClimbing(primaryWork: CardioPrimaryWork.flightsAndSteps),
-  rowing(primaryWork: CardioPrimaryWork.machineDistanceAndMets);
+enum CardioType({
+  required this.primaryWork,
+  required this.hasDistance,
+  required this.hasRoute,
+}) {
+  outdoorRun(
+    primaryWork: CardioPrimaryWork.distanceAndPace,
+    hasDistance: true,
+    hasRoute: true,
+  ),
+  indoorRun(
+    primaryWork: CardioPrimaryWork.distanceAndPace,
+    hasDistance: true,
+    hasRoute: false,
+  ),
+  outdoorWalk(
+    primaryWork: CardioPrimaryWork.distanceAndPace,
+    hasDistance: true,
+    hasRoute: true,
+  ),
+  indoorWalk(
+    primaryWork: CardioPrimaryWork.distanceAndPace,
+    hasDistance: true,
+    hasRoute: false,
+  ),
+  indoorCycle(
+    primaryWork: CardioPrimaryWork.machineDistanceAndMets,
+    hasDistance: true,
+    hasRoute: false,
+  ),
+  outdoorCycle(
+    primaryWork: CardioPrimaryWork.distanceAndPace,
+    hasDistance: true,
+    hasRoute: true,
+  ),
+  elliptical(
+    primaryWork: CardioPrimaryWork.machineDistanceAndMets,
+    hasDistance: true,
+    hasRoute: false,
+  ),
+  stairClimbing(
+    primaryWork: CardioPrimaryWork.flightsAndSteps,
+    hasDistance: false,
+    hasRoute: false,
+  ),
+  rowing(
+    primaryWork: CardioPrimaryWork.machineDistanceAndMets,
+    hasDistance: false,
+    hasRoute: false,
+  );
 
   final CardioPrimaryWork primaryWork;
+  final bool hasDistance;
+  final bool hasRoute;
 
-  String get displayName => name.titleCase;
-
-  bool get hasRoute => this == outdoorRun || this == outdoorWalk;
-
-  bool get hasDistance => switch (this) {
-    outdoorRun || indoorRun || outdoorWalk || indoorWalk || elliptical => true,
-    stairClimbing || rowing => false,
-  };
+  String get displayName => nameAsCapitalizedWords;
 
   String get dbKey => name;
 

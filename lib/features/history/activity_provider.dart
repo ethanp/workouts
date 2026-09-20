@@ -11,6 +11,7 @@ import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/models/session.dart';
 import 'package:workouts/models/session_calendar_day.dart';
 import 'package:ethan_sync/ethan_sync.dart';
+import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
@@ -227,16 +228,18 @@ class MetricsBackfillController() extends _$MetricsBackfillController {
 
     state = const MetricsBackfillStatus(
       inProgress: true,
-      label: 'Backfilling zone metrics...',
+      label: 'Computing zones and best efforts from Apple Health…',
     );
     final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
-    await cardioRepository.backfillMissingMetrics();
-
-    state = const MetricsBackfillStatus(
-      inProgress: true,
-      label: 'Backfilling best efforts...',
+    await cardioRepository.backfillMissingZonesNewestFirst(
+      ref.read(healthKitBridgeProvider),
+      onProgress: (done, total) {
+        state = MetricsBackfillStatus(
+          inProgress: true,
+          label: 'Zones · $done of $total · newest first',
+        );
+      },
     );
-    await cardioRepository.backfillMissingBestEfforts();
 
     state = const MetricsBackfillStatus(
       inProgress: true,

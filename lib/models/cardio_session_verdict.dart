@@ -74,8 +74,18 @@ class const CardioSessionVerdict({
     }
     return CardioPrimaryWorkMetric(
       headline: displayDistanceMeters.milesCaption,
-      supporting: workout.metsCaption,
+      supporting: _machineSupporting(workout),
     );
+  }
+
+  static String? _machineSupporting(CardioWorkout workout) {
+    final parts = [
+      if (workout.cyclingPowerCaption != null) workout.cyclingPowerCaption!,
+      if (workout.cyclingCadenceCaption != null) workout.cyclingCadenceCaption!,
+      if (workout.metsCaption != null) workout.metsCaption!,
+    ];
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
   }
 
   static CardioPrimaryWorkMetric _flightsAndSteps(CardioWorkout workout) {

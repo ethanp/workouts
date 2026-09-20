@@ -68,7 +68,10 @@ class const MachineCardioNotes({required final CardioWorkout workout})
   @override
   Widget build(BuildContext context) {
     final notes = <String>[];
-    if (workout.activityType == CardioType.elliptical) {
+    if (workout.hasCyclingMachineStats) {
+      _addCyclingNotes(notes);
+    } else if (workout.activityType.primaryWork ==
+        CardioPrimaryWork.machineDistanceAndMets) {
       _addDifferingMachineDuration(notes);
     } else {
       _addIndoorWalkRunNotes(notes);
@@ -93,6 +96,13 @@ class const MachineCardioNotes({required final CardioWorkout workout})
         ),
       ),
     );
+  }
+
+  void _addCyclingNotes(List<String> notes) {
+    _addDifferingMachineDuration(notes);
+    if (workout.cyclingPowerCaption case final power?) notes.add(power);
+    if (workout.cyclingCadenceCaption case final cadence?) notes.add(cadence);
+    if (workout.cyclingSpeedCaption case final speed?) notes.add(speed);
   }
 
   void _addDifferingMachineDuration(List<String> notes) {

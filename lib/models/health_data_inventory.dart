@@ -160,17 +160,29 @@ class const HealthInventoryWorkout({
   required final DateTime endedAt,
   required final int durationSeconds,
   required final String sourceName,
+  final String healthKitActivityType = '',
+  final int? healthKitActivityTypeRaw,
+  final bool indoorWorkout = false,
   final String? sourceBundleId,
   final String? deviceName,
   final String? deviceModel,
   final bool machineLinked = false,
   final double? distanceMeters,
+  final double? indoorBikeDistanceMeters,
+  final double? crossTrainerDistanceMeters,
+  final double? averageMets,
+  final double? fitnessMachineDurationSeconds,
   final double? energyKcal,
+  final double? basalEnergyKcal,
   final double? averageHeartRateBpm,
+  final double? minHeartRateBpm,
+  final double? maxHeartRateBpm,
   final double? elevationAscendedMeters,
   final double? recoveryBpm,
   final double? effortScore,
   final double? estimatedEffortScore,
+  final double? stepCount,
+  final double? flightsClimbed,
   final List<String> metadataKeys = const [],
   final Map<String, String> metadata = const {},
   final List<HealthInventoryEvent> events = const [],
@@ -186,6 +198,10 @@ class const HealthInventoryWorkout({
       activityType: CardioType.fromDbKey(
         (workoutMap['activityType'] as String?) ?? CardioType.outdoorRun.dbKey,
       ),
+      healthKitActivityType:
+          (workoutMap['healthKitActivityType'] as String?) ?? '',
+      healthKitActivityTypeRaw: _asInt(workoutMap['healthKitActivityTypeRaw']),
+      indoorWorkout: workoutMap['indoorWorkout'] == true,
       startedAt: startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
       endedAt: endDate ?? DateTime.fromMillisecondsSinceEpoch(0),
       durationSeconds: _asInt(workoutMap['durationSeconds']) ?? 0,
@@ -195,12 +211,27 @@ class const HealthInventoryWorkout({
       deviceModel: workoutMap['deviceModel'] as String?,
       machineLinked: workoutMap['machineLinked'] == true,
       distanceMeters: _asDouble(workoutMap['distanceMeters']),
+      indoorBikeDistanceMeters: _asDouble(
+        workoutMap['indoorBikeDistanceMeters'],
+      ),
+      crossTrainerDistanceMeters: _asDouble(
+        workoutMap['crossTrainerDistanceMeters'],
+      ),
+      averageMets: _asDouble(workoutMap['averageMets']),
+      fitnessMachineDurationSeconds: _asDouble(
+        workoutMap['fitnessMachineDurationSeconds'],
+      ),
       energyKcal: _asDouble(workoutMap['energyKcal']),
+      basalEnergyKcal: _asDouble(workoutMap['basalEnergyKcal']),
       averageHeartRateBpm: _asDouble(workoutMap['avgHeartRateBpm']),
+      minHeartRateBpm: _asDouble(workoutMap['minHeartRateBpm']),
+      maxHeartRateBpm: _asDouble(workoutMap['maxHeartRateBpm']),
       elevationAscendedMeters: _asDouble(workoutMap['elevationAscendedMeters']),
       recoveryBpm: _asDouble(workoutMap['recoveryBpm']),
       effortScore: _asDouble(workoutMap['effortScore']),
       estimatedEffortScore: _asDouble(workoutMap['estimatedEffortScore']),
+      stepCount: _asDouble(workoutMap['stepCount']),
+      flightsClimbed: _asDouble(workoutMap['flightsClimbed']),
       metadataKeys: _stringList(workoutMap['metadataKeys']),
       metadata: _stringMap(workoutMap['metadata']),
       events: _events(workoutMap['events']),
@@ -219,6 +250,9 @@ class const HealthInventoryWorkout({
   Map<String, Object?> get asJson => {
     'externalWorkoutId': externalWorkoutId,
     'activityType': activityType.dbKey,
+    'healthKitActivityType': healthKitActivityType,
+    'healthKitActivityTypeRaw': healthKitActivityTypeRaw,
+    'indoorWorkout': indoorWorkout,
     'startedAt': startedAt.toIso8601String(),
     'endedAt': endedAt.toIso8601String(),
     'durationSeconds': durationSeconds,
@@ -228,12 +262,21 @@ class const HealthInventoryWorkout({
     'deviceModel': deviceModel,
     'machineLinked': machineLinked,
     'distanceMeters': distanceMeters,
+    'indoorBikeDistanceMeters': indoorBikeDistanceMeters,
+    'crossTrainerDistanceMeters': crossTrainerDistanceMeters,
+    'averageMets': averageMets,
+    'fitnessMachineDurationSeconds': fitnessMachineDurationSeconds,
     'energyKcal': energyKcal,
+    'basalEnergyKcal': basalEnergyKcal,
     'averageHeartRateBpm': averageHeartRateBpm,
+    'minHeartRateBpm': minHeartRateBpm,
+    'maxHeartRateBpm': maxHeartRateBpm,
     'elevationAscendedMeters': elevationAscendedMeters,
     'recoveryBpm': recoveryBpm,
     'effortScore': effortScore,
     'estimatedEffortScore': estimatedEffortScore,
+    'stepCount': stepCount,
+    'flightsClimbed': flightsClimbed,
     'metadataKeys': metadataKeys,
     'metadata': metadata,
     'events': [for (final event in events) event.asJson],
@@ -267,6 +310,7 @@ class const HealthDataInventory({
   required final List<HealthInventoryWorkout> workouts,
   final List<String> queriedQuantityTypes = const [],
   final List<String> queriedCategoryTypes = const [],
+  final Map<String, dynamic> nativePayload = const {},
 }) {
   factory fromMap(Map<String, dynamic> inventoryMap) {
     return HealthDataInventory(
@@ -274,6 +318,7 @@ class const HealthDataInventory({
       workouts: _workouts(inventoryMap['workouts']),
       queriedQuantityTypes: _stringList(inventoryMap['queriedQuantityTypes']),
       queriedCategoryTypes: _stringList(inventoryMap['queriedCategoryTypes']),
+      nativePayload: inventoryMap,
     );
   }
 
@@ -306,6 +351,16 @@ class const HealthDataInventory({
           present.add('workoutEffortScore');
         }
         if ((workout.distanceMeters ?? 0) > 0) present.add('summaryDistance');
+        if ((workout.indoorBikeDistanceMeters ?? 0) > 0) {
+          present.add('indoorBikeDistance');
+        }
+        if (workout.averageMets != null) present.add('averageMETs');
+        if (workout.fitnessMachineDurationSeconds != null) {
+          present.add('fitnessMachineDuration');
+        }
+        if (workout.healthKitActivityType.isNotEmpty) {
+          present.add(workout.healthKitActivityType);
+        }
         if (workout.events.isNotEmpty) present.add('workoutEvents');
       }
       return HealthSourceMatrixRow(
@@ -332,7 +387,9 @@ class const HealthDataInventory({
   };
 
   String get jsonEmailBody =>
-      const JsonEncoder.withIndent('  ').convert(asJson);
+      const JsonEncoder.withIndent('  ').convert(
+        nativePayload.isEmpty ? asJson : nativePayload,
+      );
 }
 
 class const HealthInventoryInspectProgress({

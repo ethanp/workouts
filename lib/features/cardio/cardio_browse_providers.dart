@@ -9,6 +9,8 @@ import 'package:workouts/models/cardio_quantity_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/cardio_workout_event.dart';
+import 'package:workouts/models/cardio_workout_series.dart';
+import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 
 part 'cardio_browse_providers.g.dart';
@@ -37,29 +39,56 @@ Stream<List<CardioCalendarDay>> cardioCalendarDays(Ref ref) =>
     _watchRepo(ref, (cardioRepository) => cardioRepository.watchCalendarDays());
 
 @riverpod
-Stream<List<CardioRoutePoint>> cardioRoutePoints(Ref ref, String workoutId) =>
-    _watchRepo(
-      ref,
-      (cardioRepository) => cardioRepository.watchRoutePoints(workoutId),
+Future<CardioWorkoutSeries> cardioWorkoutSeries(
+  Ref ref,
+  String workoutId,
+) async {
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return CardioWorkoutSeries.empty;
+  final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
+  final workout = await cardioRepository.getWorkout(workoutId);
+  if (workout == null || workout.externalWorkoutId.isEmpty) {
+    return CardioWorkoutSeries.empty;
+  }
+  final series = await ref
+      .read(healthKitBridgeProvider)
+      .fetchCardioWorkoutSeries(
+        workoutId: workout.id,
+        externalWorkoutId: workout.externalWorkoutId,
+      );
+  try {
+    await cardioRepository.persistDerivedFromHealthKitSeries(
+      workout: workout,
+      series: series,
     );
+  } on StateError {
+    return series;
+  }
+  return series;
+}
 
 @riverpod
-Stream<List<CardioHeartRateSample>> cardioHeartRateSamples(
+Future<List<CardioRoutePoint>> cardioRoutePoints(
   Ref ref,
   String workoutId,
-) => _watchRepo(
-  ref,
-  (cardioRepository) => cardioRepository.watchHeartRateSamples(workoutId),
-);
+) async =>
+    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future)).routePoints;
 
 @riverpod
-Stream<List<CardioQuantitySample>> cardioDistanceSamples(
+Future<List<CardioHeartRateSample>> cardioHeartRateSamples(
   Ref ref,
   String workoutId,
-) => _watchRepo(
-  ref,
-  (cardioRepository) => cardioRepository.watchDistanceSamples(workoutId),
-);
+) async =>
+    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future))
+        .heartRateSamples;
+
+@riverpod
+Future<List<CardioQuantitySample>> cardioDistanceSamples(
+  Ref ref,
+  String workoutId,
+) async =>
+    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future))
+        .distanceSamples;
 
 @riverpod
 Stream<List<CardioWorkoutEvent>> cardioWorkoutEvents(
@@ -74,8 +103,6 @@ Stream<List<CardioWorkoutEvent>> cardioWorkoutEvents(
 Stream<List<CardioBestEffort>> cardioBestEfforts(Ref ref) =>
     _watchRepo(ref, (cardioRepository) => cardioRepository.watchBestEfforts());
 
-/// Number of cardio workouts that haven't had heart rate zones computed yet.
-/// Drives the "compute missing zones" UI affordance in settings.
 @riverpod
 Stream<int> workoutsMissingMetricsCount(Ref ref) => _watchRepo(
   ref,

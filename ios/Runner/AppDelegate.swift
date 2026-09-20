@@ -130,6 +130,46 @@ import UserNotifications
           result(count as NSNumber?)
         }
       }
+    case "fetchCardioWorkoutSeries":
+      let arguments = call.arguments as? [String: Any]
+      let externalWorkoutId = arguments?["externalWorkoutId"] as? String ?? ""
+      let maxRoutePoints = arguments?["maxRoutePoints"] as? Int ?? 1500
+      let includeRoute = arguments?["includeRoute"] as? Bool ?? true
+      healthKitBridge.fetchCardioWorkoutSeries(
+        externalWorkoutId: externalWorkoutId,
+        maxRoutePoints: maxRoutePoints,
+        includeRoute: includeRoute
+      ) { payload, error in
+        DispatchQueue.main.async {
+          if let error {
+            result(FlutterError(
+              code: "fetch_series_failed",
+              message: error.localizedDescription,
+              details: nil
+            ))
+            return
+          }
+          result(payload)
+        }
+      }
+    case "fetchCardioHeartRateForZones":
+      let arguments = call.arguments as? [String: Any]
+      let externalWorkoutId = arguments?["externalWorkoutId"] as? String ?? ""
+      healthKitBridge.fetchCardioHeartRateForZones(
+        externalWorkoutId: externalWorkoutId
+      ) { payload, error in
+        DispatchQueue.main.async {
+          if let error {
+            result(FlutterError(
+              code: "fetch_zones_hr_failed",
+              message: error.localizedDescription,
+              details: nil
+            ))
+            return
+          }
+          result(payload)
+        }
+      }
     case "cardioImportPersisted":
       healthKitBridge.cardioImportPersisted()
       result(nil)
@@ -186,8 +226,8 @@ private struct FetchCardioWorkoutsRequest {
     maxWorkouts = arguments?["maxWorkouts"] as? Int ?? 20
     includeRoute = arguments?["includeRoute"] as? Bool ?? false
     maxRoutePoints = arguments?["maxRoutePoints"] as? Int ?? 1500
-    includeHeartRateSeries = arguments?["includeHeartRateSeries"] as? Bool ?? true
-    includeAssociatedSeries = arguments?["includeAssociatedSeries"] as? Bool ?? true
+    includeHeartRateSeries = arguments?["includeHeartRateSeries"] as? Bool ?? false
+    includeAssociatedSeries = arguments?["includeAssociatedSeries"] as? Bool ?? false
     skipUnchangedWorkouts = arguments?["skipUnchangedWorkouts"] as? [[String: Any]] ?? []
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/models/health_data_inventory.dart';
 
 void main() {
@@ -47,6 +48,37 @@ void main() {
     expect(inventory.jsonEmailBody, contains('"HKIndoorWorkout": "true"'));
     expect(inventory.workouts.single.statistics.single.shortType, 'RunningSpeed');
     expect(inventory.jsonEmailBody, contains('\n  '));
+  });
+
+  test('keeps indoor cycle HealthKit fields in the emailed native payload', () {
+    final inventory = HealthDataInventory.fromMap({
+      'requestedTypes': const [],
+      'workouts': [
+        {
+          'externalWorkoutId': 'bike-1',
+          'activityType': 'indoorCycle',
+          'healthKitActivityType': 'cycling',
+          'healthKitActivityTypeRaw': 13,
+          'indoorWorkout': true,
+          'startDate': '2026-09-19T22:00:00.000Z',
+          'endDate': '2026-09-19T22:40:00.000Z',
+          'durationSeconds': 2400,
+          'sourceName': 'Peloton',
+          'machineLinked': true,
+          'indoorBikeDistanceMeters': 18420.5,
+          'averageMets': 8.1,
+          'fitnessMachineDurationSeconds': 2395,
+        },
+      ],
+    });
+
+    expect(inventory.workouts.single.activityType, CardioType.indoorCycle);
+    expect(inventory.workouts.single.healthKitActivityType, 'cycling');
+    expect(inventory.workouts.single.indoorBikeDistanceMeters, 18420.5);
+    expect(inventory.jsonEmailBody, contains('"healthKitActivityType": "cycling"'));
+    expect(inventory.jsonEmailBody, contains('"indoorBikeDistanceMeters": 18420.5'));
+    expect(inventory.jsonEmailBody, contains('"averageMets": 8.1'));
+    expect(inventory.sourceMatrix.single.signalsPresent, contains('indoorBikeDistance'));
   });
 
   test('inspect progress names the current workout count', () {

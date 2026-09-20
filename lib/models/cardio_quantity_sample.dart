@@ -8,6 +8,22 @@ class const CardioQuantitySample({
   required final DateTime endedAt,
   required final double value,
 }) {
+  factory fromHealthKit({
+    required String workoutId,
+    required int sampleIndex,
+    required DateTime startedAt,
+    required DateTime endedAt,
+    required double value,
+  }) {
+    return CardioQuantitySample(
+      id: 'hk-distance-$workoutId-$sampleIndex',
+      workoutId: workoutId,
+      startedAt: startedAt,
+      endedAt: endedAt,
+      value: value,
+    );
+  }
+
   factory fromRow(Map<String, dynamic> sampleRow) {
     return CardioQuantitySample(
       id: sampleRow['id'] as String,

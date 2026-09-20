@@ -58,6 +58,30 @@ void main() {
       expect(indoorWalk.distanceMeters, 1600);
     });
 
+    test('maps the indoor cycle activity type with distance and no route', () {
+      final indoorCycle = CardioImportPayload.tryParse({
+        'externalWorkoutId': 'cycle-indoor',
+        'activityType': 'indoorCycle',
+        'startDate': '2026-05-09T10:00:00Z',
+        'endDate': '2026-05-09T10:40:00Z',
+        'durationSeconds': 2400,
+        'distanceMeters': 18000,
+        'indoorBikeDistanceMeters': 18000,
+        'averageCyclingCadenceRpm': 68.2,
+        'averageCyclingPowerWatts': 74.0,
+        'averageCyclingSpeedMetersPerSecond': 5.92,
+      });
+
+      expect(indoorCycle!.activityType, CardioType.indoorCycle);
+      expect(indoorCycle.activityType.hasDistance, isTrue);
+      expect(indoorCycle.activityType.hasRoute, isFalse);
+      expect(indoorCycle.distanceMeters, 18000);
+      expect(indoorCycle.indoorBikeDistanceMeters, 18000);
+      expect(indoorCycle.averageCyclingCadenceRpm, 68.2);
+      expect(indoorCycle.averageCyclingPowerWatts, 74.0);
+      expect(indoorCycle.averageCyclingSpeedMetersPerSecond, 5.92);
+    });
+
     test('maps the outdoor walk activity type with distance and route', () {
       final outdoorWalk = CardioImportPayload.tryParse({
         'externalWorkoutId': 'walk-outdoor',

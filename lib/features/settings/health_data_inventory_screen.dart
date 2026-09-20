@@ -23,7 +23,7 @@ class const HealthDataInventoryTile() extends StatelessWidget {
           Text('Health data inventory', style: EText.section),
           const SizedBox(height: ELayout.spaceXs),
           Text(
-            'See which Apple Health signals each treadmill, indoor walk, and Watch source actually writes.',
+            'See which Apple Health signals each indoor cycle, treadmill, walk, and Watch source actually writes.',
             style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: ELayout.spaceMd),
@@ -97,11 +97,13 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Inspects recent indoor and outdoor cardio workouts on this device. '
-            'Asks HealthKit for a wide quantity/category/series set, plus every '
-            'type already attached as workout statistics — including types we '
-            'did not list in advance. Share status is shown because HealthKit '
-            'does not reveal read denial.',
+            'Inspects recent indoor and outdoor cardio on this device, '
+            'including indoor cycle. Asks HealthKit for a wide '
+            'quantity/category/series set, plus every type already attached as '
+            'workout statistics — including cycling power, cadence, and indoor '
+            'bike distance. Email JSON is the native payload so machine fields '
+            'are not dropped. Share status is shown because HealthKit does not '
+            'reveal read denial.',
             style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: ELayout.spaceMd),
@@ -116,7 +118,7 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
               child: Text(
                 inventoryState.isInspecting
                     ? 'Inspecting…'
-                    : 'Inspect last 40 workouts',
+                    : 'Inspect last 5 workouts',
               ),
             ),
           ),
@@ -336,9 +338,17 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
           ),
           const SizedBox(height: ELayout.spaceXs),
           Text(
-            '${workout.sourceName} · ${workout.machineLinked ? 'Machine-linked' : 'Watch estimate'}',
+            _workoutProvenance(workout),
             style: EText.caption.copyWith(color: EColors.textTertiary),
           ),
+          if (_machineMetricsCaption(workout) case final machineMetrics
+              when machineMetrics.isNotEmpty) ...[
+            const SizedBox(height: ELayout.spaceXs),
+            Text(
+              machineMetrics,
+              style: EText.caption.copyWith(color: EColors.textSecondary),
+            ),
+          ],
           if (presentSignals.isNotEmpty) ...[
             const SizedBox(height: ELayout.spaceXs),
             Text(
@@ -377,6 +387,37 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  String _workoutProvenance(HealthInventoryWorkout workout) {
+    return [
+      workout.sourceName,
+      if (workout.healthKitActivityType.isNotEmpty)
+        _healthKitTypeCaption(workout),
+      if (workout.indoorWorkout) 'Indoor',
+      workout.machineLinked ? 'Machine-linked' : 'Watch estimate',
+    ].join(' · ');
+  }
+
+  String _healthKitTypeCaption(HealthInventoryWorkout workout) {
+    if (workout.healthKitActivityTypeRaw == null) {
+      return 'HealthKit ${workout.healthKitActivityType}';
+    }
+    return 'HealthKit ${workout.healthKitActivityType} '
+        '(${workout.healthKitActivityTypeRaw})';
+  }
+
+  String _machineMetricsCaption(HealthInventoryWorkout workout) {
+    final indoorBikeMeters = workout.indoorBikeDistanceMeters;
+    final averageMets = workout.averageMets;
+    final machineSeconds = workout.fitnessMachineDurationSeconds;
+    return [
+      if (indoorBikeMeters != null && indoorBikeMeters > 0)
+        'Indoor bike ${indoorBikeMeters.round()} m',
+      if (averageMets != null) '${averageMets.toStringAsFixed(1)} METs',
+      if (machineSeconds != null && machineSeconds > 0)
+        'Machine ${Duration(seconds: machineSeconds.round()).formattedHms}',
+    ].join(' · ');
   }
 
   String _statisticCaption(HealthWorkoutStatistic statistic) {
