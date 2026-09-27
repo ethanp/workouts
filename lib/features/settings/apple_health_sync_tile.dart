@@ -5,7 +5,8 @@ import 'package:workouts/features/cardio/cardio_browse_providers.dart';
 import 'package:workouts/features/cardio/cardio_import_controller.dart';
 import 'package:workouts/features/history/activity_provider.dart';
 
-/// Apple Health catalog sync, plus optional newest-first zone compute.
+/// Apple Health catalog sync. Heart-rate zones are computed before sync
+/// reports done.
 class const AppleHealthSyncTile() extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,7 +36,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
           Text('Apple Health', style: EText.section),
           const SizedBox(height: ELayout.spaceXs),
           Text(
-            'Pulls new and changed cardio from Apple Health. Workouts that are already stored stay put.',
+            'Pulls new and changed cardio from Apple Health, then saves any outdoor GPS that isn’t stored yet. Workouts that are already stored stay put.',
             style: EText.body.medium.copyWith(color: EColors.textTertiary),
           ),
           const SizedBox(height: ELayout.spaceMd),
@@ -57,7 +58,29 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
               style: EText.caption.copyWith(color: EColors.danger),
             ),
           ],
-          ..._backfillSection(missingCount, backfillStatus, ref),
+          ..._backfillSection(missingCount, backfillStatus, isImporting, ref),
+          const SizedBox(height: ELayout.spaceSm),
+          _pullAllWorkoutsButton(
+            isBackfilling: backfillStatus.inProgress,
+            isImporting: isImporting,
+            ref: ref,
+          ),
+          const SizedBox(height: ELayout.spaceXs),
+          Text(
+            'Replaces every stored workout since Apr 14, 2026, computes zones again, and saves any outdoor GPS that isn’t stored yet.',
+            style: EText.caption.copyWith(color: EColors.textMuted),
+          ),
+          const SizedBox(height: ELayout.spaceSm),
+          _storeRoutesButton(
+            isBackfilling: backfillStatus.inProgress,
+            isImporting: isImporting,
+            ref: ref,
+          ),
+          const SizedBox(height: ELayout.spaceXs),
+          Text(
+            'Same GPS save, without pulling workouts again.',
+            style: EText.caption.copyWith(color: EColors.textMuted),
+          ),
         ],
       ),
     );
@@ -122,11 +145,64 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
     ],
   );
 
+  Widget _pullAllWorkoutsButton({
+    required bool isBackfilling,
+    required bool isImporting,
+    required WidgetRef ref,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: EColors.surface,
+          disabledBackgroundColor: EColors.surface,
+          padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
+        ),
+        onPressed: isBackfilling || isImporting
+            ? null
+            : () => ref
+                  .read(cardioImportControllerProvider.notifier)
+                  .importRecentWorkouts(replaceStored: true),
+        child: Text(
+          'Pull all workouts',
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+        ),
+      ),
+    );
+  }
+
+  Widget _storeRoutesButton({
+    required bool isBackfilling,
+    required bool isImporting,
+    required WidgetRef ref,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: EColors.surface,
+          disabledBackgroundColor: EColors.surface,
+          padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
+        ),
+        onPressed: isBackfilling || isImporting
+            ? null
+            : () => ref
+                  .read(cardioImportControllerProvider.notifier)
+                  .storeRoutes(),
+        child: Text(
+          'Store routes',
+          style: EText.body.medium.copyWith(color: EColors.textPrimary),
+        ),
+      ),
+    );
+  }
+
   /// Returns the backfill section as a list so the parent can splat it
   /// without leaving a dangling spacer when there's nothing to show.
   List<Widget> _backfillSection(
     int missingCount,
     MetricsBackfillStatus backfillStatus,
+    bool isImporting,
     WidgetRef ref,
   ) {
     final hasMissing = missingCount > 0;
@@ -139,7 +215,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
       if (hasMissing)
         Text(
           '$missingCount workout${missingCount == 1 ? '' : 's'} missing zone data. '
-          'Computes newest first.',
+          'Sync computes these newest first.',
           style: EText.caption.copyWith(color: EColors.warning),
         ),
       if (hasMissing || isBackfilling) ...[
@@ -152,7 +228,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
               disabledBackgroundColor: EColors.surface,
               padding: const EdgeInsets.symmetric(vertical: ELayout.spaceSm),
             ),
-            onPressed: isBackfilling
+            onPressed: isBackfilling || isImporting
                 ? null
                 : () => ref
                       .read(metricsBackfillControllerProvider.notifier)
@@ -173,7 +249,11 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
         Text(
           backfillStatus.label,
           style: EText.caption.copyWith(
-            color: isBackfilling ? EColors.textTertiary : EColors.success,
+            color: backfillStatus.failed
+                ? EColors.danger
+                : isBackfilling
+                ? EColors.textTertiary
+                : EColors.success,
           ),
         ),
       ],

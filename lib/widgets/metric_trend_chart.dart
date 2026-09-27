@@ -14,6 +14,7 @@ class const MetricTrendChart({
   /// drawn around them so the user can spot a specific session in a
   /// trend line.
   final DateTime? highlightDate,
+  final Widget? rangeScrubber,
 }) extends StatefulWidget {
   @override
   State<MetricTrendChart> createState() => _MetricTrendChartState();
@@ -43,6 +44,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
         _legend(),
         const SizedBox(height: ELayout.spaceMd),
         _chartArea(visibleTrends),
+        ..._rangeScrubber(),
       ],
     );
   }
@@ -60,6 +62,14 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
         children: children,
       ),
     );
+  }
+
+  List<Widget> _rangeScrubber() {
+    if (widget.rangeScrubber == null) return const [];
+    return [
+      const SizedBox(height: ELayout.spaceSm),
+      widget.rangeScrubber!,
+    ];
   }
 
   Widget _title() {

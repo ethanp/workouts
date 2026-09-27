@@ -1,6 +1,14 @@
 import Foundation
 import HealthKit
 
+enum HeartRateZoneFetchError: LocalizedError {
+  case healthDataUnavailable
+
+  var errorDescription: String? {
+    "Apple Health isn't available on this device."
+  }
+}
+
 final class HealthKitBridge {
   private let healthStore = HKHealthStore()
   private let importPersistGate = DispatchQueue(label: "com.workouts.cardio-import-persist")
@@ -142,21 +150,17 @@ final class HealthKitBridge {
     healthStore.execute(query)
   }
 
-  /// HR samples only, no route / expansion. Safe to call once per workout
-  /// while computing zones across the catalog.
+  /// Expanded heart-rate points for zone time. Condensed HealthKit series
+  /// samples are unpacked the same way as opening a workout.
   func fetchCardioHeartRateForZones(
     externalWorkoutId: String,
     completion: @escaping ([String: Any]?, Error?) -> Void
   ) {
     guard HKHealthStore.isHealthDataAvailable() else {
-      completion(["heartRateSeries": []], nil)
+      completion(nil, HeartRateZoneFetchError.healthDataUnavailable)
       return
     }
     guard let workoutId = UUID(uuidString: externalWorkoutId) else {
-      completion(["heartRateSeries": []], nil)
-      return
-    }
-    guard let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
       completion(["heartRateSeries": []], nil)
       return
     }
@@ -174,27 +178,52 @@ final class HealthKitBridge {
         completion(["heartRateSeries": []], nil)
         return
       }
-      let unit = HKUnit.count().unitDivided(by: .minute())
-      let heartRateQuery = HKSampleQuery(
-        sampleType: heartRateType,
-        predicate: HKQuery.predicateForObjects(from: workout),
-        limit: HKObjectQueryNoLimit,
-        sortDescriptors: [
-          NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true),
-        ]
-      ) { _, heartRateSamples, heartRateError in
+      self.fetchExpandedHeartRate(for: workout) { series, heartRateError in
         if let heartRateError {
           completion(nil, heartRateError)
           return
         }
-        let series = ((heartRateSamples as? [HKQuantitySample]) ?? []).map {
-          self.quantitySamplePayload($0, unit: unit)
-        }
-        completion(["heartRateSeries": series], nil)
+        completion(["heartRateSeries": series ?? []], nil)
       }
-      self.healthStore.execute(heartRateQuery)
     }
     healthStore.execute(workoutQuery)
+  }
+
+  private func fetchExpandedHeartRate(
+    for workout: HKWorkout,
+    completion: @escaping ([[String: Any]]?, Error?) -> Void
+  ) {
+    guard let heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
+      completion([], nil)
+      return
+    }
+    let unit = HKUnit.count().unitDivided(by: .minute())
+    let heartRateQuery = HKSampleQuery(
+      sampleType: heartRateType,
+      predicate: HKQuery.predicateForObjects(from: workout),
+      limit: HKObjectQueryNoLimit,
+      sortDescriptors: [
+        NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true),
+      ]
+    ) { [weak self] _, samples, error in
+      if let error {
+        completion(nil, error)
+        return
+      }
+      guard let self else {
+        completion([], nil)
+        return
+      }
+      let quantitySamples = (samples as? [HKQuantitySample]) ?? []
+      self.expandQuantitySamples(
+        quantitySamples,
+        unit: unit,
+        maxSamples: 5000
+      ) { series, _ in
+        completion(series, nil)
+      }
+    }
+    healthStore.execute(heartRateQuery)
   }
 
   func fetchRecentCardioWorkouts(
@@ -437,15 +466,24 @@ final class HealthKitBridge {
     healthStore.execute(query)
   }
 
+  /// Local morning of the first day the app keeps. Older HealthKit workouts
+  /// are low quality and are not queried.
+  private static let earliestConsideredWorkoutStart: Date = {
+    Calendar.current.date(from: DateComponents(year: 2026, month: 4, day: 14))
+      ?? Date()
+  }()
+
   private func cardioPagePredicate(endedBefore: Date?) -> NSPredicate {
-    let typePredicate = cardioWorkoutPredicate()
-    guard let endedBefore else { return typePredicate }
+    var options: HKQueryOptions = .strictStartDate
+    if endedBefore != nil {
+      options.insert(.strictEndDate)
+    }
     return NSCompoundPredicate(andPredicateWithSubpredicates: [
-      typePredicate,
+      cardioWorkoutPredicate(),
       HKQuery.predicateForSamples(
-        withStart: nil,
+        withStart: Self.earliestConsideredWorkoutStart,
         end: endedBefore,
-        options: .strictEndDate
+        options: options
       ),
     ])
   }

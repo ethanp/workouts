@@ -87,7 +87,6 @@ abstract final class AerobicLoadCalendar() {
     }
 
     final markers = [
-      if (entry.hasCardio) const ECalendarDayMarker(label: 'Cardio'),
       if (entry.hasStrength) const ECalendarDayMarker(label: 'Strength'),
     ];
 

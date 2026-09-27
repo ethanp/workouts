@@ -3,6 +3,7 @@ import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/cardio_import_payload.dart';
 import 'package:workouts/models/cardio_workout_fingerprint.dart';
+import 'package:workouts/models/workout_history.dart';
 
 const _log = ELogger('CardioImporter');
 const _uuid = Uuid();
@@ -27,14 +28,12 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
   }
 
   Future<CardioWorkoutFingerprintIndex> storedAppleHealthFingerprints() async {
-    final workoutRows = await _powerSync.execute(
-      '''
+    final workoutRows = await _powerSync.execute('''
       SELECT external_workout_id, started_at, ended_at, duration_seconds
       FROM cardio_workouts
       WHERE external_workout_id IS NOT NULL
         AND TRIM(external_workout_id) != ''
-      ''',
-    );
+      ''');
     return CardioWorkoutFingerprintIndex.fromRows(workoutRows);
   }
 
@@ -43,14 +42,12 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
   ) async {
     if (seenExternalIds.isEmpty) return 0;
     final seen = {for (final id in seenExternalIds) id.toLowerCase()};
-    final workoutRows = await _powerSync.execute(
-      '''
+    final workoutRows = await _powerSync.execute('''
       SELECT id, external_workout_id
       FROM cardio_workouts
       WHERE external_workout_id IS NOT NULL
         AND TRIM(external_workout_id) != ''
-      ''',
-    );
+      ''');
     var removed = 0;
     for (final workoutRow in workoutRows) {
       final externalId = (workoutRow['external_workout_id'] as String)
@@ -62,6 +59,25 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
     return removed;
   }
 
+  Future<int> dropWorkoutsBeforeFirstConsideredDay() async {
+    final workoutRows = await _powerSync.execute(
+      '''
+      SELECT id FROM cardio_workouts
+      WHERE DATE(started_at, 'localtime') < ?
+      ''',
+      [WorkoutHistory.firstDayKey],
+    );
+    for (final workoutRow in workoutRows) {
+      await _deleteWorkoutGraph(workoutRow['id'] as String);
+    }
+    if (workoutRows.isNotEmpty) {
+      _log.log(
+        'Dropped ${workoutRows.length} workouts before ${WorkoutHistory.firstDayKey}.',
+      );
+    }
+    return workoutRows.length;
+  }
+
   Future<bool> insertRawWorkout(Map<String, dynamic> payload) async {
     if (payload['skippedUnchanged'] == true) return false;
     final CardioImportPayload? workout = CardioImportPayload.tryParse(payload);
@@ -69,8 +85,15 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
       _log.warn('Skipping unparseable Apple Health workout.');
       return false;
     }
+    if (_startsBeforeFirstConsideredDay(workout)) return false;
     await _insert(workout);
     return true;
+  }
+
+  bool _startsBeforeFirstConsideredDay(CardioImportPayload workout) {
+    final startedAt = DateTime.tryParse(workout.startedAt);
+    if (startedAt == null) return false;
+    return WorkoutHistory.startsBeforeFirstDay(startedAt);
   }
 
   Future<int> replaceAll(
@@ -87,6 +110,7 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
         payloads[payloadIndex],
       );
       if (workout != null) {
+        if (_startsBeforeFirstConsideredDay(workout)) continue;
         try {
           await _insert(workout);
           inserted++;
@@ -134,9 +158,22 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
     final String workoutId = await _resolveWorkoutId(workout.externalWorkoutId);
     final String now = DateTime.now().toIso8601String();
     _log.fine('Inserting workout ${workout.externalWorkoutId}.');
-    await _deleteWorkoutGraph(workoutId);
-    await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
-    await _saveEvents(workoutId, workout.events, now: now);
+    final existingWorkout = await _powerSync.getOptional(
+      'SELECT id FROM cardio_workouts WHERE id = ?',
+      [workoutId],
+    );
+    if (existingWorkout == null) {
+      await _saveWorkout(workoutId, workout, createdAt: now, updatedAt: now);
+    } else {
+      await _updateWorkout(workoutId, workout, updatedAt: now);
+    }
+    if (workout.events.isNotEmpty) {
+      await _powerSync.execute(
+        'DELETE FROM cardio_workout_events WHERE workout_id = ?',
+        [workoutId],
+      );
+      await _saveEvents(workoutId, workout.events, now: now);
+    }
   }
 
   Future<void> _saveWorkout(
@@ -159,7 +196,12 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
       created_at, updated_at
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''',
-    _workoutValues(workoutId, workout, createdAt: createdAt, updatedAt: updatedAt),
+    _workoutValues(
+      workoutId,
+      workout,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    ),
   );
 
   List<Object?> _workoutValues(
@@ -244,24 +286,55 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
     return deterministicId;
   }
 
-  Future<void> _deleteWorkoutGraph(String workoutId) async {
-    await _powerSync.writeTransaction((transaction) async {
-      for (final table in [
-        'cardio_best_efforts',
-        'cardio_workout_events',
-      ]) {
-        await transaction.execute(
-          'DELETE FROM $table WHERE workout_id = ?',
-          [workoutId],
-        );
+  Future<void> _updateWorkout(
+    String workoutId,
+    CardioImportPayload workout, {
+    required String updatedAt,
+  }) {
+    final values = _workoutValues(
+      workoutId,
+      workout,
+      createdAt: updatedAt,
+      updatedAt: updatedAt,
+    );
+    return _powerSync.execute(
+      '''
+      UPDATE cardio_workouts SET
+        external_workout_id = ?, activity_type = ?, started_at = ?, ended_at = ?,
+        duration_seconds = ?, distance_meters = ?, energy_kcal = ?,
+        avg_heart_rate_bpm = ?, max_heart_rate_bpm = ?, route_available = ?,
+        source_name = ?, source_bundle_id = ?, device_model = ?, device_name = ?,
+        elevation_ascended_meters = ?, recovery_bpm = ?, effort_score = ?,
+        estimated_effort_score = ?, machine_linked = ?, average_mets = ?,
+        fitness_machine_duration_seconds = ?, cross_trainer_distance_meters = ?,
+        indoor_bike_distance_meters = ?, average_cycling_cadence_rpm = ?,
+        average_cycling_power_watts = ?, average_cycling_speed_meters_per_second = ?,
+        basal_energy_kcal = ?, step_count = ?, flights_climbed = ?,
+        min_heart_rate_bpm = ?, updated_at = ?
+      WHERE id = ?
+      ''',
+      [...values.sublist(1, values.length - 2), updatedAt, workoutId],
+    );
+  }
+
+  Future<void> _deleteWorkoutChildren(String workoutId) {
+    return _powerSync.writeTransaction((transaction) async {
+      for (final table in ['cardio_best_efforts', 'cardio_workout_events']) {
+        await transaction.execute('DELETE FROM $table WHERE workout_id = ?', [
+          workoutId,
+        ]);
       }
       await transaction.execute(
         'DELETE FROM cardio_computed_metrics WHERE id = ?',
         [workoutId],
       );
-      await transaction.execute('DELETE FROM cardio_workouts WHERE id = ?', [
-        workoutId,
-      ]);
     });
+  }
+
+  Future<void> _deleteWorkoutGraph(String workoutId) async {
+    await _deleteWorkoutChildren(workoutId);
+    await _powerSync.execute('DELETE FROM cardio_workouts WHERE id = ?', [
+      workoutId,
+    ]);
   }
 }

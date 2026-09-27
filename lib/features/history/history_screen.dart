@@ -2,6 +2,7 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_import_controller.dart';
+import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
 import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
@@ -33,6 +34,9 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
         (importAsync.hasError ? null : importAsync.value) ??
         const CardioImportProgress.idle();
     final isImporting = importProgress.inProgress;
+    final MetricsBackfillStatus backfillStatus = ref.watch(
+      metricsBackfillControllerProvider,
+    );
     final dbReady = ref.watch(powerSyncDatabaseProvider).hasValue;
     final syncPhase = ref.watch(syncPhaseProvider);
 
@@ -49,11 +53,25 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
         child: Column(
           children: [
             if (isImporting || importProgress.completedAt != null)
-              ImportProgressBanner(importProgress: importProgress),
+              ImportProgressBanner(importProgress: importProgress)
+            else if (backfillStatus.inProgress)
+              _zoneComputeStatus(backfillStatus.label),
             _segmentedControl(),
             Expanded(child: _tabContent()),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _zoneComputeStatus(String label) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      color: EColors.backgroundLift,
+      child: Text(
+        label.isEmpty ? 'Computing heart-rate zones…' : label,
+        style: EText.caption.copyWith(color: EColors.textTertiary),
       ),
     );
   }
@@ -138,9 +156,7 @@ class const ImportProgressBanner({
   }
 
   Widget _statusText() => Text(
-    importProgress.status.isNotEmpty
-        ? importProgress.status
-        : 'Pulls new and changed cardio from Apple Health. Already stored workouts stay put.',
+    importProgress.status.isNotEmpty ? importProgress.status : 'Pulls new and changed cardio from Apple Health. Already stored workouts stay put.',
     style: EText.caption.copyWith(color: EColors.textTertiary),
   );
 

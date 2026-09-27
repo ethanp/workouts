@@ -102,6 +102,10 @@ class ChartZoomNotifier() extends _$ChartZoomNotifier {
   }
 
   void reset() => state = null;
+
+  void setVisibleRange(DateTimeRange visibleRange) {
+    state = visibleRange;
+  }
 }
 
 class const ZoomableChartArea({

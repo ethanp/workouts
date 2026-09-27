@@ -10,9 +10,14 @@ import 'package:workouts/features/cardio/cardio_browse_providers.dart';
 import 'package:workouts/theme/goal_priority_palette.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/models/distance_bucket.dart';
+import 'package:workouts/widgets/metric_trend.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
+import 'package:workouts/widgets/metric_trend_painter.dart';
+import 'package:workouts/features/history/charts/history_chart_minimap.dart';
+import 'package:workouts/features/history/charts/history_chart_range_scrubber.dart';
 import 'package:workouts/features/history/charts/outdoor_run_trends.dart';
 import 'package:workouts/features/history/charts/polarization_chart.dart';
+import 'package:workouts/features/history/charts/polarization_minute_axis.dart';
 import 'package:workouts/features/history/charts/rolling_daily_chart.dart';
 import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
@@ -44,6 +49,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
           cardioWorkoutsAsync.value ?? [],
           bestEffortsAsync.value ?? [],
           visibleRange,
+          fullRange,
         );
         if (fullRange == null) return chartList;
 
@@ -71,6 +77,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
     List<CardioWorkout> workouts,
     List<CardioBestEffort> bestEfforts,
     DateTimeRange? visibleRange,
+    DateTimeRange? fullRange,
   ) {
     final weeklyAggregates = WeeklyActivityAggregator().aggregate(
       days,
@@ -94,16 +101,17 @@ class const HistoryChartsTab() extends ConsumerWidget {
         );
 
     return ListView(
-      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+      padding: const EdgeInsets.all(ELayout.spaceLg)
+          .withOverlaidTabBar(context),
       children: [
         RollingDailyChart(
           title: 'Z2-5 Rolling Load',
           points: rollingZ2LoadPoints,
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
+          clockMinuteAxis: true,
           summarySuffix: ' / 7d',
           showGoalDailyPace: true,
-          inspectHint: 'Drag to inspect the trailing 7-day Z2-5 load',
           emptySummaryLabel: 'No HR load yet',
           goals: const [
             RollingDailyGoal(
@@ -119,17 +127,33 @@ class const HistoryChartsTab() extends ConsumerWidget {
           ],
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
+          rangeScrubber: _rollingRangeScrubber(
+            fullRange,
+            points: rollingZ2LoadPoints,
+            lineColor: HrZonePalette.zone2,
+          ),
         ),
         const SizedBox(height: ELayout.spaceLg),
-        PolarizationChart(weeks: _weekZoneDataList(visibleWeeks)),
+        PolarizationChart(
+          weeks: _weekZoneDataList(visibleWeeks),
+          rangeScrubber: _polarizationRangeScrubber(
+            fullRange,
+            weeks: _weekZoneDataList(weeklyAggregates),
+          ),
+        ),
         const SizedBox(height: ELayout.spaceLg),
         RollingDailyChart(
           title: 'Activity (7-day)',
           points: rollingActiveDaysPoints,
           lineColor: const Color(0xFF64D2FF),
-          formatValue: (value) => '${value.toStringAsFixed(1)}d',
+          formatValue: (days) {
+            final oneDecimal = days.toStringAsFixed(1);
+            final label = oneDecimal.endsWith('.0')
+                ? oneDecimal.substring(0, oneDecimal.length - 2)
+                : oneDecimal;
+            return '${label}d';
+          },
           summarySuffix: ' / 7d',
-          inspectHint: 'Drag to inspect the trailing 7-day active days',
           emptySummaryLabel: 'No activity yet',
           goals: const [
             RollingDailyGoal(
@@ -140,6 +164,11 @@ class const HistoryChartsTab() extends ConsumerWidget {
           ],
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
+          rangeScrubber: _rollingRangeScrubber(
+            fullRange,
+            points: rollingActiveDaysPoints,
+            lineColor: const Color(0xFF64D2FF),
+          ),
         ),
         const SizedBox(height: 32),
         _OutdoorRunningCharts(
@@ -147,12 +176,60 @@ class const HistoryChartsTab() extends ConsumerWidget {
             visibleWeeks,
             valueFor: (week) => week.outdoorRunMeters.asMiles,
           ),
+          allWeeks: _weekDataList(
+            weeklyAggregates,
+            valueFor: (week) => week.outdoorRunMeters.asMiles,
+          ),
           workouts: workouts,
           bestEfforts: bestEfforts,
           displayStart: visibleRange?.start,
           displayEnd: visibleRange?.end,
+          fullRange: fullRange,
         ),
       ],
+    );
+  }
+
+  Widget? _rollingRangeScrubber(
+    DateTimeRange? fullRange, {
+    required List<RollingDailyPoint> points,
+    required Color lineColor,
+  }) {
+    if (fullRange == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: RollingDailyPainter.leftPadding,
+        right: RollingDailyPainter.rightPadding,
+      ),
+      child: HistoryChartRangeScrubber(
+        fullRange: fullRange,
+        windowColor: lineColor,
+        plot: RollingDailyMinimapPainter(
+          points: points,
+          fullStart: fullRange.start,
+          fullEnd: fullRange.end,
+          lineColor: lineColor,
+        ),
+      ),
+    );
+  }
+
+  Widget? _polarizationRangeScrubber(
+    DateTimeRange? fullRange, {
+    required List<WeekZoneData> weeks,
+  }) {
+    if (fullRange == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(left: PolarizationMinuteAxis.width),
+      child: HistoryChartRangeScrubber(
+        fullRange: fullRange,
+        windowColor: EColors.accent,
+        plot: StackedZoneWeekMinimapPainter(
+          weeks: weeks,
+          fullStart: fullRange.start,
+          fullEnd: fullRange.end,
+        ),
+      ),
     );
   }
 
@@ -175,11 +252,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.compare_arrows,
-                size: 12,
-                color: EColors.accent,
-              ),
+              const Icon(Icons.compare_arrows, size: 12, color: EColors.accent),
               const SizedBox(width: 4),
               Text(
                 'Reset zoom',
@@ -243,10 +316,12 @@ class const HistoryChartsTab() extends ConsumerWidget {
 
 class const _OutdoorRunningCharts({
   required final List<WeekData> weeks,
+  required final List<WeekData> allWeeks,
   required final List<CardioWorkout> workouts,
   required final List<CardioBestEffort> bestEfforts,
   final DateTime? displayStart,
   final DateTime? displayEnd,
+  final DateTimeRange? fullRange,
 }) extends StatefulWidget {
   @override
   State<_OutdoorRunningCharts> createState() => _OutdoorRunningChartsState();
@@ -259,33 +334,76 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _sectionHeader(),
-        if (_expanded) ...[
-          const SizedBox(height: ELayout.spaceLg),
-          WeeklyBarChart(
-            title: 'Weekly Run Distance',
-            weeks: widget.weeks,
-            barColor: EColors.accent,
-            goalLine: const ChartGoalLine(
-              target: 0.5,
-              label: '0.5mi/wk goal',
-              color: EColors.accent,
-            ),
-            formatValue: (value) => '${value.toStringAsFixed(1)}mi',
-          ),
-          const SizedBox(height: ELayout.spaceLg),
-          MetricTrendChart(
-            title: 'Outdoor Run Trends',
-            trends: const OutdoorRunTrends().build(
-              workouts: widget.workouts,
-              bestEfforts: widget.bestEfforts,
-            ),
-            displayStart: widget.displayStart,
-            displayEnd: widget.displayEnd,
-          ),
-        ],
-      ],
+      children: [_sectionHeader(), if (_expanded) ..._expandedCharts()],
+    );
+  }
+
+  List<Widget> _expandedCharts() {
+    final List<MetricTrend> trends = _outdoorRunTrends();
+    return [
+      const SizedBox(height: ELayout.spaceLg),
+      WeeklyBarChart(
+        title: 'Weekly Run Distance',
+        weeks: widget.weeks,
+        barColor: EColors.accent,
+        goalLine: const ChartGoalLine(
+          target: 0.5,
+          label: '0.5mi/wk goal',
+          color: EColors.accent,
+        ),
+        formatValue: (value) => '${value.toStringAsFixed(1)}mi',
+        rangeScrubber: _weeklyDistanceScrubber(),
+      ),
+      const SizedBox(height: ELayout.spaceLg),
+      MetricTrendChart(
+        title: 'Outdoor Run Trends',
+        trends: trends,
+        displayStart: widget.displayStart,
+        displayEnd: widget.displayEnd,
+        rangeScrubber: _trendScrubber(trends),
+      ),
+    ];
+  }
+
+  List<MetricTrend> _outdoorRunTrends() {
+    return const OutdoorRunTrends().build(
+      workouts: widget.workouts,
+      bestEfforts: widget.bestEfforts,
+    );
+  }
+
+  Widget? _weeklyDistanceScrubber() {
+    final DateTimeRange? fullRange = widget.fullRange;
+    if (fullRange == null) return null;
+    return HistoryChartRangeScrubber(
+      fullRange: fullRange,
+      windowColor: EColors.accent,
+      plot: WeeklyValueMinimapPainter(
+        weeks: widget.allWeeks,
+        fullStart: fullRange.start,
+        fullEnd: fullRange.end,
+        barColor: EColors.accent,
+      ),
+    );
+  }
+
+  Widget? _trendScrubber(List<MetricTrend> trends) {
+    final DateTimeRange? fullRange = widget.fullRange;
+    if (fullRange == null) return null;
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: MetricTrendPainter.plotLeftPadding,
+        right: MetricTrendPainter.plotRightPadding,
+      ),
+      child: HistoryChartRangeScrubber(
+        fullRange: fullRange,
+        windowColor: EColors.accent,
+        plot: MetricTrendMinimapPainter(
+          trends: trends,
+          fullStart: fullRange.start,
+          fullEnd: fullRange.end,
+        ),
+      ),
     );
   }
 

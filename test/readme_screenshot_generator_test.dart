@@ -120,17 +120,11 @@ Future<void> _writeHistoryReadmeScreenshot(
   }
 }
 
-class _LocalHistorySnapshot {
-  const _LocalHistorySnapshot({
-    required this.cardioWorkouts,
-    required this.calendarDays,
-    required this.bestEfforts,
-  });
-
-  final List<CardioWorkout> cardioWorkouts;
-  final List<ActivityCalendarDay> calendarDays;
-  final List<CardioBestEffort> bestEfforts;
-
+class const _LocalHistorySnapshot({
+  required final List<CardioWorkout> cardioWorkouts,
+  required final List<ActivityCalendarDay> calendarDays,
+  required final List<CardioBestEffort> bestEfforts,
+}) {
   List<ActivityItem> get activityList => [
     for (final workout in cardioWorkouts) ActivityCardio(workout),
   ];

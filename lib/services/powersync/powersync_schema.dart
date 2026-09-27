@@ -225,6 +225,7 @@ const schema = Schema([
     Column.integer('zone4_seconds'),
     Column.integer('zone5_seconds'),
     Column.integer('has_hr_samples'),
+    Column.integer('hr_sample_count'),
     Column.real('pace_seconds_per_mile'),
     Column.real('meters_per_heartbeat'),
     Column.real('cardiac_drift_percent'),

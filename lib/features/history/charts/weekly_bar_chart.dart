@@ -10,6 +10,7 @@ class const WeeklyBarChart({
   final ChartGoalLine? goalLine,
   final String valueSuffix = '',
   final String Function(double value)? formatValue,
+  final Widget? rangeScrubber,
 }) extends StatefulWidget {
   @override
   State<WeeklyBarChart> createState() => _WeeklyBarChartState();
@@ -40,6 +41,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
             _header(),
             const SizedBox(height: ELayout.spaceMd),
             _barsWithYearBoundaries(),
+            ..._rangeScrubber(),
           ],
         ),
       ),
@@ -72,6 +74,14 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
         ),
       ],
     );
+  }
+
+  List<Widget> _rangeScrubber() {
+    if (widget.rangeScrubber == null) return const [];
+    return [
+      const SizedBox(height: ELayout.spaceSm),
+      widget.rangeScrubber!,
+    ];
   }
 
   List<int> _yearBoundaryIndices() {

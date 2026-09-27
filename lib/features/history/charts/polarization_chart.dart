@@ -1,9 +1,12 @@
 import 'dart:math' as math;
+
 import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:flutter/material.dart';
 import 'package:workouts/models/hr_zone_time.dart';
+import 'package:workouts/features/history/charts/chart_inspect_expander.dart';
 import 'package:workouts/features/history/charts/polarization_legend.dart';
+import 'package:workouts/features/history/charts/polarization_minute_axis.dart';
 import 'package:workouts/features/history/charts/polarization_scrub_detail_panel.dart';
 import 'package:workouts/features/history/charts/week_zone_data.dart';
 import 'package:workouts/theme/goal_priority_palette.dart';
@@ -18,56 +21,94 @@ const _kPriorityTwoTargetSeconds = 150 * 60; // 150 min/week priority 2 target
 /// Both are simultaneously visible, so a polarized week (lots of blue/green
 /// and red, little amber) is visually distinct from a gray-zone-heavy week.
 ///
-/// Horizontal drag activates a scrub cursor and live readout panel.
-class const PolarizationChart({required final List<WeekZoneData> weeks})
-    extends StatefulWidget {
+/// Expand Inspect to pin a week — the latest visible week starts selected —
+/// then tap or drag the bars to move it.
+class const PolarizationChart({
+  required final List<WeekZoneData> weeks,
+  final Widget? rangeScrubber,
+}) extends StatefulWidget {
   @override
   State<PolarizationChart> createState() => _PolarizationChartState();
 }
 
 class _PolarizationChartState() extends State<PolarizationChart> {
+  bool _inspecting = false;
   int? _scrubIndex;
-  bool _legendExpanded = false;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => setState(() => _scrubIndex = null),
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.all(ELayout.spaceMd),
-        decoration: BoxDecoration(
-          color: EColors.backgroundLift,
-          borderRadius: BorderRadius.circular(ELayout.radiusMd),
-          border: Border.all(color: EColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _header(),
-            const SizedBox(height: ELayout.spaceMd),
-            _barsSection(),
-            const SizedBox(height: ELayout.spaceSm),
-            _labels(),
-            const SizedBox(height: ELayout.spaceSm),
-            PolarizationScrubDetailPanel(
-              week: _scrubIndex != null ? widget.weeks[_scrubIndex!] : null,
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      decoration: BoxDecoration(
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _header(),
+          const SizedBox(height: ELayout.spaceMd),
+          _barsSection(),
+          const SizedBox(height: ELayout.spaceSm),
+          Padding(
+            padding: const EdgeInsets.only(left: PolarizationMinuteAxis.width),
+            child: _labels(),
+          ),
+          ..._rangeScrubber(),
+          const SizedBox(height: ELayout.spaceSm),
+          _inspectExpander(),
+        ],
       ),
     );
   }
 
+  Widget _inspectExpander() {
+    final int? weekIndex = _shownWeekIndex();
+    return ChartInspectExpander(
+      isExpanded: _inspecting,
+      onToggle: _toggleInspecting,
+      detail: weekIndex == null
+          ? null
+          : PolarizationScrubDetailPanel(week: widget.weeks[weekIndex]),
+    );
+  }
+
+  void _toggleInspecting() {
+    setState(() {
+      _inspecting = !_inspecting;
+      _scrubIndex = _inspecting ? _lastWeekIndex() : null;
+    });
+  }
+
+  int? _lastWeekIndex() {
+    if (widget.weeks.isEmpty) return null;
+    return widget.weeks.length - 1;
+  }
+
+  int? _shownWeekIndex() {
+    if (!_inspecting || widget.weeks.isEmpty) return null;
+    final int? scrubIndex = _scrubIndex;
+    if (scrubIndex == null ||
+        scrubIndex < 0 ||
+        scrubIndex >= widget.weeks.length) {
+      return widget.weeks.length - 1;
+    }
+    return scrubIndex;
+  }
+
+  List<Widget> _rangeScrubber() {
+    if (widget.rangeScrubber == null) return const [];
+    return [const SizedBox(height: ELayout.spaceSm), widget.rangeScrubber!];
+  }
+
   Widget _header() {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Expanded(child: Text('Polarization', style: EText.section)),
-        PolarizationLegend(
-          isExpanded: _legendExpanded,
-          onToggle: () => setState(() => _legendExpanded = !_legendExpanded),
-        ),
+        Text('Polarization', style: EText.section),
+        const SizedBox(width: ELayout.spaceSm),
+        Expanded(child: PolarizationLegend()),
       ],
     );
   }
@@ -81,12 +122,34 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     );
   }
 
+  EChartValueScale _minuteScale() {
+    var peakSeconds = 0;
+    for (final week in widget.weeks) {
+      if (week.zoneTime.total > peakSeconds) peakSeconds = week.zoneTime.total;
+    }
+    return EChartValueScale.clockMinutes(
+      math.max(peakSeconds / 60, _kPriorityTwoTargetSeconds / 60),
+    );
+  }
+
   Widget _barsArea() {
+    final minuteScale = _minuteScale();
     return Column(
       children: [
-        DecoratedBox(
-          decoration: _barsAreaDecoration(),
-          child: SizedBox(height: 140, child: _barsWithScrub()),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            PolarizationMinuteAxis(scale: minuteScale),
+            Expanded(
+              child: DecoratedBox(
+                decoration: _barsAreaDecoration(),
+                child: SizedBox(
+                  height: PolarizationMinuteAxis.plotHeight,
+                  child: _barsWithScrub(minuteScale),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -105,7 +168,8 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     List<int> yearBoundaryIndices,
   ) {
     final barSpacing = _barSpacing();
-    final barWidth = _chartBarWidth(constraints, barSpacing);
+    final plotWidth = constraints.maxWidth - PolarizationMinuteAxis.width;
+    final barWidth = _chartBarWidth(plotWidth, barSpacing);
     return Stack(
       children: [
         _barsArea(),
@@ -135,24 +199,21 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     int boundaryIndex,
     double barWidth,
     double barSpacing,
-  ) => boundaryIndex * (barWidth + barSpacing) - barSpacing / 2;
+  ) =>
+      PolarizationMinuteAxis.width +
+      boundaryIndex * (barWidth + barSpacing) -
+      barSpacing / 2;
 
-  Widget _barsWithScrub() {
+  Widget _barsWithScrub(EChartValueScale minuteScale) {
     if (widget.weeks.isEmpty) {
-      return Center(
-        child: Text('No data yet', style: EText.caption),
-      );
+      return Center(child: Text('No data yet', style: EText.caption));
     }
 
     final zoneTimes = widget.weeks.map((week) => week.zoneTime).toList();
-    final maxTotal = zoneTimes.fold(
-      0,
-      (maxSoFar, zoneTime) => math.max(maxSoFar, zoneTime.total),
-    );
-    final effectiveMax = maxTotal > 0 ? maxTotal : 1;
+    final scaleMaxSeconds = minuteScale.max * 60;
     final barSpacing = _barSpacing();
-    final aerobicBaseFraction = _kAerobicBaseTargetSeconds / effectiveMax;
-    final priorityTwoFraction = _kPriorityTwoTargetSeconds / effectiveMax;
+    final aerobicBaseFraction = _kAerobicBaseTargetSeconds / scaleMaxSeconds;
+    final priorityTwoFraction = _kPriorityTwoTargetSeconds / scaleMaxSeconds;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -161,23 +222,35 @@ class _PolarizationChartState() extends State<PolarizationChart> {
             widget.weeks.length;
 
         return GestureDetector(
-          onHorizontalDragStart: (details) => _scrubWeekUnderFinger(
-            details.localPosition.dx,
-            barWidth,
-            barSpacing,
-            widget.weeks.length,
-          ),
-          onHorizontalDragUpdate: (details) => _scrubWeekUnderFinger(
-            details.localPosition.dx,
-            barWidth,
-            barSpacing,
-            widget.weeks.length,
-          ),
-          onHorizontalDragEnd: (_) => setState(() => _scrubIndex = null),
+          onTapDown: _inspecting
+              ? (details) => _scrubWeekUnderFinger(
+                  details.localPosition.dx,
+                  barWidth,
+                  barSpacing,
+                  widget.weeks.length,
+                )
+              : null,
+          onHorizontalDragStart: _inspecting
+              ? (details) => _scrubWeekUnderFinger(
+                  details.localPosition.dx,
+                  barWidth,
+                  barSpacing,
+                  widget.weeks.length,
+                )
+              : null,
+          onHorizontalDragUpdate: _inspecting
+              ? (details) => _scrubWeekUnderFinger(
+                  details.localPosition.dx,
+                  barWidth,
+                  barSpacing,
+                  widget.weeks.length,
+                )
+              : null,
           behavior: HitTestBehavior.opaque,
           child: Stack(
             children: [
-              _barsRow(zoneTimes, effectiveMax, barSpacing),
+              ..._minuteGridLines(minuteScale, constraints.maxHeight),
+              _barsRow(zoneTimes, scaleMaxSeconds, barSpacing),
               if (aerobicBaseFraction <= 1.0)
                 _weeklyMinuteGoal(
                   aerobicBaseFraction,
@@ -192,7 +265,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
                   '150m priority 2',
                   GoalPriorityPalette.priority2,
                 ),
-              if (_scrubIndex != null) _scrubCursor(barWidth, barSpacing),
+              if (_shownWeekIndex() != null) _scrubCursor(barWidth, barSpacing),
             ],
           ),
         );
@@ -202,7 +275,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
 
   Widget _barsRow(
     List<HrZoneTime> zoneTimes,
-    int effectiveMax,
+    double scaleMaxSeconds,
     double barSpacing,
   ) {
     return Row(
@@ -215,7 +288,11 @@ class _PolarizationChartState() extends State<PolarizationChart> {
         ) ...[
           if (weekIndex > 0) SizedBox(width: barSpacing),
           Expanded(
-            child: _stackedBar(zoneTimes[weekIndex], effectiveMax, weekIndex),
+            child: _stackedBar(
+              zoneTimes[weekIndex],
+              scaleMaxSeconds,
+              weekIndex,
+            ),
           ),
         ],
       ],
@@ -247,8 +324,10 @@ class _PolarizationChartState() extends State<PolarizationChart> {
   }
 
   Widget _scrubCursor(double barWidth, double barSpacing) {
+    final int? weekIndex = _shownWeekIndex();
+    if (weekIndex == null) return const SizedBox.shrink();
     return Positioned(
-      left: _scrubIndex! * (barWidth + barSpacing) + barWidth / 2,
+      left: weekIndex * (barWidth + barSpacing) + barWidth / 2,
       top: 0,
       bottom: 0,
       child: Container(
@@ -271,19 +350,23 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     }
   }
 
-  Widget _stackedBar(HrZoneTime zoneTime, int maxTotalSeconds, int weekIndex) {
-    final isActive = _scrubIndex == weekIndex;
+  Widget _stackedBar(
+    HrZoneTime zoneTime,
+    double scaleMaxSeconds,
+    int weekIndex,
+  ) {
+    final isActive = _shownWeekIndex() == weekIndex;
 
     return MouseRegion(
-      onEnter: (_) => setState(() => _scrubIndex = weekIndex),
-      onExit: (_) {
-        if (_scrubIndex == weekIndex) setState(() => _scrubIndex = null);
+      onEnter: (_) {
+        if (!_inspecting) return;
+        setState(() => _scrubIndex = weekIndex);
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (zoneTime.total == 0) return const SizedBox.expand();
 
-          final totalFraction = (zoneTime.total / maxTotalSeconds).clamp(
+          final totalFraction = (zoneTime.total / scaleMaxSeconds).clamp(
             0.0,
             1.0,
           );
@@ -346,16 +429,36 @@ class _PolarizationChartState() extends State<PolarizationChart> {
 
   Widget _labelStack(BoxConstraints constraints) {
     final barSpacing = _barSpacing();
-    final barWidth = _chartBarWidth(constraints, barSpacing);
+    final barWidth = _chartBarWidth(constraints.maxWidth, barSpacing);
     return Stack(
       clipBehavior: Clip.none,
       children: _weekLabels(barWidth, barSpacing),
     );
   }
 
-  double _chartBarWidth(BoxConstraints constraints, double barSpacing) {
+  List<Widget> _minuteGridLines(
+    EChartValueScale minuteScale,
+    double plotHeight,
+  ) {
+    return [
+      for (final tick in minuteScale.ticks)
+        if (tick > 0 && tick < minuteScale.max)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: minuteScale.fractionFromBottom(tick) * plotHeight,
+            child: Container(
+              height: 1,
+              color: EColors.border.withValues(alpha: 0.4),
+            ),
+          ),
+    ];
+  }
+
+  double _chartBarWidth(double plotWidth, double barSpacing) {
     final weekCount = widget.weeks.length;
-    return (constraints.maxWidth - barSpacing * (weekCount - 1)) / weekCount;
+    if (weekCount == 0) return 0;
+    return (plotWidth - barSpacing * (weekCount - 1)) / weekCount;
   }
 
   List<Widget> _weekLabels(double barWidth, double barSpacing) {

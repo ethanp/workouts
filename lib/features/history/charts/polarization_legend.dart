@@ -1,115 +1,83 @@
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:workouts/features/history/charts/polarization_formatting.dart';
+import 'package:workouts/models/hr_zone_time.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 
-class const PolarizationLegend({
-  required final bool isExpanded,
-  required final VoidCallback onToggle,
-}) extends StatelessWidget {
+class const PolarizationLegend() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _compactLegend(),
-        if (isExpanded) ...[
-          const SizedBox(height: ELayout.spaceXs),
-          _expandedLegend(),
-        ],
-      ],
-    );
-  }
-
-  Widget _compactLegend() {
-    return GestureDetector(
-      onTap: () => onToggle(),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) ...[
-            if (zoneIndex > 0) const SizedBox(width: ELayout.spaceSm),
-            _legendDot(
-              HrZonePalette.zoneColors[zoneIndex],
-              'Z${zoneIndex + 1}',
-            ),
-          ],
-          const SizedBox(width: 5),
-          Icon(
-            Icons.info_outline,
-            size: 12,
-            color: isExpanded
-                ? EColors.textTertiary
-                : EColors.textMuted.withValues(alpha: 0.6),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerRight,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(
+          color: EColors.surfaceRaised,
+          borderRadius: BorderRadius.all(Radius.circular(4)),
+        ),
+        child: IntrinsicHeight(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final zone in HrZone.values) ...[
+                if (zone.index > 0)
+                  ColoredBox(
+                    color: EColors.textMuted.withValues(alpha: 0.28),
+                    child: const SizedBox(width: 1),
+                  ),
+                _zone(HrZonePalette.zoneColors[zone.index], zone),
+              ],
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _expandedLegend() {
-    return Wrap(
-      spacing: ELayout.spaceMd,
-      runSpacing: ELayout.spaceXs,
-      children: [
-        for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++)
-          _legendDotExpanded(
-            HrZonePalette.zoneColors[zoneIndex],
-            HrZonePalette.zoneShortNames[zoneIndex],
-            formatPolarizationZoneRange(zoneIndex + 1),
-          ),
-      ],
-    );
-  }
-
-  Widget _legendDot(Color color, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: const TextStyle(fontSize: 10, color: EColors.textMuted),
-        ),
-      ],
-    );
-  }
-
-  Widget _legendDotExpanded(Color color, String name, String range) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-        ),
-        const SizedBox(width: 3),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _zone(Color color, HrZone zone) {
+    return ColoredBox(
+      color: color.withValues(alpha: 0.16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              name,
-              style: const TextStyle(fontSize: 10, color: EColors.textMuted),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 5,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(1),
+                  ),
+                ),
+                const SizedBox(width: 3),
+                Text(
+                  'Z${zone.index + 1}',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: EColors.textTertiary,
+                    height: 1.1,
+                  ),
+                ),
+              ],
             ),
             Text(
-              range,
-              style: const TextStyle(fontSize: 8, color: EColors.textMuted),
+              '${zone.lowerBpm}–${zone.upperBpm}',
+              style: const TextStyle(
+                fontSize: 8,
+                color: EColors.textTertiary,
+                height: 1.1,
+              ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }

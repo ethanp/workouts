@@ -10,6 +10,8 @@ class MetricTrendPainter({
   final Offset? hoverPosition,
   final DateTime? highlightDate,
 }) extends CustomPainter {
+  static const plotLeftPadding = 12.0;
+  static const plotRightPadding = 12.0;
   @override
   void paint(Canvas canvas, Size size) {
     final plot = _plotAcrossVisibleDates(size);
@@ -104,8 +106,8 @@ class MetricTrendPainter({
 
     return EChartPlot(
       size: size,
-      leftPadding: 12,
-      rightPadding: 12,
+      leftPadding: plotLeftPadding,
+      rightPadding: plotRightPadding,
       topPadding: 8,
       bottomPadding: 24,
       start: displayStart ?? fallbackStart,

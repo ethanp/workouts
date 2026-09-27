@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:workouts/features/history/charts/chart_inspect_expander.dart';
 import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 
-/// A smoothed trailing-7-day line chart with goal reference lines and a
-/// drag-to-inspect readout. Driven entirely by configuration so it can render
-/// any daily metric (Z2-5 minutes, active days, etc.).
+/// A smoothed trailing-7-day line chart with goal reference lines. Expand
+/// Inspect to pin a day — the latest visible day starts selected — then tap
+/// or drag the plot to move it.
 class const RollingDailyChart({
   required final String title,
   required final List<RollingDailyPoint> points,
@@ -13,46 +14,44 @@ class const RollingDailyChart({
   required final Color lineColor,
   required final String Function(double value) formatValue,
   final String summarySuffix = '',
-  final String inspectHint = 'Drag to inspect the trailing 7-day total',
   final String emptySummaryLabel = 'No data yet',
   final bool showGoalDailyPace = false,
   final DateTime? displayStart,
   final DateTime? displayEnd,
+  final Widget? rangeScrubber,
+  final bool clockMinuteAxis = false,
 }) extends StatefulWidget {
   @override
   State<RollingDailyChart> createState() => _RollingDailyChartState();
 }
 
 class _RollingDailyChartState() extends State<RollingDailyChart> {
-  Offset? _hoverPosition;
-  RollingDailyPoint? _hoveredPoint;
+  bool _inspecting = false;
+  DateTime? _inspectedDate;
 
   @override
   Widget build(BuildContext context) => _chartCard();
 
   Widget _chartCard() {
-    return GestureDetector(
-      onTap: _clearHoverPosition,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.all(ELayout.spaceMd),
-        decoration: BoxDecoration(
-          color: EColors.backgroundLift,
-          borderRadius: BorderRadius.circular(ELayout.radiusMd),
-          border: Border.all(color: EColors.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _header(),
-            const SizedBox(height: ELayout.spaceSm),
-            _goalLegend(),
-            const SizedBox(height: ELayout.spaceMd),
-            _chartArea(),
-            const SizedBox(height: ELayout.spaceSm),
-            _hoveredPointSummary(),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(ELayout.spaceMd),
+      decoration: BoxDecoration(
+        color: EColors.backgroundLift,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+        border: Border.all(color: EColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _header(),
+          const SizedBox(height: ELayout.spaceSm),
+          _goalLegend(),
+          const SizedBox(height: ELayout.spaceMd),
+          _chartArea(),
+          ..._rangeScrubber(),
+          const SizedBox(height: ELayout.spaceSm),
+          _inspectExpander(),
+        ],
       ),
     );
   }
@@ -108,74 +107,99 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     return SizedBox(
       height: 180,
       child: LayoutBuilder(
-        builder: (context, constraints) {
-          return MouseRegion(
-            onHover: (event) =>
-                _updateHoverPosition(event.localPosition, constraints),
-            onExit: (_) => _clearHoverPosition(),
-            child: GestureDetector(
-              onTapDown: (details) =>
-                  _updateHoverPosition(details.localPosition, constraints),
-              onPanUpdate: (details) =>
-                  _updateHoverPosition(details.localPosition, constraints),
-              onPanEnd: (_) => _clearHoverPosition(),
-              child: CustomPaint(
-                size: Size(constraints.maxWidth, constraints.maxHeight),
-                painter: RollingDailyPainter(
-                  points: widget.points,
-                  goals: widget.goals,
-                  lineColor: widget.lineColor,
-                  formatValue: widget.formatValue,
-                  displayStart: widget.displayStart,
-                  displayEnd: widget.displayEnd,
-                  hoverPosition: _hoverPosition,
-                ),
-              ),
-            ),
-          );
-        },
+        builder: (context, constraints) => _plot(constraints),
       ),
     );
+  }
+
+  Widget _plot(BoxConstraints constraints) {
+    final plot = CustomPaint(
+      size: Size(constraints.maxWidth, constraints.maxHeight),
+      painter: RollingDailyPainter(
+        points: widget.points,
+        goals: widget.goals,
+        lineColor: widget.lineColor,
+        formatValue: widget.formatValue,
+        displayStart: widget.displayStart,
+        displayEnd: widget.displayEnd,
+        inspectedPoint: _visibleInspectedPoint(),
+        clockMinuteAxis: widget.clockMinuteAxis,
+      ),
+    );
+    if (!_inspecting) return plot;
+    return MouseRegion(
+      onHover: (event) => _inspectAt(event.localPosition, constraints),
+      child: GestureDetector(
+        onTapDown: (details) => _inspectAt(details.localPosition, constraints),
+        onPanUpdate: (details) =>
+            _inspectAt(details.localPosition, constraints),
+        child: plot,
+      ),
+    );
+  }
+
+  Widget _inspectExpander() {
+    final RollingDailyPoint? inspectedPoint = _visibleInspectedPoint();
+    return ChartInspectExpander(
+      isExpanded: _inspecting,
+      onToggle: _toggleInspecting,
+      detail: inspectedPoint == null ? null : _inspectedSummary(inspectedPoint),
+    );
+  }
+
+  Widget _inspectedSummary(RollingDailyPoint inspectedPoint) {
+    return Text(
+      '${_formatDate(inspectedPoint.date)} · '
+      '${widget.formatValue(inspectedPoint.smoothedValue)} smoothed '
+      '(${widget.formatValue(inspectedPoint.rollingValue)} raw)',
+      style: EText.caption.copyWith(color: EColors.textTertiary),
+    );
+  }
+
+  void _toggleInspecting() {
+    setState(() {
+      _inspecting = !_inspecting;
+      if (_inspecting) _inspectedDate = _latestVisiblePoint()?.date;
+    });
+  }
+
+  void _inspectAt(Offset position, BoxConstraints constraints) {
+    final RollingDailyPoint? nearestPoint = _nearestPoint(
+      position,
+      constraints,
+    );
+    if (nearestPoint == null) return;
+    setState(() => _inspectedDate = nearestPoint.date);
+  }
+
+  List<Widget> _rangeScrubber() {
+    if (widget.rangeScrubber == null) return const [];
+    return [const SizedBox(height: ELayout.spaceSm), widget.rangeScrubber!];
   }
 
   Widget _emptyState() {
     return SizedBox(
       height: 180,
-      child: Center(
-        child: Text('Need 2+ days of data', style: EText.caption),
-      ),
+      child: Center(child: Text('Need 2+ days of data', style: EText.caption)),
     );
   }
 
-  Widget _hoveredPointSummary() {
-    final hoveredPoint = _hoveredPoint;
-    if (hoveredPoint == null) {
-      return Text(
-        widget.inspectHint,
-        style: EText.caption.copyWith(color: EColors.textMuted),
-      );
-    }
-
-    return Text(
-      '${_formatDate(hoveredPoint.date)} · '
-      '${widget.formatValue(hoveredPoint.smoothedValue)} smoothed '
-      '(${widget.formatValue(hoveredPoint.rollingValue)} raw)',
-      style: EText.caption.copyWith(color: EColors.textTertiary),
-    );
-  }
-
-  void _updateHoverPosition(Offset position, BoxConstraints constraints) {
-    setState(() {
-      _hoverPosition = position;
-      _hoveredPoint = _nearestPoint(position, constraints);
-    });
-  }
-
-  void _clearHoverPosition() {
-    if (_hoverPosition == null && _hoveredPoint == null) return;
-    setState(() {
-      _hoverPosition = null;
-      _hoveredPoint = null;
+  RollingDailyPoint? _visibleInspectedPoint() {
+    if (!_inspecting) return null;
+    final List<RollingDailyPoint> visiblePoints = _visiblePoints();
+    if (visiblePoints.isEmpty) return null;
+    final DateTime? inspectedDate = _inspectedDate;
+    if (inspectedDate == null) return visiblePoints.last;
+    return visiblePoints.reduce((nearestPoint, point) {
+      final int pointDistance = point.date
+          .difference(inspectedDate)
+          .inSeconds
+          .abs();
+      final int nearestDistance = nearestPoint.date
+          .difference(inspectedDate)
+          .inSeconds
+          .abs();
+      return pointDistance < nearestDistance ? point : nearestPoint;
     });
   }
 
@@ -264,10 +288,7 @@ class const _GoalChip({required final String label, required final Color color})
         const SizedBox(width: 6),
         Text(
           label,
-          style: EText.caption.copyWith(
-            color: EColors.textMuted,
-            fontSize: 10,
-          ),
+          style: EText.caption.copyWith(color: EColors.textMuted, fontSize: 10),
         ),
       ],
     );

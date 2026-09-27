@@ -8,16 +8,9 @@ class const PolarizationScrubDetailPanel({required final WeekZoneData? week})
     extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    if (week == null) return _emptyState();
+    if (week == null) return const SizedBox.shrink();
     if (week!.zoneTime.total == 0) return _noDataState(week!);
     return _dataState(week!);
-  }
-
-  Widget _emptyState() {
-    return Text(
-      'Drag to inspect a week',
-      style: EText.caption.copyWith(color: EColors.textMuted),
-    );
   }
 
   Widget _noDataState(WeekZoneData week) {

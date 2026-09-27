@@ -1,10 +1,9 @@
 import 'package:ethan_utils/ethan_utils.dart';
-
+import 'package:flutter/services.dart';
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/cardio_best_effort.dart';
 import 'package:workouts/models/cardio_calendar_day.dart';
-import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/cardio_workout_event.dart';
 import 'package:workouts/models/cardio_workout_fingerprint.dart';
@@ -15,11 +14,12 @@ import 'package:workouts/services/repositories/best_effort_store.dart';
 import 'package:workouts/services/repositories/cardio_import.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 import 'package:workouts/models/distance_bucket.dart';
+import 'package:workouts/models/workout_history.dart';
 
 part 'cardio_repository_powersync.g.dart';
 
 const _log = ELogger('CardioRepository');
-const _zoneHeartRatePageSize = 40;
+const _zoneHeartRatePageSize = 8;
 
 class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
   late final CardioMetricsStore _metricsStore = CardioMetricsStore(_powerSync);
@@ -45,9 +45,12 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
         LEFT JOIN cardio_computed_metrics m ON m.id = w.id
 ''';
 
+  static String get _onOrAfterFirstDay =>
+      "DATE(w.started_at, 'localtime') >= '${WorkoutHistory.firstDayKey}'";
+
   Stream<List<CardioWorkout>> watchCardioWorkouts() => _powerSync
       .watch(
-        '$_workoutSelectSql ORDER BY w.started_at DESC',
+        '$_workoutSelectSql WHERE $_onOrAfterFirstDay ORDER BY w.started_at DESC',
         triggerOnTables: const {'cardio_workouts', 'cardio_computed_metrics'},
       )
       .map((workoutRows) => workoutRows.mapL(CardioWorkout.fromRow));
@@ -75,6 +78,7 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
         SELECT be.distance_meters, be.elapsed_seconds, w.started_at, w.activity_type
         FROM cardio_best_efforts be
         JOIN cardio_workouts w ON w.id = be.workout_id
+        WHERE $_onOrAfterFirstDay
         ORDER BY w.started_at ASC
         ''',
         triggerOnTables: const {'cardio_best_efforts', 'cardio_workouts'},
@@ -106,6 +110,7 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
           COUNT(w.id)                       AS workout_count
         FROM cardio_workouts w
         LEFT JOIN cardio_computed_metrics m ON m.id = w.id
+        WHERE $_onOrAfterFirstDay
         GROUP BY day
         ORDER BY day ASC
         ''',
@@ -118,6 +123,7 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
         '${localDate.year}-${localDate.month.toString().padLeft(2, '0')}-${localDate.day.toString().padLeft(2, '0')}';
     final List<Map<String, dynamic>> workoutRows = await _powerSync.execute(
       "$_workoutSelectSql WHERE DATE(w.started_at, 'localtime') = ? "
+      'AND $_onOrAfterFirstDay '
       'ORDER BY w.started_at ASC',
       [dayString],
     );
@@ -163,6 +169,9 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
 
   Future<void> wipeImportedCardio() => _importer.wipeStoredCardio();
 
+  Future<int> dropWorkoutsBeforeFirstConsideredDay() =>
+      _importer.dropWorkoutsBeforeFirstConsideredDay();
+
   Future<CardioWorkoutFingerprintIndex> storedAppleHealthFingerprints() =>
       _importer.storedAppleHealthFingerprints();
 
@@ -189,18 +198,20 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     await _bestEffortStore.computeFromSeries(workout.id, series);
   }
 
-  Future<void> backfillMissingZonesNewestFirst(
+  Future<ZoneComputeOutcome> backfillMissingZonesNewestFirst(
     HealthKitBridge healthKit, {
     void Function(int done, int total)? onProgress,
   }) async {
     final workoutRows = await _powerSync.execute('''
       SELECT w.* FROM cardio_workouts w
       LEFT JOIN cardio_computed_metrics m ON m.id = w.id
-      WHERE w.external_workout_id IS NOT NULL
-        AND TRIM(w.external_workout_id) != ''
-        AND (m.id IS NULL OR m.zone1_seconds IS NULL)
+      WHERE ${CardioMetricsStore.workoutsNeedingZoneComputeWhere}
       ORDER BY w.started_at DESC
     ''');
+    var wroteFromHeartRate = 0;
+    var markedUnreadable = 0;
+    var leftMissing = 0;
+    String? failureMessage;
     for (
       var pageStart = 0;
       pageStart < workoutRows.length;
@@ -209,39 +220,86 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
       final pageEnd = pageStart + _zoneHeartRatePageSize > workoutRows.length
           ? workoutRows.length
           : pageStart + _zoneHeartRatePageSize;
-      final pageHeartRates = await Future.wait([
-        for (var workoutIndex = pageStart; workoutIndex < pageEnd; workoutIndex++)
-          _heartRateForZones(
-            healthKit,
-            CardioWorkout.fromRow(workoutRows[workoutIndex]),
-          ),
-      ]);
-      for (final loaded in pageHeartRates) {
-        await _metricsStore.persistFromHealthKitSeries(
-          workout: loaded.workout,
-          series: CardioWorkoutSeries(
-            routePoints: const [],
-            heartRateSamples: loaded.heartRateSamples,
-            distanceSamples: const [],
-          ),
-        );
-      }
+      final healthUnavailable = await _computeZonePage(
+        healthKit,
+        workoutRows.sublist(pageStart, pageEnd),
+        onWrote: () => wroteFromHeartRate++,
+        onMarkedUnreadable: () => markedUnreadable++,
+        onLeftMissing: () => leftMissing++,
+      );
       onProgress?.call(pageEnd, workoutRows.length);
+      if (healthUnavailable) {
+        failureMessage = "Apple Health isn't available on this device.";
+        break;
+      }
     }
+    if (failureMessage == null && leftMissing > 0) {
+      final workouts = leftMissing == 1 ? 'workout' : 'workouts';
+      failureMessage = "Couldn't read heart rate for $leftMissing $workouts.";
+    }
+    return ZoneComputeOutcome(
+      wroteFromHeartRate: wroteFromHeartRate,
+      markedUnreadable: markedUnreadable,
+      failureMessage: failureMessage,
+    );
   }
 
-  Future<_WorkoutHeartRateForZones> _heartRateForZones(
+  Future<bool> _computeZonePage(
+    HealthKitBridge healthKit,
+    List<Map<String, dynamic>> workoutRows, {
+    required void Function() onWrote,
+    required void Function() onMarkedUnreadable,
+    required void Function() onLeftMissing,
+  }) async {
+    final outcomes = await Future.wait([
+      for (final workoutRow in workoutRows)
+        _computeZonesForWorkout(healthKit, CardioWorkout.fromRow(workoutRow)),
+    ]);
+    var healthUnavailable = false;
+    for (final outcome in outcomes) {
+      switch (outcome) {
+        case _ZoneWorkoutWrite.heartRate:
+          onWrote();
+        case _ZoneWorkoutWrite.markedEmpty:
+          onMarkedUnreadable();
+        case _ZoneWorkoutWrite.leftMissing:
+          onLeftMissing();
+        case _ZoneWorkoutWrite.healthUnavailable:
+          healthUnavailable = true;
+      }
+    }
+    return healthUnavailable;
+  }
+
+  Future<_ZoneWorkoutWrite> _computeZonesForWorkout(
     HealthKitBridge healthKit,
     CardioWorkout workout,
   ) async {
-    final heartRateSamples = await healthKit.fetchCardioHeartRateForZones(
-      workoutId: workout.id,
-      externalWorkoutId: workout.externalWorkoutId,
-    );
-    return _WorkoutHeartRateForZones(
-      workout: workout,
-      heartRateSamples: heartRateSamples,
-    );
+    try {
+      final heartRateSamples = await healthKit.fetchCardioHeartRateForZones(
+        workoutId: workout.id,
+        externalWorkoutId: workout.externalWorkoutId,
+      );
+      await _metricsStore.persistZoneTimeFromHeartRate(
+        workoutId: workout.id,
+        heartRateSamples: heartRateSamples,
+      );
+      return _ZoneWorkoutWrite.heartRate;
+    } on PlatformException catch (error) {
+      if (error.code == 'health_data_unavailable') {
+        return _ZoneWorkoutWrite.healthUnavailable;
+      }
+      final existingMetrics = await _powerSync.getOptional(
+        'SELECT id FROM cardio_computed_metrics WHERE id = ?',
+        [workout.id],
+      );
+      if (existingMetrics != null) return _ZoneWorkoutWrite.leftMissing;
+      await _metricsStore.persistZoneTimeFromHeartRate(
+        workoutId: workout.id,
+        heartRateSamples: const [],
+      );
+      return _ZoneWorkoutWrite.markedEmpty;
+    }
   }
 
   Stream<int> watchWorkoutsMissingMetricsCount() =>
@@ -259,7 +317,20 @@ CardioRepositoryPowerSync cardioRepositoryPowerSync(Ref ref) {
   return CardioRepositoryPowerSync(powerSync);
 }
 
-class const _WorkoutHeartRateForZones({
-  required final CardioWorkout workout,
-  required final List<CardioHeartRateSample> heartRateSamples,
+enum _ZoneWorkoutWrite() {
+  heartRate,
+  markedEmpty,
+  leftMissing,
+  healthUnavailable,
+}
+
+class const ZoneComputeOutcome({
+  required final int wroteFromHeartRate,
+  required final int markedUnreadable,
+  final String? failureMessage,
 });
+
+class ZoneComputeFailed(final String message) implements Exception {
+  @override
+  String toString() => message;
+}

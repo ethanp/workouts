@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/app/app.dart';
 import 'package:workouts/services/backend/sync_config.dart';
+import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/notifications/timer_notification_service_provider.dart';
 import 'package:workouts/services/preferences_provider.dart';
 import 'package:workouts/error_bus.dart';
@@ -46,6 +47,8 @@ Future<void> _bootstrap() async {
     errorBus.add('PowerSync init: $error');
   }
 
+  await _dropWorkoutsBeforeFirstConsideredDay(container);
+
   // Warm up the local-notification plugin (timezone DB + plugin init) so
   // the first interval-timer start doesn't pay that cost. Permission is
   // still requested lazily inside `scheduleAt` on first use.
@@ -54,6 +57,23 @@ Future<void> _bootstrap() async {
   runApp(
     UncontrolledProviderScope(container: container, child: const WorkoutsApp()),
   );
+}
+
+Future<void> _dropWorkoutsBeforeFirstConsideredDay(
+  ProviderContainer container,
+) async {
+  final powerSyncDatabase = container.read(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return;
+  try {
+    await CardioRepositoryPowerSync(powerSyncDatabase)
+        .dropWorkoutsBeforeFirstConsideredDay();
+  } catch (error, stackTrace) {
+    _log.error(
+      'Failed to drop workouts before the first considered day',
+      error,
+      stackTrace,
+    );
+  }
 }
 
 void _installGlobalErrorHandlers() {
@@ -85,5 +105,6 @@ void _reportError(
   StackTrace? stack,
 ) {
   _log.error(label, error, stack);
+  if (error.isUnreachableBackend) return;
   errorBus.add('$label: $message');
 }

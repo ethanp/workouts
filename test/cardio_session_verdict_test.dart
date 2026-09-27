@@ -44,11 +44,17 @@ void main() {
       expect(walk.primaryWork.headline, contains('mi'));
       expect(walk.primaryWork.supporting, contains('/mi'));
 
-      expect(CardioType.indoorWalk.primaryWork, CardioPrimaryWork.distanceAndPace);
-      expect(CardioType.indoorRun.primaryWork, CardioPrimaryWork.distanceAndPace);
+      expect(
+        CardioType.indoorWalk.primaryWork,
+        CardioPrimaryWork.distanceAndPace,
+      );
+      expect(
+        CardioType.indoorRun.primaryWork,
+        CardioPrimaryWork.distanceAndPace,
+      );
     });
 
-    test('uses distance, power, cadence, and METs for indoor cycle', () {
+    test('uses distance and METs for indoor cycle', () {
       expect(
         CardioType.indoorCycle.primaryWork,
         CardioPrimaryWork.machineDistanceAndMets,
@@ -63,7 +69,7 @@ void main() {
         ),
       );
       expect(verdict.primaryWork.headline, contains('mi'));
-      expect(verdict.primaryWork.supporting, '74 W · 68 rpm · 7.6 METs');
+      expect(verdict.primaryWork.supporting, '7.6 METs');
     });
 
     test('uses machine distance and METs for elliptical', () {

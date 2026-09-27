@@ -415,7 +415,6 @@ class _ElapsedTimePlot({
 
   static const _minuteMilliseconds = 60 * 1000;
   static const _minimumElapsedLabelGapWidth = 44.0;
-  static const _minuteSteps = [1, 2, 5, 10, 15, 20, 30, 60, 90, 120];
 
   late final double left;
   late final double right;
@@ -475,17 +474,14 @@ class _ElapsedTimePlot({
   }
 
   int _minuteStepFor(int maxLabelCount) {
-    for (final minuteStep in _minuteSteps) {
+    for (final minuteStep in EChartValueScale.clockMinuteSteps) {
       final stepMilliseconds = minuteStep * _minuteMilliseconds;
       final middleLabelCount =
           (timeDomain.durationMilliseconds - 1) ~/ stepMilliseconds;
       if (middleLabelCount + 2 <= maxLabelCount) return minuteStep;
     }
 
-    final middleLabelCapacity = math.max(1, maxLabelCount - 2);
-    final durationMinutes =
-        (timeDomain.durationMilliseconds / _minuteMilliseconds).ceil();
-    return (durationMinutes / middleLabelCapacity).ceil();
+    return EChartValueScale.clockMinuteSteps.last;
   }
 }
 

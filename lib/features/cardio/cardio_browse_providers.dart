@@ -11,7 +11,10 @@ import 'package:workouts/models/cardio_workout.dart';
 import 'package:workouts/models/cardio_workout_event.dart';
 import 'package:workouts/models/cardio_workout_series.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
+import 'package:workouts/services/backend/service_urls.dart';
+import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
+import 'package:workouts/services/repositories/stored_workout_route.dart';
 
 part 'cardio_browse_providers.g.dart';
 
@@ -50,12 +53,27 @@ Future<CardioWorkoutSeries> cardioWorkoutSeries(
   if (workout == null || workout.externalWorkoutId.isEmpty) {
     return CardioWorkoutSeries.empty;
   }
-  final series = await ref
+  final healthKitSeries = await ref
       .read(healthKitBridgeProvider)
       .fetchCardioWorkoutSeries(
         workoutId: workout.id,
         externalWorkoutId: workout.externalWorkoutId,
       );
+  final storedRoute = StoredWorkoutRoute(ref.read(postgrestUrlProvider));
+  final CardioWorkoutSeries series;
+  if (healthKitSeries.routePoints.length >= 2) {
+    await storedRoute.replace(workout.id, healthKitSeries.routePoints);
+    series = healthKitSeries;
+  } else {
+    final storedPoints = await storedRoute.pointsFor(workout.id);
+    series = storedPoints.length >= 2
+        ? CardioWorkoutSeries(
+            routePoints: storedPoints,
+            heartRateSamples: healthKitSeries.heartRateSamples,
+            distanceSamples: healthKitSeries.distanceSamples,
+          )
+        : healthKitSeries;
+  }
   try {
     await cardioRepository.persistDerivedFromHealthKitSeries(
       workout: workout,
@@ -72,15 +90,38 @@ Future<List<CardioRoutePoint>> cardioRoutePoints(
   Ref ref,
   String workoutId,
 ) async =>
-    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future)).routePoints;
+    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future))
+        .routePoints;
 
 @riverpod
 Future<List<CardioHeartRateSample>> cardioHeartRateSamples(
   Ref ref,
   String workoutId,
-) async =>
-    (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future))
-        .heartRateSamples;
+) async {
+  final powerSyncDatabase = ref.watch(powerSyncDatabaseProvider).value;
+  if (powerSyncDatabase == null) return const [];
+  final workout = await CardioRepositoryPowerSync(powerSyncDatabase)
+      .getWorkout(workoutId);
+  if (workout == null || workout.externalWorkoutId.isEmpty) return const [];
+  final expandedHeartRate = await ref
+      .read(healthKitBridgeProvider)
+      .fetchCardioHeartRateForZones(
+        workoutId: workout.id,
+        externalWorkoutId: workout.externalWorkoutId,
+      );
+  final seriesHeartRate = expandedHeartRate.length >= 2
+      ? const <CardioHeartRateSample>[]
+      : (await ref.watch(cardioWorkoutSeriesProvider(workoutId).future))
+            .heartRateSamples;
+  final heartRateSamples = seriesHeartRate.length > expandedHeartRate.length
+      ? seriesHeartRate
+      : expandedHeartRate;
+  await CardioMetricsStore(powerSyncDatabase).correctZoneTimeFromHeartRate(
+    workoutId: workout.id,
+    heartRateSamples: heartRateSamples,
+  );
+  return heartRateSamples;
+}
 
 @riverpod
 Future<List<CardioQuantitySample>> cardioDistanceSamples(

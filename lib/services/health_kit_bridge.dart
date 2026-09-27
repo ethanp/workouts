@@ -111,33 +111,29 @@ class HealthKitBridge() {
     required String workoutId,
     required String externalWorkoutId,
   }) async {
-    try {
-      final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
-        'fetchCardioHeartRateForZones',
-        {'externalWorkoutId': externalWorkoutId},
-      );
-      if (payload == null) return const [];
-      final heartRateSamples = HeartRateSamplePayload.parseList(
-        Map<String, dynamic>.from(payload)['heartRateSeries'],
-      );
-      return [
-        for (
-          var sampleIndex = 0;
-          sampleIndex < heartRateSamples.length;
-          sampleIndex++
-        )
-          CardioHeartRateSample.fromHealthKit(
-            workoutId: workoutId,
-            sampleIndex: sampleIndex,
-            timestamp: DateTime.parse(heartRateSamples[sampleIndex].timestamp),
-            bpm: heartRateSamples[sampleIndex].bpm,
-          ),
-      ];
-    } on MissingPluginException {
-      return const [];
-    } on PlatformException {
-      return const [];
+    final payload = await _methodChannel.invokeMethod<Map<Object?, Object?>>(
+      'fetchCardioHeartRateForZones',
+      {'externalWorkoutId': externalWorkoutId},
+    );
+    if (payload == null) {
+      throw StateError('Apple Health returned no heart-rate series');
     }
+    final heartRateSamples = HeartRateSamplePayload.parseList(
+      Map<String, dynamic>.from(payload)['heartRateSeries'],
+    );
+    return [
+      for (
+        var sampleIndex = 0;
+        sampleIndex < heartRateSamples.length;
+        sampleIndex++
+      )
+        CardioHeartRateSample.fromHealthKit(
+          workoutId: workoutId,
+          sampleIndex: sampleIndex,
+          timestamp: DateTime.parse(heartRateSamples[sampleIndex].timestamp),
+          bpm: heartRateSamples[sampleIndex].bpm,
+        ),
+    ];
   }
 
   Future<CardioWorkoutSeries> fetchCardioWorkoutSeries({
@@ -250,8 +246,7 @@ class HealthKitBridge() {
         onProgress(HealthInventoryInspectProgress.fromMap(event));
         if (event['importFinished'] != true) continue;
         seenExternalIds = [
-          for (final id in event['seenExternalIds'] as List? ?? const [])
-            '$id',
+          for (final id in event['seenExternalIds'] as List? ?? const []) '$id',
         ];
         break;
       }
@@ -299,7 +294,8 @@ class HealthKitBridge() {
 
   Map<String, dynamic> _jsonObjectMap(Map<Object?, Object?> payload) => {
     for (final entry in payload.entries)
-      if (entry.key is String) entry.key as String: _jsonReadyValue(entry.value),
+      if (entry.key is String)
+        entry.key as String: _jsonReadyValue(entry.value),
   };
 
   Object? _jsonReadyValue(Object? value) {

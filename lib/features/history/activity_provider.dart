@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/activity_calendar_day.dart';
 import 'package:workouts/models/activity_item.dart';
@@ -213,6 +214,7 @@ Future<List<ActivityItem>> activityForDate(Ref ref, DateTime date) async {
 @riverpod
 class MetricsBackfillController() extends _$MetricsBackfillController {
   bool _disposed = false;
+  Future<void>? _inFlight;
 
   @override
   MetricsBackfillStatus build() {
@@ -221,49 +223,118 @@ class MetricsBackfillController() extends _$MetricsBackfillController {
     return const MetricsBackfillStatus.idle();
   }
 
-  Future<void> runBackfill() async {
-    if (state.inProgress) return;
+  /// Joins a pass already running, then runs again so workouts imported
+  /// during that pass are included.
+  Future<void> runBackfill({
+    void Function(int done, int total)? onZoneProgress,
+  }) {
+    final existing = _inFlight;
+    if (existing != null) {
+      return existing.then((_) => runBackfill(onZoneProgress: onZoneProgress));
+    }
+    final flight = _computeZones(onZoneProgress);
+    _inFlight = flight;
+    return flight.whenComplete(() {
+      if (identical(_inFlight, flight)) _inFlight = null;
+    });
+  }
+
+  Future<void> _computeZones(
+    void Function(int done, int total)? onZoneProgress,
+  ) async {
     final powerSyncDatabase = ref.read(powerSyncDatabaseProvider).value;
     if (powerSyncDatabase == null) return;
 
-    state = const MetricsBackfillStatus(
-      inProgress: true,
-      label: 'Computing zones and best efforts from Apple Health…',
-    );
+    final keepBackfillAlive = ref.keepAlive();
+    try {
+      final wroteZones = await _writeExpandedZoneTimes(
+        powerSyncDatabase,
+        onZoneProgress,
+      );
+      await _backfillSessionMetrics(powerSyncDatabase);
+      if (wroteZones) _showBackfillDone();
+    } catch (error) {
+      if (!_disposed) {
+        state = MetricsBackfillStatus(label: '$error', failed: true);
+      }
+      rethrow;
+    } finally {
+      keepBackfillAlive.close();
+    }
+  }
+
+  Future<bool> _writeExpandedZoneTimes(
+    PowerSyncDatabase powerSyncDatabase,
+    void Function(int done, int total)? onZoneProgress,
+  ) async {
     final cardioRepository = CardioRepositoryPowerSync(powerSyncDatabase);
-    await cardioRepository.backfillMissingZonesNewestFirst(
+    final missingCardioCount = await cardioRepository
+        .watchWorkoutsMissingMetricsCount()
+        .first;
+    if (missingCardioCount == 0) return false;
+
+    if (!_disposed) {
+      state = const MetricsBackfillStatus(
+        inProgress: true,
+        label: 'Computing heart-rate zones…',
+      );
+    }
+    final outcome = await cardioRepository.backfillMissingZonesNewestFirst(
       ref.read(healthKitBridgeProvider),
       onProgress: (done, total) {
+        onZoneProgress?.call(done, total);
+        if (_disposed) return;
         state = MetricsBackfillStatus(
           inProgress: true,
           label: 'Zones · $done of $total · newest first',
         );
       },
     );
+    if (outcome.failureMessage != null) {
+      throw ZoneComputeFailed(outcome.failureMessage!);
+    }
+    if (outcome.markedUnreadable > 0) {
+      _showUnreadableHeartRate(outcome.markedUnreadable);
+    }
+    return true;
+  }
 
-    state = const MetricsBackfillStatus(
-      inProgress: true,
-      label: 'Backfilling session metrics...',
-    );
+  void _showUnreadableHeartRate(int markedUnreadable) {
+    final workouts = markedUnreadable == 1 ? 'workout' : 'workouts';
+    if (!_disposed) {
+      state = MetricsBackfillStatus(
+        label:
+            'Done. Apple Health had no heart rate for $markedUnreadable $workouts.',
+      );
+    }
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!_disposed) state = const MetricsBackfillStatus.idle();
+    });
+  }
+
+  void _showBackfillDone() {
+    if (!_disposed) {
+      state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
+    }
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!_disposed) state = const MetricsBackfillStatus.idle();
+    });
+  }
+
+  Future<void> _backfillSessionMetrics(PowerSyncDatabase powerSyncDatabase) {
     final templateRepo = ref.read(templateRepositoryPowerSyncProvider);
-    await SessionRepositoryPowerSync(
+    return SessionRepositoryPowerSync(
       powerSyncDatabase,
       templateRepo,
     ).backfillMissingMetrics();
-
-    state = const MetricsBackfillStatus(inProgress: false, label: 'Done');
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!_disposed) {
-        state = const MetricsBackfillStatus.idle();
-      }
-    });
   }
 }
 
 class MetricsBackfillStatus {
-  const new({this.inProgress = false, this.label = ''});
-  const new idle() : inProgress = false, label = '';
+  const new({this.inProgress = false, this.label = '', this.failed = false});
+  const new idle() : inProgress = false, label = '', failed = false;
 
   final bool inProgress;
   final String label;
+  final bool failed;
 }

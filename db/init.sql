@@ -412,6 +412,7 @@ CREATE TABLE cardio_computed_metrics (
     zone4_seconds INTEGER NOT NULL DEFAULT 0,
     zone5_seconds INTEGER NOT NULL DEFAULT 0,
     has_hr_samples INTEGER NOT NULL DEFAULT 0,
+    hr_sample_count INTEGER,
     pace_seconds_per_mile DOUBLE PRECISION,
     meters_per_heartbeat DOUBLE PRECISION,
     cardiac_drift_percent DOUBLE PRECISION,

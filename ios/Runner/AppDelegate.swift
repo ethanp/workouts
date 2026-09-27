@@ -160,8 +160,11 @@ import UserNotifications
       ) { payload, error in
         DispatchQueue.main.async {
           if let error {
+            let code = error is HeartRateZoneFetchError
+              ? "health_data_unavailable"
+              : "fetch_zones_hr_failed"
             result(FlutterError(
-              code: "fetch_zones_hr_failed",
+              code: code,
               message: error.localizedDescription,
               details: nil
             ))

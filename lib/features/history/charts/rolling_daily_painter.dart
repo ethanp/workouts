@@ -1,5 +1,5 @@
-import 'dart:math' as math;
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 
 import 'package:flutter/material.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
@@ -23,7 +23,8 @@ class RollingDailyPainter({
   required final String Function(double value) formatValue,
   final DateTime? displayStart,
   final DateTime? displayEnd,
-  final Offset? hoverPosition,
+  final RollingDailyPoint? inspectedPoint,
+  final bool clockMinuteAxis = false,
 }) extends CustomPainter {
   static const leftPadding = 36.0;
   static const rightPadding = 12.0;
@@ -34,13 +35,12 @@ class RollingDailyPainter({
     if (visiblePoints.length < 2) return;
 
     final plot = _plotAcrossVisibleDates(size, visiblePoints);
-    final scale = _valueScale(visiblePoints);
     _paintDateGridAndYearBoundaries(canvas, plot);
-    _strokeTrailingWindowGoals(canvas, plot, scale);
-    _strokeSmoothedTrailingSevenDayTotal(canvas, plot, scale, visiblePoints);
-    _paintDayDotsWhenUnderNinetyPoints(canvas, plot, scale, visiblePoints);
-    _paintScrubCrosshairOnNearestDay(canvas, plot, scale, visiblePoints);
-    _paintZeroAndMaxLoad(canvas, plot, scale);
+    _strokeTrailingWindowGoals(canvas, plot);
+    _strokeSmoothedTrailingSevenDayTotal(canvas, plot, visiblePoints);
+    _paintDayDotsWhenUnderNinetyPoints(canvas, plot, visiblePoints);
+    _paintInspectedDay(canvas, plot);
+    _paintNiceValueTicks(canvas, plot);
   }
 
   EChartPlot _plotAcrossVisibleDates(
@@ -55,44 +55,35 @@ class RollingDailyPainter({
       bottomPadding: 24,
       start: displayStart ?? visiblePoints.first.date,
       end: displayEnd ?? visiblePoints.last.date,
-      valueScale: EChartValueScale.fixed(
-        min: 0,
-        max: 1,
-        ticks: const [0, 1],
-      ),
+      valueScale: _niceValueScale(visiblePoints),
     );
   }
 
-  RollingDailyScale _valueScale(List<RollingDailyPoint> visiblePoints) {
-    final highestSmoothedValue = visiblePoints.fold(
-      0.0,
-      (highest, point) => math.max(highest, point.smoothedValue),
-    );
-    final highestGoalValue = goals.fold(
-      0.0,
-      (highest, goal) => math.max(highest, goal.value),
-    );
-    final maxValue = math.max(highestSmoothedValue, highestGoalValue);
-    return RollingDailyScale(maxValue: math.max(1, maxValue * 1.12));
+  EChartValueScale _niceValueScale(List<RollingDailyPoint> visiblePoints) {
+    final double peak = [
+      ...visiblePoints.map((point) => point.smoothedValue),
+      ...goals.map((goal) => goal.value),
+    ].max;
+    if (clockMinuteAxis) return EChartValueScale.clockMinutes(peak);
+    return EChartValueScale.nice(peak, targetTickCount: 4);
   }
 
   void _paintDateGridAndYearBoundaries(Canvas canvas, EChartPlot plot) {
-    _strokeQuarterHeightGuides(canvas, plot);
+    _strokeNiceTickGuides(canvas, plot);
     final chrome = EChartChrome(plot);
     chrome.strokePlotEdges(canvas);
     chrome.paintYearBoundaryGuides(canvas);
     chrome.paintDateTicks(canvas);
   }
 
-  void _strokeQuarterHeightGuides(Canvas canvas, EChartPlot plot) {
+  void _strokeNiceTickGuides(Canvas canvas, EChartPlot plot) {
     final gridPaint = Paint()
       ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
 
-    const lineCount = 4;
-    for (var lineIndex = 0; lineIndex <= lineCount; lineIndex++) {
-      final lineFraction = lineIndex / lineCount;
-      final lineY = plot.top + lineFraction * plot.height;
+    for (final tick in plot.valueScale.ticks) {
+      if (tick <= plot.valueScale.min || tick >= plot.valueScale.max) continue;
+      final lineY = plot.yForValue(tick);
       canvas.drawLine(
         Offset(plot.left, lineY),
         Offset(plot.right, lineY),
@@ -101,13 +92,9 @@ class RollingDailyPainter({
     }
   }
 
-  void _strokeTrailingWindowGoals(
-    Canvas canvas,
-    EChartPlot plot,
-    RollingDailyScale scale,
-  ) {
+  void _strokeTrailingWindowGoals(Canvas canvas, EChartPlot plot) {
     for (final goal in goals) {
-      final goalY = scale.yForValue(goal.value, plot);
+      final goalY = plot.yForValue(goal.value);
       final goalPaint = Paint()
         ..color = goal.color.withValues(alpha: 0.35)
         ..strokeWidth = 1;
@@ -150,7 +137,6 @@ class RollingDailyPainter({
   void _strokeSmoothedTrailingSevenDayTotal(
     Canvas canvas,
     EChartPlot plot,
-    RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
     final loadPath = Path();
@@ -158,7 +144,7 @@ class RollingDailyPainter({
       final point = visiblePoints[pointIndex];
       final pointOffset = Offset(
         plot.xForDate(point.date),
-        scale.yForValue(point.smoothedValue, plot),
+        plot.yForValue(point.smoothedValue),
       );
       if (pointIndex == 0) {
         loadPath.moveTo(pointOffset.dx, pointOffset.dy);
@@ -179,7 +165,6 @@ class RollingDailyPainter({
   void _paintDayDotsWhenUnderNinetyPoints(
     Canvas canvas,
     EChartPlot plot,
-    RollingDailyScale scale,
     List<RollingDailyPoint> visiblePoints,
   ) {
     if (visiblePoints.length > 90) return;
@@ -187,27 +172,19 @@ class RollingDailyPainter({
     final pointPaint = Paint()..color = lineColor;
     for (final point in visiblePoints) {
       canvas.drawCircle(
-        Offset(
-          plot.xForDate(point.date),
-          scale.yForValue(point.smoothedValue, plot),
-        ),
+        Offset(plot.xForDate(point.date), plot.yForValue(point.smoothedValue)),
         2,
         pointPaint,
       );
     }
   }
 
-  void _paintScrubCrosshairOnNearestDay(
-    Canvas canvas,
-    EChartPlot plot,
-    RollingDailyScale scale,
-    List<RollingDailyPoint> visiblePoints,
-  ) {
-    final hoveredPoint = _pointNearestHover(plot, visiblePoints);
-    if (hoveredPoint == null) return;
+  void _paintInspectedDay(Canvas canvas, EChartPlot plot) {
+    final inspected = inspectedPoint;
+    if (inspected == null) return;
 
-    final hoveredX = plot.xForDate(hoveredPoint.date);
-    final hoveredY = scale.yForValue(hoveredPoint.smoothedValue, plot);
+    final hoveredX = plot.xForDate(inspected.date);
+    final hoveredY = plot.yForValue(inspected.smoothedValue);
     final markerPaint = Paint()
       ..color = EColors.textTertiary.withValues(alpha: 0.6)
       ..strokeWidth = 1;
@@ -224,45 +201,24 @@ class RollingDailyPainter({
     canvas.drawCircle(Offset(hoveredX, hoveredY), 5, ringPaint);
   }
 
-  void _paintZeroAndMaxLoad(
-    Canvas canvas,
-    EChartPlot plot,
-    RollingDailyScale scale,
-  ) {
-    _paintLoadLabel(canvas, formatValue(scale.maxValue), Offset(2, plot.top));
-    _paintLoadLabel(canvas, formatValue(0), Offset(10, plot.bottom - 10));
+  void _paintNiceValueTicks(Canvas canvas, EChartPlot plot) {
+    for (final tick in plot.valueScale.ticks) {
+      final textPainter = TextPainter(
+        text: TextSpan(text: formatValue(tick), style: EChartAxis.tickLabel),
+        textAlign: TextAlign.right,
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+      )..layout(maxWidth: plot.left - 4);
+      final tickY = (plot.yForValue(tick) - textPainter.height / 2).clamp(
+        plot.top,
+        plot.bottom - textPainter.height,
+      );
+      textPainter.paint(
+        canvas,
+        Offset(plot.left - textPainter.width - 4, tickY),
+      );
+    }
   }
-
-  void _paintLoadLabel(Canvas canvas, String text, Offset position) {
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: const TextStyle(color: EColors.textMuted, fontSize: 9),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainter.paint(canvas, position);
-  }
-
-  RollingDailyPoint? _pointNearestHover(
-    EChartPlot plot,
-    List<RollingDailyPoint> visiblePoints,
-  ) {
-    final position = hoverPosition;
-    if (position == null || visiblePoints.isEmpty) return null;
-
-    final hoverDate = plot.dateForX(position.dx);
-    return visiblePoints.reduce(
-      (nearestPoint, point) =>
-          _dateDistance(point, hoverDate) <
-              _dateDistance(nearestPoint, hoverDate)
-          ? point
-          : nearestPoint,
-    );
-  }
-
-  int _dateDistance(RollingDailyPoint point, DateTime date) =>
-      point.date.difference(date).inSeconds.abs();
 
   List<RollingDailyPoint> _visiblePoints() {
     return points.where((point) {
@@ -283,12 +239,8 @@ class RollingDailyPainter({
       lineColor != oldDelegate.lineColor ||
       displayStart != oldDelegate.displayStart ||
       displayEnd != oldDelegate.displayEnd ||
-      hoverPosition != oldDelegate.hoverPosition;
-}
-
-class const RollingDailyScale({required final double maxValue}) {
-  double yForValue(double value, EChartPlot plot) {
-    final valueFraction = (value / maxValue).clamp(0.0, 1.0);
-    return plot.bottom - valueFraction * plot.height;
-  }
+      inspectedPoint?.date != oldDelegate.inspectedPoint?.date ||
+      inspectedPoint?.smoothedValue !=
+          oldDelegate.inspectedPoint?.smoothedValue ||
+      clockMinuteAxis != oldDelegate.clockMinuteAxis;
 }
