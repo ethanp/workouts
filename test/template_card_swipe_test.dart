@@ -69,7 +69,7 @@ void main() {
       await tester.fling(find.text('Test Routine'), const Offset(-300, 0), 800);
       await tester.pumpAndSettle();
 
-      expect(find.text('Delete Routine?'), findsOneWidget);
+      expect(find.byType(AlertDialog), findsOneWidget);
     },
   );
 

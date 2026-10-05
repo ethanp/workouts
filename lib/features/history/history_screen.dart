@@ -6,6 +6,7 @@ import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/features/history/activity_list/history_activity_list_tab.dart';
 import 'package:workouts/features/history/calendar_tab.dart';
 import 'package:workouts/features/history/charts/history_charts_tab.dart';
+import 'package:workouts/models/cardio_type.dart';
 import 'package:ethan_sync/ethan_sync.dart';
 
 enum HistoryTab() {
@@ -21,6 +22,11 @@ class const HistoryScreen() extends ConsumerStatefulWidget {
 
 class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
   HistoryTab _selectedTab = HistoryTab.charts;
+  CardioType? _listedActivityType;
+
+  void _selectListedActivityType(CardioType? activityType) {
+    setState(() => _listedActivityType = activityType);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,7 +125,10 @@ class _HistoryScreenState() extends ConsumerState<HistoryScreen> {
   Widget _tabContent() {
     return switch (_selectedTab) {
       HistoryTab.charts => const HistoryChartsTab(),
-      HistoryTab.list => const HistoryActivityListTab(),
+      HistoryTab.list => HistoryActivityListTab(
+        activityType: _listedActivityType,
+        onActivityTypeSelected: _selectListedActivityType,
+      ),
       HistoryTab.calendar => const HistoryCalendarTab(),
     };
   }
