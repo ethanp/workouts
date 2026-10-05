@@ -13,7 +13,6 @@ import 'package:workouts/models/distance_bucket.dart';
 import 'package:workouts/widgets/metric_trend.dart';
 import 'package:workouts/widgets/metric_trend_chart.dart';
 import 'package:workouts/widgets/metric_trend_painter.dart';
-import 'package:workouts/features/history/charts/history_chart_minimap.dart';
 import 'package:workouts/features/history/charts/history_chart_range_scrubber.dart';
 import 'package:workouts/features/history/charts/outdoor_run_trends.dart';
 import 'package:workouts/features/history/charts/polarization_chart.dart';
@@ -204,12 +203,18 @@ class const HistoryChartsTab() extends ConsumerWidget {
       child: HistoryChartRangeScrubber(
         fullRange: fullRange,
         windowColor: lineColor,
-        plot: RollingDailyMinimapPainter(
-          points: points,
-          fullStart: fullRange.start,
-          fullEnd: fullRange.end,
-          lineColor: lineColor,
-        ),
+        lines: [
+          EChartAllTimeRangeLine(
+            color: lineColor,
+            samples: [
+              for (final point in points)
+                EChartAllTimeRangeSample(
+                  date: point.date,
+                  value: point.smoothedValue,
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -224,11 +229,25 @@ class const HistoryChartsTab() extends ConsumerWidget {
       child: HistoryChartRangeScrubber(
         fullRange: fullRange,
         windowColor: EColors.accent,
-        plot: StackedZoneWeekMinimapPainter(
-          weeks: weeks,
-          fullStart: fullRange.start,
-          fullEnd: fullRange.end,
-        ),
+        bars: [
+          for (final week in weeks)
+            if (week.zoneTime.total > 0)
+              EChartAllTimeRangeBar(
+                start: week.weekStart,
+                end: week.weekStart.shiftedByDays(7),
+                segments: [
+                  for (
+                    var zoneIndex = 0;
+                    zoneIndex < week.zoneTime.asList.length;
+                    zoneIndex++
+                  )
+                    EChartAllTimeRangeBarSegment(
+                      value: week.zoneTime.asList[zoneIndex].toDouble(),
+                      color: HrZonePalette.zoneColors[zoneIndex],
+                    ),
+                ],
+              ),
+        ],
       ),
     );
   }
@@ -378,12 +397,20 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
     return HistoryChartRangeScrubber(
       fullRange: fullRange,
       windowColor: EColors.accent,
-      plot: WeeklyValueMinimapPainter(
-        weeks: widget.allWeeks,
-        fullStart: fullRange.start,
-        fullEnd: fullRange.end,
-        barColor: EColors.accent,
-      ),
+      bars: [
+        for (final week in widget.allWeeks)
+          if (week.value > 0)
+            EChartAllTimeRangeBar(
+              start: week.weekStart,
+              end: week.weekStart.shiftedByDays(7),
+              segments: [
+                EChartAllTimeRangeBarSegment(
+                  value: week.value,
+                  color: EColors.accent,
+                ),
+              ],
+            ),
+      ],
     );
   }
 
@@ -398,13 +425,30 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
       child: HistoryChartRangeScrubber(
         fullRange: fullRange,
         windowColor: EColors.accent,
-        plot: MetricTrendMinimapPainter(
-          trends: trends,
-          fullStart: fullRange.start,
-          fullEnd: fullRange.end,
-        ),
+        lines: [
+          for (final trend in trends)
+            if (trend.points.length >= 2)
+              EChartAllTimeRangeLine(
+                color: trend.color,
+                samples: _normalizedTrendSamples(trend),
+              ),
+        ],
       ),
     );
+  }
+
+  List<EChartAllTimeRangeSample> _normalizedTrendSamples(MetricTrend trend) {
+    final scale = PaddedMetricScale(
+      trend.points,
+      lowerIsBetter: trend.lowerIsBetter,
+    );
+    return [
+      for (final point in trend.points)
+        EChartAllTimeRangeSample(
+          date: point.date,
+          value: scale.normalize(point.value),
+        ),
+    ];
   }
 
   Widget _sectionHeader() {
