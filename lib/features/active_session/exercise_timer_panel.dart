@@ -32,14 +32,12 @@ class const ExerciseTimerPanel({
   required final bool hasWorkPhase,
   required final bool hasRestPhase,
 }) extends StatelessWidget {
-  String get _phaseLabel => switch (phase) {
-    TimerPhase.setup => 'Setup',
-    TimerPhase.work => 'Work',
-    TimerPhase.rest => 'Rest',
-    TimerPhase.complete => 'Complete',
-    TimerPhase.idle =>
-      hasSetupPhase || hasWorkPhase || hasRestPhase ? 'Ready' : 'Timer',
-  };
+  String get _phaseLabel {
+    if (phase == TimerPhase.idle) {
+      return hasSetupPhase || hasWorkPhase || hasRestPhase ? 'Ready' : 'Timer';
+    }
+    return phase.nameAsCapitalizedWords;
+  }
 
   String get _timeDisplay =>
       remaining == null ? '--:--' : remaining!.formattedClock;

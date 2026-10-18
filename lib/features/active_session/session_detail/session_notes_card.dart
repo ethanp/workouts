@@ -70,7 +70,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
                 Text(note.content, style: EText.body.medium),
                 const SizedBox(height: ELayout.spaceXs),
                 Text(
-                  note.timestamp.clockTime,
+                  note.timestamp.clockTime(),
                   style: EText.caption.copyWith(
                     color: EColors.textMuted,
                   ),
