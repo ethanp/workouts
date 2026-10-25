@@ -9,10 +9,10 @@ class const RollingDailyGoal({
   required final String label,
   required final Color color,
 }) {
-  /// Legend text reframing the trailing-window goal as an average daily pace.
-  String legendWithDailyPace({int rollingDays = 7}) {
+  /// Trailing-window goal as an average daily pace.
+  String dailyPaceLabel({int rollingDays = 7}) {
     final minutesPerDay = (value / rollingDays).round();
-    return '$label · ${minutesPerDay}m/day';
+    return '${minutesPerDay}m/day';
   }
 }
 

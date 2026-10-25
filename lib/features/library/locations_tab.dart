@@ -72,7 +72,7 @@ class const _LocationsList({required final List<TrainingLocation> locations})
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(context),
       children: [
         _explanationBanner(),
         ...locations.map((location) => _LocationCard(location: location)),
@@ -136,11 +136,7 @@ class const _LocationCard({required final TrainingLocation location})
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-      size: 22,
-    ),
+    child: const Icon(Icons.delete, color: Colors.white, size: 22),
   );
 
   Widget _card(BuildContext context) {
@@ -160,11 +156,7 @@ class const _LocationCard({required final TrainingLocation location})
           IconButton(
             tooltip: 'Edit',
             onPressed: () => _openEditSheet(context),
-            icon: const Icon(
-              Icons.edit,
-              size: 20,
-              color: EColors.textTertiary,
-            ),
+            icon: const Icon(Icons.edit, size: 20, color: EColors.textTertiary),
           ),
         ],
       ),
@@ -257,7 +249,9 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
       ),
       decoration: const BoxDecoration(
         color: EColors.backgroundLift,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(top: false, child: _sheetContent()),
     );

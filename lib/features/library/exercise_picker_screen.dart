@@ -127,9 +127,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
             vertical: ELayout.spaceSm,
           ),
           decoration: BoxDecoration(
-            color: isSelected
-                ? EColors.accent
-                : EColors.surface,
+            color: isSelected ? EColors.accent : EColors.surface,
             borderRadius: BorderRadius.circular(ELayout.radiusMd),
           ),
           child: Text(
@@ -160,7 +158,10 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
     );
 
     return ListView.builder(
-      padding: const EdgeInsets.only(bottom: 32).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(
+        context,
+        contentPadding: EdgeInsets.only(bottom: 32),
+      ),
       itemCount: modalities.length,
       itemBuilder: (context, index) {
         final modality = modalities[index];
@@ -282,18 +283,11 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.auto_awesome,
-            size: 10,
-            color: EColors.warning,
-          ),
+          const Icon(Icons.auto_awesome, size: 10, color: EColors.warning),
           const SizedBox(width: 2),
           Text(
             '$count',
-            style: EText.caption.copyWith(
-              color: EColors.warning,
-              fontSize: 10,
-            ),
+            style: EText.caption.copyWith(color: EColors.warning, fontSize: 10),
           ),
         ],
       ),
@@ -338,17 +332,11 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.view_in_ar,
-            size: 12,
-            color: EColors.warning,
-          ),
+          const Icon(Icons.view_in_ar, size: 12, color: EColors.warning),
           const SizedBox(width: ELayout.spaceXs),
           Text(
             equipment,
-            style: EText.caption.copyWith(
-              color: EColors.warning,
-            ),
+            style: EText.caption.copyWith(color: EColors.warning),
           ),
         ],
       ),
@@ -365,10 +353,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
         color: EColors.accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
-      child: Text(
-        label,
-        style: EText.caption.copyWith(color: EColors.accent),
-      ),
+      child: Text(label, style: EText.caption.copyWith(color: EColors.accent)),
     );
   }
 }

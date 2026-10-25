@@ -47,7 +47,7 @@ class _HistoryCalendarTabState() extends ConsumerState<HistoryCalendarTab> {
         _scrollToBottom();
         return ListView(
           controller: _scrollController,
-          padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+          padding: ETabBarOverlay.paddingOf(context),
           children: [
             ActivityCalendar(
               activityData: activityData,
@@ -165,10 +165,7 @@ class const DayDetailCardioRow({required final CardioWorkout workout})
               Text(_label(), style: EText.body.medium),
             ],
           ),
-          Text(
-            workout.duration.formattedHm,
-            style: EText.caption,
-          ),
+          Text(workout.duration.formattedHm, style: EText.caption),
         ],
       ),
     );
@@ -209,8 +206,7 @@ class const DayDetailSessionRow({required final Session session})
                   );
                 },
                 loading: () => Text('…', style: EText.body.medium),
-                error: (_, _) =>
-                    Text('Session', style: EText.body.medium),
+                error: (_, _) => Text('Session', style: EText.body.medium),
               ),
             ],
           ),

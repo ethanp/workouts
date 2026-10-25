@@ -15,7 +15,7 @@ class const WorkoutOptionsList({
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(context),
       children: [
         if (showExplanation) _explanation(),
         ...response.options.map(
@@ -26,7 +26,10 @@ class const WorkoutOptionsList({
             onWorkoutSelected: () => onSelectOption(option),
           ),
         ),
-        if (footer != null) ...[const SizedBox(height: ELayout.spaceXl), footer!],
+        if (footer != null) ...[
+          const SizedBox(height: ELayout.spaceXl),
+          footer!,
+        ],
       ],
     );
   }

@@ -21,6 +21,7 @@ import 'package:workouts/features/workout_generation/workout_generation_provider
 import 'package:workouts/models/workout_template.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
+
 /// One Library destination: label, icon, and whether the section page shows +.
 class const LibrarySection({
   required final String id,
@@ -109,12 +110,15 @@ class const LibraryScreen() extends ConsumerWidget {
 
   Widget _sectionsSliver(BuildContext context) {
     return SliverPadding(
-      padding: const EdgeInsets.fromLTRB(
-        ELayout.spaceLg,
-        0,
-        ELayout.spaceLg,
-        ELayout.spaceMd,
-      ).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(
+        context,
+        contentPadding: EdgeInsets.fromLTRB(
+          ELayout.spaceLg,
+          0,
+          ELayout.spaceLg,
+          ELayout.spaceMd,
+        ),
+      ),
       sliver: SliverList.separated(
         itemCount: librarySections.length,
         separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),

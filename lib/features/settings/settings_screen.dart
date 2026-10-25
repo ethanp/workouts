@@ -21,7 +21,7 @@ class const SettingsScreen() extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+          padding: ETabBarOverlay.paddingOf(context),
           children: const [
             SettingsSection(title: 'Connection', children: [ConnectionTile()]),
             SizedBox(height: ELayout.spaceXl),
@@ -37,12 +37,7 @@ class const SettingsScreen() extends ConsumerWidget {
             SizedBox(height: ELayout.spaceXl),
             SettingsSection(
               title: 'Debug log',
-              children: [
-                SizedBox(
-                  height: 360,
-                  child: EAppLogViewer(),
-                ),
-              ],
+              children: [SizedBox(height: 360, child: EAppLogViewer())],
             ),
           ],
         ),

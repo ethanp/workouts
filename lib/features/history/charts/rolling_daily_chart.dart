@@ -85,19 +85,21 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
   }
 
   Widget _goalLegend() {
-    return Wrap(
-      spacing: ELayout.spaceMd,
-      runSpacing: ELayout.spaceXs,
-      children: widget.goals
-          .map(
-            (goal) => _GoalChip(
-              label: widget.showGoalDailyPace
-                  ? goal.legendWithDailyPace()
-                  : goal.label,
-              color: goal.color,
+    return EChartLegend(
+      entries: [
+        for (final goal in widget.goals)
+          EChartLegendEntry(
+            swatch: Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(color: goal.color, shape: BoxShape.circle),
             ),
-          )
-          .toList(),
+            label: goal.label,
+            value: widget.showGoalDailyPace ? goal.dailyPaceLabel() : null,
+            labelStyle: EText.caption.copyWith(color: EColors.textMuted),
+            valueStyle: EText.caption.copyWith(color: goal.color),
+          ),
+      ],
     );
   }
 
@@ -273,24 +275,3 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
   String _formatDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
 }
 
-class const _GoalChip({required final String label, required final Color color})
-    extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: EText.caption.copyWith(color: EColors.textMuted, fontSize: 10),
-        ),
-      ],
-    );
-  }
-}

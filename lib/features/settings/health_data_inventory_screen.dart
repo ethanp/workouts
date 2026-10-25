@@ -58,9 +58,7 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(
-            ELayout.spaceLg,
-          ).withOverlaidTabBar(context),
+          padding: ETabBarOverlay.paddingOf(context),
           children: [
             _introCard(context, ref, inventoryState),
             if (inventoryState.errorMessage != null) ...[

@@ -62,7 +62,7 @@ class _WorkoutGenerationStreamingViewState()
 
     return ListView(
       controller: _scrollController,
-      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(context),
       children: [
         Text(
           widget.partialText,

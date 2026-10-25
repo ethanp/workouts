@@ -16,10 +16,13 @@ class const GoalsList({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsets.symmetric(
-      horizontal: ELayout.spaceLg,
-      vertical: ELayout.spaceMd,
-    ).withOverlaidTabBar(context),
+    padding: ETabBarOverlay.paddingOf(
+      context,
+      contentPadding: EdgeInsets.symmetric(
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
+      ),
+    ),
     children: [
       ..._activeGoalsSection(),
       ..._emptySection(),

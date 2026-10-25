@@ -2,9 +2,11 @@ import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/cardio/cardio_browse_providers.dart';
+
 import 'cardio_session_stories.dart';
 import 'same_type_comparison_card.dart';
 import 'session_verdict_card.dart';
+
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/cardio_type.dart';
@@ -37,9 +39,7 @@ class const CardioDetailScreen({required final CardioWorkout workout})
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: const EdgeInsets.all(
-            ELayout.spaceLg,
-          ).withOverlaidTabBar(context),
+          padding: ETabBarOverlay.paddingOf(context),
           children: [
             SessionVerdictCard(workout: latestWorkout),
             if (comparison.hasPeers) ...[

@@ -100,8 +100,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         );
 
     return ListView(
-      padding: const EdgeInsets.all(ELayout.spaceLg)
-          .withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(context),
       children: [
         RollingDailyChart(
           title: 'Z2-5 Rolling Load',

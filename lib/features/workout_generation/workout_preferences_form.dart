@@ -34,7 +34,7 @@ class _WorkoutPreferencesFormState()
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: const EdgeInsets.all(ELayout.spaceLg).withOverlaidTabBar(context),
+      padding: ETabBarOverlay.paddingOf(context),
       children: [
         _sectionLabel('Duration'),
         _durationChips(),
@@ -84,22 +84,16 @@ class _WorkoutPreferencesFormState()
               vertical: ELayout.spaceSm,
             ),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? EColors.accent
-                  : EColors.backgroundLift,
+              color: isSelected ? EColors.accent : EColors.backgroundLift,
               borderRadius: BorderRadius.circular(ELayout.radiusMd),
               border: Border.all(
-                color: isSelected
-                    ? EColors.accent
-                    : EColors.border,
+                color: isSelected ? EColors.accent : EColors.border,
               ),
             ),
             child: Text(
               '$minutes min',
               style: EText.body.medium.copyWith(
-                color: isSelected
-                    ? Colors.white
-                    : EColors.textSecondary,
+                color: isSelected ? Colors.white : EColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -140,22 +134,16 @@ class _WorkoutPreferencesFormState()
                   vertical: ELayout.spaceSm,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? EColors.accent
-                      : EColors.backgroundLift,
+                  color: isSelected ? EColors.accent : EColors.backgroundLift,
                   borderRadius: BorderRadius.circular(ELayout.radiusMd),
                   border: Border.all(
-                    color: isSelected
-                        ? EColors.accent
-                        : EColors.border,
+                    color: isSelected ? EColors.accent : EColors.border,
                   ),
                 ),
                 child: Text(
                   goal.title,
                   style: EText.body.medium.copyWith(
-                    color: isSelected
-                        ? Colors.white
-                        : EColors.textSecondary,
+                    color: isSelected ? Colors.white : EColors.textSecondary,
                     fontWeight: isSelected
                         ? FontWeight.w600
                         : FontWeight.normal,
@@ -202,22 +190,16 @@ class _WorkoutPreferencesFormState()
                       : EColors.backgroundLift,
                   borderRadius: BorderRadius.circular(ELayout.radiusMd),
                   border: Border.all(
-                    color: isSelected
-                        ? EColors.accent
-                        : EColors.border,
+                    color: isSelected ? EColors.accent : EColors.border,
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      isSelected
-                          ? Icons.check_circle
-                          : Icons.circle_outlined,
+                      isSelected ? Icons.check_circle : Icons.circle_outlined,
                       size: 20,
-                      color: isSelected
-                          ? EColors.accent
-                          : EColors.textTertiary,
+                      color: isSelected ? EColors.accent : EColors.textTertiary,
                     ),
                     const SizedBox(width: ELayout.spaceMd),
                     Expanded(child: _locationInfo(location)),
