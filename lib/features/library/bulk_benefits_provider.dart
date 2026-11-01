@@ -5,7 +5,7 @@ import 'package:workouts/features/goals/goals_provider.dart';
 import 'package:workouts/features/library/templates_provider.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/templates/template_repository_powersync.dart';
-import 'package:workouts/error_bus.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 part 'bulk_benefits_provider.g.dart';
 

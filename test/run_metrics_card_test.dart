@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
-import 'package:workouts/services/preferences_provider.dart';
+import 'package:ethan_sync/ethan_sync.dart';
 import 'package:workouts/widgets/cardio_metrics_card.dart';
 
 void main() {

@@ -56,7 +56,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         return ZoomableChartArea(
           fullRange: fullRange,
           child: Stack(
-            children: [chartList, if (isZoomed) _zoomResetPill(ref)],
+            children: [chartList, if (isZoomed) _zoomResetPill(context, ref)],
           ),
         );
       },
@@ -103,7 +103,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
       padding: ETabBarOverlay.paddingOf(context),
       children: [
         RollingDailyChart(
-          title: 'Cardio Minutes (7-day)',
+          title: 'Cardio Minutes',
           points: rollingCardioMinutesPoints,
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
@@ -249,9 +249,10 @@ class const HistoryChartsTab() extends ConsumerWidget {
     );
   }
 
-  Widget _zoomResetPill(WidgetRef ref) {
+  /// Floats above the tab bar so it never covers a chart header.
+  Widget _zoomResetPill(BuildContext context, WidgetRef ref) {
     return Positioned(
-      top: ELayout.spaceMd,
+      bottom: context.overlaidTabBarInset + ELayout.spaceMd,
       right: ELayout.spaceMd,
       child: GestureDetector(
         onTap: () => ref.read(chartZoomProvider.notifier).reset(),

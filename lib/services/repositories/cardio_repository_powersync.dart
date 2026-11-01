@@ -169,9 +169,6 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
 
   Future<void> wipeImportedCardio() => _importer.wipeStoredCardio();
 
-  Future<int> dropWorkoutsBeforeFirstConsideredDay() =>
-      _importer.dropWorkoutsBeforeFirstConsideredDay();
-
   Future<CardioWorkoutFingerprintIndex> storedAppleHealthFingerprints() =>
       _importer.storedAppleHealthFingerprints();
 

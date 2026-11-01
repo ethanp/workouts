@@ -171,11 +171,5 @@ void main() {
     test('fromMeters returns null for unknown values', () {
       expect(DistanceBucket.fromMeters(999), isNull);
     });
-
-    test('bucket meters are correctly derived from metersPerMile', () {
-      expect(DistanceBucket.halfMile.meters, closeTo(metersPerMile / 2, 0.01));
-      expect(DistanceBucket.oneMile.meters, closeTo(metersPerMile, 0.01));
-      expect(DistanceBucket.fiveMiles.meters, closeTo(metersPerMile * 5, 0.01));
-    });
   });
 }

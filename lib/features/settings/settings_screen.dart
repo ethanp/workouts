@@ -6,7 +6,6 @@ import 'package:workouts/features/settings/apple_health_sync_tile.dart';
 import 'package:workouts/features/settings/connection_tile.dart';
 import 'package:workouts/features/settings/debug_tiles.dart';
 import 'package:workouts/features/settings/health_data_inventory_screen.dart';
-import 'package:workouts/features/settings/settings_section.dart';
 
 class const SettingsScreen() extends ConsumerWidget {
   @override
@@ -23,19 +22,19 @@ class const SettingsScreen() extends ConsumerWidget {
         child: ListView(
           padding: ETabBarOverlay.paddingOf(context),
           children: const [
-            SettingsSection(title: 'Connection', children: [ConnectionTile()]),
+            ESettingsSection(title: 'Connection', children: [ConnectionTile()]),
             SizedBox(height: ELayout.spaceXl),
-            SettingsSection(
+            ESettingsSection(
               title: 'Apple Health',
               children: [AppleHealthSyncTile(), HealthDataInventoryTile()],
             ),
             SizedBox(height: ELayout.spaceXl),
-            SettingsSection(
+            ESettingsSection(
               title: 'Diagnostics',
               children: [CardioImportDebugTile(), SyncDebugTile()],
             ),
             SizedBox(height: ELayout.spaceXl),
-            SettingsSection(
+            ESettingsSection(
               title: 'Debug log',
               children: [SizedBox(height: 360, child: EAppLogViewer())],
             ),

@@ -86,7 +86,9 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     RollingDailyPoint latestPoint,
     String Function(double value) formatDayAndWeekSummary,
   ) {
-    final TextStyle valueStyle = _summaryValueStyle(latestPoint.smoothedValue);
+    final TextStyle valueStyle = EText.body.tiny.copyWith(
+      color: _summaryColor(latestPoint.smoothedValue),
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -117,7 +119,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(formattedValue, style: valueStyle),
-        Text(period, style: EText.caption.copyWith(color: EColors.textMuted)),
+        Text(period, style: EText.body.tiny.copyWith(color: EColors.textMuted)),
       ],
     );
   }

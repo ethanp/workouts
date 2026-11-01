@@ -13,7 +13,7 @@ import 'package:workouts/features/history/history_provider.dart';
 import 'package:workouts/providers/watch_connectivity_provider.dart';
 import 'package:workouts/services/repositories/session/session_repository_powersync.dart';
 import 'package:workouts/services/watch_connectivity_bridge.dart';
-import 'package:workouts/error_bus.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 part 'active_session_provider.g.dart';
 

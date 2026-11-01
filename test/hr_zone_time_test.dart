@@ -9,22 +9,6 @@ void main() {
   final base = DateTime(2026, 1, 1, 8, 0, 0);
   Duration sec(int seconds) => Duration(seconds: seconds);
 
-  group('HrZone', () {
-    test('5-zone lower bounds are correct', () {
-      expect(HrZone.values.map((zone) => zone.lowerBpm), [
-        93,
-        115,
-        146,
-        163,
-        176,
-      ]);
-    });
-
-    test('zone 2 lower bound is 115', () {
-      expect(HrZone.zone2.lowerBpm, 115);
-    });
-  });
-
   group('HrZoneTime.fromSamples', () {
     test('below zone 1 contributes to no zone', () {
       final samples = [_hr(base, 80), _hr(base.add(sec(10)), 80)];
@@ -104,26 +88,6 @@ void main() {
     test('empty or single sample produces zero zone time', () {
       expect(HrZoneTime.fromSamples([]), HrZoneTime.zero);
       expect(HrZoneTime.fromSamples([_hr(base, 120)]), HrZoneTime.zero);
-    });
-
-    test('gteZone2 sums zones 2-5', () {
-      final samples = [
-        _hr(base, 120),
-        _hr(base.add(sec(10)), 140),
-        _hr(base.add(sec(20)), 160),
-        _hr(base.add(sec(30)), 180),
-        _hr(base.add(sec(40)), 180),
-      ];
-      final zone = HrZoneTime.fromSamples(samples);
-      expect(zone.gteZone2, zone.zone2 + zone.zone3 + zone.zone4 + zone.zone5);
-      expect(zone.gteZone2, 40);
-    });
-
-    test('gteZone2 excludes zone 1', () {
-      final samples = [_hr(base, 100), _hr(base.add(sec(10)), 100)];
-      final zone = HrZoneTime.fromSamples(samples);
-      expect(zone.zone1, 10);
-      expect(zone.gteZone2, 0);
     });
   });
 

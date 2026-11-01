@@ -10,13 +10,7 @@ import 'package:workouts/theme/cardio_type_palette.dart';
 class const HealthDataInventoryTile() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(ELayout.spaceMd),
-      decoration: BoxDecoration(
-        color: EColors.backgroundLift,
-        borderRadius: BorderRadius.circular(ELayout.radiusMd),
-        border: Border.all(color: EColors.border),
-      ),
+    return ESettingsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

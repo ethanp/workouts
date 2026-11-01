@@ -80,12 +80,8 @@ class _CardioImportDebugTileState()
   }
 
   Widget _buildContent() {
-    return Container(
-      decoration: BoxDecoration(
-        color: EColors.backgroundLift,
-        borderRadius: BorderRadius.circular(ELayout.radiusMd),
-        border: Border.all(color: EColors.border),
-      ),
+    return ESettingsCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -110,13 +106,9 @@ class _CardioImportDebugTileState()
                     ),
                   ),
                   const SizedBox(width: ELayout.spaceMd),
-                  Expanded(
-                    child: Text('Import Debug', style: EText.section),
-                  ),
+                  Expanded(child: Text('Import Debug', style: EText.section)),
                   Icon(
-                    _expanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    _expanded ? Icons.expand_less : Icons.expand_more,
                     color: EColors.textTertiary,
                     size: 16,
                   ),
@@ -280,12 +272,8 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: EColors.backgroundLift,
-        borderRadius: BorderRadius.circular(ELayout.radiusMd),
-        border: Border.all(color: EColors.border),
-      ),
+    return ESettingsCard(
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -326,9 +314,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
             const SizedBox(width: ELayout.spaceMd),
             Expanded(child: Text('Sync Debug', style: EText.section)),
             Icon(
-              _expanded
-                  ? Icons.expand_less
-                  : Icons.expand_more,
+              _expanded ? Icons.expand_less : Icons.expand_more,
               color: EColors.textTertiary,
               size: 16,
             ),
@@ -466,9 +452,7 @@ class const DebugRow(final String label, final String value)
           Expanded(
             child: Text(
               label,
-              style: EText.caption.copyWith(
-                color: EColors.textTertiary,
-              ),
+              style: EText.caption.copyWith(color: EColors.textTertiary),
             ),
           ),
           const SizedBox(width: ELayout.spaceSm),
@@ -476,9 +460,7 @@ class const DebugRow(final String label, final String value)
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: EText.caption.copyWith(
-                color: EColors.textPrimary,
-              ),
+              style: EText.caption.copyWith(color: EColors.textPrimary),
             ),
           ),
         ],

@@ -6,7 +6,7 @@ import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
 import 'package:workouts/services/repositories/workout_route_store.dart';
-import 'package:workouts/error_bus.dart';
+import 'package:ethan_ui/ethan_ui.dart';
 
 import 'cardio_browse_providers.dart';
 

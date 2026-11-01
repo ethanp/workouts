@@ -23,13 +23,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
         ? '${importAsync.error}'
         : null;
 
-    return Container(
-      padding: const EdgeInsets.all(ELayout.spaceMd),
-      decoration: BoxDecoration(
-        color: EColors.backgroundLift,
-        borderRadius: BorderRadius.circular(ELayout.radiusMd),
-        border: Border.all(color: EColors.border),
-      ),
+    return ESettingsCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

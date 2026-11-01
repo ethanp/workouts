@@ -5,7 +5,6 @@ import 'package:uuid/uuid.dart';
 import 'package:workouts/models/training_influence.dart';
 import 'package:workouts/services/llm/llm_service.dart';
 import 'package:workouts/services/repositories/influences_repository_powersync.dart';
-import 'package:workouts/error_bus.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 
 class const InfluenceFormSheet({final TrainingInfluence? existing})

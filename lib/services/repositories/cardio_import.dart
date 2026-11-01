@@ -59,25 +59,6 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
     return removed;
   }
 
-  Future<int> dropWorkoutsBeforeFirstConsideredDay() async {
-    final workoutRows = await _powerSync.execute(
-      '''
-      SELECT id FROM cardio_workouts
-      WHERE DATE(started_at, 'localtime') < ?
-      ''',
-      [WorkoutHistory.firstDayKey],
-    );
-    for (final workoutRow in workoutRows) {
-      await _deleteWorkoutGraph(workoutRow['id'] as String);
-    }
-    if (workoutRows.isNotEmpty) {
-      _log.log(
-        'Dropped ${workoutRows.length} workouts before ${WorkoutHistory.firstDayKey}.',
-      );
-    }
-    return workoutRows.length;
-  }
-
   Future<bool> insertRawWorkout(Map<String, dynamic> payload) async {
     if (payload['skippedUnchanged'] == true) return false;
     final CardioImportPayload? workout = CardioImportPayload.tryParse(payload);

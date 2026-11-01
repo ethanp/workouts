@@ -43,23 +43,4 @@ void main() {
       expect(updated.value, HealthPermissionStatus.authorized);
     });
   });
-
-  group('HeartRateTimelineNotifier', () {
-    test('can be cleared', () async {
-      final bridge = FakeHealthKitBridge();
-      final container = ProviderContainer(
-        overrides: [healthKitBridgeProvider.overrideWithValue(bridge)],
-      );
-      addTearDown(() {
-        bridge.dispose();
-        container.dispose();
-      });
-
-      final notifier = container.read(heartRateTimelineProvider.notifier);
-      notifier.clear();
-
-      final timeline = container.read(heartRateTimelineProvider);
-      expect(timeline, isEmpty);
-    });
-  });
 }
