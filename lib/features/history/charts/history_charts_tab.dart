@@ -86,11 +86,11 @@ class const HistoryChartsTab() extends ConsumerWidget {
         ? _filterWeeksToRange(weeklyAggregates, visibleRange)
         : weeklyAggregates;
     final now = DateTime.now();
-    final List<RollingDailyPoint> rollingZ2LoadPoints =
+    final List<RollingDailyPoint> rollingCardioMinutesPoints =
         const TrailingSevenDayTotals().build(
           days: days,
           endDate: now,
-          dailyValue: (day) => day.totalZoneTime.gteZone2 / 60,
+          dailyValue: (day) => day.totalZoneTime.cardioMinutes,
         );
     final List<RollingDailyPoint> rollingActiveDaysPoints =
         const TrailingSevenDayTotals().build(
@@ -103,14 +103,12 @@ class const HistoryChartsTab() extends ConsumerWidget {
       padding: ETabBarOverlay.paddingOf(context),
       children: [
         RollingDailyChart(
-          title: 'Z2-5 Rolling Load',
-          points: rollingZ2LoadPoints,
+          title: 'Cardio Minutes (7-day)',
+          points: rollingCardioMinutesPoints,
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
-          clockMinuteAxis: true,
-          summarySuffix: ' / 7d',
-          showGoalDailyPace: true,
-          emptySummaryLabel: 'No HR load yet',
+          formatDayAndWeekSummary: (value) => '${value.round()}mins',
+          emptySummaryLabel: 'No cardio minutes yet',
           goals: const [
             RollingDailyGoal(
               value: 90,
@@ -127,7 +125,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
           displayEnd: visibleRange?.end,
           rangeScrubber: _rollingRangeScrubber(
             fullRange,
-            points: rollingZ2LoadPoints,
+            points: rollingCardioMinutesPoints,
             lineColor: HrZonePalette.zone2,
           ),
         ),

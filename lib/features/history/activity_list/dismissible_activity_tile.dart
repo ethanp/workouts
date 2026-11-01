@@ -55,10 +55,10 @@ class const DismissibleActivityTile({
     return Container(
       alignment: Alignment.centerRight,
       padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    decoration: BoxDecoration(
-      color: EColors.danger,
-      borderRadius: BorderRadius.circular(ELayout.radiusMd),
-    ),
+      decoration: BoxDecoration(
+        color: EColors.danger,
+        borderRadius: BorderRadius.circular(ELayout.radiusMd),
+      ),
       child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

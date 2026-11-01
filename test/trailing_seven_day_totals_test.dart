@@ -25,21 +25,21 @@ RollingDailyPoint _pointOn(List<RollingDailyPoint> points, DateTime date) =>
           point.date.day == date.day,
     );
 
-double _z2LoadMinutes(ActivityCalendarDay day) =>
-    day.totalZoneTime.gteZone2 / 60;
+double _cardioMinutes(ActivityCalendarDay day) =>
+    day.totalZoneTime.cardioMinutes;
 
 double _activeDay(ActivityCalendarDay day) => day.hasActivity ? 1.0 : 0.0;
 
 void main() {
   const trailingSevenDayTotals = TrailingSevenDayTotals();
 
-  group('TrailingSevenDayTotals (Z2-5 load minutes)', () {
+  group('TrailingSevenDayTotals (cardio minutes)', () {
     test('returns empty when there are no days', () {
       expect(
         trailingSevenDayTotals.build(
           days: [],
           endDate: DateTime(2026, 1, 20),
-          dailyValue: _z2LoadMinutes,
+          dailyValue: _cardioMinutes,
         ),
         isEmpty,
       );
@@ -49,7 +49,7 @@ void main() {
       final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5))],
         endDate: DateTime(2026, 1, 20),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
       expect(points, isEmpty);
     });
@@ -58,7 +58,7 @@ void main() {
       final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 3600)],
         endDate: DateTime(2026, 1, 20),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2026, 1, 5)).rollingValue, 60);
@@ -73,7 +73,7 @@ void main() {
           _activityDay(DateTime(2026, 1, 7), gteZone2Seconds: 1200),
         ],
         endDate: DateTime(2026, 1, 20),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2026, 1, 8)).rollingValue, 50);
@@ -83,7 +83,7 @@ void main() {
       final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 5), gteZone2Seconds: 90)],
         endDate: DateTime(2026, 1, 6),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2026, 1, 5)).rollingValue, 1.5);
@@ -100,7 +100,7 @@ void main() {
       final points = trailingSevenDayTotals.build(
         days: steadyDays,
         endDate: DateTime(2026, 1, 25),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2026, 1, 20)).smoothedValue, 70);
@@ -113,7 +113,7 @@ void main() {
       final points = trailingSevenDayTotals.build(
         days: [_activityDay(DateTime(2026, 1, 10), gteZone2Seconds: 4200)],
         endDate: DateTime(2026, 1, 31),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       final midPlateau = _pointOn(points, DateTime(2026, 1, 13)).smoothedValue;
@@ -129,7 +129,7 @@ void main() {
           _activityDay(DateTime(2026, 3, 20), gteZone2Seconds: 3600),
         ],
         endDate: DateTime(2026, 3, 25),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2026, 3, 22)).rollingValue, 60);
@@ -143,7 +143,7 @@ void main() {
           _activityDay(DateTime(2025, 11, 10), gteZone2Seconds: 3600),
         ],
         endDate: DateTime(2025, 11, 15),
-        dailyValue: _z2LoadMinutes,
+        dailyValue: _cardioMinutes,
       );
 
       expect(_pointOn(points, DateTime(2025, 11, 12)).rollingValue, 60);

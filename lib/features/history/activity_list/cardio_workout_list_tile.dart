@@ -92,11 +92,7 @@ class const CardioWorkoutListTile({required final CardioWorkout workout})
         child: Icon(Icons.map, color: workout.activityType.color, size: 16),
       ),
     const SizedBox(width: ELayout.spaceXs),
-    const Icon(
-      Icons.chevron_right,
-      color: EColors.textMuted,
-      size: 14,
-    ),
+    const Icon(Icons.chevron_right, color: EColors.textMuted, size: 14),
   ];
 
   String _summaryText() {

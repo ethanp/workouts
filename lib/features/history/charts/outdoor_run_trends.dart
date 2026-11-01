@@ -43,7 +43,6 @@ class const OutdoorRunTrends() {
         .sortedOn((workout) => workout.startedAt);
   }
 
-
   List<MetricTrend> _bestEffortPaces(List<CardioBestEffort> bestEfforts) {
     final byBucket = <DistanceBucket, List<CardioBestEffort>>{};
     for (final effort in bestEfforts) {

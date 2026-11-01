@@ -1,16 +1,21 @@
 import 'package:workouts/models/timestamped_heart_rate.dart';
 
 enum HrZone {
-  zone1(lowerBpm: 93, upperBpm: 114),
-  zone2(lowerBpm: 115, upperBpm: 145),
-  zone3(lowerBpm: 146, upperBpm: 162),
-  zone4(lowerBpm: 163, upperBpm: 175),
-  zone5(lowerBpm: 176, upperBpm: 185);
+  zone1(lowerBpm: 93, upperBpm: 114, effortWeight: 0.5),
+  zone2(lowerBpm: 115, upperBpm: 145, effortWeight: 1),
+  zone3(lowerBpm: 146, upperBpm: 162, effortWeight: 1.25),
+  zone4(lowerBpm: 163, upperBpm: 175, effortWeight: 1.5),
+  zone5(lowerBpm: 176, upperBpm: 185, effortWeight: 2);
 
-  const HrZone({required this.lowerBpm, required this.upperBpm});
+  const HrZone({
+    required this.lowerBpm,
+    required this.upperBpm,
+    required this.effortWeight,
+  });
 
   final int lowerBpm;
   final int upperBpm;
+  final double effortWeight;
 
   static HrZone? forBpm(int bpm) {
     for (final zone in values.reversed) {
@@ -91,6 +96,13 @@ class const HrZoneTime({
   int get easyAerobicSeconds => zone1 + zone2;
   int get hardAerobicSeconds => zone4 + zone5;
   int get total => zone1 + zone2 + zone3 + zone4 + zone5;
+
+  /// Aerobic load: minutes in each zone weighted by that zone's effort.
+  double get cardioMinutes => HrZone.values.fold(
+    0,
+    (weightedMinutes, zone) =>
+        weightedMinutes + this[zone.index] / 60 * zone.effortWeight,
+  );
 
   int get dominantZoneIndex {
     var dominantZoneIndex = 0;

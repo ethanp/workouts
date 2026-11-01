@@ -42,9 +42,7 @@ class const ActivityCalendar({
       );
     }
 
-    final oldest = activityData.keys.reduce(
-      (a, b) => a.isBefore(b) ? a : b,
-    );
+    final oldest = activityData.keys.reduce((a, b) => a.isBefore(b) ? a : b);
     final now = DateTime.now();
     return EMonthStackCalendar<DateTime>(
       firstVisibleMonth: DateTime(oldest.year, oldest.month, 1),
@@ -62,7 +60,7 @@ class const ActivityCalendar({
 
 abstract final class AerobicLoadCalendar() {
   static final scale = EFixedThresholdHeatmapScale(
-    legendTitle: 'Aerobic load · cardio Z2–5 minutes',
+    legendTitle: 'Aerobic load · cardio minutes',
     bands: const [
       EHeatmapBand(upperBound: 0, caption: '0'),
       EHeatmapBand(upperBound: 15, caption: '1–15m'),
@@ -100,15 +98,15 @@ abstract final class AerobicLoadCalendar() {
       );
     }
 
-    final z25Minutes = entry.cardioZoneTime.gteZone2Minutes;
+    final cardioMinutes = entry.cardioZoneTime.cardioMinutes.round();
     return ECalendarDayPresentation(
       date: day,
       id: day,
-      semanticsLabel: '$z25Minutes cardio Z2–5 minutes',
+      semanticsLabel: '$cardioMinutes cardio minutes',
       visual: ECalendarDayMeasuredHeat(
-        intensity: scale.intensityFor(z25Minutes),
+        intensity: scale.intensityFor(cardioMinutes),
       ),
-      secondaryLabel: '${z25Minutes}m',
+      secondaryLabel: '${cardioMinutes}m',
       markers: markers,
     );
   }
@@ -118,18 +116,20 @@ abstract final class AerobicLoadCalendar() {
     Map<DateTime, ActivityCalendarDay> activityData,
   ) {
     var activeDays = 0;
-    var cardioZ25Minutes = 0;
+    var periodCardioMinutes = 0.0;
     for (var offset = 0; offset < DateTime.daysPerWeek; offset++) {
       final entry = activityData[weekMonday.shiftedByDays(offset)];
       if (entry == null || !entry.hasActivity) continue;
       activeDays++;
       if (entry.cardioHasHrData) {
-        cardioZ25Minutes += entry.cardioZoneTime.gteZone2Minutes;
+        periodCardioMinutes += entry.cardioZoneTime.cardioMinutes;
       }
     }
     return ECalendarPeriodPresentation(
       activeDays: activeDays,
-      measureCaption: cardioZ25Minutes > 0 ? '${cardioZ25Minutes}m' : null,
+      measureCaption: periodCardioMinutes > 0
+          ? '${periodCardioMinutes.round()}m'
+          : null,
     );
   }
 
@@ -139,18 +139,21 @@ abstract final class AerobicLoadCalendar() {
   ) {
     final daysInMonth = DateTime(monthStart.year, monthStart.month + 1, 0).day;
     var activeDays = 0;
-    var cardioZ25Minutes = 0;
+    var periodCardioMinutes = 0.0;
     for (var day = 1; day <= daysInMonth; day++) {
-      final entry = activityData[DateTime(monthStart.year, monthStart.month, day)];
+      final entry =
+          activityData[DateTime(monthStart.year, monthStart.month, day)];
       if (entry == null || !entry.hasActivity) continue;
       activeDays++;
       if (entry.cardioHasHrData) {
-        cardioZ25Minutes += entry.cardioZoneTime.gteZone2Minutes;
+        periodCardioMinutes += entry.cardioZoneTime.cardioMinutes;
       }
     }
     return ECalendarPeriodPresentation(
       activeDays: activeDays,
-      measureCaption: cardioZ25Minutes > 0 ? '${cardioZ25Minutes}m' : null,
+      measureCaption: periodCardioMinutes > 0
+          ? '${periodCardioMinutes.round()}m'
+          : null,
     );
   }
 

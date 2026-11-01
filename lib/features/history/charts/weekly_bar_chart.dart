@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+
 import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:flutter/material.dart';
@@ -78,10 +79,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
 
   List<Widget> _rangeScrubber() {
     if (widget.rangeScrubber == null) return const [];
-    return [
-      const SizedBox(height: ELayout.spaceSm),
-      widget.rangeScrubber!,
-    ];
+    return [const SizedBox(height: ELayout.spaceSm), widget.rangeScrubber!];
   }
 
   List<int> _yearBoundaryIndices() {
@@ -151,9 +149,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
 
   Widget _bars() {
     if (widget.weeks.isEmpty) {
-      return Center(
-        child: Text('No data yet', style: EText.caption),
-      );
+      return Center(child: Text('No data yet', style: EText.caption));
     }
 
     final highestWeekValue = widget.weeks.fold(

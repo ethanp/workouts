@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:workouts/features/history/charts/chart_inspect_expander.dart';
 import 'package:workouts/features/history/charts/rolling_daily_painter.dart';
 import 'package:workouts/features/history/charts/rolling_daily_point.dart';
 
-/// A smoothed trailing-7-day line chart with goal reference lines. Expand
-/// Inspect to pin a day — the latest visible day starts selected — then tap
-/// or drag the plot to move it.
+/// A smoothed trailing-7-day line chart with goal reference lines. The
+/// inspected day starts as the latest visible day; tap or hover the plot to
+/// move it.
 class const RollingDailyChart({
   required final String title,
   required final List<RollingDailyPoint> points,
@@ -15,18 +14,19 @@ class const RollingDailyChart({
   required final String Function(double value) formatValue,
   final String summarySuffix = '',
   final String emptySummaryLabel = 'No data yet',
-  final bool showGoalDailyPace = false,
+
+  /// When set, the header shows the latest smoothed value as a per-day and
+  /// per-week pair in this format.
+  final String Function(double value)? formatDayAndWeekSummary,
   final DateTime? displayStart,
   final DateTime? displayEnd,
   final Widget? rangeScrubber,
-  final bool clockMinuteAxis = false,
 }) extends StatefulWidget {
   @override
   State<RollingDailyChart> createState() => _RollingDailyChartState();
 }
 
 class _RollingDailyChartState() extends State<RollingDailyChart> {
-  bool _inspecting = false;
   DateTime? _inspectedDate;
 
   @override
@@ -44,13 +44,10 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _header(),
-          const SizedBox(height: ELayout.spaceSm),
-          _goalLegend(),
+          ..._inspectedDaySummary(),
           const SizedBox(height: ELayout.spaceMd),
           _chartArea(),
           ..._rangeScrubber(),
-          const SizedBox(height: ELayout.spaceSm),
-          _inspectExpander(),
         ],
       ),
     );
@@ -75,33 +72,60 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
       );
     }
 
+    final formatDayAndWeekSummary = widget.formatDayAndWeekSummary;
+    if (formatDayAndWeekSummary != null) {
+      return _dayAndWeekSummary(latestPoint, formatDayAndWeekSummary);
+    }
     return Text(
       '${widget.formatValue(latestPoint.smoothedValue)}${widget.summarySuffix}',
-      style: EText.caption.copyWith(
-        color: _summaryColor(latestPoint.smoothedValue),
-        fontWeight: FontWeight.w600,
-      ),
+      style: _summaryValueStyle(latestPoint.smoothedValue),
     );
   }
 
-  Widget _goalLegend() {
-    return EChartLegend(
-      entries: [
-        for (final goal in widget.goals)
-          EChartLegendEntry(
-            swatch: Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: goal.color, shape: BoxShape.circle),
-            ),
-            label: goal.label,
-            value: widget.showGoalDailyPace ? goal.dailyPaceLabel() : null,
-            labelStyle: EText.caption.copyWith(color: EColors.textMuted),
-            valueStyle: EText.caption.copyWith(color: goal.color),
+  Widget _dayAndWeekSummary(
+    RollingDailyPoint latestPoint,
+    String Function(double value) formatDayAndWeekSummary,
+  ) {
+    final TextStyle valueStyle = _summaryValueStyle(latestPoint.smoothedValue);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _summaryPeriodColumn(
+          formatDayAndWeekSummary(
+            latestPoint.smoothedValue / DateTime.daysPerWeek,
           ),
+          'day',
+          valueStyle,
+        ),
+        const SizedBox(width: ELayout.spaceMd),
+        _summaryPeriodColumn(
+          formatDayAndWeekSummary(latestPoint.smoothedValue),
+          'week',
+          valueStyle,
+        ),
       ],
     );
   }
+
+  Widget _summaryPeriodColumn(
+    String formattedValue,
+    String period,
+    TextStyle valueStyle,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(formattedValue, style: valueStyle),
+        Text(period, style: EText.caption.copyWith(color: EColors.textMuted)),
+      ],
+    );
+  }
+
+  TextStyle _summaryValueStyle(double smoothedValue) => EText.caption.copyWith(
+    color: _summaryColor(smoothedValue),
+    fontWeight: FontWeight.w600,
+  );
 
   Widget _chartArea() {
     if (widget.points.length < 2) return _emptyState();
@@ -125,44 +149,29 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
         displayStart: widget.displayStart,
         displayEnd: widget.displayEnd,
         inspectedPoint: _visibleInspectedPoint(),
-        clockMinuteAxis: widget.clockMinuteAxis,
       ),
     );
-    if (!_inspecting) return plot;
     return MouseRegion(
       onHover: (event) => _inspectAt(event.localPosition, constraints),
       child: GestureDetector(
         onTapDown: (details) => _inspectAt(details.localPosition, constraints),
-        onPanUpdate: (details) =>
-            _inspectAt(details.localPosition, constraints),
         child: plot,
       ),
     );
   }
 
-  Widget _inspectExpander() {
+  List<Widget> _inspectedDaySummary() {
     final RollingDailyPoint? inspectedPoint = _visibleInspectedPoint();
-    return ChartInspectExpander(
-      isExpanded: _inspecting,
-      onToggle: _toggleInspecting,
-      detail: inspectedPoint == null ? null : _inspectedSummary(inspectedPoint),
-    );
-  }
-
-  Widget _inspectedSummary(RollingDailyPoint inspectedPoint) {
-    return Text(
-      '${_formatDate(inspectedPoint.date)} · '
-      '${widget.formatValue(inspectedPoint.smoothedValue)} smoothed '
-      '(${widget.formatValue(inspectedPoint.rollingValue)} raw)',
-      style: EText.caption.copyWith(color: EColors.textTertiary),
-    );
-  }
-
-  void _toggleInspecting() {
-    setState(() {
-      _inspecting = !_inspecting;
-      if (_inspecting) _inspectedDate = _latestVisiblePoint()?.date;
-    });
+    if (inspectedPoint == null) return const [];
+    return [
+      const SizedBox(height: ELayout.spaceXs),
+      Text(
+        '${_formatDate(inspectedPoint.date)} · '
+        '${widget.formatValue(inspectedPoint.smoothedValue)} smoothed '
+        '(${widget.formatValue(inspectedPoint.rollingValue)} raw)',
+        style: EText.caption.copyWith(color: EColors.textTertiary),
+      ),
+    ];
   }
 
   void _inspectAt(Offset position, BoxConstraints constraints) {
@@ -187,7 +196,6 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
   }
 
   RollingDailyPoint? _visibleInspectedPoint() {
-    if (!_inspecting) return null;
     final List<RollingDailyPoint> visiblePoints = _visiblePoints();
     if (visiblePoints.isEmpty) return null;
     final DateTime? inspectedDate = _inspectedDate;
@@ -274,4 +282,3 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
 
   String _formatDate(DateTime date) => '${date.month}/${date.day}/${date.year}';
 }
-

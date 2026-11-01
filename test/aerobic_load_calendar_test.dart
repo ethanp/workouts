@@ -28,7 +28,7 @@ ActivityCalendarDay _day({
 void main() {
   const twentyZ25 = HrZoneTime(zone2: 20 * 60);
 
-  test('equal cardio Z2–5 minutes yield the same intensity across types', () {
+  test('equal cardio minutes yield the same intensity across types', () {
     final walk = AerobicLoadCalendar.day(
       DateTime(2026, 9, 8),
       _day(
@@ -54,7 +54,10 @@ void main() {
       (walk.visual as ECalendarDayMeasuredHeat).intensity,
       (elliptical.visual as ECalendarDayMeasuredHeat).intensity,
     );
-    expect((walk.visual as ECalendarDayMeasuredHeat).fill, isNot(EHeatmapIntensity.none.color));
+    expect(
+      (walk.visual as ECalendarDayMeasuredHeat).fill,
+      isNot(EHeatmapIntensity.none.color),
+    );
   });
 
   test('distance and strength duration do not change fill', () {
@@ -110,7 +113,7 @@ void main() {
     expect(strengthOnly.visual, isA<ECalendarDayRecordedWithoutMeasure>());
   });
 
-  test('month totals sum cardio Z2–5 minutes and active days', () {
+  test('month totals sum cardio minutes and active days', () {
     final month = AerobicLoadCalendar.month(DateTime(2026, 9, 1), {
       DateTime(2026, 9, 8): _day(
         date: DateTime(2026, 9, 8),
@@ -139,5 +142,24 @@ void main() {
       ),
     );
     expect((presentation.visual as ECalendarDayMeasuredHeat).intensity, 1);
+  });
+
+  test('day load scales minutes by zone effort', () {
+    final presentation = AerobicLoadCalendar.day(
+      DateTime(2026, 9, 8),
+      _day(
+        date: DateTime(2026, 9, 8),
+        cardioHasHrData: true,
+        cardioCount: 1,
+        cardioZoneTime: const HrZoneTime(
+          zone1: 10 * 60,
+          zone2: 10 * 60,
+          zone3: 4 * 60,
+          zone4: 2 * 60,
+          zone5: 60,
+        ),
+      ),
+    );
+    expect(presentation.secondaryLabel, '25m');
   });
 }

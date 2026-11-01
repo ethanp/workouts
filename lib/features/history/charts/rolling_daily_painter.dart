@@ -8,13 +8,7 @@ class const RollingDailyGoal({
   required final double value,
   required final String label,
   required final Color color,
-}) {
-  /// Trailing-window goal as an average daily pace.
-  String dailyPaceLabel({int rollingDays = 7}) {
-    final minutesPerDay = (value / rollingDays).round();
-    return '${minutesPerDay}m/day';
-  }
-}
+});
 
 class RollingDailyPainter({
   required final List<RollingDailyPoint> points,
@@ -24,7 +18,6 @@ class RollingDailyPainter({
   final DateTime? displayStart,
   final DateTime? displayEnd,
   final RollingDailyPoint? inspectedPoint,
-  final bool clockMinuteAxis = false,
 }) extends CustomPainter {
   static const leftPadding = 36.0;
   static const rightPadding = 12.0;
@@ -64,7 +57,6 @@ class RollingDailyPainter({
       ...visiblePoints.map((point) => point.smoothedValue),
       ...goals.map((goal) => goal.value),
     ].max;
-    if (clockMinuteAxis) return EChartValueScale.clockMinutes(peak);
     return EChartValueScale.nice(peak, targetTickCount: 4);
   }
 
@@ -241,6 +233,5 @@ class RollingDailyPainter({
       displayEnd != oldDelegate.displayEnd ||
       inspectedPoint?.date != oldDelegate.inspectedPoint?.date ||
       inspectedPoint?.smoothedValue !=
-          oldDelegate.inspectedPoint?.smoothedValue ||
-      clockMinuteAxis != oldDelegate.clockMinuteAxis;
+          oldDelegate.inspectedPoint?.smoothedValue;
 }

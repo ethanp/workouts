@@ -174,4 +174,21 @@ void main() {
       expect(zone.gteZone2Minutes, 1);
     });
   });
+
+  group('cardioMinutes', () {
+    test('weights each zone minute by effort', () {
+      const zoneTime = HrZoneTime(
+        zone1: 60,
+        zone2: 60,
+        zone3: 60,
+        zone4: 60,
+        zone5: 60,
+      );
+      expect(zoneTime.cardioMinutes, 0.5 + 1 + 1.25 + 1.5 + 2);
+    });
+
+    test('counts partial minutes', () {
+      expect(const HrZoneTime(zone5: 90).cardioMinutes, 3);
+    });
+  });
 }
