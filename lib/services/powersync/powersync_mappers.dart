@@ -78,8 +78,7 @@ WorkoutExercise _exerciseFromJoinRow({
   required String exercisePrefix,
   required String linkPrefix,
 }) {
-  final prescription =
-      row[_prefixed(linkPrefix, 'prescription')] as String? ?? '';
+  final prescription = row[_prefixed(linkPrefix, 'prescription')] as String;
   final storedPlannedSets = PlannedSet.listFromJsonString(
     row[_prefixed(linkPrefix, 'planned_sets')] as String?,
   );
@@ -167,7 +166,7 @@ WorkoutBlock workoutBlockFromRow(
       seconds: blockRow['target_duration_seconds'] as int,
     ),
     exercises: exercises,
-    description: blockRow['description'] as String? ?? '',
+    description: blockRow.stringOrEmpty('description'),
     rounds: blockRow['rounds'] as int? ?? 1,
   );
 }

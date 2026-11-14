@@ -1,4 +1,5 @@
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,10 +16,9 @@ class const CardioRouteCard({required final List<CardioRoutePoint> routePoints})
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (routePoints.length < 2) return const CardioNoRouteCard();
-    final routeLatLngPoints = [
-      for (final routePoint in routePoints)
-        LatLng(routePoint.latitude, routePoint.longitude),
-    ];
+    final routeLatLngPoints = routePoints.mapL(
+      (routePoint) => LatLng(routePoint.latitude, routePoint.longitude),
+    );
     return CardioRouteMapCard(
       routeLatLngPoints: routeLatLngPoints,
       tileProxyUrl: ref.watch(tileProxyUrlProvider),

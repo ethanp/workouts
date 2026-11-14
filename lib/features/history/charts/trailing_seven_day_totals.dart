@@ -20,16 +20,12 @@ class const TrailingSevenDayTotals() {
       );
     }
 
-    return [
-      for (final point in ETrailingSevenDaySmoothedTotals.of(
-        observed,
-        through: endDate,
-      ))
-        RollingDailyPoint(
-          date: point.date,
-          rollingValue: point.trailingTotal,
-          smoothedValue: point.smoothedTotal,
-        ),
-    ];
+    return ETrailingSevenDaySmoothedTotals.of(observed, through: endDate).mapL(
+      (point) => RollingDailyPoint(
+        date: point.date,
+        rollingValue: point.trailingTotal,
+        smoothedValue: point.smoothedTotal,
+      ),
+    );
   }
 }

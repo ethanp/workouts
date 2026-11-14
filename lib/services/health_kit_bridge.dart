@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:ethan_utils/ethan_utils.dart';
+
 import 'package:flutter/services.dart';
 import 'package:uuid/uuid.dart';
 import 'package:workouts/models/apple_health_cardio_listing.dart';
@@ -245,9 +247,9 @@ class HealthKitBridge() {
         }
         onProgress(HealthInventoryInspectProgress.fromMap(event));
         if (event['importFinished'] != true) continue;
-        seenExternalIds = [
-          for (final id in event['seenExternalIds'] as List? ?? const []) '$id',
-        ];
+        seenExternalIds = (event['seenExternalIds'] as List? ?? const []).mapL(
+          (id) => '$id',
+        );
         break;
       }
     }();
@@ -260,10 +262,9 @@ class HealthKitBridge() {
           'maxRoutePoints': maxRoutePoints,
           'includeHeartRateSeries': includeHeartRateSeries,
           'includeAssociatedSeries': includeAssociatedSeries,
-          'skipUnchangedWorkouts': [
-            for (final fingerprint in skipUnchanged)
-              fingerprint.asHealthKitSkipArgument,
-          ],
+          'skipUnchangedWorkouts': skipUnchanged.mapL(
+            (fingerprint) => fingerprint.asHealthKitSkipArgument,
+          ),
         },
       );
       await consumeEvents;
@@ -303,7 +304,7 @@ class HealthKitBridge() {
       return _jsonObjectMap(Map<Object?, Object?>.from(value));
     }
     if (value is List) {
-      return [for (final item in value) _jsonReadyValue(item)];
+      return value.mapL(_jsonReadyValue);
     }
     return value;
   }

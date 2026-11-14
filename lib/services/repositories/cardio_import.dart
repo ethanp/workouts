@@ -5,6 +5,8 @@ import 'package:workouts/models/cardio_import_payload.dart';
 import 'package:workouts/models/cardio_workout_fingerprint.dart';
 import 'package:workouts/models/workout_history.dart';
 
+import 'cardio_metrics_store.dart';
+
 const _log = ELogger('CardioImporter');
 const _uuid = Uuid();
 final _workoutIdNamespace = Namespace.url.value;
@@ -57,6 +59,31 @@ class CardioImporter(final PowerSyncDatabase _powerSync) {
       removed++;
     }
     return removed;
+  }
+
+  /// Deletes local workouts the server lacks so the next import re-uploads
+  /// them from Apple Health. Their fingerprints otherwise match, the import
+  /// skips them as unchanged, and their children fail the server FK forever.
+  /// Workouts still waiting in the upload queue are left alone.
+  Future<int> forgetWorkoutsMissingFromServer(
+    Set<String> serverWorkoutIds,
+  ) async {
+    final workoutRows = await _powerSync.execute('''
+      SELECT w.id FROM cardio_workouts w
+      WHERE ${CardioMetricsStore.workoutsSinceFirstDayWhere}
+        AND w.id NOT IN (
+          SELECT json_extract(data, '\$.id') FROM ps_crud
+          WHERE json_extract(data, '\$.type') = 'cardio_workouts'
+        )
+      ''');
+    var forgotten = 0;
+    for (final workoutRow in workoutRows) {
+      final workoutId = workoutRow['id'] as String;
+      if (serverWorkoutIds.contains(workoutId)) continue;
+      await _deleteWorkoutGraph(workoutId);
+      forgotten++;
+    }
+    return forgotten;
   }
 
   Future<bool> insertRawWorkout(Map<String, dynamic> payload) async {

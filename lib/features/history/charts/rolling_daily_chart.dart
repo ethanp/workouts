@@ -12,6 +12,7 @@ class const RollingDailyChart({
   required final List<RollingDailyGoal> goals,
   required final Color lineColor,
   required final String Function(double value) formatValue,
+  required final EChartValueScale Function(double peak) valueScaleCoveringPeak,
   final String summarySuffix = '',
   final String emptySummaryLabel = 'No data yet',
 
@@ -148,6 +149,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
         goals: widget.goals,
         lineColor: widget.lineColor,
         formatValue: widget.formatValue,
+        valueScaleCoveringPeak: widget.valueScaleCoveringPeak,
         displayStart: widget.displayStart,
         displayEnd: widget.displayEnd,
         inspectedPoint: _visibleInspectedPoint(),

@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'package:ethan_utils/ethan_utils.dart';
+
 import 'package:ethan_ui/ethan_ui.dart';
 
 import 'package:flutter/material.dart';
@@ -301,15 +303,14 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
       right: 0,
       bottom: 0,
       child: Row(
-        children: [
-          for (final accentColor in accentColors)
-            Expanded(
-              child: Container(
-                height: 3,
-                color: accentColor.withValues(alpha: isActive ? 1.0 : 0.75),
-              ),
+        children: accentColors.mapL(
+          (accentColor) => Expanded(
+            child: Container(
+              height: 3,
+              color: accentColor.withValues(alpha: isActive ? 1.0 : 0.75),
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

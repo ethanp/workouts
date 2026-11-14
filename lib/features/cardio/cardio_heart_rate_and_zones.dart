@@ -1,7 +1,10 @@
 import 'package:ethan_ui/ethan_ui.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'workout_polarization_card.dart';
+
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_route_point.dart';
 import 'package:workouts/models/heart_rate_sample.dart';
@@ -20,16 +23,15 @@ class const CardioHeartRateAndZones({
           children: [
             const SizedBox(height: ELayout.spaceMd),
             CardioMetricsCard(
-              samples: [
-                for (final sample in cardioHeartRateSamples)
-                  HeartRateSample(
-                    id: sample.id,
-                    sessionId: sample.workoutId,
-                    timestamp: sample.timestamp,
-                    bpm: sample.bpm,
-                    source: 'cardio_import',
-                  ),
-              ],
+              samples: cardioHeartRateSamples.mapL(
+                (sample) => HeartRateSample(
+                  id: sample.id,
+                  sessionId: sample.workoutId,
+                  timestamp: sample.timestamp,
+                  bpm: sample.bpm,
+                  source: 'cardio_import',
+                ),
+              ),
               routePoints: routePoints,
             ),
             const SizedBox(height: ELayout.spaceMd),

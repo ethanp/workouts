@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/exercise_history/exercise_history_provider.dart';
@@ -82,19 +83,17 @@ class const ExerciseProgressCard({
           label: 'Top set',
           color: EColors.accent,
           formatValue: metrics.formatTopSet,
-          points: [
-            for (final point in points)
-              TrendPoint(date: point.date, value: point.topSet),
-          ],
+          points: points.mapL(
+            (point) => TrendPoint(date: point.date, value: point.topSet),
+          ),
         ),
         MetricTrend(
           label: 'Volume',
           color: EColors.success,
           formatValue: metrics.formatVolume,
-          points: [
-            for (final point in points)
-              TrendPoint(date: point.date, value: point.volume),
-          ],
+          points: points.mapL(
+            (point) => TrendPoint(date: point.date, value: point.volume),
+          ),
         ),
       ],
     );
@@ -103,10 +102,9 @@ class const ExerciseProgressCard({
   Widget _loggedSets() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final log in exerciseLogs)
-          SessionSetLogRow(log: log, exercise: exercise),
-      ],
+      children: exerciseLogs.mapL(
+        (log) => SessionSetLogRow(log: log, exercise: exercise),
+      ),
     );
   }
 }

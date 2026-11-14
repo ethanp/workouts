@@ -1,3 +1,4 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'fitness_goal.freezed.dart';
@@ -49,7 +50,7 @@ abstract class FitnessGoal with _$FitnessGoal {
     return FitnessGoal(
       id: goalRow['id'] as String,
       title: goalRow['title'] as String,
-      description: (goalRow['description'] as String?) ?? '',
+      description: goalRow.stringOrEmpty('description'),
       category: GoalCategory.values.firstWhere(
         (goalCategory) => goalCategory.name == goalRow['category'],
         orElse: () => GoalCategory.strength,

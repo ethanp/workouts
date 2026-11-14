@@ -12,6 +12,7 @@ void main() {
         {
           'externalWorkoutId': 'w1',
           'activityType': 'indoorWalk',
+          'healthKitActivityType': 'walking',
           'startDate': '2026-09-01T12:00:00.000Z',
           'endDate': '2026-09-01T12:30:00.000Z',
           'durationSeconds': 1800,

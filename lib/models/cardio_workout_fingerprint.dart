@@ -1,3 +1,5 @@
+import 'package:ethan_utils/ethan_utils.dart';
+
 class const CardioWorkoutFingerprint({
   required final String externalWorkoutId,
   required final DateTime startedAt,
@@ -64,7 +66,6 @@ class const CardioWorkoutFingerprintIndex({
     return false;
   }
 
-  List<Map<String, Object>> get asHealthKitSkipArguments => [
-    for (final fingerprint in fingerprints) fingerprint.asHealthKitSkipArgument,
-  ];
+  List<Map<String, Object>> get asHealthKitSkipArguments =>
+      fingerprints.mapL((fingerprint) => fingerprint.asHealthKitSkipArgument);
 }

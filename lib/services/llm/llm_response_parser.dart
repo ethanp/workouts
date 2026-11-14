@@ -62,7 +62,7 @@ class const LlmResponseParser() {
     final content = _messageContent(body);
     final parsed = _jsonObjectFromText(content, 'LLM influence content');
 
-    final description = parsed['description'] as String? ?? '';
+    final description = parsed['description'] as String;
 
     return TrainingInfluence(
       id: id,
@@ -76,7 +76,7 @@ class const LlmResponseParser() {
   String parseLocationEquipmentResponse(String body) {
     final content = _messageContent(body);
     final parsed = _jsonObjectFromText(content, 'LLM equipment content');
-    return (parsed['equipment'] as String?) ?? '';
+    return parsed['equipment'] as String;
   }
 
   /// Parses the replacement-suggestions response into in-memory suggestions.
@@ -157,7 +157,7 @@ class const LlmResponseParser() {
     Map<String, dynamic> suggestionJson, {
     required Map<String, WorkoutExercise> libraryById,
   }) {
-    final reason = (suggestionJson['reason'] as String?)?.trim() ?? '';
+    final reason = suggestionJson.stringOrEmpty('reason').trim();
     final libraryId = suggestionJson['library_exercise_id'] as String?;
 
     if (libraryId != null && libraryId.isNotEmpty) {
@@ -208,7 +208,7 @@ class const LlmResponseParser() {
       id: const Uuid().v4(),
       name: name,
       modality: modality,
-      prescription: (json['prescription'] as String?) ?? '',
+      prescription: json['prescription'] as String,
       targetSets: (json['target_sets'] as int?) ?? 1,
       equipment: (equipment == null || equipment.isEmpty) ? null : equipment,
       cues: stringListFromObject(json['cues']),

@@ -15,6 +15,7 @@ class RollingDailyPainter({
   required final List<RollingDailyGoal> goals,
   required final Color lineColor,
   required final String Function(double value) formatValue,
+  required final EChartValueScale Function(double peak) valueScaleCoveringPeak,
   final DateTime? displayStart,
   final DateTime? displayEnd,
   final RollingDailyPoint? inspectedPoint,
@@ -33,7 +34,7 @@ class RollingDailyPainter({
     _strokeSmoothedTrailingSevenDayTotal(canvas, plot, visiblePoints);
     _paintDayDotsWhenUnderNinetyPoints(canvas, plot, visiblePoints);
     _paintInspectedDay(canvas, plot);
-    _paintNiceValueTicks(canvas, plot);
+    _paintValueTicks(canvas, plot);
   }
 
   EChartPlot _plotAcrossVisibleDates(
@@ -48,27 +49,28 @@ class RollingDailyPainter({
       bottomPadding: 24,
       start: displayStart ?? visiblePoints.first.date,
       end: displayEnd ?? visiblePoints.last.date,
-      valueScale: _niceValueScale(visiblePoints),
+      valueScale: _valueScaleCoveringVisiblePeak(visiblePoints),
     );
   }
 
-  EChartValueScale _niceValueScale(List<RollingDailyPoint> visiblePoints) {
-    final double peak = [
+  EChartValueScale _valueScaleCoveringVisiblePeak(
+    List<RollingDailyPoint> visiblePoints,
+  ) {
+    return valueScaleCoveringPeak([
       ...visiblePoints.map((point) => point.smoothedValue),
       ...goals.map((goal) => goal.value),
-    ].max;
-    return EChartValueScale.nice(peak, targetTickCount: 4);
+    ].max);
   }
 
   void _paintDateGridAndYearBoundaries(Canvas canvas, EChartPlot plot) {
-    _strokeNiceTickGuides(canvas, plot);
+    _strokeValueTickGuides(canvas, plot);
     final chrome = EChartChrome(plot);
     chrome.strokePlotEdges(canvas);
     chrome.paintYearBoundaryGuides(canvas);
     chrome.paintDateTicks(canvas);
   }
 
-  void _strokeNiceTickGuides(Canvas canvas, EChartPlot plot) {
+  void _strokeValueTickGuides(Canvas canvas, EChartPlot plot) {
     final gridPaint = Paint()
       ..color = EColors.border.withValues(alpha: 0.4)
       ..strokeWidth = 0.5;
@@ -193,7 +195,7 @@ class RollingDailyPainter({
     canvas.drawCircle(Offset(hoveredX, hoveredY), 5, ringPaint);
   }
 
-  void _paintNiceValueTicks(Canvas canvas, EChartPlot plot) {
+  void _paintValueTicks(Canvas canvas, EChartPlot plot) {
     for (final tick in plot.valueScale.ticks) {
       final textPainter = TextPainter(
         text: TextSpan(text: formatValue(tick), style: EChartAxis.tickLabel),

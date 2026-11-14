@@ -1,8 +1,11 @@
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/cardio_type.dart';
 import 'package:workouts/services/health_kit_bridge.dart';
 import 'package:workouts/services/repositories/cardio_metrics_store.dart';
 import 'package:workouts/services/repositories/stored_workout_route.dart';
+
+const _log = ELogger('WorkoutRouteStore');
 
 class const RouteStoreOutcome({
   required final int stored,
@@ -60,7 +63,8 @@ class WorkoutRouteStore({
         } else {
           failed++;
         }
-      } catch (_) {
+      } catch (error) {
+        _log.warn('Could not store route for $workoutId: $error');
         failed++;
       }
       onProgress?.call(index + 1, missing.length);

@@ -1,4 +1,5 @@
 import 'package:ethan_sync/ethan_sync.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:powersync/powersync.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/cardio_workout.dart';
@@ -109,10 +110,10 @@ class CardioMetricsStore(final PowerSyncDatabase _powerSync) {
 
   List<TimestampedHeartRate> _timestamped(
     List<CardioHeartRateSample> heartRateSamples,
-  ) => [
-    for (final sample in heartRateSamples)
-      TimestampedHeartRate(timestamp: sample.timestamp, bpm: sample.bpm),
-  ];
+  ) => heartRateSamples.mapL(
+    (sample) =>
+        TimestampedHeartRate(timestamp: sample.timestamp, bpm: sample.bpm),
+  );
 
   Map<String, Object?> _zoneColumns(List<TimestampedHeartRate> hrSamples) => {
     ..._zoneTime(hrSamples).toRow(),

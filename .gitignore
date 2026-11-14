@@ -63,3 +63,6 @@ ios/build/
 
 # Golden comparison leftovers
 test/failures/
+
+# Real-data snapshot from export_real_data_snapshot.sh (private rows)
+.real_data/

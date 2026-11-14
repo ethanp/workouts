@@ -30,10 +30,7 @@ class StoredWorkoutRoute(final String _postgrestUrl) {
             'Content-Type': 'application/json',
             'Prefer': 'resolution=merge-duplicates',
           },
-          body: jsonEncode([
-            for (final routePoint in routePoints.sublist(start, end))
-              _row(routePoint),
-          ]),
+          body: jsonEncode(routePoints.sublist(start, end).mapL(_row)),
         );
         if (response.statusCode >= 400) {
           _log.warn(

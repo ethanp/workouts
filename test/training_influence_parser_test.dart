@@ -20,6 +20,7 @@ void main() {
       final influence = TrainingInfluence.fromRow({
         'id': 'coach',
         'name': 'Coach',
+        'description': '',
         'principles': '{not json',
         'is_active': 0,
       });

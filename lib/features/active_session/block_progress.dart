@@ -21,15 +21,14 @@ class BlockProgress(SessionBlock block, EarlyStopped earlyStopped) {
     EarlyStopped earlyStopped,
   ) {
     final logCounts = block.logs.countBy((log) => log.exerciseId);
-    return [
-      for (final exercise in block.exercises)
-        ExerciseProgress._(
-          exercise: exercise,
-          blockId: block.id,
-          loggedCount: logCounts[exercise.id] ?? 0,
-          earlyStopped: earlyStopped,
-        ),
-    ];
+    return block.exercises.mapL(
+      (exercise) => ExerciseProgress._(
+        exercise: exercise,
+        blockId: block.id,
+        loggedCount: logCounts[exercise.id] ?? 0,
+        earlyStopped: earlyStopped,
+      ),
+    );
   }
 
   /// First exercise in declared order that is not yet complete. Null when

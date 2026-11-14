@@ -5,6 +5,7 @@ import 'package:workouts/features/history/activity_provider.dart';
 import 'package:workouts/providers/health_kit_provider.dart';
 import 'package:workouts/services/backend/service_urls.dart';
 import 'package:workouts/services/repositories/cardio_repository_powersync.dart';
+import 'package:workouts/services/repositories/server_cardio_workouts.dart';
 import 'package:workouts/services/repositories/workout_route_store.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 
@@ -184,6 +185,9 @@ class CardioImportController() extends _$CardioImportController {
     required int maxRoutePoints,
     required bool replaceStored,
   }) async {
+    if (!replaceStored) {
+      await _forgetWorkoutsMissingFromServer(cardioRepository);
+    }
     _publishProgress(status: 'Asking Apple Health for workouts…');
     final alreadyStored = replaceStored
         ? null
@@ -229,6 +233,21 @@ class CardioImportController() extends _$CardioImportController {
       skippedCount: skippedCount,
       removedCount: removedCount,
     );
+  }
+
+  Future<void> _forgetWorkoutsMissingFromServer(
+    CardioRepositoryPowerSync cardioRepository,
+  ) async {
+    _publishProgress(status: 'Checking the server for missing workouts…');
+    final Set<String>? serverWorkoutIds = await ServerCardioWorkouts(
+      ref.read(postgrestUrlProvider),
+    ).idsIfReachable();
+    if (serverWorkoutIds == null) return;
+    final forgotten = await cardioRepository.forgetWorkoutsMissingFromServer(
+      serverWorkoutIds,
+    );
+    if (forgotten == 0) return;
+    _log.log('Re-importing $forgotten workouts missing from the server.');
   }
 
   Future<RouteStoreOutcome> _storeMissingRoutes() {

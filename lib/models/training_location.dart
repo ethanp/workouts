@@ -20,7 +20,7 @@ abstract class TrainingLocation with _$TrainingLocation {
     return TrainingLocation(
       id: locationRow['id'] as String,
       name: locationRow['name'] as String,
-      equipment: (locationRow['equipment'] as String?) ?? '',
+      equipment: locationRow['equipment'] as String,
       createdAt: _asDateTime(locationRow['created_at']),
       updatedAt: _asDateTime(locationRow['updated_at']),
     );

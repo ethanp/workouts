@@ -35,9 +35,7 @@ class const SessionVerdictCard({required final CardioWorkout workout})
           Wrap(
             spacing: ELayout.spaceLg,
             runSpacing: ELayout.spaceMd,
-            children: [
-              for (final stat in _stats(verdict)) _LabeledStat(stat: stat),
-            ],
+            children: _stats(verdict).mapL((stat) => _LabeledStat(stat: stat)),
           ),
           const SizedBox(height: ELayout.spaceMd),
           Text(

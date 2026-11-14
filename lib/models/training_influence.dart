@@ -24,7 +24,7 @@ abstract class TrainingInfluence with _$TrainingInfluence {
     return TrainingInfluence(
       id: influenceRow['id'] as String,
       name: influenceRow['name'] as String,
-      description: (influenceRow['description'] as String?) ?? '',
+      description: influenceRow['description'] as String,
       principles: stringListFromJsonText(principlesJson),
       isActive: (influenceRow['is_active'] as int? ?? 0) == 1,
       createdAt: _asDateTime(influenceRow['created_at']),

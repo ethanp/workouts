@@ -176,6 +176,9 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     Set<String> seenExternalIds,
   ) => _importer.deleteAppleHealthWorkoutsMissingFrom(seenExternalIds);
 
+  Future<int> forgetWorkoutsMissingFromServer(Set<String> serverWorkoutIds) =>
+      _importer.forgetWorkoutsMissingFromServer(serverWorkoutIds);
+
   Future<bool> insertImportedWorkout(Map<String, dynamic> payload) =>
       _importer.insertRawWorkout(payload);
 
@@ -248,10 +251,14 @@ class CardioRepositoryPowerSync(final PowerSyncDatabase _powerSync) {
     required void Function() onMarkedUnreadable,
     required void Function() onLeftMissing,
   }) async {
-    final outcomes = await Future.wait([
-      for (final workoutRow in workoutRows)
-        _computeZonesForWorkout(healthKit, CardioWorkout.fromRow(workoutRow)),
-    ]);
+    final outcomes = await Future.wait(
+      workoutRows.mapL(
+        (workoutRow) => _computeZonesForWorkout(
+          healthKit,
+          CardioWorkout.fromRow(workoutRow),
+        ),
+      ),
+    );
     var healthUnavailable = false;
     for (final outcome in outcomes) {
       switch (outcome) {

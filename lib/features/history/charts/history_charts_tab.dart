@@ -107,6 +107,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
           points: rollingCardioMinutesPoints,
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
+          valueScaleCoveringPeak: EChartValueScale.minuteTotals,
           formatDayAndWeekSummary: (value) => '${value.round()}mins',
           emptySummaryLabel: 'No cardio minutes yet',
           goals: const [
@@ -149,6 +150,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
                 : oneDecimal;
             return '${label}d';
           },
+          valueScaleCoveringPeak: EChartValueScale.nice,
           summarySuffix: ' / 7d',
           emptySummaryLabel: 'No activity yet',
           goals: const [
@@ -203,13 +205,12 @@ class const HistoryChartsTab() extends ConsumerWidget {
         lines: [
           EChartAllTimeRangeLine(
             color: lineColor,
-            samples: [
-              for (final point in points)
-                EChartAllTimeRangeSample(
-                  date: point.date,
-                  value: point.smoothedValue,
-                ),
-            ],
+            samples: points.mapL(
+              (point) => EChartAllTimeRangeSample(
+                date: point.date,
+                value: point.smoothedValue,
+              ),
+            ),
           ),
         ],
       ),
@@ -440,13 +441,12 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
       trend.points,
       lowerIsBetter: trend.lowerIsBetter,
     );
-    return [
-      for (final point in trend.points)
-        EChartAllTimeRangeSample(
-          date: point.date,
-          value: scale.normalize(point.value),
-        ),
-    ];
+    return trend.points.mapL(
+      (point) => EChartAllTimeRangeSample(
+        date: point.date,
+        value: scale.normalize(point.value),
+      ),
+    );
   }
 
   Widget _sectionHeader() {

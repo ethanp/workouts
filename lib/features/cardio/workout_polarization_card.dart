@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/cardio_heart_rate_sample.dart';
 import 'package:workouts/models/hr_zone_time.dart';
@@ -41,11 +42,7 @@ class const WorkoutPolarizationCard({
     final dominantZoneIndex = _dominantZoneIndex(zoneTime);
     return Row(
       children: [
-        const Icon(
-          Icons.graphic_eq,
-          size: 18,
-          color: EColors.textSecondary,
-        ),
+        const Icon(Icons.graphic_eq, size: 18, color: EColors.textSecondary),
         const SizedBox(width: ELayout.spaceSm),
         Expanded(child: Text('Zone Distribution', style: EText.title)),
         Container(
@@ -104,10 +101,9 @@ class const WorkoutPolarizationCard({
 
   Widget _zoneLabels(HrZoneTime zoneTime, List<int> representedZoneIndexes) {
     return Row(
-      children: [
-        for (final zoneIndex in representedZoneIndexes)
-          _zoneCell(zoneTime, zoneIndex),
-      ],
+      children: representedZoneIndexes.mapL(
+        (zoneIndex) => _zoneCell(zoneTime, zoneIndex),
+      ),
     );
   }
 
@@ -168,9 +164,8 @@ class const WorkoutPolarizationCard({
   }
 
   HrZoneTime _compute() {
-    final timestamped = [
-      for (final sample in samples) sample.asTimestampedHeartRate,
-    ]..sort(
+    final timestamped = samples.mapL((sample) => sample.asTimestampedHeartRate)
+      ..sort(
         (firstSample, secondSample) =>
             firstSample.timestamp.compareTo(secondSample.timestamp),
       );

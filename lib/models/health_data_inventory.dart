@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:ethan_utils/ethan_utils.dart';
 import 'package:workouts/models/cardio_type.dart';
 
 class const HealthShareStatus({
@@ -11,9 +12,7 @@ class const HealthShareStatus({
     return HealthShareStatus(
       id: (statusMap['id'] as String?) ?? 'unknown',
       shareStatus: (statusMap['shareStatus'] as String?) ?? 'unknown',
-      note:
-          (statusMap['note'] as String?) ??
-          'HealthKit reports share permission only; read denial is not visible to apps.',
+      note: (statusMap['note'] as String?) ?? 'HealthKit reports share permission only; read denial is not visible to apps.',
     );
   }
 
@@ -103,10 +102,8 @@ class const HealthInventoryEvent({
   factory fromMap(Map<String, dynamic> eventMap) {
     return HealthInventoryEvent(
       type: (eventMap['type'] as String?) ?? 'other',
-      timestamp:
-          DateTime.tryParse(eventMap['timestamp'] as String? ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      endedAt: DateTime.tryParse(eventMap['endTimestamp'] as String? ?? ''),
+      timestamp: DateTime.parse(eventMap['timestamp'] as String),
+      endedAt: DateTime.parse(eventMap['endTimestamp'] as String),
       metadata: _stringMap(eventMap['metadata']),
     );
   }
@@ -132,10 +129,8 @@ class const HealthInventoryActivity({
     return HealthInventoryActivity(
       activityType: (activityMap['activityType'] as String?) ?? 'unknown',
       activityTypeRaw: _asInt(activityMap['activityTypeRaw']) ?? 0,
-      startedAt:
-          DateTime.tryParse(activityMap['startDate'] as String? ?? '') ??
-          DateTime.fromMillisecondsSinceEpoch(0),
-      endedAt: DateTime.tryParse(activityMap['endDate'] as String? ?? ''),
+      startedAt: DateTime.parse(activityMap['startDate'] as String),
+      endedAt: (activityMap['endDate'] as String?).map(DateTime.parse),
       durationSeconds: _asInt(activityMap['durationSeconds']) ?? 0,
       metadata: _stringMap(activityMap['metadata']),
       statistics: _statistics(activityMap['statistics']),
@@ -149,7 +144,7 @@ class const HealthInventoryActivity({
     'endedAt': endedAt?.toIso8601String(),
     'durationSeconds': durationSeconds,
     'metadata': metadata,
-    'statistics': [for (final statistic in statistics) statistic.asJson],
+    'statistics': statistics.mapL((statistic) => statistic.asJson),
   };
 }
 
@@ -191,19 +186,16 @@ class const HealthInventoryWorkout({
   final List<HealthInventoryActivity> activities = const [],
 }) {
   factory fromMap(Map<String, dynamic> workoutMap) {
-    final startDate = DateTime.tryParse(workoutMap['startDate'] as String? ?? '');
-    final endDate = DateTime.tryParse(workoutMap['endDate'] as String? ?? '');
     return HealthInventoryWorkout(
-      externalWorkoutId: (workoutMap['externalWorkoutId'] as String?) ?? '',
+      externalWorkoutId: workoutMap['externalWorkoutId'] as String,
       activityType: CardioType.fromDbKey(
         (workoutMap['activityType'] as String?) ?? CardioType.outdoorRun.dbKey,
       ),
-      healthKitActivityType:
-          (workoutMap['healthKitActivityType'] as String?) ?? '',
+      healthKitActivityType: workoutMap['healthKitActivityType'] as String,
       healthKitActivityTypeRaw: _asInt(workoutMap['healthKitActivityTypeRaw']),
       indoorWorkout: workoutMap['indoorWorkout'] == true,
-      startedAt: startDate ?? DateTime.fromMillisecondsSinceEpoch(0),
-      endedAt: endDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+      startedAt: DateTime.parse(workoutMap['startDate'] as String),
+      endedAt: DateTime.parse(workoutMap['endDate'] as String),
       durationSeconds: _asInt(workoutMap['durationSeconds']) ?? 0,
       sourceName: (workoutMap['sourceName'] as String?) ?? 'Apple Health',
       sourceBundleId: workoutMap['sourceBundleId'] as String?,
@@ -279,10 +271,10 @@ class const HealthInventoryWorkout({
     'flightsClimbed': flightsClimbed,
     'metadataKeys': metadataKeys,
     'metadata': metadata,
-    'events': [for (final event in events) event.asJson],
-    'signals': [for (final signal in signals) signal.asJson],
-    'statistics': [for (final statistic in statistics) statistic.asJson],
-    'activities': [for (final activity in activities) activity.asJson],
+    'events': events.mapL((event) => event.asJson),
+    'signals': signals.mapL((signal) => signal.asJson),
+    'statistics': statistics.mapL((statistic) => statistic.asJson),
+    'activities': activities.mapL((activity) => activity.asJson),
   };
 }
 
@@ -293,8 +285,7 @@ class const HealthSourceMatrixRow({
   required final int workoutCount,
   required final List<String> signalsPresent,
 }) {
-  String get cohortLabel =>
-      machineLinked ? 'Machine-linked' : 'Watch estimate';
+  String get cohortLabel => machineLinked ? 'Machine-linked' : 'Watch estimate';
 
   Map<String, Object> get asJson => {
     'sourceKey': sourceKey,
@@ -347,7 +338,8 @@ class const HealthDataInventory({
         if (workout.recoveryBpm != null) {
           present.add('heartRateRecoveryOneMinute');
         }
-        if (workout.effortScore != null || workout.estimatedEffortScore != null) {
+        if (workout.effortScore != null ||
+            workout.estimatedEffortScore != null) {
           present.add('workoutEffortScore');
         }
         if ((workout.distanceMeters ?? 0) > 0) present.add('summaryDistance');
@@ -373,7 +365,9 @@ class const HealthDataInventory({
     }).toList()..sort((left, right) {
       final sourceOrder = left.sourceKey.compareTo(right.sourceKey);
       if (sourceOrder != 0) return sourceOrder;
-      return left.activityType.displayName.compareTo(right.activityType.displayName);
+      return left.activityType.displayName.compareTo(
+        right.activityType.displayName,
+      );
     });
   }
 
@@ -381,15 +375,14 @@ class const HealthDataInventory({
     'workoutCount': workouts.length,
     'queriedQuantityTypes': queriedQuantityTypes,
     'queriedCategoryTypes': queriedCategoryTypes,
-    'requestedTypes': [for (final status in requestedTypes) status.asJson],
-    'sourceMatrix': [for (final row in sourceMatrix) row.asJson],
-    'workouts': [for (final workout in workouts) workout.asJson],
+    'requestedTypes': requestedTypes.mapL((status) => status.asJson),
+    'sourceMatrix': sourceMatrix.mapL((row) => row.asJson),
+    'workouts': workouts.mapL((workout) => workout.asJson),
   };
 
   String get jsonEmailBody =>
-      const JsonEncoder.withIndent('  ').convert(
-        nativePayload.isEmpty ? asJson : nativePayload,
-      );
+      const JsonEncoder.withIndent('  ')
+          .convert(nativePayload.isEmpty ? asJson : nativePayload);
 }
 
 class const HealthInventoryInspectProgress({
@@ -432,7 +425,8 @@ List<HealthInventoryWorkout> _workouts(Object? raw) {
   return raw
       .whereType<Map>()
       .map(
-        (item) => HealthInventoryWorkout.fromMap(Map<String, dynamic>.from(item)),
+        (item) =>
+            HealthInventoryWorkout.fromMap(Map<String, dynamic>.from(item)),
       )
       .toList();
 }
@@ -441,7 +435,9 @@ List<HealthSignalSummary> _signals(Object? raw) {
   if (raw is! List) return const [];
   return raw
       .whereType<Map>()
-      .map((item) => HealthSignalSummary.fromMap(Map<String, dynamic>.from(item)))
+      .map(
+        (item) => HealthSignalSummary.fromMap(Map<String, dynamic>.from(item)),
+      )
       .toList();
 }
 
@@ -471,7 +467,9 @@ List<HealthInventoryEvent> _events(Object? raw) {
   if (raw is! List) return const [];
   return raw
       .whereType<Map>()
-      .map((item) => HealthInventoryEvent.fromMap(Map<String, dynamic>.from(item)))
+      .map(
+        (item) => HealthInventoryEvent.fromMap(Map<String, dynamic>.from(item)),
+      )
       .toList();
 }
 
