@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/material.dart' show DateTimeRange;
+import 'package:material_ui/material_ui.dart' show DateTimeRange;
 import 'package:powersync/powersync.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:workouts/models/activity_calendar_day.dart';

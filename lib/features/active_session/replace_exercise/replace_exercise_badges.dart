@@ -1,5 +1,5 @@
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:workouts/models/workout_exercise.dart';
 
 class const ReplaceExerciseBadges({required final WorkoutExercise exercise})

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Confirms a destructive in-session exercise replacement when logged sets
 /// would be discarded. Returns `true` if the user confirms, `false` otherwise.

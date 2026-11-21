@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/workout_generation/options/workout_option_card.dart';
 import 'package:workouts/models/llm_workout_option.dart';

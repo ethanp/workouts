@@ -4,7 +4,7 @@ import 'package:ethan_utils/ethan_utils.dart';
 
 import 'package:ethan_ui/ethan_ui.dart';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const WeeklyBarChart({
   required final String title,

@@ -1,5 +1,5 @@
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/active_session/session_detail/edit_session_duration_sheet.dart';
 import 'package:workouts/features/active_session/session_detail/session_blocks_card.dart';

@@ -1,5 +1,5 @@
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:workouts/features/workout_generation/options/workout_followup_answer.dart';
 import 'package:workouts/widgets/connection_gated_widget.dart';
 

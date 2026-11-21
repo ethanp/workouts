@@ -1,5 +1,5 @@
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class const HrZonePalette._() {
   static const zone1 = Color(0xFF5BB5EA);

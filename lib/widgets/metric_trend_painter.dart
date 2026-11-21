@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/widgets/chart_tooltip.dart';
 import 'package:workouts/widgets/metric_trend.dart';

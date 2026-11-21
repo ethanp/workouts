@@ -1,6 +1,6 @@
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workouts/features/settings/apple_health_sync_tile.dart';
 import 'package:workouts/features/settings/connection_tile.dart';

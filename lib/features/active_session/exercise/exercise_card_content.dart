@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/exercise/active_timer_store.dart';
 import 'package:workouts/features/active_session/exercise/current_set_editor.dart';

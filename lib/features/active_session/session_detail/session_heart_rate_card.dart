@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/features/active_session/session_detail/zone_distribution_section.dart';
 import 'package:workouts/models/heart_rate_sample.dart';

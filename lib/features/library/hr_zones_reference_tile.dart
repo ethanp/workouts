@@ -1,6 +1,6 @@
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:ethan_utils/ethan_utils.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:workouts/theme/hr_zone_palette.dart';
 import 'package:workouts/models/hr_zone_time.dart';
 

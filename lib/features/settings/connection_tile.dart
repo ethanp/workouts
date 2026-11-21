@@ -1,6 +1,6 @@
 import 'package:ethan_sync/ethan_sync.dart';
 import 'package:ethan_ui/ethan_ui.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// The shared sync connection panel on a settings card.
 class const ConnectionTile() extends StatelessWidget {

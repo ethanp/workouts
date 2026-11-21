@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:ethan_ui/ethan_ui.dart';
 import 'package:workouts/models/session_note.dart';
 import 'package:workouts/theme/session_note_type_palette.dart';
