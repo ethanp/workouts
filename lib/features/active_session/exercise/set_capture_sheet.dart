@@ -48,7 +48,9 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
       ),
       decoration: const BoxDecoration(
         color: EColors.backgroundLift,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -84,10 +86,7 @@ class SetCaptureSheetState() extends State<SetCaptureSheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$typeLabel: ${widget.exercise.name}',
-          style: EText.section,
-        ),
+        Text('$typeLabel: ${widget.exercise.name}', style: EText.section),
         if (plannedSet != null) ...[
           const SizedBox(height: ELayout.spaceXs),
           Text(

@@ -9,9 +9,7 @@ class const WatchConnectionIndicator({required final bool isConnected})
     final background = isConnected
         ? EColors.success.withValues(alpha: 0.15)
         : EColors.surface;
-    final icon = isConnected
-        ? Icons.check_circle
-        : Icons.warning;
+    final icon = isConnected ? Icons.check_circle : Icons.warning;
     final label = isConnected ? 'Watch connected' : 'Watch offline';
 
     return Container(

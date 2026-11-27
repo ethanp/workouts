@@ -48,11 +48,7 @@ class _InfluenceCardState() extends ConsumerState<InfluenceCard> {
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-      size: 22,
-    ),
+    child: const Icon(Icons.delete, color: Colors.white, size: 22),
   );
 
   Widget _card(TrainingInfluence influence) {
@@ -108,11 +104,7 @@ class _InfluenceCardState() extends ConsumerState<InfluenceCard> {
           IconButton(
             tooltip: 'Edit',
             onPressed: () => _openEditSheet(context),
-            icon: const Icon(
-              Icons.edit,
-              size: 20,
-              color: EColors.textTertiary,
-            ),
+            icon: const Icon(Icons.edit, size: 20, color: EColors.textTertiary),
           ),
           Switch(
             value: influence.isActive,
@@ -150,9 +142,7 @@ class _InfluenceCardState() extends ConsumerState<InfluenceCard> {
             const SizedBox(width: ELayout.spaceXs),
             Text(
               _isExpanded ? 'Hide principles' : 'Show principles',
-              style: EText.caption.copyWith(
-                color: EColors.textTertiary,
-              ),
+              style: EText.caption.copyWith(color: EColors.textTertiary),
             ),
           ],
         ),
@@ -182,9 +172,7 @@ class _InfluenceCardState() extends ConsumerState<InfluenceCard> {
                 children: [
                   Text(
                     '•',
-                    style: EText.body.medium.copyWith(
-                      color: EColors.accent,
-                    ),
+                    style: EText.body.medium.copyWith(color: EColors.accent),
                   ),
                   const SizedBox(width: ELayout.spaceSm),
                   Expanded(

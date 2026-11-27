@@ -71,7 +71,7 @@ class const _LocationsList({required final List<TrainingLocation> locations})
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         _explanationBanner(),
         ...locations.map((location) => _LocationCard(location: location)),

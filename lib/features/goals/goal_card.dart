@@ -69,11 +69,7 @@ class const GoalCard({
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-      size: 22,
-    ),
+    child: const Icon(Icons.delete, color: Colors.white, size: 22),
   );
 
   Widget _cardContent(GoalCategoryStyle categoryStyle) {
@@ -120,35 +116,21 @@ class const GoalCard({
 
   List<Widget> _achievedBadge() => [
     const SizedBox(width: ELayout.spaceSm),
-    const Icon(
-      Icons.verified,
-      size: 13,
-      color: EColors.success,
-    ),
+    const Icon(Icons.verified, size: 13, color: EColors.success),
     const SizedBox(width: 3),
     Text(
       'Achieved',
-      style: EText.caption.copyWith(
-        fontSize: 12,
-        color: EColors.success,
-      ),
+      style: EText.caption.copyWith(fontSize: 12, color: EColors.success),
     ),
   ];
 
   List<Widget> _pausedBadge() => [
     const SizedBox(width: ELayout.spaceSm),
-    const Icon(
-      Icons.pause_circle_outline,
-      size: 13,
-      color: EColors.textMuted,
-    ),
+    const Icon(Icons.pause_circle_outline, size: 13, color: EColors.textMuted),
     const SizedBox(width: 3),
     Text(
       'Archived',
-      style: EText.caption.copyWith(
-        fontSize: 12,
-        color: EColors.textMuted,
-      ),
+      style: EText.caption.copyWith(fontSize: 12, color: EColors.textMuted),
     ),
   ];
 

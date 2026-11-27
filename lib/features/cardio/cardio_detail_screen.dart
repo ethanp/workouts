@@ -39,7 +39,7 @@ class const CardioDetailScreen({required final CardioWorkout workout})
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: ETabBarOverlay.paddingOf(context),
+          padding: ELayout.pagePadding.plusBottomInset(context),
           children: [
             SessionVerdictCard(workout: latestWorkout),
             if (comparison.hasPeers) ...[

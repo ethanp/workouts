@@ -100,9 +100,7 @@ class _ExerciseBenefitsSheetState()
                       const SizedBox(height: ELayout.spaceSm),
                       Text(
                         _generationError!,
-                        style: EText.caption.copyWith(
-                          color: EColors.danger,
-                        ),
+                        style: EText.caption.copyWith(color: EColors.danger),
                       ),
                     ],
                     const SizedBox(height: ELayout.spaceLg),
@@ -136,9 +134,7 @@ class _ExerciseBenefitsSheetState()
         decoration: BoxDecoration(
           color: EColors.warning.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(ELayout.radiusMd),
-          border: Border.all(
-            color: EColors.warning.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: EColors.warning.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -146,11 +142,7 @@ class _ExerciseBenefitsSheetState()
             if (_isGenerating)
               const CircularProgressIndicator()
             else
-              const Icon(
-                Icons.auto_awesome,
-                size: 16,
-                color: EColors.warning,
-              ),
+              const Icon(Icons.auto_awesome, size: 16, color: EColors.warning),
             const SizedBox(width: ELayout.spaceSm),
             Text(
               _isGenerating ? 'Generating…' : 'Generate Benefits with AI',
@@ -295,11 +287,7 @@ class _ExerciseBenefitsSheetState()
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.add,
-              size: 16,
-              color: EColors.textTertiary,
-            ),
+            const Icon(Icons.add, size: 16, color: EColors.textTertiary),
             const SizedBox(width: ELayout.spaceSm),
             Text(
               'Add Benefit',

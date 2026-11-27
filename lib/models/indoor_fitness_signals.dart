@@ -81,7 +81,8 @@ class _IndoorFitness {
   double _integratedBeats() {
     var totalBeats = 0.0;
     for (var index = 1; index < heartRateSamples.length; index++) {
-      final elapsedMinutes = heartRateSamples[index].timestamp
+      final elapsedMinutes =
+          heartRateSamples[index].timestamp
               .difference(heartRateSamples[index - 1].timestamp)
               .inMilliseconds /
           60000.0;

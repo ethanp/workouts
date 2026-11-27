@@ -31,10 +31,7 @@ class MetricTrendPainter({
     }
   }
 
-  void _paintPerMetricMinMaxAtPlotCorners(
-    Canvas canvas,
-    EChartPlot plot,
-  ) {
+  void _paintPerMetricMinMaxAtPlotCorners(Canvas canvas, EChartPlot plot) {
     const double rowHeight = 11;
     const double horizontalInset = 4;
     double topCursorY = plot.top + 2;
@@ -112,11 +109,7 @@ class MetricTrendPainter({
       bottomPadding: 24,
       start: displayStart ?? fallbackStart,
       end: displayEnd ?? fallbackEnd,
-      valueScale: EChartValueScale.fixed(
-        min: 0,
-        max: 1,
-        ticks: const [0, 1],
-      ),
+      valueScale: EChartValueScale.fixed(min: 0, max: 1, ticks: const [0, 1]),
     );
   }
 
@@ -213,8 +206,7 @@ class MetricTrendPainter({
     final visiblePoints = metricTrend.points
         .where(
           (point) =>
-              !point.date.isBefore(plot.start) &&
-              !point.date.isAfter(plot.end),
+              !point.date.isBefore(plot.start) && !point.date.isAfter(plot.end),
         )
         .toList();
 

@@ -63,7 +63,9 @@ class const CardioSessionVerdict({
     );
   }
 
-  static CardioPrimaryWorkMetric _machineDistanceAndMets(CardioWorkout workout) {
+  static CardioPrimaryWorkMetric _machineDistanceAndMets(
+    CardioWorkout workout,
+  ) {
     final displayDistanceMeters = workout.displayDistanceMeters;
     if (displayDistanceMeters <= 0) {
       final metsCaption = workout.metsCaption;

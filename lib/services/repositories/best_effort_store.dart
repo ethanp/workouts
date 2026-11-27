@@ -70,7 +70,12 @@ class BestEffortStore(final PowerSyncDatabase _powerSync) {
       );
       return;
     }
-    await _updateKeptEffort(transaction, existingRows, effort.elapsedSeconds, now);
+    await _updateKeptEffort(
+      transaction,
+      existingRows,
+      effort.elapsedSeconds,
+      now,
+    );
   }
 
   Future<void> _updateKeptEffort(

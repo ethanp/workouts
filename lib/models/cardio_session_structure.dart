@@ -18,7 +18,9 @@ class const CardioSessionStructure({required final List<String> captions}) {
         continue;
       }
       if (event.eventType == 'pause') {
-        captions.add(_pauseCaption(sortedEvents, eventIndex, consumedResumeIndexes));
+        captions.add(
+          _pauseCaption(sortedEvents, eventIndex, consumedResumeIndexes),
+        );
         continue;
       }
       if (event.eventType == 'resume') continue;

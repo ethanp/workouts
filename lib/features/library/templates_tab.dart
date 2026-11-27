@@ -88,11 +88,7 @@ class const _TemplateCard({required final WorkoutTemplate template})
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-      size: 22,
-    ),
+    child: const Icon(Icons.delete, color: Colors.white, size: 22),
   );
 
   Widget _card(int blockCount, int exerciseCount) {
@@ -108,11 +104,7 @@ class const _TemplateCard({required final WorkoutTemplate template})
           _templateIcon(),
           const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _cardContent(blockCount, exerciseCount)),
-          const Icon(
-            Icons.chevron_right,
-            size: 14,
-            color: EColors.textMuted,
-          ),
+          const Icon(Icons.chevron_right, size: 14, color: EColors.textMuted),
         ],
       ),
     );
@@ -126,11 +118,7 @@ class const _TemplateCard({required final WorkoutTemplate template})
         color: EColors.accent.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(ELayout.radiusSm),
       ),
-      child: const Icon(
-        Icons.layers,
-        size: 18,
-        color: EColors.accent,
-      ),
+      child: const Icon(Icons.layers, size: 18, color: EColors.accent),
     );
   }
 
@@ -204,11 +192,7 @@ class const _EmptyState({required final VoidCallback onTemplateAddRequested})
                 color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Icon(
-                Icons.layers,
-                size: 32,
-                color: EColors.accent,
-              ),
+              child: const Icon(Icons.layers, size: 32, color: EColors.accent),
             ),
             const SizedBox(height: ELayout.spaceXl),
             Text('No Templates Yet', style: EText.title),

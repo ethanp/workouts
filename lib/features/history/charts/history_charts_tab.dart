@@ -100,7 +100,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
         );
 
     return ListView(
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         RollingDailyChart(
           title: 'Cardio Minutes',
@@ -253,7 +253,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
   /// Floats above the tab bar so it never covers a chart header.
   Widget _zoomResetPill(BuildContext context, WidgetRef ref) {
     return Positioned(
-      bottom: context.overlaidTabBarInset + ELayout.spaceMd,
+      bottom: MediaQuery.paddingOf(context).bottom + ELayout.spaceMd,
       right: ELayout.spaceMd,
       child: GestureDetector(
         onTap: () => ref.read(chartZoomProvider.notifier).reset(),

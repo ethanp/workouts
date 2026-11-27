@@ -59,7 +59,7 @@ class const _ExercisesBody({
       ..._benefitsGenerationBanners(isOffline),
       if (exercises.isEmpty) _emptyLibrary() else _exerciseRows(exercises),
       SliverToBoxAdapter(
-        child: SizedBox(height: 32 + context.overlaidTabBarInset),
+        child: SizedBox(height: 32 + MediaQuery.paddingOf(context).bottom),
       ),
     ];
   }
@@ -159,24 +159,14 @@ class const _GenerateAllBanner({
       decoration: BoxDecoration(
         color: EColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(ELayout.radiusMd),
-        border: Border.all(
-          color: EColors.warning.withValues(alpha: 0.3),
-        ),
+        border: Border.all(color: EColors.warning.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.auto_awesome,
-            size: 18,
-            color: EColors.warning,
-          ),
+          const Icon(Icons.auto_awesome, size: 18, color: EColors.warning),
           const SizedBox(width: ELayout.spaceMd),
           Expanded(child: _bannerText()),
-          const Icon(
-            Icons.chevron_right,
-            size: 14,
-            color: EColors.warning,
-          ),
+          const Icon(Icons.chevron_right, size: 14, color: EColors.warning),
         ],
       ),
     );
@@ -224,9 +214,7 @@ class const _GeneratingProgressBanner({
         decoration: BoxDecoration(
           color: EColors.warning.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(ELayout.radiusMd),
-          border: Border.all(
-            color: EColors.warning.withValues(alpha: 0.3),
-          ),
+          border: Border.all(color: EColors.warning.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -235,9 +223,7 @@ class const _GeneratingProgressBanner({
             Expanded(
               child: Text(
                 progress.label,
-                style: EText.body.medium.copyWith(
-                  color: EColors.warning,
-                ),
+                style: EText.body.medium.copyWith(color: EColors.warning),
               ),
             ),
             Text(
@@ -320,9 +306,7 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
               : '$benefitCount ${benefitCount == 1 ? 'benefit' : 'benefits'}',
           style: EText.caption.copyWith(
             fontSize: 12,
-            color: benefitCount == 0
-                ? EColors.textMuted
-                : EColors.textTertiary,
+            color: benefitCount == 0 ? EColors.textMuted : EColors.textTertiary,
           ),
         ),
       ],
@@ -333,11 +317,7 @@ class const _ExerciseRow({required final WorkoutExercise exercise})
     return IconButton(
       tooltip: 'Generate benefits',
       onPressed: () => _openBenefitsSheet(context, autoGenerate: true),
-      icon: const Icon(
-        Icons.auto_awesome,
-        size: 18,
-        color: EColors.warning,
-      ),
+      icon: const Icon(Icons.auto_awesome, size: 18, color: EColors.warning),
     );
   }
 
@@ -439,7 +419,6 @@ class const _ModalityIcon({required final ExerciseModality modality})
     ExerciseModality.mobility => Icons.sync,
     ExerciseModality.breath => Icons.air,
   };
-
 }
 
 class const _ModalityPill({required final ExerciseModality modality})

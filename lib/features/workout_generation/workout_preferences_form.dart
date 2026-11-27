@@ -34,7 +34,7 @@ class _WorkoutPreferencesFormState()
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         _sectionLabel('Duration'),
         _durationChips(),

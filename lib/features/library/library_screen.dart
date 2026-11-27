@@ -110,15 +110,12 @@ class const LibraryScreen() extends ConsumerWidget {
 
   Widget _sectionsSliver(BuildContext context) {
     return SliverPadding(
-      padding: ETabBarOverlay.paddingOf(
-        context,
-        contentPadding: EdgeInsets.fromLTRB(
-          ELayout.spaceLg,
-          0,
-          ELayout.spaceLg,
-          ELayout.spaceMd,
-        ),
-      ),
+      padding: EdgeInsets.fromLTRB(
+        ELayout.spaceLg,
+        0,
+        ELayout.spaceLg,
+        ELayout.spaceMd,
+      ).plusBottomInset(context),
       sliver: SliverList.separated(
         itemCount: librarySections.length,
         separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),

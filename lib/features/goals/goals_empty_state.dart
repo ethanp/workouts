@@ -18,11 +18,7 @@ class const GoalsEmptyState({required final VoidCallback onAddGoal})
                 color: EColors.accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
-              child: const Icon(
-                Icons.flag,
-                size: 32,
-                color: EColors.accent,
-              ),
+              child: const Icon(Icons.flag, size: 32, color: EColors.accent),
             ),
             const SizedBox(height: ELayout.spaceXl),
             Text('No Goals Yet', style: EText.title),

@@ -41,18 +41,14 @@ class const GoalsArchivedToggleRow({
         child: Row(
           children: [
             Icon(
-              isExpanded
-                  ? Icons.expand_more
-                  : Icons.chevron_right,
+              isExpanded ? Icons.expand_more : Icons.chevron_right,
               size: 12,
               color: EColors.textMuted,
             ),
             const SizedBox(width: ELayout.spaceSm),
             Text(
               isExpanded ? 'Hide Archived' : 'Show Archived ($count)',
-              style: EText.caption.copyWith(
-                color: EColors.textMuted,
-              ),
+              style: EText.caption.copyWith(color: EColors.textMuted),
             ),
           ],
         ),
@@ -72,10 +68,7 @@ class const GoalsQuickAddRow({required final VoidCallback onAddGoal})
           onPressed: onAddGoal,
           child: const Text(
             'Add Your First Goal',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
         ),
       ],

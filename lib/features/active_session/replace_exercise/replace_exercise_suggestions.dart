@@ -9,7 +9,8 @@ class const ReplaceExerciseSuggestions({
   required final bool isLoading,
   required final Object? error,
   required final VoidCallback onLoadSuggestions,
-  required final ValueChanged<ExerciseReplacementSuggestion> onSuggestionSelected,
+  required final ValueChanged<ExerciseReplacementSuggestion>
+  onSuggestionSelected,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -230,7 +231,9 @@ class const ReplaceExerciseSuggestionRow({
                 ),
               ),
               const SizedBox(width: ELayout.spaceMd),
-              Expanded(child: ReplaceExerciseSuggestionDetails(suggestion: suggestion)),
+              Expanded(
+                child: ReplaceExerciseSuggestionDetails(suggestion: suggestion),
+              ),
               const SizedBox(width: ELayout.spaceSm),
               const Icon(
                 Icons.add_circle_outline,

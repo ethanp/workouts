@@ -15,7 +15,7 @@ class const WorkoutOptionsList({
   Widget build(BuildContext context) {
     return ListView(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         if (showExplanation) _explanation(),
         ...response.options.map(

@@ -54,13 +54,10 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
 
   Widget _body(WorkoutTemplate template) {
     return ListView(
-      padding: ETabBarOverlay.paddingOf(
-        context,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: ELayout.spaceLg,
-          vertical: ELayout.spaceMd,
-        ),
-      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: ELayout.spaceLg,
+        vertical: ELayout.spaceMd,
+      ).plusBottomInset(context),
       children: [
         _templateHeader(template),
         const SizedBox(height: ELayout.spaceLg),

@@ -32,7 +32,9 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
       ),
       decoration: const BoxDecoration(
         color: EColors.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -105,9 +107,7 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
                   : EColors.backgroundLift,
               borderRadius: BorderRadius.circular(ELayout.radiusSm),
               border: Border.all(
-                color: isSelected
-                    ? EColors.accent
-                    : EColors.border,
+                color: isSelected ? EColors.accent : EColors.border,
               ),
             ),
             child: Row(
@@ -118,9 +118,7 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
                 Text(
                   type.displayName,
                   style: EText.body.medium.copyWith(
-                    color: isSelected
-                        ? EColors.accent
-                        : EColors.textSecondary,
+                    color: isSelected ? EColors.accent : EColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -138,24 +136,16 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
       decoration: BoxDecoration(
         color: EColors.danger.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(ELayout.radiusSm),
-        border: Border.all(
-          color: EColors.danger.withValues(alpha: 0.4),
-        ),
+        border: Border.all(color: EColors.danger.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.warning,
-            size: 16,
-            color: EColors.danger,
-          ),
+          const Icon(Icons.warning, size: 16, color: EColors.danger),
           const SizedBox(width: ELayout.spaceSm),
           Expanded(
             child: Text(
               _errorText!,
-              style: EText.caption.copyWith(
-                color: EColors.danger,
-              ),
+              style: EText.caption.copyWith(color: EColors.danger),
             ),
           ),
         ],

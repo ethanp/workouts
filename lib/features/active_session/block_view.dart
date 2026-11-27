@@ -122,10 +122,7 @@ class _BlockViewState() extends ConsumerState<BlockView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(
-            widget.block.type.name.titleCase,
-            style: EText.title,
-          ),
+          child: Text(widget.block.type.name.titleCase, style: EText.title),
         ),
         InkWell(
           onTap: () => _showExercisePicker(context),
@@ -134,15 +131,9 @@ class _BlockViewState() extends ConsumerState<BlockView> {
             decoration: BoxDecoration(
               color: EColors.accent.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(ELayout.radiusSm),
-              border: Border.all(
-                color: EColors.accent.withValues(alpha: 0.3),
-              ),
+              border: Border.all(color: EColors.accent.withValues(alpha: 0.3)),
             ),
-            child: const Icon(
-              Icons.add,
-              color: EColors.accent,
-              size: 20,
-            ),
+            child: const Icon(Icons.add, color: EColors.accent, size: 20),
           ),
         ),
       ],
@@ -215,10 +206,6 @@ class const _ExerciseDragHandle() extends StatelessWidget {
   @override
   Widget build(BuildContext context) => const Padding(
     padding: EdgeInsets.symmetric(horizontal: ELayout.spaceSm),
-    child: Icon(
-      Icons.drag_handle,
-      size: 20,
-      color: EColors.textTertiary,
-    ),
+    child: Icon(Icons.drag_handle, size: 20, color: EColors.textTertiary),
   );
 }

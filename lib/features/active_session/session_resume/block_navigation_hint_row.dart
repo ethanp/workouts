@@ -15,14 +15,8 @@ class const BlockNavigationHintRow({
       ),
       Row(
         children: [
-          _navigationButton(
-            icon: Icons.chevron_left,
-            onPressed: onPrevious,
-          ),
-          _navigationButton(
-            icon: Icons.chevron_right,
-            onPressed: onNext,
-          ),
+          _navigationButton(icon: Icons.chevron_left, onPressed: onPrevious),
+          _navigationButton(icon: Icons.chevron_right, onPressed: onNext),
         ],
       ),
     ],

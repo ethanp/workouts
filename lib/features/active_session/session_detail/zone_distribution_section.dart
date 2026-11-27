@@ -35,9 +35,7 @@ class ZoneDistributionSectionState() extends State<ZoneDistributionSection> {
               ),
               const SizedBox(width: ELayout.spaceXs),
               Icon(
-                _expanded
-                    ? Icons.expand_less
-                    : Icons.expand_more,
+                _expanded ? Icons.expand_less : Icons.expand_more,
                 size: 11,
                 color: EColors.textMuted,
               ),
@@ -74,10 +72,7 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
       children: [
         Text(
           'Shown as Aerobic Base · Gray Zone · VO₂max — metabolic context only.',
-          style: EText.caption.copyWith(
-            color: EColors.textMuted,
-            fontSize: 11,
-          ),
+          style: EText.caption.copyWith(color: EColors.textMuted, fontSize: 11),
         ),
         const SizedBox(height: ELayout.spaceSm),
         ClipRRect(
@@ -137,11 +132,11 @@ class const ZoneBreakdown({required final List<HeartRateSample> samples})
   }
 
   PolarizationWeek _compute() {
-    final timestamped = samples.map((sample) => sample.asTimestampedHeartRate).toList()
-      ..sort(
-        (firstSample, secondSample) =>
-            firstSample.timestamp.compareTo(secondSample.timestamp),
-      );
+    final timestamped =
+        samples.map((sample) => sample.asTimestampedHeartRate).toList()..sort(
+          (firstSample, secondSample) =>
+              firstSample.timestamp.compareTo(secondSample.timestamp),
+        );
 
     return PolarizationWeek.fromHrZoneTime(HrZoneTime.fromSamples(timestamped));
   }

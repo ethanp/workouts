@@ -11,8 +11,6 @@ enum DistanceOrigin() {
     unknown => 'Unknown source',
   };
 
-  static DistanceOrigin fromDbKey(String? key) => values.firstWhere(
-    (origin) => origin.name == key,
-    orElse: () => unknown,
-  );
+  static DistanceOrigin fromDbKey(String? key) =>
+      values.firstWhere((origin) => origin.name == key, orElse: () => unknown);
 }

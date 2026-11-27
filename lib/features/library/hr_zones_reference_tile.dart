@@ -20,7 +20,7 @@ class const HrZonesReferenceTile() extends StatelessWidget {
         children: [
           _header(),
           const SizedBox(height: ELayout.spaceMd),
-          _zoneTable(),
+          _zoneTable(context),
         ],
       ),
     );
@@ -42,11 +42,11 @@ class const HrZonesReferenceTile() extends StatelessWidget {
     ],
   );
 
-  Widget _zoneTable() {
+  Widget _zoneTable(BuildContext context) {
     final zoneCodeStyle = EText.caption.copyWith(fontWeight: FontWeight.w600);
     final zoneCodeWidth = [
       for (var zoneIndex = 0; zoneIndex < 5; zoneIndex++) 'Z${zoneIndex + 1}',
-    ].widestLaidOutWidth(zoneCodeStyle);
+    ].widestLaidOutWidthIn(context, zoneCodeStyle);
 
     return Column(
       children: [

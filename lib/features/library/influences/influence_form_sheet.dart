@@ -210,9 +210,7 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
             padding: const EdgeInsets.only(top: ELayout.spaceMd),
             child: Text(
               '•',
-              style: EText.body.medium.copyWith(
-                color: EColors.accent,
-              ),
+              style: EText.body.medium.copyWith(color: EColors.accent),
             ),
           ),
           const SizedBox(width: ELayout.spaceSm),

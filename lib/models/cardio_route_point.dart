@@ -100,7 +100,9 @@ class _RouteBestEfforts {
   }
 
   List<CardioRoutePoint> _timedPointsSortedByTime() {
-    return routePoints.where((routePoint) => routePoint.recordedAt != null).toList()
+    return routePoints
+        .where((routePoint) => routePoint.recordedAt != null)
+        .toList()
       ..sort(
         (firstPoint, secondPoint) =>
             firstPoint.recordedAt!.compareTo(secondPoint.recordedAt!),

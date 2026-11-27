@@ -72,11 +72,7 @@ class const BackgroundNoteRow({
     ),
     alignment: Alignment.centerRight,
     padding: const EdgeInsets.only(right: ELayout.spaceLg),
-    child: const Icon(
-      Icons.delete,
-      color: Colors.white,
-      size: 22,
-    ),
+    child: const Icon(Icons.delete, color: Colors.white, size: 22),
   );
 
   Widget _noteContent(FitnessGoal? linkedGoal, Color categoryColor) {
@@ -137,10 +133,7 @@ class const BackgroundNoteRow({
     Flexible(
       child: Text(
         linkedGoal.title,
-        style: EText.caption.copyWith(
-          fontSize: 11,
-          color: EColors.textMuted,
-        ),
+        style: EText.caption.copyWith(fontSize: 11, color: EColors.textMuted),
         overflow: TextOverflow.ellipsis,
       ),
     ),
@@ -225,5 +218,4 @@ class const BackgroundNoteRow({
       ),
     );
   }
-
 }

@@ -85,7 +85,7 @@ class const HistoryActivityListTab({
     List<ActivityItem> items,
   ) {
     return ListView.separated(
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       itemCount: items.length,
       separatorBuilder: (_, _) => const SizedBox(height: ELayout.spaceSm),
       itemBuilder: (context, index) =>

@@ -174,9 +174,7 @@ class const _BlockSection({required final LlmWorkoutBlock block})
               const SizedBox(width: ELayout.spaceSm),
               Text(
                 '${block.estimatedMinutes}m',
-                style: EText.caption.copyWith(
-                  color: EColors.textTertiary,
-                ),
+                style: EText.caption.copyWith(color: EColors.textTertiary),
               ),
             ],
           ),

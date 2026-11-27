@@ -31,7 +31,9 @@ class const ReplaceExerciseLibraryList({
       );
     }
 
-    final modalities = groups.keys.toList().sortedOn((modality) => modality.name);
+    final modalities = groups.keys.toList().sortedOn(
+      (modality) => modality.name,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -20,7 +20,7 @@ class const SettingsScreen() extends ConsumerWidget {
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: ETabBarOverlay.paddingOf(context),
+          padding: ELayout.pagePadding.plusBottomInset(context),
           children: const [
             ESettingsSection(title: 'Connection', children: [ConnectionTile()]),
             SizedBox(height: ELayout.spaceXl),

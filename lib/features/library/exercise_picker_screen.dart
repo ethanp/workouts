@@ -158,10 +158,7 @@ class _ExercisePickerBodyState() extends State<_ExercisePickerBody> {
     );
 
     return ListView.builder(
-      padding: ETabBarOverlay.paddingOf(
-        context,
-        contentPadding: EdgeInsets.only(bottom: 32),
-      ),
+      padding: EdgeInsets.only(bottom: 32).plusBottomInset(context),
       itemCount: modalities.length,
       itemBuilder: (context, index) {
         final modality = modalities[index];

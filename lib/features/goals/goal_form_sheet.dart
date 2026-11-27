@@ -52,7 +52,9 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: EColors.backgroundLift,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -124,16 +126,14 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedCategory = cat),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: ELayout.spaceMd),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: ELayout.spaceMd,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected
-                      ? EColors.accent
-                      : EColors.surface,
+                  color: isSelected ? EColors.accent : EColors.surface,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: isSelected
-                        ? EColors.accent
-                        : EColors.borderStrong,
+                    color: isSelected ? EColors.accent : EColors.borderStrong,
                   ),
                 ),
                 alignment: Alignment.center,
@@ -141,9 +141,7 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
                   cat.name,
                   style: TextStyle(
                     fontSize: 13,
-                    color: isSelected
-                        ? Colors.white
-                        : EColors.textSecondary,
+                    color: isSelected ? Colors.white : EColors.textSecondary,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
@@ -169,14 +167,10 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: isSelected
-                    ? EColors.accent
-                    : EColors.surface,
+                color: isSelected ? EColors.accent : EColors.surface,
                 borderRadius: BorderRadius.circular(ELayout.radiusSm),
                 border: Border.all(
-                  color: isSelected
-                      ? EColors.accent
-                      : EColors.borderStrong,
+                  color: isSelected ? EColors.accent : EColors.borderStrong,
                 ),
               ),
               alignment: Alignment.center,
@@ -185,9 +179,7 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isSelected
-                      ? Colors.white
-                      : EColors.textSecondary,
+                  color: isSelected ? Colors.white : EColors.textSecondary,
                 ),
               ),
             ),
@@ -208,31 +200,27 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
     ),
   );
 
-  Widget _saveButton(BuildContext context, bool isEditing) =>
-      FilledButton(
-        onPressed: _titleController.text.trim().isEmpty
-            ? null
-            : () async {
-                final navigator = Navigator.of(context);
-                try {
-                  await widget.onSave(
-                    _titleController.text.trim(),
-                    _selectedCategory,
-                    _descriptionController.text.trim(),
-                    _priority,
-                  );
-                } finally {
-                  if (navigator.canPop()) navigator.pop();
-                }
-              },
-        child: Text(
-          isEditing ? 'Save Changes' : 'Add Goal',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
+  Widget _saveButton(BuildContext context, bool isEditing) => FilledButton(
+    onPressed: _titleController.text.trim().isEmpty
+        ? null
+        : () async {
+            final navigator = Navigator.of(context);
+            try {
+              await widget.onSave(
+                _titleController.text.trim(),
+                _selectedCategory,
+                _descriptionController.text.trim(),
+                _priority,
+              );
+            } finally {
+              if (navigator.canPop()) navigator.pop();
+            }
+          },
+    child: Text(
+      isEditing ? 'Save Changes' : 'Add Goal',
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+    ),
+  );
 
   Widget _cancelButton(BuildContext context) => TextButton(
     onPressed: () => Navigator.of(context).pop(),

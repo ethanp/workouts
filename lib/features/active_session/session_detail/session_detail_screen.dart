@@ -42,7 +42,7 @@ class const SessionDetailScreen({required final Session session})
       body: SafeArea(
         bottom: false,
         child: ListView(
-          padding: ETabBarOverlay.paddingOf(context),
+          padding: ELayout.pagePadding.plusBottomInset(context),
           children: [
             SessionSummaryCard(
               session: liveSession,

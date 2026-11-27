@@ -32,9 +32,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
               const Spacer(),
               Text(
                 '${notes.length}',
-                style: EText.caption.copyWith(
-                  color: EColors.textTertiary,
-                ),
+                style: EText.caption.copyWith(color: EColors.textTertiary),
               ),
             ],
           ),
@@ -71,9 +69,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
                 const SizedBox(height: ELayout.spaceXs),
                 Text(
                   note.timestamp.clockTime(),
-                  style: EText.caption.copyWith(
-                    color: EColors.textMuted,
-                  ),
+                  style: EText.caption.copyWith(color: EColors.textMuted),
                 ),
               ],
             ),
@@ -82,5 +78,4 @@ class const SessionNotesCard({required final List<SessionNote> notes})
       ),
     );
   }
-
 }

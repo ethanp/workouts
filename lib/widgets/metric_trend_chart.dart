@@ -66,10 +66,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
 
   List<Widget> _rangeScrubber() {
     if (widget.rangeScrubber == null) return const [];
-    return [
-      const SizedBox(height: ELayout.spaceSm),
-      widget.rangeScrubber!,
-    ];
+    return [const SizedBox(height: ELayout.spaceSm), widget.rangeScrubber!];
   }
 
   Widget _title() {
@@ -95,11 +92,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
     return TableRow(
       children: [
         _labelCell(metricTrend, isHidden),
-        _latestValueCell(
-          metricTrend.label,
-          isHidden,
-          latestAndSlope.latest,
-        ),
+        _latestValueCell(metricTrend.label, isHidden, latestAndSlope.latest),
         _slopeCell(metricTrend.label, isHidden, latestAndSlope.slope),
       ],
     );
@@ -134,10 +127,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
         padding: const EdgeInsets.only(left: ELayout.spaceMd),
         child: Text(
           latest,
-          style: EText.caption.copyWith(
-            color: EColors.textMuted,
-            fontSize: 10,
-          ),
+          style: EText.caption.copyWith(color: EColors.textMuted, fontSize: 10),
         ),
       ),
     );
@@ -151,10 +141,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
         padding: const EdgeInsets.only(left: ELayout.spaceSm),
         child: Text(
           slope,
-          style: EText.caption.copyWith(
-            color: EColors.textMuted,
-            fontSize: 10,
-          ),
+          style: EText.caption.copyWith(color: EColors.textMuted, fontSize: 10),
         ),
       ),
     );
@@ -223,10 +210,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
       return SizedBox(
         height: 180,
         child: Center(
-          child: Text(
-            'Need 2+ workouts for trends',
-            style: EText.caption,
-          ),
+          child: Text('Need 2+ workouts for trends', style: EText.caption),
         ),
       );
     }

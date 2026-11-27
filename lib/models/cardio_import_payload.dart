@@ -89,7 +89,9 @@ class const CardioImportPayload({
       heartRateSamples: HeartRateSamplePayload.parseList(
         payload['heartRateSeries'],
       ),
-      distanceSamples: QuantitySamplePayload.parseList(payload['distanceSeries']),
+      distanceSamples: QuantitySamplePayload.parseList(
+        payload['distanceSeries'],
+      ),
       stepSamples: QuantitySamplePayload.parseList(payload['stepSeries']),
       events: WorkoutEventPayload.parseList(payload['events']),
     );

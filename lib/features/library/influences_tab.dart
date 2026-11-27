@@ -47,7 +47,7 @@ class const InfluencesList({required final List<TrainingInfluence> influences})
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: ETabBarOverlay.paddingOf(context),
+      padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         _explanationBanner(),
         ...influences.map((influence) => InfluenceCard(influence: influence)),

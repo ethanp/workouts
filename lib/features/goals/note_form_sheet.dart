@@ -49,7 +49,9 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
       padding: EdgeInsets.only(bottom: bottomInset),
       decoration: const BoxDecoration(
         color: EColors.backgroundLift,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(ELayout.radiusXl)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(ELayout.radiusXl),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -140,14 +142,10 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
           vertical: ELayout.spaceSm,
         ),
         decoration: BoxDecoration(
-          color: isSelected
-              ? EColors.accent
-              : EColors.surface,
+          color: isSelected ? EColors.accent : EColors.surface,
           borderRadius: BorderRadius.circular(ELayout.radiusSm),
           border: Border.all(
-            color: isSelected
-                ? EColors.accent
-                : EColors.borderStrong,
+            color: isSelected ? EColors.accent : EColors.borderStrong,
           ),
         ),
         child: Row(
@@ -159,9 +157,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
               cat.displayName,
               style: TextStyle(
                 fontSize: 13,
-                color: isSelected
-                    ? Colors.white
-                    : EColors.textSecondary,
+                color: isSelected ? Colors.white : EColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),
@@ -175,11 +171,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
     label: 'Link to Goal (optional)',
     child: Column(
       children: [
-        _goalOption(
-          id: null,
-          label: 'General (all goals)',
-          icon: Icons.public,
-        ),
+        _goalOption(id: null, label: 'General (all goals)', icon: Icons.public),
         const SizedBox(height: ELayout.spaceSm),
         ...widget.availableGoals
             .where((goal) => goal.isActive)
@@ -213,9 +205,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
               : EColors.surface,
           borderRadius: BorderRadius.circular(ELayout.radiusSm),
           border: Border.all(
-            color: isSelected
-                ? EColors.accent
-                : EColors.borderStrong,
+            color: isSelected ? EColors.accent : EColors.borderStrong,
           ),
         ),
         child: Row(
@@ -223,18 +213,14 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
             Icon(
               icon,
               size: 15,
-              color: isSelected
-                  ? EColors.accent
-                  : EColors.textTertiary,
+              color: isSelected ? EColors.accent : EColors.textTertiary,
             ),
             const SizedBox(width: ELayout.spaceSm),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
-                  color: isSelected
-                      ? EColors.accent
-                      : EColors.textSecondary,
+                  color: isSelected ? EColors.accent : EColors.textSecondary,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
@@ -255,10 +241,7 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
           ),
     child: Text(
       isEditing ? 'Save Changes' : 'Add Note',
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w600,
-      ),
+      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
     ),
   );
 

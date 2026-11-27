@@ -49,7 +49,7 @@ class const HeartRateAndSpeedChart({
 
 enum CardioChartSeries({required final Color color}) {
   heartRate(color: EColors.danger),
-  speed(color: EColors.success);
+  speed(color: EColors.success),
 }
 
 class _HeartRateAndSpeedPainter({
@@ -72,16 +72,8 @@ class _HeartRateAndSpeedPainter({
     final heartRateScale = _heartRateScale();
     if (heartRateScale == null) return;
 
-    _paintHeartRateZonesAndElapsedTimeAxes(
-      canvas,
-      plot,
-      heartRateScale,
-    );
-    _strokeSmoothedHeartRateOverElapsedTime(
-      canvas,
-      plot,
-      heartRateScale,
-    );
+    _paintHeartRateZonesAndElapsedTimeAxes(canvas, plot, heartRateScale);
+    _strokeSmoothedHeartRateOverElapsedTime(canvas, plot, heartRateScale);
     _strokeSpeedOverElapsedTime(canvas, plot);
   }
 
@@ -542,4 +534,3 @@ class const _TimeDomain({
         durationMilliseconds;
   }
 }
-

@@ -68,5 +68,5 @@ enum CardioType({
 enum CardioPrimaryWork() {
   distanceAndPace,
   machineDistanceAndMets,
-  flightsAndSteps;
+  flightsAndSteps,
 }

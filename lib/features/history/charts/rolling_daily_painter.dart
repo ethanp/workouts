@@ -56,10 +56,12 @@ class RollingDailyPainter({
   EChartValueScale _valueScaleCoveringVisiblePeak(
     List<RollingDailyPoint> visiblePoints,
   ) {
-    return valueScaleCoveringPeak([
-      ...visiblePoints.map((point) => point.smoothedValue),
-      ...goals.map((goal) => goal.value),
-    ].max);
+    return valueScaleCoveringPeak(
+      [
+        ...visiblePoints.map((point) => point.smoothedValue),
+        ...goals.map((goal) => goal.value),
+      ].max,
+    );
   }
 
   void _paintDateGridAndYearBoundaries(Canvas canvas, EChartPlot plot) {

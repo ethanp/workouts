@@ -127,9 +127,7 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
             child: Text(
               plannedSetLabel,
               textAlign: TextAlign.end,
-              style: EText.caption.copyWith(
-                color: EColors.textMuted,
-              ),
+              style: EText.caption.copyWith(color: EColors.textMuted),
             ),
           ),
         ],
@@ -235,10 +233,7 @@ class _CurrentSetEditorState() extends State<CurrentSetEditor> {
 
   Weight? _weightInput() {
     if (!_showsWeightControl) return null;
-    return Weight.fromInput(
-      _weightController.text,
-      widget.exercise.weightUnit,
-    );
+    return Weight.fromInput(_weightController.text, widget.exercise.weightUnit);
   }
 
   Duration? _durationInput() {

@@ -69,7 +69,9 @@ class const CardioWorkout({
       sourceBundleId: workoutRow['source_bundle_id'] as String?,
       deviceModel: workoutRow['device_model'] as String?,
       deviceName: workoutRow['device_name'] as String?,
-      elevationAscendedMeters: _asDouble(workoutRow['elevation_ascended_meters']),
+      elevationAscendedMeters: _asDouble(
+        workoutRow['elevation_ascended_meters'],
+      ),
       recoveryBpm: _asDouble(workoutRow['recovery_bpm']),
       effortScore: _asDouble(workoutRow['effort_score']),
       estimatedEffortScore: _asDouble(workoutRow['estimated_effort_score']),
