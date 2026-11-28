@@ -122,7 +122,10 @@ class _BlockViewState() extends ConsumerState<BlockView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Text(widget.block.type.name.titleCase, style: EText.title),
+          child: Text(
+            widget.block.type.name.titleCase,
+            style: EText.sectionTitle,
+          ),
         ),
         InkWell(
           onTap: () => _showExercisePicker(context),

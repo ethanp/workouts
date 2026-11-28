@@ -267,8 +267,8 @@ class _LocationFormSheetState() extends ConsumerState<LocationFormSheet> {
           _dragHandle(),
           const SizedBox(height: ELayout.spaceLg),
           Text(
-            _isEditing ? 'Edit Location' : 'Add Location',
-            style: EText.title,
+            _isEditing ? 'Edit location' : 'Add location',
+            style: EText.sectionTitle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: ELayout.spaceXl),

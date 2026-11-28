@@ -29,7 +29,7 @@ class const SessionHeartRateCard({
                 color: EColors.textSecondary,
               ),
               const SizedBox(width: ELayout.spaceSm),
-              Text('Heart Rate', style: EText.title),
+              Text('Heart rate', style: EText.sectionTitle),
             ],
           ),
           const SizedBox(height: ELayout.spaceMd),

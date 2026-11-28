@@ -28,7 +28,7 @@ class const SessionNotesCard({required final List<SessionNote> notes})
                 color: EColors.textSecondary,
               ),
               const SizedBox(width: ELayout.spaceSm),
-              Text('Session Notes', style: EText.title),
+              Text('Session notes', style: EText.sectionTitle),
               const Spacer(),
               Text(
                 '${notes.length}',

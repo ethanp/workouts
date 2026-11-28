@@ -106,7 +106,7 @@ class _CardioImportDebugTileState()
                     ),
                   ),
                   const SizedBox(width: ELayout.spaceMd),
-                  Expanded(child: Text('Import Debug', style: EText.section)),
+                  Expanded(child: Text('Import debug', style: EText.cardTitle)),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
                     color: EColors.textTertiary,
@@ -312,7 +312,7 @@ class _SyncDebugTileState() extends ConsumerState<SyncDebugTile> {
               ),
             ),
             const SizedBox(width: ELayout.spaceMd),
-            Expanded(child: Text('Sync Debug', style: EText.section)),
+            Expanded(child: Text('Sync debug', style: EText.cardTitle)),
             Icon(
               _expanded ? Icons.expand_less : Icons.expand_more,
               color: EColors.textTertiary,

@@ -70,7 +70,7 @@ class _MetricTrendChartState() extends State<MetricTrendChart> {
   }
 
   Widget _title() {
-    return Text(widget.title, style: EText.section);
+    return Text(widget.title, style: EText.cardTitle);
   }
 
   Widget _legend() {

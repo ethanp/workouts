@@ -83,7 +83,7 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(template.name, style: EText.title),
+        Text(template.name, style: EText.sectionTitle),
         if (template.goal.isNotEmpty) ...[
           const SizedBox(height: ELayout.spaceSm),
           Text(
@@ -169,14 +169,7 @@ class _TemplateDetailScreenState() extends ConsumerState<TemplateDetailScreen> {
           children: [
             const Icon(Icons.layers, size: 12, color: EColors.textMuted),
             const SizedBox(width: ELayout.spaceXs),
-            Text(
-              'BLOCKS',
-              style: EText.caption.copyWith(
-                color: EColors.textMuted,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.0,
-              ),
-            ),
+            Text('Blocks', style: EText.sectionTitle),
           ],
         ),
         const SizedBox(height: ELayout.spaceSm),

@@ -78,7 +78,7 @@ class const ExerciseCardMenuButton({
                 ELayout.spaceLg,
                 ELayout.spaceSm,
               ),
-              child: Text(exerciseName, style: EText.section),
+              child: Text(exerciseName, style: EText.sectionTitle),
             ),
             for (final item in items)
               ListTile(

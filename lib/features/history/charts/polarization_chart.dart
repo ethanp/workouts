@@ -106,7 +106,7 @@ class _PolarizationChartState() extends State<PolarizationChart> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('Polarization', style: EText.section),
+        Text('Polarization', style: EText.sectionTitle),
         const SizedBox(width: ELayout.spaceSm),
         Expanded(child: PolarizationLegend()),
       ],

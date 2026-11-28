@@ -22,7 +22,7 @@ class const SessionSummaryCard({
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Summary', style: EText.title),
+              Text('Summary', style: EText.sectionTitle),
               _statusBadge(),
             ],
           ),
@@ -44,7 +44,7 @@ class const SessionSummaryCard({
           ],
           if (session.notes?.isNotEmpty ?? false) ...[
             const SizedBox(height: ELayout.spaceMd),
-            Text('Notes', style: EText.section),
+            Text('Notes', style: EText.cardTitle),
             const SizedBox(height: ELayout.spaceXs),
             Text(
               session.notes!,

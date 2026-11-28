@@ -139,7 +139,7 @@ class const ExerciseCardContent({
   Widget _exerciseHeader() => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
-      Expanded(child: Text(exercise.name, style: EText.section)),
+      Expanded(child: Text(exercise.name, style: EText.cardTitle)),
       ExerciseCardMenuButton(
         exerciseName: exercise.name,
         onExerciseHistoryRequested: onExerciseHistoryRequested,

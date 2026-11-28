@@ -12,14 +12,7 @@ class const GoalsSectionHeader({
       children: [
         Icon(icon, size: 12, color: EColors.textMuted),
         const SizedBox(width: ELayout.spaceXs),
-        Text(
-          title,
-          style: EText.caption.copyWith(
-            color: EColors.textMuted,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 1.0,
-          ),
-        ),
+        Text(title, style: EText.sectionTitle),
         const Spacer(),
         if (action != null) action!,
       ],

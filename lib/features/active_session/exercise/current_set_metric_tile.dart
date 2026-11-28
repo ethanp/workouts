@@ -68,13 +68,13 @@ class const CurrentSetMetricTile({
     keyboardType: keyboardType,
     textInputAction: TextInputAction.done,
     textAlign: TextAlign.center,
-    style: EText.title.copyWith(
+    style: EText.headline.small.copyWith(
       color: EColors.textPrimary,
       fontWeight: FontWeight.w700,
     ),
     decoration: InputDecoration(
       hintText: placeholder,
-      hintStyle: EText.title.copyWith(
+      hintStyle: EText.headline.small.copyWith(
         color: EColors.textMuted,
         fontWeight: FontWeight.w600,
       ),

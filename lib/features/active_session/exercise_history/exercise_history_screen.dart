@@ -116,7 +116,7 @@ class _SessionSectionState() extends ConsumerState<_SessionSection> {
                 children: [
                   Text(
                     widget.entry.completedAt.todayYesterdayOrDate,
-                    style: EText.section,
+                    style: EText.cardTitle,
                   ),
                   const SizedBox(height: ELayout.spaceXs),
                   Text(_subtitle, style: EText.caption),

@@ -91,7 +91,7 @@ class const BackgroundNotesList({
       if (activeNotes.isNotEmpty) ...[
         GoalsSectionHeader(
           icon: Icons.description,
-          title: 'BACKGROUND',
+          title: 'Background',
           action: TextButton(
             onPressed: onAddNote,
             child: const Text(

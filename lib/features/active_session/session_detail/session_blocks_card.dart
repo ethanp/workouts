@@ -43,7 +43,7 @@ class const SessionDetailBlockCard({
       children: [
         Text(
           'Block ${index + 1}: ${_titleCase(block.type.name)}',
-          style: EText.title,
+          style: EText.sectionTitle,
         ),
         if (block.totalRounds != null)
           Text(

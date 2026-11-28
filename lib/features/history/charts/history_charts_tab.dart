@@ -103,7 +103,7 @@ class const HistoryChartsTab() extends ConsumerWidget {
       padding: ELayout.pagePadding.plusBottomInset(context),
       children: [
         RollingDailyChart(
-          title: 'Cardio Minutes',
+          title: 'Cardio minutes',
           points: rollingCardioMinutesPoints,
           lineColor: HrZonePalette.zone2,
           formatValue: (value) => '${value.round()}m',
@@ -361,7 +361,7 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
     return [
       const SizedBox(height: ELayout.spaceLg),
       WeeklyBarChart(
-        title: 'Weekly Run Distance',
+        title: 'Weekly run distance',
         weeks: widget.weeks,
         barColor: EColors.accent,
         goalLine: const ChartGoalLine(
@@ -374,7 +374,7 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
       ),
       const SizedBox(height: ELayout.spaceLg),
       MetricTrendChart(
-        title: 'Outdoor Run Trends',
+        title: 'Outdoor run trends',
         trends: trends,
         displayStart: widget.displayStart,
         displayEnd: widget.displayEnd,
@@ -455,15 +455,7 @@ class _OutdoorRunningChartsState() extends State<_OutdoorRunningCharts> {
       behavior: HitTestBehavior.opaque,
       child: Row(
         children: [
-          Text(
-            'OUTDOOR RUNNING',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.8,
-              color: EColors.textMuted,
-            ),
-          ),
+          Text('Outdoor running', style: EText.sectionTitle),
           const SizedBox(width: ELayout.spaceSm),
           Icon(
             _expanded ? Icons.expand_less : Icons.expand_more,

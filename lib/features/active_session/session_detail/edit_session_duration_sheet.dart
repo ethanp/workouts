@@ -58,8 +58,8 @@ class _EditSessionDurationSheetState()
           _dragHandle(),
           const SizedBox(height: ELayout.spaceLg),
           Text(
-            'Edit Duration',
-            style: EText.title,
+            'Edit duration',
+            style: EText.sectionTitle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: ELayout.spaceLg),

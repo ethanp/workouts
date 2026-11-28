@@ -77,7 +77,7 @@ class _AddNoteSheetState() extends ConsumerState<AddNoteSheet> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        Text('Add Note', style: EText.title),
+        Text('Add note', style: EText.sectionTitle),
         TextButton(
           onPressed: _contentController.text.trim().isEmpty || _isSaving
               ? null

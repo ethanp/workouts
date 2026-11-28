@@ -86,7 +86,7 @@ class const DayDetailSheet({required final DateTime date})
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(date.fullDate, style: EText.section),
+            Text(date.fullDate, style: EText.sectionTitle),
             const SizedBox(height: ELayout.spaceMd),
             itemsAsync.when(
               data: (items) => items.isEmpty

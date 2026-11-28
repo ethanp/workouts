@@ -48,7 +48,7 @@ class const WorkoutOptionCard({
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: Text(option.title, style: EText.section)),
+        Expanded(child: Text(option.title, style: EText.cardTitle)),
         Row(
           children: [
             _goalBadge(),

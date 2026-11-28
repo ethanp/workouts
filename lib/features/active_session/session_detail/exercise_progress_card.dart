@@ -51,7 +51,7 @@ class const ExerciseProgressCard({
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Expanded(child: Text(exercise.name, style: EText.section)),
+        Expanded(child: Text(exercise.name, style: EText.cardTitle)),
         Text(
           '$completedSets/$targetSets sets',
           style: EText.caption.copyWith(

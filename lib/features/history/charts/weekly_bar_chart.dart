@@ -53,7 +53,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
 
   Widget _header() {
     if (widget.weeks.isEmpty) {
-      return Text(widget.title, style: EText.section);
+      return Text(widget.title, style: EText.cardTitle);
     }
 
     final averageableWeeks = widget.weeks
@@ -70,7 +70,7 @@ class _WeeklyBarChartState() extends State<WeeklyBarChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(widget.title, style: EText.section),
+        Text(widget.title, style: EText.cardTitle),
         Text(
           'avg ${_formatValue(avg)}/wk',
           style: EText.caption.copyWith(color: EColors.textTertiary),

@@ -25,7 +25,7 @@ class const SessionFinishSheet._() {
               ),
               child: Column(
                 children: [
-                  Text('Finish Session', style: EText.section),
+                  Text('Finish session', style: EText.sectionTitle),
                   const SizedBox(height: ELayout.spaceXs),
                   Text(
                     'Choose how to wrap up your workout.',

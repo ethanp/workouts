@@ -21,7 +21,7 @@ class const CardioSessionStructureCard({
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Session', style: EText.section),
+                Text('Session', style: EText.sectionTitle),
                 const SizedBox(height: ELayout.spaceSm),
                 for (final caption in structure.captions)
                   Padding(

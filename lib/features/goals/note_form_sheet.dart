@@ -98,8 +98,8 @@ class _NoteFormSheetState() extends State<NoteFormSheet> {
   Widget _sheetHeader(bool isEditing) => Column(
     children: [
       Text(
-        isEditing ? 'Edit Note' : 'New Background Note',
-        style: EText.title,
+        isEditing ? 'Edit note' : 'New background note',
+        style: EText.sectionTitle,
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: ELayout.spaceSm),

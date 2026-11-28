@@ -23,7 +23,10 @@ class const SessionVerdictCard({required final CardioWorkout workout})
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Text(verdict.aerobicJob.label, style: EText.title),
+                child: Text(
+                  verdict.aerobicJob.label,
+                  style: EText.sectionTitle,
+                ),
               ),
               Text(
                 workout.startedAt.fullDate,

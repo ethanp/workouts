@@ -76,7 +76,7 @@ class const ExerciseTimerPanel({
       children: [
         Text(
           _timeDisplay,
-          style: EText.title.copyWith(
+          style: EText.headline.small.copyWith(
             letterSpacing: 1.2,
             fontFeatures: const [FontFeature.tabularFigures()],
           ),

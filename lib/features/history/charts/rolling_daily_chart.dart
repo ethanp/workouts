@@ -58,7 +58,7 @@ class _RollingDailyChartState() extends State<RollingDailyChart> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(widget.title, style: EText.section),
+        Text(widget.title, style: EText.sectionTitle),
         _currentSummary(),
       ],
     );

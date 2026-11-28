@@ -99,8 +99,8 @@ class _GoalFormSheetState() extends State<GoalFormSheet> {
   );
 
   Widget _sheetTitle(bool isEditing) => Text(
-    isEditing ? 'Edit Goal' : 'New Goal',
-    style: EText.title,
+    isEditing ? 'Edit goal' : 'New goal',
+    style: EText.sectionTitle,
     textAlign: TextAlign.center,
   );
 

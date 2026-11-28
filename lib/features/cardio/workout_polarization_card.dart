@@ -44,7 +44,7 @@ class const WorkoutPolarizationCard({
       children: [
         const Icon(Icons.graphic_eq, size: 18, color: EColors.textSecondary),
         const SizedBox(width: ELayout.spaceSm),
-        Expanded(child: Text('Zone Distribution', style: EText.title)),
+        Expanded(child: Text('Zone distribution', style: EText.sectionTitle)),
         Container(
           padding: const EdgeInsets.symmetric(
             horizontal: ELayout.spaceSm,

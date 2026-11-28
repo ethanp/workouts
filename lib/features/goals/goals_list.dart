@@ -33,7 +33,7 @@ class const GoalsList({
     return [
       GoalsSectionHeader(
         icon: Icons.flag,
-        title: 'GOALS',
+        title: 'Goals',
         action: TextButton(
           onPressed: onAddGoal,
           child: const Text(

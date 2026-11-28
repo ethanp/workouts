@@ -38,7 +38,7 @@ class const HrZonesReferenceTile() extends StatelessWidget {
         child: const Icon(Icons.favorite, color: EColors.danger, size: 18),
       ),
       const SizedBox(width: ELayout.spaceMd),
-      Text('Heart Rate Zones', style: EText.section),
+      Text('Heart rate zones', style: EText.sectionTitle),
     ],
   );
 

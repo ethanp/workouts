@@ -358,7 +358,11 @@ class _NewTemplateSheetState() extends ConsumerState<_NewTemplateSheet> {
         children: [
           _dragHandle(),
           const SizedBox(height: ELayout.spaceLg),
-          Text('New Template', style: EText.title, textAlign: TextAlign.center),
+          Text(
+            'New template',
+            style: EText.sectionTitle,
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: ELayout.spaceXl),
           _nameFormField(),
           const SizedBox(height: ELayout.spaceLg),

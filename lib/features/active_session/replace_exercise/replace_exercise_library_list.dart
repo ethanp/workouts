@@ -85,12 +85,8 @@ class const ReplaceExerciseModalitySection({
             ELayout.spaceSm,
           ),
           child: Text(
-            modality.name.toUpperCase(),
-            style: EText.caption.copyWith(
-              color: EColors.textMuted,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
+            modality.nameAsCapitalizedWords,
+            style: EText.sectionTitle,
           ),
         ),
         ...exercises.map(

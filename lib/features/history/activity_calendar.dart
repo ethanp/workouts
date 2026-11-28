@@ -24,7 +24,7 @@ class const ActivityCalendar({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Activity Calendar', style: EText.section),
+          Text('Activity calendar', style: EText.sectionTitle),
           const SizedBox(height: ELayout.spaceSm),
           EHeatmapLegend(scale: AerobicLoadCalendar.scale),
           const SizedBox(height: ELayout.spaceMd),

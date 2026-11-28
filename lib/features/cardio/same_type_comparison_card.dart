@@ -43,7 +43,7 @@ class _SameTypeComparisonCardState() extends State<SameTypeComparisonCard> {
         children: [
           Text(
             '${_comparison.thisWorkout.activityType.displayName} sessions',
-            style: EText.section,
+            style: EText.sectionTitle,
           ),
           const SizedBox(height: ELayout.spaceXs),
           Text(

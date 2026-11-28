@@ -14,7 +14,7 @@ class const HealthDataInventoryTile() extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Health data inventory', style: EText.section),
+          Text('Health data inventory', style: EText.cardTitle),
           const SizedBox(height: ELayout.spaceXs),
           Text(
             'See which Apple Health signals each indoor cycle, treadmill, walk, and Watch source actually writes.',
@@ -216,7 +216,7 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (inventory.queriedQuantityTypes.isNotEmpty) ...[
-          _sectionLabel('Queried quantity types'),
+          _sectionTitle('Queried quantity types'),
           Text(
             inventory.queriedQuantityTypes
                 .map((type) => type.shortHealthKitType)
@@ -225,10 +225,10 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
           ),
           const SizedBox(height: ELayout.spaceLg),
         ],
-        _sectionLabel('Share status'),
+        _sectionTitle('Share status'),
         ...inventory.requestedTypes.map(_shareStatusRow),
         const SizedBox(height: ELayout.spaceLg),
-        _sectionLabel('Source matrix'),
+        _sectionTitle('Source matrix'),
         if (inventory.sourceMatrix.isEmpty)
           Text(
             'No cardio workouts found.',
@@ -237,23 +237,16 @@ class const HealthDataInventoryScreen() extends ConsumerWidget {
         else
           ...inventory.sourceMatrix.map(_matrixRow),
         const SizedBox(height: ELayout.spaceLg),
-        _sectionLabel('Workouts'),
+        _sectionTitle('Workouts'),
         ...inventory.workouts.map(_workoutCard),
       ],
     );
   }
 
-  Widget _sectionLabel(String title) {
+  Widget _sectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: ELayout.spaceSm),
-      child: Text(
-        title.toUpperCase(),
-        style: EText.caption.copyWith(
-          color: EColors.textMuted,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.6,
-        ),
-      ),
+      child: Text(title, style: EText.sectionTitle),
     );
   }
 

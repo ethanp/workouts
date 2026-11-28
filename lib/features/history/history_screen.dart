@@ -146,10 +146,7 @@ class const ImportProgressBanner({
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Sync from Apple Health',
-            style: EText.section.copyWith(color: EColors.textPrimary),
-          ),
+          Text('Sync from Apple Health', style: EText.sectionTitle),
           const SizedBox(height: ELayout.spaceXs),
           _statusText(),
           if (importProgress.inProgress) ...[

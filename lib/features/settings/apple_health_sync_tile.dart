@@ -27,7 +27,7 @@ class const AppleHealthSyncTile() extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Apple Health', style: EText.section),
+          Text('Apple Health', style: EText.cardTitle),
           const SizedBox(height: ELayout.spaceXs),
           Text(
             'Pulls new and changed cardio from Apple Health, then saves any outdoor GPS that isn’t stored yet. Workouts that are already stored stay put.',

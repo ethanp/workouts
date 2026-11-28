@@ -84,8 +84,8 @@ class _InfluenceFormSheetState() extends ConsumerState<InfluenceFormSheet> {
           _dragHandle(),
           const SizedBox(height: ELayout.spaceLg),
           Text(
-            _isEditing ? 'Edit Influence' : 'Add Influence',
-            style: EText.title,
+            _isEditing ? 'Edit influence' : 'Add influence',
+            style: EText.sectionTitle,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: ELayout.spaceXl),
